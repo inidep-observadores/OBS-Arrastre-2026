@@ -1,0 +1,36 @@
+<Window x:Class="OBSArrastre2026.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="OBS Arrastre 2026"
+        Height="450"
+        Width="800"
+        MinHeight="320"
+        MinWidth="520">
+    <Grid Background="#F5F7FA">
+        <Border Margin="24"
+                Padding="24"
+                Background="White"
+                BorderBrush="#D9E1EC"
+                BorderThickness="1"
+                CornerRadius="12">
+            <StackPanel>
+                <TextBlock FontSize="28"
+                           FontWeight="SemiBold"
+                           Foreground="#1F2937"
+                           Text="App de prueba WPF" />
+                <TextBlock Margin="0,12,0,0"
+                           FontSize="15"
+                           Foreground="#4B5563"
+                           Text="La solución base está creada y compilando correctamente sobre .NET 9." />
+                <Button Width="180"
+                        Margin="0,24,0,0"
+                        Padding="12,8"
+                        HorizontalAlignment="Left"
+                        Content="Acción de prueba" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
