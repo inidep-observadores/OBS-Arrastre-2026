@@ -21,7 +21,7 @@ public sealed class ThemeService : IThemeService
         SidebarBorder:              "#E5E7EB",
         PrimaryText:                "#0F172A",
         SecondaryText:              "#475569",
-        HeroBackground:             "#1E3A5F",
+        HeroBackground:             "#FFFFFF",
         CardBackground:             "#FFFFFF",
         CardBorder:                 "#DCE7FF",
         Accent:                     "#2F6BFF",

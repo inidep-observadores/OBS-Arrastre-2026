@@ -18,27 +18,39 @@
         </Style>
 
         <Style x:Key="SidebarItemStyle" TargetType="ListBoxItem">
-            <Setter Property="Margin" Value="0,0,0,10" />
+            <Setter Property="Margin" Value="0,1,0,1" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
-                        <Border x:Name="Container"
-                                Padding="16,14"
-                                Background="{DynamicResource SidebarSecondaryBackgroundBrush}"
-                                BorderBrush="Transparent"
-                                BorderThickness="1"
-                                CornerRadius="18">
-                            <ContentPresenter />
-                        </Border>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="3" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Rectangle x:Name="AccentBar"
+                                       Fill="Transparent"
+                                       RadiusX="2"
+                                       RadiusY="2" />
+                            <Border x:Name="Container"
+                                    Grid.Column="1"
+                                    Padding="12,10"
+                                    Background="Transparent"
+                                    CornerRadius="10">
+                                <ContentPresenter />
+                            </Border>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Container" Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+                                <Setter TargetName="Container" Property="Background"
+                                        Value="{DynamicResource AccentMutedBrush}" />
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="Container" Property="Background" Value="{DynamicResource SelectionBackgroundBrush}" />
-                                <Setter TargetName="Container" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                <Setter TargetName="AccentBar" Property="Fill"
+                                        Value="{DynamicResource AccentBrush}" />
+                                <Setter TargetName="Container" Property="Background"
+                                        Value="{DynamicResource SelectionBackgroundBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -238,6 +250,13 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <Style x:Key="TableRowStyle" TargetType="Border">
+            <Setter Property="BorderBrush" Value="{DynamicResource TableRowBorderBrush}" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="Padding" Value="18,15" />
+            <Setter Property="Background" Value="Transparent" />
         </Style>
 
         <Style x:Key="SlimScrollViewerStyle" TargetType="ScrollViewer">

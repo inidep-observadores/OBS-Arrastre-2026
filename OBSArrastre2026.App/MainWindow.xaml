@@ -66,33 +66,22 @@
                         <DataTemplate>
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="44" />
+                                    <ColumnDefinition Width="28" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
 
-                                <Border Width="34"
-                                        Height="34"
-                                        Background="{DynamicResource AccentMutedBrush}"
-                                        CornerRadius="10"
-                                        VerticalAlignment="Center">
-                                    <TextBlock HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"
-                                               FontSize="16"
-                                               FontWeight="Bold"
-                                               Foreground="{DynamicResource AccentBrush}"
-                                               Text="{Binding Glyph}" />
-                                </Border>
+                                <TextBlock HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           FontSize="14"
+                                           Foreground="{DynamicResource SecondaryTextBrush}"
+                                           Text="{Binding Glyph}" />
 
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock FontSize="15"
-                                               FontWeight="SemiBold"
-                                               Foreground="{DynamicResource PrimaryTextBrush}"
-                                               Text="{Binding Title}" />
-                                    <TextBlock Margin="0,4,0,0"
-                                               FontSize="12"
-                                               Foreground="{DynamicResource SecondaryTextBrush}"
-                                               Text="{Binding Caption}" />
-                                </StackPanel>
+                                <TextBlock Grid.Column="1"
+                                           VerticalAlignment="Center"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PrimaryTextBrush}"
+                                           Text="{Binding Title}" />
                             </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
@@ -103,19 +92,15 @@
                         Padding="16"
                         Background="{DynamicResource SidebarSecondaryBackgroundBrush}">
                     <StackPanel>
-                        <TextBlock FontSize="12"
+                        <TextBlock FontSize="10"
+                                   FontWeight="SemiBold"
                                    Foreground="{DynamicResource SecondaryTextBrush}"
-                                   Text="Estado del shell" />
+                                   Text="ESTADO DEL SISTEMA" />
                         <TextBlock Margin="0,6,0,0"
-                                   FontSize="18"
+                                   FontSize="16"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource PrimaryTextBrush}"
-                                   Text="Listo para iterar" />
-                        <TextBlock Margin="0,8,0,0"
-                                   FontSize="12"
-                                   TextWrapping="Wrap"
-                                   Foreground="{DynamicResource SecondaryTextBrush}"
-                                   Text="La maqueta ya soporta dashboard, secciones maestras y tema claro/oscuro/sistema." />
+                                   Text="Premium v2026" />
                     </StackPanel>
                 </Border>
             </Grid>
@@ -220,11 +205,13 @@
             </Grid>
 
             <Border Grid.Row="1"
-                    Padding="24"
+                    Padding="28"
                     Background="{DynamicResource HeroBackgroundBrush}"
-                    BorderBrush="{DynamicResource SidebarBorderBrush}"
-                    BorderThickness="1"
-                    CornerRadius="32">
+                    CornerRadius="28">
+                <Border.Effect>
+                    <DropShadowEffect Color="#000000" Direction="270"
+                                      ShadowDepth="2" BlurRadius="20" Opacity="0.07" />
+                </Border.Effect>
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -238,14 +225,14 @@
                         </Grid.ColumnDefinitions>
 
                         <StackPanel>
-                            <TextBlock FontSize="15"
+                            <TextBlock FontSize="17"
                                        FontWeight="SemiBold"
                                        Foreground="{DynamicResource PrimaryTextBrush}"
-                                       Text="Experiencia principal" />
-                            <TextBlock Margin="0,6,0,0"
+                                       Text="Vista de Operaciones" />
+                            <TextBlock Margin="0,5,0,0"
                                        FontSize="13"
                                        Foreground="{DynamicResource SecondaryTextBrush}"
-                                       Text="Navegacion lateral fija, area central flexible y lectura rapida para operacion." />
+                                       Text="Gestión y monitoreo en tiempo real." />
                         </StackPanel>
 
                         <Button Grid.Column="1"
@@ -400,12 +387,10 @@
                             </ItemsControl>
 
                             <Border Grid.Row="1"
-                                    Margin="0,2,0,14"
-                                    Padding="16,14"
-                                    Background="{DynamicResource TableHeaderBrush}"
-                                    BorderBrush="{DynamicResource CardBorderBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="18">
+                                    Margin="0,6,0,4"
+                                    Padding="18,10"
+                                    BorderBrush="{DynamicResource TableRowBorderBrush}"
+                                    BorderThickness="0,0,0,1">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="1.2*" />
@@ -430,9 +415,7 @@
                                 <ItemsControl ItemsSource="{Binding Records}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Style="{StaticResource SurfaceBorderStyle}"
-                                                    Margin="0,0,0,12"
-                                                    Padding="18,16">
+                                            <Border Style="{StaticResource TableRowStyle}">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="1.2*" />
