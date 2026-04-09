@@ -178,15 +178,42 @@
                     <Border Style="{StaticResource SurfaceBorderStyle}"
                             Padding="6">
                         <StackPanel Orientation="Horizontal">
-                            <Button Style="{StaticResource ThemeButtonStyle}"
-                                    Command="{Binding SetSystemThemeCommand}"
-                                    Content="Sistema" />
-                            <Button Style="{StaticResource ThemeButtonStyle}"
-                                    Command="{Binding SetLightThemeCommand}"
-                                    Content="Claro" />
-                            <Button Style="{StaticResource ThemeButtonStyle}"
-                                    Command="{Binding SetDarkThemeCommand}"
-                                    Content="Oscuro" />
+                            <Button Command="{Binding SetSystemThemeCommand}" Content="Sistema">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource ThemeButtonStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsSystemThemeActive}" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource SelectionBackgroundBrush}" />
+                                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                            <Button Command="{Binding SetLightThemeCommand}" Content="Claro">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource ThemeButtonStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsLightThemeActive}" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource SelectionBackgroundBrush}" />
+                                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                            <Button Command="{Binding SetDarkThemeCommand}" Content="Oscuro">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource ThemeButtonStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsDarkThemeActive}" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource SelectionBackgroundBrush}" />
+                                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
                         </StackPanel>
                     </Border>
                 </StackPanel>
@@ -297,12 +324,10 @@
                                                                    Foreground="{DynamicResource PrimaryTextBrush}"
                                                                    Text="{Binding Label}" />
                                                         <ProgressBar Grid.Column="1"
-                                                                     Height="10"
+                                                                     Style="{StaticResource SlimProgressBarStyle}"
                                                                      Margin="14,0"
                                                                      Maximum="100"
-                                                                     Value="{Binding Value}"
-                                                                     Foreground="{DynamicResource AccentBrush}"
-                                                                     Background="{DynamicResource AccentMutedBrush}" />
+                                                                     Value="{Binding Value}" />
                                                         <TextBlock Grid.Column="2"
                                                                    VerticalAlignment="Center"
                                                                    HorizontalAlignment="Right"
@@ -400,6 +425,7 @@
                             </Border>
 
                             <ScrollViewer Grid.Row="2"
+                                          Style="{StaticResource SlimScrollViewerStyle}"
                                           VerticalScrollBarVisibility="Auto">
                                 <ItemsControl ItemsSource="{Binding Records}">
                                     <ItemsControl.ItemTemplate>
@@ -432,14 +458,85 @@
                                                                Style="{StaticResource BodySecondaryStyle}"
                                                                Text="{Binding Column5}" />
                                                     <Border Grid.Column="5"
-                                                            Padding="10,6"
+                                                            Padding="10,5"
                                                             HorizontalAlignment="Left"
-                                                            Background="{DynamicResource AccentMutedBrush}"
                                                             CornerRadius="999">
-                                                        <TextBlock FontSize="11"
-                                                                   FontWeight="SemiBold"
-                                                                   Foreground="{DynamicResource AccentBrush}"
-                                                                   Text="{Binding Badge}" />
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Setter Property="Background" Value="{DynamicResource AccentMutedBrush}" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Badge}" Value="En curso">
+                                                                        <Setter Property="Background" Value="{DynamicResource SuccessBackgroundBrush}" />
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Badge}" Value="Validado">
+                                                                        <Setter Property="Background" Value="{DynamicResource SuccessBackgroundBrush}" />
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Badge}" Value="Lista">
+                                                                        <Setter Property="Background" Value="{DynamicResource SuccessBackgroundBrush}" />
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Badge}" Value="Completa">
+                                                                        <Setter Property="Background" Value="{DynamicResource SuccessBackgroundBrush}" />
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Badge}" Value="Cerrado">
+                                                                        <Setter Property="Background" Value="{DynamicResource SuccessBackgroundBrush}" />
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Badge}" Value="Cerrada">
+                                                                        <Setter Property="Background" Value="{DynamicResource SuccessBackgroundBrush}" />
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Badge}" Value="Auditada">
+                                                                        <Setter Property="Background" Value="{DynamicResource SuccessBackgroundBrush}" />
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Badge}" Value="Revision">
+                                                                        <Setter Property="Background" Value="{DynamicResource WarningBackgroundBrush}" />
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Badge}" Value="Observado">
+                                                                        <Setter Property="Background" Value="{DynamicResource WarningBackgroundBrush}" />
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Badge}" Value="Pendiente">
+                                                                        <Setter Property="Background" Value="{DynamicResource WarningBackgroundBrush}" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Border.Style>
+                                                        <TextBlock FontSize="11" FontWeight="SemiBold" Text="{Binding Badge}">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding Badge}" Value="En curso">
+                                                                            <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Badge}" Value="Validado">
+                                                                            <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Badge}" Value="Lista">
+                                                                            <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Badge}" Value="Completa">
+                                                                            <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Badge}" Value="Cerrado">
+                                                                            <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Badge}" Value="Cerrada">
+                                                                            <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Badge}" Value="Auditada">
+                                                                            <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Badge}" Value="Revision">
+                                                                            <Setter Property="Foreground" Value="{DynamicResource WarningForegroundBrush}" />
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Badge}" Value="Observado">
+                                                                            <Setter Property="Foreground" Value="{DynamicResource WarningForegroundBrush}" />
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Badge}" Value="Pendiente">
+                                                                            <Setter Property="Foreground" Value="{DynamicResource WarningForegroundBrush}" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
                                                     </Border>
                                                 </Grid>
                                             </Border>

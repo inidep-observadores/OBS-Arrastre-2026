@@ -15,36 +15,48 @@ public interface IThemeService
 public sealed class ThemeService : IThemeService
 {
     private static readonly ThemePalette LightPalette = new(
-        "#F5F7FB",
-        "#FFFFFF",
-        "#F8FAFC",
-        "#E5E7EB",
-        "#0F172A",
-        "#475569",
-        "#0B1220",
-        "#FFFFFF",
-        "#DCE7FF",
-        "#2F6BFF",
-        "#D8E4FF",
-        "#EEF4FF",
-        "#334155",
-        "#E2E8F0");
+        ShellBackground:            "#F5F7FB",
+        SidebarBackground:          "#FFFFFF",
+        SidebarSecondaryBackground: "#F8FAFC",
+        SidebarBorder:              "#E5E7EB",
+        PrimaryText:                "#0F172A",
+        SecondaryText:              "#475569",
+        HeroBackground:             "#1E3A5F",
+        CardBackground:             "#FFFFFF",
+        CardBorder:                 "#DCE7FF",
+        Accent:                     "#2F6BFF",
+        AccentMuted:                "#D8E4FF",
+        SelectionBackground:        "#EEF4FF",
+        TableHeader:                "#EFF2F7",
+        TableRowBorder:             "#E2E8F0",
+        SuccessForeground:          "#15803D",
+        SuccessBackground:          "#DCFCE7",
+        WarningForeground:          "#B45309",
+        WarningBackground:          "#FEF3C7",
+        DangerForeground:           "#B91C1C",
+        DangerBackground:           "#FEE2E2");
 
     private static readonly ThemePalette DarkPalette = new(
-        "#07111F",
-        "#0F1A2B",
-        "#132238",
-        "#20314C",
-        "#F8FAFC",
-        "#94A3B8",
-        "#09101D",
-        "#0F1A2B",
-        "#1A3E71",
-        "#71A3FF",
-        "#17396A",
-        "#13284A",
-        "#CBD5E1",
-        "#20314C");
+        ShellBackground:            "#07111F",
+        SidebarBackground:          "#0F1A2B",
+        SidebarSecondaryBackground: "#132238",
+        SidebarBorder:              "#20314C",
+        PrimaryText:                "#F8FAFC",
+        SecondaryText:              "#94A3B8",
+        HeroBackground:             "#09101D",
+        CardBackground:             "#0F1A2B",
+        CardBorder:                 "#1A3E71",
+        Accent:                     "#71A3FF",
+        AccentMuted:                "#17396A",
+        SelectionBackground:        "#13284A",
+        TableHeader:                "#0D1929",
+        TableRowBorder:             "#20314C",
+        SuccessForeground:          "#4ADE80",
+        SuccessBackground:          "#052E16",
+        WarningForeground:          "#FCD34D",
+        WarningBackground:          "#451A03",
+        DangerForeground:           "#F87171",
+        DangerBackground:           "#450A0A");
 
     public AppThemeMode CurrentMode { get; private set; } = AppThemeMode.System;
 
@@ -72,6 +84,12 @@ public sealed class ThemeService : IThemeService
         SetBrush("SelectionBackgroundBrush", palette.SelectionBackground);
         SetBrush("TableHeaderBrush", palette.TableHeader);
         SetBrush("TableRowBorderBrush", palette.TableRowBorder);
+        SetBrush("SuccessForegroundBrush", palette.SuccessForeground);
+        SetBrush("SuccessBackgroundBrush", palette.SuccessBackground);
+        SetBrush("WarningForegroundBrush", palette.WarningForeground);
+        SetBrush("WarningBackgroundBrush", palette.WarningBackground);
+        SetBrush("DangerForegroundBrush", palette.DangerForeground);
+        SetBrush("DangerBackgroundBrush", palette.DangerBackground);
 
         Application.Current.Resources["DisplayFontFamily"] = new FontFamily("Segoe UI Variable Display");
         Application.Current.Resources["TextFontFamily"] = new FontFamily("Segoe UI Variable Text");
@@ -104,5 +122,11 @@ public sealed class ThemeService : IThemeService
         string AccentMuted,
         string SelectionBackground,
         string TableHeader,
-        string TableRowBorder);
+        string TableRowBorder,
+        string SuccessForeground,
+        string SuccessBackground,
+        string WarningForeground,
+        string WarningBackground,
+        string DangerForeground,
+        string DangerBackground);
 }
