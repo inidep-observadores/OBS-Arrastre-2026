@@ -441,9 +441,9 @@
                                                                Style="{StaticResource BodySecondaryStyle}"
                                                                Text="{Binding Column5}" />
                                                     <Border Grid.Column="5"
-                                                            Padding="10,5"
+                                                            Padding="10,4"
                                                             HorizontalAlignment="Left"
-                                                            CornerRadius="999">
+                                                            CornerRadius="7">
                                                         <Border.Style>
                                                             <Style TargetType="Border">
                                                                 <Setter Property="Background" Value="{DynamicResource AccentMutedBrush}" />
