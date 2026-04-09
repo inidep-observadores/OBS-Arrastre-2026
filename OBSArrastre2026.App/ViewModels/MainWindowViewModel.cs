@@ -161,34 +161,17 @@ public sealed class MainWindowViewModel : ObservableObject
         PageTitle = listSection.Title;
         PageDescription = listSection.Description;
         PrimaryActionLabel = listSection.PrimaryActionLabel;
-        Column1Header = listSection.Column1Header;
-        Column2Header = listSection.Column2Header;
-        Column3Header = listSection.Column3Header;
-        Column4Header = listSection.Column4Header;
-        Column5Header = listSection.Column5Header;
+        SetColumnHeaders(
+            listSection.Column1Header,
+            listSection.Column2Header,
+            listSection.Column3Header,
+            listSection.Column4Header,
+            listSection.Column5Header);
 
-        ActiveFilters.Clear();
-        foreach (var filter in listSection.Filters)
-        {
-            ActiveFilters.Add(filter);
-        }
-
-        Records.Clear();
-        foreach (var row in listSection.Rows)
-        {
-            Records.Add(row);
-        }
-
-        DashboardCards.Clear();
-        InsightCards.Clear();
-        TrendPoints.Clear();
+        ReplaceItems(ActiveFilters, listSection.Filters);
+        ReplaceItems(Records, listSection.Rows);
+        ClearDashboardCollections();
         IsDashboardVisible = false;
-
-        OnPropertyChanged(nameof(Column1Header));
-        OnPropertyChanged(nameof(Column2Header));
-        OnPropertyChanged(nameof(Column3Header));
-        OnPropertyChanged(nameof(Column4Header));
-        OnPropertyChanged(nameof(Column5Header));
     }
 
     private void LoadDashboard()
@@ -200,32 +183,35 @@ public sealed class MainWindowViewModel : ObservableObject
         PageDescription = dashboard.Description;
         PrimaryActionLabel = dashboard.PrimaryActionLabel;
 
-        DashboardCards.Clear();
-        foreach (var card in dashboard.Cards)
-        {
-            DashboardCards.Add(card);
-        }
-
-        InsightCards.Clear();
-        foreach (var card in dashboard.Insights)
-        {
-            InsightCards.Add(card);
-        }
-
-        TrendPoints.Clear();
-        foreach (var point in dashboard.Trends)
-        {
-            TrendPoints.Add(point);
-        }
-
+        ReplaceItems(DashboardCards, dashboard.Cards);
+        ReplaceItems(InsightCards, dashboard.Insights);
+        ReplaceItems(TrendPoints, dashboard.Trends);
         ActiveFilters.Clear();
         Records.Clear();
-        Column1Header = string.Empty;
-        Column2Header = string.Empty;
-        Column3Header = string.Empty;
-        Column4Header = string.Empty;
-        Column5Header = string.Empty;
+        SetColumnHeaders(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
         IsDashboardVisible = true;
+    }
+
+    private void ApplyTheme(AppThemeMode mode)
+    {
+        _themeService.ApplyTheme(mode);
+        CurrentThemeMode = mode;
+    }
+
+    private void ClearDashboardCollections()
+    {
+        DashboardCards.Clear();
+        InsightCards.Clear();
+        TrendPoints.Clear();
+    }
+
+    private void SetColumnHeaders(string column1, string column2, string column3, string column4, string column5)
+    {
+        Column1Header = column1;
+        Column2Header = column2;
+        Column3Header = column3;
+        Column4Header = column4;
+        Column5Header = column5;
 
         OnPropertyChanged(nameof(Column1Header));
         OnPropertyChanged(nameof(Column2Header));
@@ -234,9 +220,13 @@ public sealed class MainWindowViewModel : ObservableObject
         OnPropertyChanged(nameof(Column5Header));
     }
 
-    private void ApplyTheme(AppThemeMode mode)
+    private static void ReplaceItems<T>(ObservableCollection<T> target, IEnumerable<T> source)
     {
-        _themeService.ApplyTheme(mode);
-        CurrentThemeMode = mode;
+        target.Clear();
+
+        foreach (var item in source)
+        {
+            target.Add(item);
+        }
     }
 }

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Principios de Arquitectura"
+  short_description: "Aplica criterios SOLID y arquitectura limpia."
+  default_prompt: "Usa $principios-arquitectura para evaluar o proponer una solución de diseño en este repositorio."

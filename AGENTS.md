@@ -21,6 +21,8 @@ Use this file as the project-specific operating guide for Codex-compatible agent
 - Keep UI code simple and readable; do not introduce frameworks unless requested.
 - Preserve nullable reference types and implicit usings unless there is a clear reason to change them.
 - Prefer MVVM-style separation and keep business logic out of WPF code-behind.
+- Apply principles such as SOLID, Clean Code, Clean Architecture, separation of concerns, and Repository Pattern when they are appropriate and materially improve the solution.
+- Avoid introducing layers or patterns that do not add clear value to the current problem.
 - Treat `docs/esquema.sql` as the source of truth for domain naming until the project defines entities or migrations.
 - When creating new application structure, prefer folders such as `Views`, `ViewModels`, `Models`, `Services`, and `Infrastructure`.
 - Keep text files in UTF-8 to avoid mojibake in XAML and markdown files.
@@ -47,6 +49,7 @@ Use this file as the project-specific operating guide for Codex-compatible agent
 - Project-local skills live under `.codex/skills/`.
 - Use the local skill `obs-arrastre-wpf` when working on architecture, naming, domain mapping, or implementation tasks in this repository.
 - Use the local skill `commits-convencionales` when drafting commit, merge, squash, or revert messages.
+- Use the local skill `principios-arquitectura` when evaluating or applying design principles and structural patterns.
 - Read `.codex/skills/obs-arrastre-wpf/references/domain-context.md` when changes depend on the fishing-domain schema.
 
 ## Early Architecture Guidance
