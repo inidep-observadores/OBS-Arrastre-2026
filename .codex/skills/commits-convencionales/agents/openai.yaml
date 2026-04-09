@@ -1,0 +1,4 @@
+interface:
+  display_name: "Commits Convencionales"
+  short_description: "Redacta commits estandar en espanol."
+  default_prompt: "Usa $commits-convencionales para proponer un mensaje de commit siguiendo Conventional Commits en español."

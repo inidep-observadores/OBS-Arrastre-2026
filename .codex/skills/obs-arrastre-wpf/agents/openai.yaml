@@ -1,0 +1,4 @@
+interface:
+  display_name: "OBS Arrastre WPF"
+  short_description: "Flujo de trabajo local para la app WPF."
+  default_prompt: "Use $obs-arrastre-wpf para trabajar en la aplicacion WPF OBS Arrastre 2026."
