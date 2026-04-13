@@ -1,5 +1,13 @@
+# .gitignore for .NET / Visual Studio
 bin/
 obj/
 .vs/
-.vscode/
-*.lscache
+.user/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.gemini/
+*.pdf
+# Ignorar staging temporal
+# OBSArrastre2026.App/Data/Import/Staging/
