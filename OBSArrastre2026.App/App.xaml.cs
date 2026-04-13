@@ -48,6 +48,8 @@ public partial class App : Application
                 services.AddSingleton<IDbfExtractorService, DbfExtractorService>();
                 services.AddSingleton<IJsonImportService, JsonImportService>();
                 services.AddSingleton<IDataSyncCoordinator, DataSyncCoordinator>();
+                services.AddSingleton<IMareaReportService, MareaReportService>();
+                services.AddSingleton<IMareaImportService, MareaImportService>();
 
                 // Validación y ViewModels
                 services.AddValidatorsFromAssemblyContaining<App>();

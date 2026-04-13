@@ -1,6 +1,8 @@
 using System.IO;
 using System.Text.Json;
 using DbfDataReader;
+using OBSArrastre2026.App.Models.Import;
+using OBSArrastre2026.App.Services.Internal;
 
 namespace OBSArrastre2026.App.Services;
 
@@ -55,7 +57,6 @@ public sealed class DbfExtractorService : IDbfExtractorService
                     {
                         var cleanedValue = CleanValue(value);
                         
-                        // Conversión especial para Frecuente (bool)
                         if (mappedName == "Frecuente")
                         {
                             record[mappedName] = IsTrueValue(cleanedValue);
@@ -72,6 +73,182 @@ public sealed class DbfExtractorService : IDbfExtractorService
 
         var json = JsonSerializer.Serialize(records, new JsonSerializerOptions { WriteIndented = true });
         await File.WriteAllTextAsync(jsonOutputPath, json);
+    }
+
+    public async Task<List<LegacyCaptura>> ReadCapturasAsync(string dbfPath)
+    {
+        var list = new List<LegacyCaptura>();
+        if (!File.Exists(dbfPath)) return list;
+
+        using var reader = new DbfDataReader.DbfDataReader(dbfPath);
+        var colMap = GetColumnMap(reader);
+
+        while (reader.Read())
+        {
+            var c = new LegacyCaptura
+            {
+                Barco = GetString(reader, colMap, "BARCO"),
+                Marea = GetDouble(reader, colMap, "MAREA"),
+                Lance = GetDouble(reader, colMap, "LANCE"),
+                Fecha = GetDateTime(reader, colMap, "FECHA") ?? DateTime.MinValue,
+                HoraInic = GetDouble(reader, colMap, "HORA_INIC"),
+                HoraFinal = GetDouble(reader, colMap, "HORA_FINAL"),
+                LatInic = GetDouble(reader, colMap, "LAT_INIC"),
+                LongInic = GetDouble(reader, colMap, "LONG_INIC"),
+                LatFinal = GetDouble(reader, colMap, "LAT_FINAL"),
+                LongFinal = GetDouble(reader, colMap, "LONG_FINAL"),
+                ProfInic = GetDouble(reader, colMap, "PROF_INIC"),
+                ProfFinal = GetDouble(reader, colMap, "PROF_FINAL"),
+                CaptTotal = GetDouble(reader, colMap, "CAPT_TOTAL"),
+                Descarte = GetDouble(reader, colMap, "DESCARTE")
+            };
+
+            for (int i = 1; i <= 25; i++)
+            {
+                var espCode = GetDouble(reader, colMap, $"ESPECIE_{i}");
+                if (espCode > 0)
+                {
+                    c.Especies[(int)espCode] = GetDouble(reader, colMap, $"KG_{i}");
+                    c.DescartesPorEspecie[(int)espCode] = GetDouble(reader, colMap, $"DESCAR_{i}");
+                }
+            }
+            list.Add(c);
+        }
+        return list;
+    }
+
+    public async Task<List<LegacyMuestra>> ReadMuestrasAsync(string dbfPath)
+    {
+        var list = new List<LegacyMuestra>();
+        if (!File.Exists(dbfPath)) return list;
+
+        using var reader = new DbfDataReader.DbfDataReader(dbfPath);
+        var colMap = GetColumnMap(reader);
+
+        while (reader.Read())
+        {
+            var m = new LegacyMuestra
+            {
+                Barco = GetString(reader, colMap, "BARCO"),
+                Marea = GetDouble(reader, colMap, "MAREA"),
+                Lance = GetDouble(reader, colMap, "LANCE"),
+                Fecha = GetDateTime(reader, colMap, "FECHA") ?? DateTime.MinValue,
+                Especie = GetString(reader, colMap, "ESPECIE"),
+                CodEspec = (int)GetDouble(reader, colMap, "COD_ESPEC"),
+                Area = GetDouble(reader, colMap, "AREA"),
+                PrimTalla = (int)GetDouble(reader, colMap, "PRIM_TALLA"),
+                UltTalla = (int)GetDouble(reader, colMap, "ULT_TALLA"),
+                Intervalo = (int)GetDouble(reader, colMap, "INTERVALO"),
+                PesoMues = GetDouble(reader, colMap, "PESO_MUES"),
+                FactPond = GetDouble(reader, colMap, "FACT_POND")
+            };
+
+            for (int i = 1; i <= 90; i++)
+            {
+                var val = GetValue(reader, colMap, $"TALLA_{i}");
+                if (val != null && val.ToString() != "0")
+                {
+                    m.Tallies.Add(LegacyDecoder.DecodeTally(val));
+                }
+            }
+            list.Add(m);
+        }
+        return list;
+    }
+
+    public async Task<List<LegacySubmuestra>> ReadSubmuestrasAsync(string dbfPath)
+    {
+        var list = new List<LegacySubmuestra>();
+        if (!File.Exists(dbfPath)) return list;
+
+        using var reader = new DbfDataReader.DbfDataReader(dbfPath);
+        var colMap = GetColumnMap(reader);
+
+        while (reader.Read())
+        {
+            list.Add(new LegacySubmuestra
+            {
+                Barco = GetString(reader, colMap, "BARCO"),
+                Marea = GetDouble(reader, colMap, "MAREA"),
+                Lance = GetDouble(reader, colMap, "LANCE"),
+                Fecha = GetDateTime(reader, colMap, "FECHA") ?? DateTime.MinValue,
+                Especie = GetString(reader, colMap, "ESPECIE"),
+                NEjemplar = (int)GetDouble(reader, colMap, "NEJEMPLAR"),
+                LargoTot = (int)GetDouble(reader, colMap, "LARGO_TOT"),
+                LargoSta = (int)GetDouble(reader, colMap, "LARGO_STA"),
+                PesoTot = GetDouble(reader, colMap, "PESO_TOT"),
+                Sexo = (int)GetDouble(reader, colMap, "SEXO"),
+                Estadio = (int)GetDouble(reader, colMap, "ESTADIO")
+            });
+        }
+        return list;
+    }
+
+    public async Task<List<LegacyLg>> ReadLgAsync(string dbfPath)
+    {
+        var list = new List<LegacyLg>();
+        if (!File.Exists(dbfPath)) return list;
+
+        using var reader = new DbfDataReader.DbfDataReader(dbfPath);
+        var colMap = GetColumnMap(reader);
+
+        while (reader.Read())
+        {
+            var lg = new LegacyLg
+            {
+                Barco = GetString(reader, colMap, "BARCO"),
+                Marea = GetDouble(reader, colMap, "MAREA"),
+                Lance = GetDouble(reader, colMap, "LANCE"),
+                Fecha = GetDateTime(reader, colMap, "FECHA") ?? DateTime.MinValue,
+                CodEspecIE = (int)GetDouble(reader, colMap, "CODIGO"),
+            };
+
+            for (int i = 1; i <= 70; i++)
+            {
+                var val = GetDouble(reader, colMap, $"TALLA_{i}");
+                if (val > 0)
+                {
+                    lg.Frecuencias[i] = val;
+                }
+            }
+            list.Add(lg);
+        }
+        return list;
+    }
+
+    private Dictionary<string, int> GetColumnMap(DbfDataReader.DbfDataReader reader)
+    {
+        var map = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var columns = reader.DbfTable.Columns;
+        for (int i = 0; i < columns.Count; i++)
+        {
+            map[columns[i].ColumnName] = i;
+        }
+        return map;
+    }
+
+    private string GetString(DbfDataReader.DbfDataReader reader, Dictionary<string, int> map, string name)
+    {
+        if (map.TryGetValue(name, out int index)) return reader.GetString(index)?.Trim() ?? "";
+        return "";
+    }
+
+    private double GetDouble(DbfDataReader.DbfDataReader reader, Dictionary<string, int> map, string name)
+    {
+        if (map.TryGetValue(name, out int index)) return reader.GetDouble(index);
+        return 0;
+    }
+
+    private DateTime? GetDateTime(DbfDataReader.DbfDataReader reader, Dictionary<string, int> map, string name)
+    {
+        if (map.TryGetValue(name, out int index)) return reader.GetDateTime(index);
+        return null;
+    }
+
+    private object? GetValue(DbfDataReader.DbfDataReader reader, Dictionary<string, int> map, string name)
+    {
+        if (map.TryGetValue(name, out int index)) return reader.GetValue(index);
+        return null;
     }
 
     private string? MapBuqueColumn(string dbfName)

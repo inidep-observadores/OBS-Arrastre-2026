@@ -1,0 +1,38 @@
+namespace OBSArrastre2026.App.Models.Import;
+
+public enum ValidationLevel
+{
+    Info,
+    Warning,
+    AutoFixed,
+    Error,
+    Fatal
+}
+
+public record ValidationIssue(
+    ValidationLevel Level,
+    string Category, // Ej: "Geografía", "Biometría", "Especie"
+    string Message,
+    string? Context = null, // Ej: "Lance 14", "Dato: Talla 85"
+    string? OriginalValue = null,
+    string? CorrectedValue = null);
+
+public class MareaValidationReport
+{
+    public string Barco { get; set; } = string.Empty;
+    public string Marea { get; set; } = string.Empty;
+    public int Año { get; set; }
+    
+    public List<ValidationIssue> Issues { get; } = new();
+    
+    public int TotalLances { get; set; }
+    public int LancesConErrores => Issues.Count(i => i.Level == ValidationLevel.Error);
+    public int LancesConAdvertencias => Issues.Count(i => i.Level == ValidationLevel.Warning);
+    
+    public bool HasFatalErrors => Issues.Any(i => i.Level == ValidationLevel.Fatal);
+
+    public void AddIssue(ValidationLevel level, string category, string message, string? context = null, string? original = null, string? corrected = null)
+    {
+        Issues.Add(new ValidationIssue(level, category, message, context, original, corrected));
+    }
+}
