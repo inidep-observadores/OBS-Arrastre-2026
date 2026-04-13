@@ -8,10 +8,21 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 {
     public DbSet<Buque> Buques => Set<Buque>();
     public DbSet<Especie> Especies => Set<Especie>();
+    public DbSet<Producto> Productos => Set<Producto>();
+    public DbSet<Marea> Mareas => Set<Marea>();
+    public DbSet<MareaEtapa> MareaEtapas => Set<MareaEtapa>();
+    public DbSet<RegistroProduccion> RegistrosProduccion => Set<RegistroProduccion>();
+    public DbSet<Lance> Lances => Set<Lance>();
+    public DbSet<Muestra> Muestras => Set<Muestra>();
+    public DbSet<FrecuenciaTalla> FrecuenciasTallas => Set<FrecuenciaTalla>();
+    public DbSet<FrecuenciaTallaEstadio> FrecuenciasTallasEstadio => Set<FrecuenciaTallaEstadio>();
+    public DbSet<ItemCaptura> ItemsCaptura => Set<ItemCaptura>();
+    public DbSet<ItemSubmuestra> ItemsSubmuestras => Set<ItemSubmuestra>();
+    public DbSet<ItemContenidoGastrico> ContenidosGastricos => Set<ItemContenidoGastrico>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfiguration(new BuqueConfiguration());
-        modelBuilder.ApplyConfiguration(new EspecieConfiguration());
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
     }
 }

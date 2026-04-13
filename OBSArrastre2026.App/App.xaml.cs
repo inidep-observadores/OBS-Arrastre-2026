@@ -1,4 +1,6 @@
+using System;
 using System.Windows;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -46,6 +48,12 @@ public partial class App : Application
                 services.AddSingleton<IDbfExtractorService, DbfExtractorService>();
                 services.AddSingleton<IJsonImportService, JsonImportService>();
                 services.AddSingleton<IDataSyncCoordinator, DataSyncCoordinator>();
+
+                // Validación y ViewModels
+                services.AddValidatorsFromAssemblyContaining<App>();
+                
+                services.AddSingleton<Func<Action, MareaEditViewModel>>(sp => 
+                    (Action onClose) => new MareaEditViewModel(onClose, sp.GetRequiredService<IValidator<MareaEditViewModel>>()));
 
                 services.AddSingleton<MainWindowViewModel>();
                 services.AddSingleton<MainWindow>();

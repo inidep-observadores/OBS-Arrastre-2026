@@ -56,7 +56,7 @@ public sealed class JsonImportService : IJsonImportService
                 // Insert
                 context.Buques.Add(new Buque
                 {
-                    Id = Guid.NewGuid(),
+                    Id = Guid.NewGuid().ToString(),
                     Nombre = nombre,
                     Matricula = nMatricula,
                     IdRadial = nIdRadial,

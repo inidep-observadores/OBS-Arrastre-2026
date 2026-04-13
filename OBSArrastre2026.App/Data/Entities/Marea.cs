@@ -10,6 +10,7 @@ public sealed class Marea
     public DateTime FechaInicio { get; set; } = DateTime.Today;
     public DateTime? FechaFin { get; set; }
     public string? BuqueID { get; set; }
-    
-    // Propiedad de navegación - Podríamos añadirla luego si es necesario para el mockup
+    public Buque? Buque { get; set; }
+
+    public ICollection<MareaEtapa> Etapas { get; set; } = new List<MareaEtapa>();
 }

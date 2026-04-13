@@ -1,3 +1,4 @@
+using System;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using OBSArrastre2026.App.Models;
@@ -9,6 +10,7 @@ public sealed class MainWindowViewModel : ObservableObject
 {
     private readonly IMockShellDataService _mockShellDataService;
     private readonly IThemeService _themeService;
+    private readonly Func<Action, MareaEditViewModel> _mareaEditFactory;
     private NavigationItemViewModel? _selectedNavigationItem;
     private string _pageTitle = string.Empty;
     private string _pageDescription = string.Empty;
@@ -18,10 +20,14 @@ public sealed class MainWindowViewModel : ObservableObject
     private AppThemeMode _currentThemeMode;
     private object? _currentEditViewModel;
 
-    public MainWindowViewModel(IMockShellDataService mockShellDataService, IThemeService themeService)
+    public MainWindowViewModel(
+        IMockShellDataService mockShellDataService, 
+        IThemeService themeService,
+        Func<Action, MareaEditViewModel> mareaEditFactory)
     {
         _mockShellDataService = mockShellDataService;
         _themeService = themeService;
+        _mareaEditFactory = mareaEditFactory;
 
         SearchPlaceholder = "Buscar en la maqueta...";
         SetSystemThemeCommand = new RelayCommand(() => ApplyTheme(AppThemeMode.System));
@@ -201,7 +207,7 @@ public sealed class MainWindowViewModel : ObservableObject
 
     private void OpenNewMareaForm()
     {
-        CurrentEditViewModel = new MareaEditViewModel(() => CurrentEditViewModel = null);
+        CurrentEditViewModel = _mareaEditFactory(() => CurrentEditViewModel = null);
     }
 
     private void ApplyTheme(AppThemeMode mode)

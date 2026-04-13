@@ -12,4 +12,9 @@ public sealed class Especie
     public string? NombreCientifico { get; set; }
     public string? NombreVulgar { get; set; }
     public string? Orden { get; set; }
+
+    // Navigation properties
+    public ICollection<MareaEtapa> MareaEtapas { get; set; } = new List<MareaEtapa>();
+    public ICollection<Muestra> Muestras { get; set; } = new List<Muestra>();
+    public ICollection<ItemCaptura> ItemsCaptura { get; set; } = new List<ItemCaptura>();
 }

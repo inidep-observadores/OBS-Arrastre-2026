@@ -15,7 +15,7 @@ public sealed class DatabaseInitializer(IDbContextFactory<AppDbContext> dbContex
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        await dbContext.Database.EnsureCreatedAsync(cancellationToken);
+        await dbContext.Database.MigrateAsync(cancellationToken);
 
         if (await dbContext.Buques.AnyAsync(cancellationToken))
         {
@@ -25,7 +25,7 @@ public sealed class DatabaseInitializer(IDbContextFactory<AppDbContext> dbContex
         dbContext.Buques.AddRange(
             new Buque
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.NewGuid().ToString(),
                 Nombre = "Mar Azul",
                 Matricula = 101,
                 IdRadial = 5001,
@@ -34,7 +34,7 @@ public sealed class DatabaseInitializer(IDbContextFactory<AppDbContext> dbContex
             },
             new Buque
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.NewGuid().ToString(),
                 Nombre = "Nuevo Horizonte",
                 Matricula = 102,
                 IdRadial = 5002,

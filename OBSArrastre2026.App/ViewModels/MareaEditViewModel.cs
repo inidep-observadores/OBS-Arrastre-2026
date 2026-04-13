@@ -1,11 +1,15 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Windows.Input;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using FluentValidation;
 using OBSArrastre2026.App.Data.Entities;
 using OBSArrastre2026.App.Services;
 
 namespace OBSArrastre2026.App.ViewModels;
 
-public sealed class MareaEditViewModel : ObservableObject
+public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaEditViewModel>
 {
     private readonly Action _onClose;
     private int _anioInidep;
@@ -15,8 +19,9 @@ public sealed class MareaEditViewModel : ObservableObject
     private DateTime _fechaInicio;
     private DateTime? _fechaFin;
     private string? _comentarios;
+    private Buque? _selectedBuque;
 
-    public MareaEditViewModel(Action onClose)
+    public MareaEditViewModel(Action onClose, IValidator<MareaEditViewModel> validator) : base(validator)
     {
         _onClose = onClose;
         _fechaInicio = DateTime.Today;
@@ -32,26 +37,42 @@ public sealed class MareaEditViewModel : ObservableObject
         // Añadimos una etapa inicial mock
         AddEtapa();
         if (Etapas.Count > 0) Etapas[0].IsExpanded = true;
+
+        ValidateAll();
     }
 
     public ObservableCollection<MareaEtapaItemViewModel> Etapas { get; } = [];
-
-    public int AnioInidep
-    {
-        get => _anioInidep;
-        set => SetProperty(ref _anioInidep, value);
-    }
-
-    public int NumeroInidep
-    {
-        get => _numeroInidep;
-        set => SetProperty(ref _numeroInidep, value);
-    }
 
     public string? Codigo
     {
         get => _codigo;
         set => SetProperty(ref _codigo, value);
+    }
+
+    public string? Comentarios
+    {
+        get => _comentarios;
+        set => SetProperty(ref _comentarios, value);
+    }
+
+    public int AnioInidep
+    {
+        get => _anioInidep;
+        set 
+        {
+            if (SetProperty(ref _anioInidep, value))
+                ValidatePropertyWithFluent(value, nameof(AnioInidep));
+        }
+    }
+
+    public int NumeroInidep
+    {
+        get => _numeroInidep;
+        set 
+        {
+            if (SetProperty(ref _numeroInidep, value))
+                ValidatePropertyWithFluent(value, nameof(NumeroInidep));
+        }
     }
 
     public string? BuqueID
@@ -63,19 +84,37 @@ public sealed class MareaEditViewModel : ObservableObject
     public DateTime FechaInicio
     {
         get => _fechaInicio;
-        set => SetProperty(ref _fechaInicio, value);
+        set 
+        {
+            if (SetProperty(ref _fechaInicio, value))
+                ValidatePropertyWithFluent(value, nameof(FechaInicio));
+        }
     }
 
     public DateTime? FechaFin
     {
         get => _fechaFin;
-        set => SetProperty(ref _fechaFin, value);
+        set 
+        {
+            if (SetProperty(ref _fechaFin, value))
+            {
+                ValidatePropertyWithFluent(value, nameof(FechaFin));
+                ValidatePropertyWithFluent(FechaInicio, nameof(FechaInicio));
+            }
+        }
     }
 
-    public string? Comentarios
+    public Buque? SelectedBuque
     {
-        get => _comentarios;
-        set => SetProperty(ref _comentarios, value);
+        get => _selectedBuque;
+        set 
+        {
+            if (SetProperty(ref _selectedBuque, value))
+            {
+                BuqueID = value?.Id;
+                ValidatePropertyWithFluent(value, nameof(SelectedBuque));
+            }
+        }
     }
 
     public ICommand SaveCommand { get; }
@@ -84,7 +123,6 @@ public sealed class MareaEditViewModel : ObservableObject
 
     private void AddEtapa()
     {
-        // Colapsamos todas antes de añadir
         foreach (var e in Etapas) e.IsExpanded = false;
 
         var nuevaEtapa = new MareaEtapa 
@@ -98,8 +136,10 @@ public sealed class MareaEditViewModel : ObservableObject
 
     private void Save()
     {
-        // Por ahora solo cerramos (mockup)
-        _onClose();
+        if (ValidateAll())
+        {
+            _onClose();
+        }
     }
 
     private void Cancel()
