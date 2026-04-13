@@ -4,4 +4,7 @@ public interface IJsonImportService
 {
     Task ImportBuquesAsync(string jsonPath);
     Task ImportEspeciesAsync(string jsonPath);
+
+    Task<bool> IsBuquesEmptyAsync();
+    Task<bool> IsEspeciesEmptyAsync();
 }

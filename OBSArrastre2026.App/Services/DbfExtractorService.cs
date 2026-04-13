@@ -76,14 +76,18 @@ public sealed class DbfExtractorService : IDbfExtractorService
 
     private string? MapBuqueColumn(string dbfName)
     {
-        return dbfName.ToUpper() switch
+        return dbfName.Trim().ToUpper() switch
         {
             "ID" => "ID",
+            "BARCO" => "ID",
             "NOMBRE" => "Nombre",
+            "NBRE_BQE" => "Nombre",
             "MATRICULA" => "Matricula",
             "MATRIC" => "Matricula",
+            "MATR_BQE" => "Matricula",
             "RADIAL" => "IdRadial",
             "ID_RADIAL" => "IdRadial",
+            "RIP" => "IdRadial",
             "IMO" => "IMO",
             "MMSI" => "MMSI",
             _ => null
@@ -92,11 +96,12 @@ public sealed class DbfExtractorService : IDbfExtractorService
 
     private string? MapEspecieColumn(string dbfName)
     {
-        return dbfName.ToUpper() switch
+        return dbfName.Trim().ToUpper() switch
         {
             "ID" => "ID",
             "COD_INIDEP" => "CodigoInidep",
             "COD" => "CodigoInidep",
+            "CODINIDEP" => "CodigoInidep",
             "DOC_INFO" => "DocumentoInformativo",
             "DOC" => "DocumentoInformativo",
             "ESPECIFICO" => "Especifico",
@@ -104,7 +109,9 @@ public sealed class DbfExtractorService : IDbfExtractorService
             "FRECUENTE" => "Frecuente",
             "GENERO" => "Genero",
             "NOM_CIENT" => "NombreCientifico",
+            "NOMCIENT" => "NombreCientifico",
             "NOM_VULGAR" => "NombreVulgar",
+            "NOMVULCAS" => "NombreVulgar",
             "ORDEN" => "Orden",
             _ => null
         };

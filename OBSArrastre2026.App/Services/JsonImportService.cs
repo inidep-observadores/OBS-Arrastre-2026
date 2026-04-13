@@ -27,20 +27,30 @@ public sealed class JsonImportService : IJsonImportService
 
         foreach (var item in sourceItems)
         {
-            var nombre = item.GetProperty("Nombre").GetString();
-            var matricula = item.GetProperty("Matricula").GetRawText(); // Handle as raw to avoid parsing issues if it's float in JSON
-            var idRadial = item.GetProperty("IdRadial").GetRawText();
+            var nombre = GetStringValue(item, "Nombre");
+            var matriculaStr = GetStringValue(item, "Matricula");
+            var idRadialStr = GetStringValue(item, "IdRadial");
 
-            if (string.IsNullOrEmpty(nombre)) continue;
+            if (string.IsNullOrWhiteSpace(nombre)) continue;
 
-            int.TryParse(matricula, out int nMatricula);
-            int.TryParse(idRadial, out int nIdRadial);
+            int.TryParse(matriculaStr, out int nMatricula);
+            int.TryParse(idRadialStr, out int nIdRadial);
 
-            // Búsqueda jerárquica para Upsert
-            var existing = await context.Buques
-                .FirstOrDefaultAsync(b => b.Nombre == nombre 
-                                          || (nMatricula != 0 && b.Matricula == nMatricula) 
-                                          || (nIdRadial != 0 && b.IdRadial == nIdRadial));
+            // Búsqueda secuencial (Priority: Nombre > Matricula > IdRadial)
+            // Primero buscamos en la base de datos
+            Buque? existing = await context.Buques.FirstOrDefaultAsync(b => b.Nombre == nombre);
+            
+            if (existing == null && nMatricula != 0)
+                existing = await context.Buques.FirstOrDefaultAsync(b => b.Matricula == nMatricula);
+
+            if (existing == null && nIdRadial != 0)
+                existing = await context.Buques.FirstOrDefaultAsync(b => b.IdRadial == nIdRadial);
+
+            // Si no está en DB, buscamos en el ChangeTracker por si ya añadimos uno con el mismo nombre en este ciclo
+            if (existing == null)
+            {
+                existing = context.Buques.Local.FirstOrDefault(b => b.Nombre == nombre);
+            }
 
             if (existing != null)
             {
@@ -48,8 +58,12 @@ public sealed class JsonImportService : IJsonImportService
                 existing.Nombre = nombre;
                 if (nMatricula != 0) existing.Matricula = nMatricula;
                 if (nIdRadial != 0) existing.IdRadial = nIdRadial;
-                if (item.TryGetProperty("IMO", out var imoProp) && imoProp.ValueKind == JsonValueKind.Number) existing.IMO = imoProp.GetInt32();
-                if (item.TryGetProperty("MMSI", out var mmsiProp) && mmsiProp.ValueKind == JsonValueKind.Number) existing.MMSI = mmsiProp.GetInt32();
+                
+                if (item.TryGetProperty("IMO", out var imoProp) && imoProp.ValueKind == JsonValueKind.Number) 
+                    existing.IMO = imoProp.GetInt32();
+                
+                if (item.TryGetProperty("MMSI", out var mmsiProp) && mmsiProp.ValueKind == JsonValueKind.Number) 
+                    existing.MMSI = mmsiProp.GetInt32();
             }
             else
             {
@@ -61,12 +75,24 @@ public sealed class JsonImportService : IJsonImportService
                     Matricula = nMatricula,
                     IdRadial = nIdRadial,
                     IMO = item.TryGetProperty("IMO", out var i) && i.ValueKind == JsonValueKind.Number ? i.GetInt32() : null,
-                    MMSI = item.TryGetProperty("MMSI", out var m) && m.ValueKind == JsonValueKind.Number ? m.GetInt32() : null
+                    MMSI = item.TryGetProperty("MMSI", out var ms) && ms.ValueKind == JsonValueKind.Number ? ms.GetInt32() : null
                 });
             }
         }
 
         await context.SaveChangesAsync();
+    }
+
+    public async Task<bool> IsBuquesEmptyAsync()
+    {
+        using var context = await _dbContextFactory.CreateDbContextAsync();
+        return !await context.Buques.AnyAsync();
+    }
+
+    public async Task<bool> IsEspeciesEmptyAsync()
+    {
+        using var context = await _dbContextFactory.CreateDbContextAsync();
+        return !await context.Especies.AnyAsync();
     }
 
     public async Task ImportEspeciesAsync(string jsonPath)
@@ -81,20 +107,25 @@ public sealed class JsonImportService : IJsonImportService
 
         foreach (var item in sourceItems)
         {
-            if (!item.TryGetProperty("CodigoInidep", out var codProp)) continue;
-            var codigo = codProp.GetString();
+            var codigo = GetStringValue(item, "CodigoInidep");
             if (string.IsNullOrEmpty(codigo)) continue;
 
+            // Buscamos en DB
             var existing = await context.Especies.FirstOrDefaultAsync(e => e.CodigoInidep == codigo);
+            
+            // Si no está en DB, buscamos en la memoria local del contexto (ChangeTracker) 
+            // por si el DBF tiene duplicados
+            if (existing == null)
+            {
+                existing = context.Especies.Local.FirstOrDefault(e => e.CodigoInidep == codigo);
+            }
 
             if (existing != null)
             {
-                // Update
                 UpdateEspecie(existing, item);
             }
             else
             {
-                // Insert
                 var nuevo = new Especie { CodigoInidep = codigo };
                 UpdateEspecie(nuevo, item);
                 context.Especies.Add(nuevo);
@@ -106,13 +137,29 @@ public sealed class JsonImportService : IJsonImportService
 
     private void UpdateEspecie(Especie target, JsonElement source)
     {
-        if (source.TryGetProperty("NombreVulgar", out var nv)) target.NombreVulgar = nv.GetString();
-        if (source.TryGetProperty("NombreCientifico", out var nc)) target.NombreCientifico = nc.GetString();
-        if (source.TryGetProperty("Familia", out var f)) target.Familia = f.GetString();
-        if (source.TryGetProperty("Genero", out var g)) target.Genero = g.GetString();
-        if (source.TryGetProperty("Especifico", out var e)) target.Especifico = e.GetString();
-        if (source.TryGetProperty("Orden", out var o)) target.Orden = o.GetString();
-        if (source.TryGetProperty("DocumentoInformativo", out var d)) target.DocumentoInformativo = d.GetString();
-        if (source.TryGetProperty("Frecuente", out var fr)) target.Frecuente = fr.GetBoolean();
+        target.NombreVulgar = GetStringValue(source, "NombreVulgar");
+        target.NombreCientifico = GetStringValue(source, "NombreCientifico");
+        target.Familia = GetStringValue(source, "Familia");
+        target.Genero = GetStringValue(source, "Genero");
+        target.Especifico = GetStringValue(source, "Especifico");
+        target.Orden = GetStringValue(source, "Orden");
+        target.DocumentoInformativo = GetStringValue(source, "DocumentoInformativo");
+        
+        if (source.TryGetProperty("Frecuente", out var fr) && fr.ValueKind != JsonValueKind.Null) 
+            target.Frecuente = fr.GetBoolean();
+    }
+
+    private string? GetStringValue(JsonElement element, string propertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out var prop) || prop.ValueKind == JsonValueKind.Null)
+            return null;
+
+        if (prop.ValueKind == JsonValueKind.String)
+            return prop.GetString();
+
+        if (prop.ValueKind == JsonValueKind.Number)
+            return prop.GetRawText();
+
+        return null;
     }
 }

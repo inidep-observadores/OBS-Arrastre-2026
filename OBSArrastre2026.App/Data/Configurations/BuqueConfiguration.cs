@@ -20,6 +20,6 @@ public sealed class BuqueConfiguration : IEntityTypeConfiguration<Buque>
         builder.Property(x => x.MMSI).HasColumnName("MMSI");
 
         builder.HasIndex(x => x.Nombre).IsUnique();
-        builder.HasIndex(x => x.IdRadial).IsUnique();
+        builder.HasIndex(x => x.IdRadial); // Mantenemos el índice para búsquedas ágiles, pero sin unicidad
     }
 }
