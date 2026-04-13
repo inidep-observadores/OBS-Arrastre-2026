@@ -16,6 +16,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private string _primaryActionLabel = string.Empty;
     private bool _isDashboardVisible;
     private AppThemeMode _currentThemeMode;
+    private object? _currentEditViewModel;
 
     public MainWindowViewModel(IMockShellDataService mockShellDataService, IThemeService themeService)
     {
@@ -26,7 +27,7 @@ public sealed class MainWindowViewModel : ObservableObject
         SetSystemThemeCommand = new RelayCommand(() => ApplyTheme(AppThemeMode.System));
         SetLightThemeCommand = new RelayCommand(() => ApplyTheme(AppThemeMode.Light));
         SetDarkThemeCommand = new RelayCommand(() => ApplyTheme(AppThemeMode.Dark));
-        PrimaryActionCommand = new RelayCommand(() => { });
+        PrimaryActionCommand = new RelayCommand(OpenNewMareaForm);
 
         foreach (var navigationItem in _mockShellDataService.GetNavigationItems())
         {
@@ -97,6 +98,12 @@ public sealed class MainWindowViewModel : ObservableObject
     {
         get => _primaryActionLabel;
         private set => SetProperty(ref _primaryActionLabel, value);
+    }
+
+    public object? CurrentEditViewModel
+    {
+        get => _currentEditViewModel;
+        private set => SetProperty(ref _currentEditViewModel, value);
     }
 
     public bool IsDashboardVisible
@@ -190,6 +197,11 @@ public sealed class MainWindowViewModel : ObservableObject
         Records.Clear();
         SetColumnHeaders(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
         IsDashboardVisible = true;
+    }
+
+    private void OpenNewMareaForm()
+    {
+        CurrentEditViewModel = new MareaEditViewModel(() => CurrentEditViewModel = null);
     }
 
     private void ApplyTheme(AppThemeMode mode)

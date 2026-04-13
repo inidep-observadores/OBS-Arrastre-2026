@@ -3,6 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:views="clr-namespace:OBSArrastre2026.App.Views"
+        xmlns:vm="clr-namespace:OBSArrastre2026.App.ViewModels"
         mc:Ignorable="d"
         Title="{Binding Title}"
         Width="1460"
@@ -11,6 +13,12 @@
         MinHeight="760"
         Background="{DynamicResource ShellBackgroundBrush}"
         FontFamily="{DynamicResource TextFontFamily}">
+    <Window.Resources>
+        <DataTemplate DataType="{x:Type vm:MareaEditViewModel}">
+            <views:MareaEditView />
+        </DataTemplate>
+    </Window.Resources>
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="294" />
@@ -531,6 +539,23 @@
                     </Grid>
                 </Grid>
             </Border>
+        </Grid>
+
+        <!-- Overlay for Editing -->
+        <Grid Grid.ColumnSpan="2">
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Setter Property="Visibility" Value="Visible" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding CurrentEditViewModel}" Value="{x:Null}">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
+
+            <Border Background="Black" Opacity="0.5" />
+            <ContentControl Content="{Binding CurrentEditViewModel}" />
         </Grid>
     </Grid>
 </Window>
