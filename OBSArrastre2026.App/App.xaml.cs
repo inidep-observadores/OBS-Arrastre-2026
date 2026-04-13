@@ -41,6 +41,12 @@ public partial class App : Application
 
                 services.AddSingleton<IDatabaseInitializer, DatabaseInitializer>();
                 services.AddSingleton<IBuqueService, BuqueService>();
+
+                // Servicios de sincronización de datos
+                services.AddSingleton<IDbfExtractorService, DbfExtractorService>();
+                services.AddSingleton<IJsonImportService, JsonImportService>();
+                services.AddSingleton<IDataSyncCoordinator, DataSyncCoordinator>();
+
                 services.AddSingleton<MainWindowViewModel>();
                 services.AddSingleton<MainWindow>();
             })
@@ -52,6 +58,11 @@ public partial class App : Application
         base.OnStartup(e);
 
         await _host.StartAsync();
+
+        // Inicializar base de datos y realizar sembrado/sincronización de datos maestros
+        await _host.Services.GetRequiredService<IDatabaseInitializer>().InitializeAsync();
+        await _host.Services.GetRequiredService<IDataSyncCoordinator>().SyncAllAsync();
+
         _host.Services.GetRequiredService<IThemeService>().ApplyTheme(AppThemeMode.System);
 
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
