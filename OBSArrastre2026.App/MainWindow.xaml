@@ -11,6 +11,8 @@
         Height="920"
         MinWidth="1180"
         MinHeight="760"
+        WindowStartupLocation="CenterScreen"
+        WindowState="Maximized"
         Background="{DynamicResource ShellBackgroundBrush}"
         FontFamily="{DynamicResource TextFontFamily}">
     <Window.Resources>
