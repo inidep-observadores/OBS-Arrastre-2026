@@ -119,4 +119,9 @@ public partial class DatePickerPremium : UserControl
             UpdateTextFromDate(); // Revertir a la fecha válida anterior o vacío
         }
     }
+
+    private void UserControl_GotFocus(object sender, RoutedEventArgs e)
+    {
+        DateInput.Focus();
+    }
 }

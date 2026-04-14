@@ -4,6 +4,10 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
+             Focusable="True"
+             IsTabStop="False"
+             KeyboardNavigation.TabNavigation="Continue"
+             GotFocus="UserControl_GotFocus"
              d:DesignHeight="40" d:DesignWidth="200">
     <Grid>
         <Border x:Name="MainBorder"
@@ -51,6 +55,7 @@
                               Background="Transparent"
                               BorderThickness="0"
                               Cursor="Hand"
+                              IsTabStop="False"
                               IsChecked="{Binding IsOpen, ElementName=CalendarPopup, Mode=TwoWay}">
                     <!-- Icono Vectorial Premium -->
                     <Path Data="M19,4H18V2H16V4H8V2H6V4H5C3.89,4 3,4.9 3,6V20A2,2 0 0,0 5,22H19A2,2 0 0,0 21,20V6A2,2 0 0,0 19,4M19,20H5V10H19V20M19,8H5V6H19V8M7,12H9V14H7V12M11,12H13V14H11V12M15,12H17V14H15V12M7,16H9V18H7V16M11,16H13V18H11V16M15,16H17V18H15V16Z"

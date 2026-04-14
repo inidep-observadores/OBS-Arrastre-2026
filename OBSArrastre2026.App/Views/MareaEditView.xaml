@@ -8,6 +8,10 @@
              xmlns:controls="clr-namespace:OBSArrastre2026.App.Controls"
              mc:Ignorable="d" 
              d:DesignHeight="800" d:DesignWidth="1000">
+    <UserControl.InputBindings>
+        <KeyBinding Key="Esc" Command="{Binding CancelCommand}" />
+        <KeyBinding Key="N" Modifiers="Control" Command="{Binding AddEtapaCommand}" />
+    </UserControl.InputBindings>
     <AdornerDecorator>
         <Border Background="{DynamicResource ShellBackgroundBrush}"
                 Padding="40"
@@ -83,12 +87,12 @@
                                     <!-- Fila 1 -->
                                     <StackPanel>
                                         <Label Content="Año Inidep" Style="{StaticResource FormLabelStyle}" />
-                                        <TextBox Text="{Binding AnioInidep}" Style="{StaticResource PremiumTextBoxStyle}" TabIndex="1" />
+                                        <TextBox x:Name="AnioInput" Text="{Binding AnioInidep}" Style="{StaticResource PremiumTextBoxStyle}" />
                                     </StackPanel>
 
                                     <StackPanel Grid.Column="2">
                                         <Label Content="Número Inidep" Style="{StaticResource FormLabelStyle}" />
-                                        <TextBox Text="{Binding NumeroInidep}" Style="{StaticResource PremiumTextBoxStyle}" TabIndex="2" />
+                                        <TextBox Text="{Binding NumeroInidep}" Style="{StaticResource PremiumTextBoxStyle}" />
                                     </StackPanel>
 
                                     <StackPanel Grid.Column="4">
@@ -108,18 +112,17 @@
                                         <ComboBox ItemsSource="{Binding Buques}"
                                                   DisplayMemberPath="Nombre"
                                                   SelectedItem="{Binding SelectedBuque}"
-                                                  Style="{StaticResource PremiumComboBoxStyle}" 
-                                                  TabIndex="4" />
+                                                  Style="{StaticResource PremiumComboBoxStyle}" />
                                     </StackPanel>
 
                                     <StackPanel Grid.Row="2" Grid.Column="2">
                                         <Label Content="Fecha Inicio" Style="{StaticResource FormLabelStyle}" />
-                                        <controls:DatePickerPremium SelectedDate="{Binding FechaInicio}" TabIndex="5" />
+                                        <controls:DatePickerPremium SelectedDate="{Binding FechaInicio}" />
                                     </StackPanel>
 
                                     <StackPanel Grid.Row="2" Grid.Column="4">
                                         <Label Content="Fecha Fin" Style="{StaticResource FormLabelStyle}" />
-                                        <controls:DatePickerPremium SelectedDate="{Binding FechaFin}" TabIndex="6" />
+                                        <controls:DatePickerPremium SelectedDate="{Binding FechaFin}" />
                                     </StackPanel>
                                 </Grid>
                                 
@@ -129,8 +132,7 @@
                                              Style="{StaticResource PremiumTextBoxStyle}" 
                                              MinHeight="80" 
                                              AcceptsReturn="True" 
-                                             TextWrapping="Wrap" 
-                                             TabIndex="7" />
+                                             TextWrapping="Wrap" />
                                 </StackPanel>
                             </StackPanel>
                         </Border>
@@ -240,7 +242,7 @@
 
                                                         <StackPanel>
                                                             <Label Content="Fecha Zarpada" Style="{StaticResource FormLabelStyle}" />
-                                                            <controls:DatePickerPremium SelectedDate="{Binding FechaZarpada}" />
+                                                            <controls:DatePickerPremium SelectedDate="{Binding FechaZarpada}" Loaded="EtapaDatePicker_Loaded" />
                                                         </StackPanel>
 
                                                         <StackPanel Grid.Column="2">

@@ -1,5 +1,6 @@
-using System;
 using System.Windows;
+using System.Windows.Input;
+using System.Windows.Controls;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -67,6 +68,40 @@ public partial class App : Application
                 services.AddSingleton<MainWindow>();
             })
             .Build();
+
+        // Registro de navegación global "Enter as Tab"
+        EventManager.RegisterClassHandler(typeof(UIElement), UIElement.PreviewKeyDownEvent, new KeyEventHandler(OnPreviewKeyDown));
+
+        // Selección automática de texto al recibir foco en TextBox
+        EventManager.RegisterClassHandler(typeof(TextBox), TextBox.GotFocusEvent, new RoutedEventHandler(OnTextBoxGotFocus));
+    }
+
+    private void OnTextBoxGotFocus(object sender, RoutedEventArgs e)
+    {
+        if (sender is TextBox tb)
+        {
+            tb.SelectAll();
+        }
+    }
+
+    private void OnPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            var element = Keyboard.FocusedElement as UIElement;
+            if (element == null) return;
+
+            // Excepción: Permitir el Enter normal en TextBox que acepten retornos
+            if (element is TextBox tb && tb.AcceptsReturn) return;
+
+            // Navegar al siguiente/anterior elemento
+            var direction = (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift 
+                            ? FocusNavigationDirection.Previous 
+                            : FocusNavigationDirection.Next;
+
+            e.Handled = true;
+            element.MoveFocus(new TraversalRequest(direction));
+        }
     }
 
     protected override async void OnStartup(StartupEventArgs e)
