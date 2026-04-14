@@ -62,11 +62,22 @@ public sealed class ThemeService : IThemeService
         HoverBackground:            "#1E293B",
         SurfaceBackground:          "#0B1423");
 
+    private readonly IUserSettingsService _settingsService;
+
+    public ThemeService(IUserSettingsService settingsService)
+    {
+        _settingsService = settingsService;
+    }
+
     public AppThemeMode CurrentMode { get; private set; } = AppThemeMode.System;
 
     public void ApplyTheme(AppThemeMode mode)
     {
         CurrentMode = mode;
+        
+        // Guardar preferencia automáticamente
+        _settingsService.UpdateSettings(s => s.ThemeMode = mode);
+
         var palette = mode switch
         {
             AppThemeMode.Light => LightPalette,

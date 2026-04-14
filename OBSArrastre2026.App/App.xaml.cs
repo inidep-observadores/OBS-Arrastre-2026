@@ -33,6 +33,7 @@ public partial class App : Application
                 services.AddSingleton(sp => sp.GetRequiredService<IOptions<DatabaseOptions>>().Value);
 
                 services.AddSingleton<IDatabasePathProvider, DatabasePathProvider>();
+                services.AddSingleton<IUserSettingsService, UserSettingsService>();
                 services.AddSingleton<IThemeService, ThemeService>();
                 services.AddSingleton<IMockShellDataService, MockShellDataService>();
 
@@ -114,9 +115,18 @@ public partial class App : Application
         await _host.Services.GetRequiredService<IDatabaseInitializer>().InitializeAsync();
         await _host.Services.GetRequiredService<IDataSyncCoordinator>().SyncAllAsync();
 
-        _host.Services.GetRequiredService<IThemeService>().ApplyTheme(AppThemeMode.System);
+        // Cargar preferencias de usuario
+        var settingsService = _host.Services.GetRequiredService<IUserSettingsService>();
+        var settings = settingsService.GetSettings();
+
+        // Aplicar tema guardado
+        _host.Services.GetRequiredService<IThemeService>().ApplyTheme(settings.ThemeMode);
 
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
+        
+        // Aplicar estado de la ventana (Maximizada por defecto si no hay registro)
+        mainWindow.WindowState = settings.WindowState;
+        
         mainWindow.Show();
     }
 
