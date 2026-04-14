@@ -247,3 +247,34 @@ CREATE TABLE item_contenido_gastrico (
 );
 
 CREATE INDEX ix_item_contenido_gastrico_item_submuestra_id ON item_contenido_gastrico (ItemSubmuestraID);
+
+
+-- auditoria_mareas_lotes definition
+
+CREATE TABLE auditoria_mareas_lotes (
+    ID TEXT NOT NULL PRIMARY KEY,
+    MareaID TEXT NOT NULL,
+    Fecha TEXT NOT NULL,
+    Tipo TEXT NOT NULL,
+    Resultado TEXT NOT NULL,
+    Metadatos TEXT NULL, -- JSON
+    FOREIGN KEY (MareaID) REFERENCES mareas (ID) ON DELETE CASCADE
+);
+
+CREATE INDEX ix_auditoria_mareas_lotes_marea_id ON auditoria_mareas_lotes (MareaID);
+
+
+-- auditoria_mareas_registros definition
+
+CREATE TABLE auditoria_mareas_registros (
+    ID TEXT NOT NULL PRIMARY KEY,
+    LoteID TEXT NOT NULL,
+    Nivel TEXT NOT NULL, -- ERROR, ADVERTENCIA, INFO
+    Entidad TEXT NULL,   -- Tabla afectada (ej: lances)
+    EntidadID TEXT NULL, -- ID del registro afectado
+    Mensaje TEXT NOT NULL,
+    Metadatos TEXT NULL, -- JSON
+    FOREIGN KEY (LoteID) REFERENCES auditoria_mareas_lotes (ID) ON DELETE CASCADE
+);
+
+CREATE INDEX ix_auditoria_mareas_registros_lote_id ON auditoria_mareas_registros (LoteID);

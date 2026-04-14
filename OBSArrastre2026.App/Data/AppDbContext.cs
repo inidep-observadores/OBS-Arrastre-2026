@@ -19,6 +19,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<ItemCaptura> ItemsCaptura => Set<ItemCaptura>();
     public DbSet<ItemSubmuestra> ItemsSubmuestras => Set<ItemSubmuestra>();
     public DbSet<ItemContenidoGastrico> ContenidosGastricos => Set<ItemContenidoGastrico>();
+    public DbSet<AuditoriaMareaLote> AuditoriaMareaLotes => Set<AuditoriaMareaLote>();
+    public DbSet<AuditoriaMareaRegistro> AuditoriaMareaRegistros => Set<AuditoriaMareaRegistro>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
