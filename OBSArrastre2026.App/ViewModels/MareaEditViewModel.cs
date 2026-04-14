@@ -11,43 +11,50 @@ namespace OBSArrastre2026.App.ViewModels;
 
 public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaEditViewModel>
 {
+    private readonly IMareaService _mareaService;
+    private readonly IBuqueService _buqueService;
     private readonly Action _onClose;
+    private string? _mareaId;
     private int _anioInidep;
     private int _numeroInidep;
-    private string? _codigo;
     private string? _buqueID;
     private DateTime _fechaInicio;
     private DateTime? _fechaFin;
     private string? _comentarios;
-    private Buque? _selectedBuque;
+    private BuqueListItemViewModel? _selectedBuque;
+    private bool _isLoading;
 
-    public MareaEditViewModel(Action onClose, IValidator<MareaEditViewModel> validator) : base(validator)
+    public MareaEditViewModel(
+        Action onClose, 
+        IValidator<MareaEditViewModel> validator,
+        IMareaService mareaService,
+        IBuqueService buqueService,
+        string? mareaId = null) : base(validator)
     {
         _onClose = onClose;
+        _mareaService = mareaService;
+        _buqueService = buqueService;
+        _mareaId = mareaId;
+        
         _fechaInicio = DateTime.Today;
 
-        SaveCommand = new RelayCommand(Save);
+        SaveCommand = new AsyncRelayCommand(SaveAsync);
         CancelCommand = new RelayCommand(Cancel);
         AddEtapaCommand = new RelayCommand(AddEtapa);
 
-        // Mock de datos iniciales
-        _anioInidep = 2026;
-        _numeroInidep = 14;
-        
-        // Añadimos una etapa inicial mock
-        AddEtapa();
-        if (Etapas.Count > 0) Etapas[0].IsExpanded = true;
-
-        ValidateAll();
+        _ = InitializeAsync();
     }
 
     public ObservableCollection<MareaEtapaItemViewModel> Etapas { get; } = [];
+    public ObservableCollection<BuqueListItemViewModel> Buques { get; } = [];
 
-    public string? Codigo
+    public bool IsLoading
     {
-        get => _codigo;
-        set => SetProperty(ref _codigo, value);
+        get => _isLoading;
+        set => SetProperty(ref _isLoading, value);
     }
+
+    public string CodigoDisplay => $"{NumeroInidep}/{AnioInidep % 100:D2}";
 
     public string? Comentarios
     {
@@ -61,7 +68,10 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
         set 
         {
             if (SetProperty(ref _anioInidep, value))
+            {
                 ValidatePropertyWithFluent(value, nameof(AnioInidep));
+                OnPropertyChanged(nameof(CodigoDisplay));
+            }
         }
     }
 
@@ -71,7 +81,10 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
         set 
         {
             if (SetProperty(ref _numeroInidep, value))
+            {
                 ValidatePropertyWithFluent(value, nameof(NumeroInidep));
+                OnPropertyChanged(nameof(CodigoDisplay));
+            }
         }
     }
 
@@ -104,14 +117,14 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
         }
     }
 
-    public Buque? SelectedBuque
+    public BuqueListItemViewModel? SelectedBuque
     {
         get => _selectedBuque;
         set 
         {
             if (SetProperty(ref _selectedBuque, value))
             {
-                BuqueID = value?.Id;
+                BuqueID = value?.ID;
                 ValidatePropertyWithFluent(value, nameof(SelectedBuque));
             }
         }
@@ -121,24 +134,111 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
     public ICommand CancelCommand { get; }
     public ICommand AddEtapaCommand { get; }
 
+    private async Task InitializeAsync()
+    {
+        IsLoading = true;
+        try
+        {
+            // Cargar buques
+            var availableBuques = await _buqueService.GetBuquesAsync();
+            Buques.Clear();
+            foreach (var b in availableBuques) Buques.Add(b);
+
+            if (!string.IsNullOrEmpty(_mareaId))
+            {
+                // Cargar marea existente
+                var marea = await _mareaService.GetMareaAsync(_mareaId);
+                if (marea != null)
+                {
+                    AnioInidep = marea.AnioInidep;
+                    NumeroInidep = marea.NumeroInidep;
+                    Comentarios = marea.Comentarios;
+                    FechaInicio = marea.FechaInicio;
+                    FechaFin = marea.FechaFin;
+                    SelectedBuque = Buques.FirstOrDefault(b => b.ID == marea.BuqueID);
+
+                    Etapas.Clear();
+                    foreach (var etapa in marea.Etapas.OrderBy(e => e.FechaZarpada))
+                    {
+                        var vm = new MareaEtapaItemViewModel(etapa);
+                        vm.RequestDeletion = HandleEtapaDeletion;
+                        Etapas.Add(vm);
+                    }
+                }
+            }
+            else
+            {
+                // Marea nueva: valores por defecto
+                AnioInidep = DateTime.Today.Year;
+            }
+        }
+        finally
+        {
+            IsLoading = false;
+            ValidateAll();
+        }
+    }
+
     private void AddEtapa()
     {
         foreach (var e in Etapas) e.IsExpanded = false;
 
         var nuevaEtapa = new MareaEtapa 
         { 
-            FechaZarpada = DateTime.Today,
-            NombreCapitan = "Capitán Mock"
+            MareaID = _mareaId,
+            FechaZarpada = DateTime.Today
         };
-        var vm = new MareaEtapaItemViewModel(nuevaEtapa) { IsExpanded = true };
+        var vm = new MareaEtapaItemViewModel(nuevaEtapa) 
+        { 
+            IsExpanded = true,
+            RequestDeletion = HandleEtapaDeletion
+        };
         Etapas.Add(vm);
     }
 
-    private void Save()
+    private void HandleEtapaDeletion(MareaEtapaItemViewModel vm)
+    {
+        Etapas.Remove(vm);
+    }
+
+    private async Task SaveAsync()
     {
         if (ValidateAll())
         {
-            _onClose();
+            IsLoading = true;
+            try
+            {
+                var marea = new Marea
+                {
+                    ID = _mareaId ?? Guid.NewGuid().ToString(),
+                    AnioInidep = AnioInidep,
+                    NumeroInidep = NumeroInidep,
+                    Comentarios = Comentarios,
+                    FechaInicio = FechaInicio,
+                    FechaFin = FechaFin,
+                    BuqueID = SelectedBuque?.ID
+                };
+
+                // Añadir etapas desde los ViewModels
+                foreach (var etapaVm in Etapas)
+                {
+                    var etapa = etapaVm.ToEntity();
+                    etapa.MareaID = marea.ID;
+                    marea.Etapas.Add(etapa);
+                }
+
+                await _mareaService.SaveMareaAsync(marea);
+                _onClose();
+            }
+            catch (Exception ex)
+            {
+                // Aquí se podría mostrar un mensaje de error al usuario
+                System.Diagnostics.Debug.WriteLine($"Error al guardar marea: {ex.Message}");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
         }
     }
 

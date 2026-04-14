@@ -1,6 +1,8 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using OBSArrastre2026.App.Models;
 using OBSArrastre2026.App.Services;
 
@@ -12,7 +14,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private readonly IThemeService _themeService;
     private readonly IMareaService _mareaService;
     private readonly IBuqueService _buqueService;
-    private readonly Func<Action, MareaEditViewModel> _mareaEditFactory;
+    private readonly Func<Action, string?, MareaEditViewModel> _mareaEditFactory;
     private NavigationItemViewModel? _selectedNavigationItem;
     private string _pageTitle = string.Empty;
     private string _pageDescription = string.Empty;
@@ -34,7 +36,7 @@ public sealed class MainWindowViewModel : ObservableObject
         IThemeService themeService,
         IMareaService mareaService,
         IBuqueService buqueService,
-        Func<Action, MareaEditViewModel> mareaEditFactory)
+        Func<Action, string?, MareaEditViewModel> mareaEditFactory)
     {
         _mockShellDataService = mockShellDataService;
         _themeService = themeService;
@@ -48,6 +50,7 @@ public sealed class MainWindowViewModel : ObservableObject
         SetDarkThemeCommand = new RelayCommand(() => ApplyTheme(AppThemeMode.Dark));
         PrimaryActionCommand = new RelayCommand(OpenNewMareaForm);
         ApplyMareaFiltersCommand = new AsyncCommand(LoadMareasAsync);
+        EditMareaCommand = new RelayCommand<MareaListItemViewModel>(OpenEditMareaForm);
 
         _mareasFilterAnio = DateTime.Today.Year;
 
@@ -89,6 +92,8 @@ public sealed class MainWindowViewModel : ObservableObject
     public ICommand SetDarkThemeCommand { get; }
 
     public ICommand PrimaryActionCommand { get; }
+
+    public ICommand EditMareaCommand { get; }
 
     public NavigationItemViewModel? SelectedNavigationItem
     {
@@ -315,12 +320,21 @@ public sealed class MainWindowViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            // Podríamos loguear el error aquí
             System.Diagnostics.Debug.WriteLine($"Error cargando datos de filtro: {ex.Message}");
-        }
-    }
-        {
-            // Log error
+            // Si falla la carga de buques, reintentamos una vez tras un breve delay 
+            // por si la sincronización inicial estaba terminando
+            _ = Task.Delay(2000).ContinueWith(async _ => 
+            {
+                try {
+                    var b = await _buqueService.GetBuquesAsync();
+                    if (b.Any()) {
+                        App.Current.Dispatcher.Invoke(() => {
+                            Buques.Clear();
+                            foreach(var x in b) Buques.Add(x);
+                        });
+                    }
+                } catch { /* Ignorar reintento silencioso */ }
+            });
         }
     }
 
@@ -356,7 +370,22 @@ public sealed class MainWindowViewModel : ObservableObject
 
     private void OpenNewMareaForm()
     {
-        CurrentEditViewModel = _mareaEditFactory(() => CurrentEditViewModel = null);
+        CurrentEditViewModel = _mareaEditFactory(() => 
+        {
+            CurrentEditViewModel = null;
+            _ = LoadMareasAsync(); // Recargar lista al cerrar
+        }, null);
+    }
+
+    private void OpenEditMareaForm(MareaListItemViewModel? item)
+    {
+        if (item == null) return;
+        
+        CurrentEditViewModel = _mareaEditFactory(() => 
+        {
+            CurrentEditViewModel = null;
+            _ = LoadMareasAsync(); // Recargar lista al cerrar
+        }, item.ID);
     }
 
     private void ApplyTheme(AppThemeMode mode)

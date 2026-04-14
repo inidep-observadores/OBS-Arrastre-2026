@@ -9,6 +9,8 @@ namespace OBSArrastre2026.App.Services;
 public interface IMareaService
 {
     Task<IReadOnlyList<int>> GetAniosExistentesAsync(CancellationToken cancellationToken = default);
+    Task<Marea?> GetMareaAsync(string id, CancellationToken cancellationToken = default);
+    Task SaveMareaAsync(Marea marea, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<Marea>> GetMareasAsync(
         int? anio = null,

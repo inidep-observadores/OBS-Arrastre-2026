@@ -5,6 +5,7 @@ namespace OBSArrastre2026.App.ViewModels;
 
 public sealed class MareaEtapaItemViewModel : ObservableObject
 {
+    private readonly string _id;
     private bool _isExpanded;
     private DateTime _fechaZarpada;
     private DateTime? _fechaArribo;
@@ -14,6 +15,7 @@ public sealed class MareaEtapaItemViewModel : ObservableObject
 
     public MareaEtapaItemViewModel(MareaEtapa mareaEtapa)
     {
+        _id = mareaEtapa.ID;
         _fechaZarpada = mareaEtapa.FechaZarpada;
         _fechaArribo = mareaEtapa.FechaArribo;
         _nombreCapitan = mareaEtapa.NombreCapitan;
@@ -21,7 +23,12 @@ public sealed class MareaEtapaItemViewModel : ObservableObject
         _nombreOficialPesca = mareaEtapa.NombreOficialPesca;
 
         ToggleExpandedCommand = new RelayCommand(() => IsExpanded = !IsExpanded);
+        RemoveCommand = new RelayCommand(() => RequestDeletion?.Invoke(this));
     }
+
+    public string ID => _id;
+    public Action<MareaEtapaItemViewModel>? RequestDeletion { get; set; }
+    public ICommand RemoveCommand { get; }
 
     public bool IsExpanded
     {
@@ -80,4 +87,14 @@ public sealed class MareaEtapaItemViewModel : ObservableObject
     public string SummaryText => $"{FechaZarpada:dd/MM/yyyy} - {(FechaArribo.HasValue ? FechaArribo.Value.ToString("dd/MM/yyyy") : "En curso")} | Cap. {NombreCapitan ?? "S/D"}";
 
     public ICommand ToggleExpandedCommand { get; }
+
+    public MareaEtapa ToEntity() => new()
+    {
+        ID = _id,
+        FechaZarpada = FechaZarpada,
+        FechaArribo = FechaArribo,
+        NombreCapitan = NombreCapitan,
+        NombreOficialCubierta = NombreOficialCubierta,
+        NombreOficialPesca = NombreOficialPesca
+    };
 }

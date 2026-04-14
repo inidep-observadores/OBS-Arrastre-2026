@@ -22,7 +22,12 @@
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type vm:MareaListItemViewModel}">
-            <Border Style="{StaticResource TableRowStyle}">
+            <Border Style="{StaticResource TableRowStyle}" Cursor="Hand">
+                <Border.InputBindings>
+                    <MouseBinding MouseAction="LeftDoubleClick" 
+                                  Command="{Binding DataContext.EditMareaCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  CommandParameter="{Binding}"/>
+                </Border.InputBindings>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1.2*" />
@@ -50,7 +55,7 @@
                     <Border Grid.Column="5"
                             Padding="10,4"
                             HorizontalAlignment="Left"
-                            CornerRadius="7">
+                            CornerRadius="0">
                         <Border.Style>
                             <Style TargetType="Border">
                                 <Setter Property="Background" Value="{DynamicResource AccentMutedBrush}" />
@@ -96,7 +101,7 @@
                 Background="{DynamicResource SidebarBackgroundBrush}"
                 BorderBrush="{DynamicResource SidebarBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="30">
+                CornerRadius="0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -108,7 +113,7 @@
                     <Border Width="58"
                             Height="58"
                             Background="{DynamicResource AccentBrush}"
-                            CornerRadius="18"
+                            CornerRadius="0"
                             HorizontalAlignment="Left">
                         <TextBlock HorizontalAlignment="Center"
                                    VerticalAlignment="Center"
@@ -281,7 +286,7 @@
             <Border Grid.Row="1"
                     Padding="28"
                     Background="{DynamicResource HeroBackgroundBrush}"
-                    CornerRadius="28">
+                    CornerRadius="0">
                 <Border.Effect>
                     <DropShadowEffect Color="#000000" Direction="270"
                                       ShadowDepth="2" BlurRadius="20" Opacity="0.07" />
@@ -507,7 +512,7 @@
                                         <Label Content="Búsqueda" Style="{StaticResource FormLabelStyle}"/>
                                         <TextBox Style="{StaticResource PremiumTextBoxStyle}"
                                                  Text="{Binding MareasSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                                 Tag="Código o comentarios..."/>
+                                                 Tag="Número o comentarios..."/>
                                     </StackPanel>
 
                                     <Button Grid.Column="4" 

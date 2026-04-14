@@ -78,17 +78,16 @@ public partial class DatePickerPremium : UserControl
 
     private void DateInput_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        // Permitir solo números y teclas de control
-        if ((e.Key >= Key.D0 && e.Key <= Key.D9) || 
-            (e.Key >= Key.NumPad0 && e.Key <= Key.NumPad9) || 
-            e.Key == Key.Back || e.Key == Key.Delete || e.Key == Key.Tab || e.Key == Key.Enter ||
-            e.Key == Key.Left || e.Key == Key.Right || e.Key == Key.Up || e.Key == Key.Down ||
-            e.Key == Key.Home || e.Key == Key.End)
-        {
-            return;
-        }
+        // Bloquear teclas no deseadas, pero permitir navegación y control
+        bool isDigit = (e.Key >= Key.D0 && e.Key <= Key.D9) || (e.Key >= Key.NumPad0 && e.Key <= Key.NumPad9);
+        bool isNavigation = e.Key == Key.Left || e.Key == Key.Right || e.Key == Key.Up || e.Key == Key.Down ||
+                            e.Key == Key.Home || e.Key == Key.End || e.Key == Key.PageUp || e.Key == Key.PageDown;
+        bool isAction = e.Key == Key.Back || e.Key == Key.Delete || e.Key == Key.Tab || e.Key == Key.Enter || e.Key == Key.Escape;
 
-        e.Handled = true;
+        if (!isDigit && !isNavigation && !isAction)
+        {
+            e.Handled = true;
+        }
     }
 
     private void UpdateDateFromText(string text)
@@ -103,28 +102,18 @@ public partial class DatePickerPremium : UserControl
 
     private void ValidateDate(string text)
     {
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            MainBorder.BorderBrush = (Brush)FindResource("CardBorderBrush");
-            return;
-        }
-
-        if (DateTime.TryParseExact(text, DateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
-        {
-            MainBorder.BorderBrush = (Brush)FindResource("SuccessForegroundBrush"); // Verde si es válida
-        }
-        else if (text.Length == 10)
-        {
-            MainBorder.BorderBrush = (Brush)FindResource("WarningForegroundBrush"); // Rojo/Naranja si está completa pero es inválida
-        }
-        else
-        {
-            MainBorder.BorderBrush = (Brush)FindResource("AccentBrush"); // Azul mientras se escribe
-        }
+        // Ya no manipulamos MainBorder.BorderBrush aquí para no romper el estilo visual de foco en el XAML.
+        // En el futuro, podríamos exponer una propiedad IsValid para que el XAML reaccione.
     }
 
     private void DateInput_LostFocus(object sender, RoutedEventArgs e)
     {
+        if (string.IsNullOrWhiteSpace(DateInput.Text))
+        {
+            SelectedDate = null;
+            return;
+        }
+
         if (!DateTime.TryParseExact(DateInput.Text, DateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
         {
             UpdateTextFromDate(); // Revertir a la fecha válida anterior o vacío

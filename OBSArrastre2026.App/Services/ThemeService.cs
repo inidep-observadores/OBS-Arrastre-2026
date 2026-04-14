@@ -34,7 +34,9 @@ public sealed class ThemeService : IThemeService
         WarningForeground:          "#B45309",
         WarningBackground:          "#FEF3C7",
         DangerForeground:           "#B91C1C",
-        DangerBackground:           "#FEE2E2");
+        DangerBackground:           "#FEE2E2",
+        HoverBackground:            "#F1F5F9",
+        SurfaceBackground:          "#F8FAFC");
 
     private static readonly ThemePalette DarkPalette = new(
         ShellBackground:            "#07111F",
@@ -56,7 +58,9 @@ public sealed class ThemeService : IThemeService
         WarningForeground:          "#FCD34D",
         WarningBackground:          "#451A03",
         DangerForeground:           "#F87171",
-        DangerBackground:           "#450A0A");
+        DangerBackground:           "#450A0A",
+        HoverBackground:            "#1E293B",
+        SurfaceBackground:          "#0B1423");
 
     public AppThemeMode CurrentMode { get; private set; } = AppThemeMode.System;
 
@@ -90,6 +94,8 @@ public sealed class ThemeService : IThemeService
         SetBrush("WarningBackgroundBrush", palette.WarningBackground);
         SetBrush("DangerForegroundBrush", palette.DangerForeground);
         SetBrush("DangerBackgroundBrush", palette.DangerBackground);
+        SetBrush("HoverBackgroundBrush", palette.HoverBackground);
+        SetBrush("SurfaceBackgroundBrush", palette.SurfaceBackground);
 
         Application.Current.Resources["DisplayFontFamily"] = new FontFamily("Segoe UI Variable Display");
         Application.Current.Resources["TextFontFamily"] = new FontFamily("Segoe UI Variable Text");
@@ -105,7 +111,14 @@ public sealed class ThemeService : IThemeService
 
     private static void SetBrush(string key, string color)
     {
-        Application.Current.Resources[key] = new SolidColorBrush((Color)ColorConverter.ConvertFromString(color));
+        var colorVal = (Color)ColorConverter.ConvertFromString(color);
+        Application.Current.Resources[key] = new SolidColorBrush(colorVal);
+        
+        // Si es el AccentBrush, también registramos el AccentColor para que los bindings estáticos funcionen
+        if (key == "AccentBrush")
+        {
+            Application.Current.Resources["AccentColor"] = colorVal;
+        }
     }
 
     private sealed record ThemePalette(
@@ -128,5 +141,7 @@ public sealed class ThemeService : IThemeService
         string WarningForeground,
         string WarningBackground,
         string DangerForeground,
-        string DangerBackground);
+        string DangerBackground,
+        string HoverBackground,
+        string SurfaceBackground);
 }

@@ -22,6 +22,63 @@ public sealed class MareaService(IDbContextFactory<AppDbContext> dbContextFactor
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<Marea?> GetMareaAsync(string id, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        
+        return await dbContext.Mareas
+            .Include(x => x.Buque)
+            .Include(x => x.Etapas)
+            .FirstOrDefaultAsync(x => x.ID == id, cancellationToken);
+    }
+
+    public async Task SaveMareaAsync(Marea marea, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        
+        var existingMarea = await dbContext.Mareas
+            .Include(x => x.Etapas)
+            .FirstOrDefaultAsync(x => x.ID == marea.ID, cancellationToken);
+
+        if (existingMarea == null)
+        {
+            // Nueva marea
+            await dbContext.Mareas.AddAsync(marea, cancellationToken);
+        }
+        else
+        {
+            // Actualizar marea existente
+            dbContext.Entry(existingMarea).CurrentValues.SetValues(marea);
+            existingMarea.BuqueID = marea.BuqueID;
+
+            // Sincronizar Etapas
+            // 1. ELiminar etapas que ya no están
+            foreach (var existingEtapa in existingMarea.Etapas.ToList())
+            {
+                if (!marea.Etapas.Any(e => e.ID == existingEtapa.ID))
+                {
+                    dbContext.MareaEtapas.Remove(existingEtapa);
+                }
+            }
+
+            // 2. Actualizar o añadir etapas
+            foreach (var etapa in marea.Etapas)
+            {
+                var existingEtapa = existingMarea.Etapas.FirstOrDefault(e => e.ID == etapa.ID);
+                if (existingEtapa == null)
+                {
+                    existingMarea.Etapas.Add(etapa);
+                }
+                else
+                {
+                    dbContext.Entry(existingEtapa).CurrentValues.SetValues(etapa);
+                }
+            }
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Marea>> GetMareasAsync(
         int? anio = null,
         string? buqueId = null,
@@ -60,9 +117,8 @@ public sealed class MareaService(IDbContextFactory<AppDbContext> dbContextFactor
         {
             var search = busquedaTextual.Trim().ToLower();
             query = query.Where(x => 
-                (x.Codigo != null && x.Codigo.ToLower().Contains(search)) ||
                 (x.Comentarios != null && x.Comentarios.ToLower().Contains(search)) ||
-                (x.NumeroInidep.ToString() + "/" + x.AnioInidep.ToString()).Contains(search));
+                (x.NumeroInidep.ToString() + "/" + (x.AnioInidep % 100).ToString("D2")).Contains(search));
         }
 
         // Ordenar: Las "En curso" (FechaFin null) arriba, luego por FechaFin desc, luego por FechaInicio desc

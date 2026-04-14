@@ -10,7 +10,23 @@
                 Background="{DynamicResource CardBackgroundBrush}"
                 BorderBrush="{DynamicResource CardBorderBrush}"
                 BorderThickness="1.5"
-                CornerRadius="10">
+                CornerRadius="0"
+                SnapsToDevicePixels="True">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsFocused, ElementName=DateInput}" Value="True">
+                            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                            <Setter Property="BorderThickness" Value="2"/>
+                            <Setter Property="Effect">
+                                <Setter.Value>
+                                    <DropShadowEffect BlurRadius="8" ShadowDepth="0" Color="{Binding Color, Source={StaticResource AccentBrush}}" Opacity="0.3"/>
+                                </Setter.Value>
+                            </Setter>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -36,11 +52,14 @@
                               BorderThickness="0"
                               Cursor="Hand"
                               IsChecked="{Binding IsOpen, ElementName=CalendarPopup, Mode=TwoWay}">
-                    <TextBlock Text="📅" 
-                               FontSize="16" 
-                               HorizontalAlignment="Center" 
-                               VerticalAlignment="Center"
-                               Foreground="{DynamicResource SecondaryTextBrush}"/>
+                    <!-- Icono Vectorial Premium -->
+                    <Path Data="M19,4H18V2H16V4H8V2H6V4H5C3.89,4 3,4.9 3,6V20A2,2 0 0,0 5,22H19A2,2 0 0,0 21,20V6A2,2 0 0,0 19,4M19,20H5V10H19V20M19,8H5V6H19V8M7,12H9V14H7V12M11,12H13V14H11V12M15,12H17V14H15V12M7,16H9V18H7V16M11,16H13V18H11V16M15,16H17V18H15V16Z"
+                          Fill="{DynamicResource SecondaryTextBrush}"
+                          Stretch="Uniform"
+                          Width="16"
+                          Height="16"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"/>
                 </ToggleButton>
             </Grid>
         </Border>
@@ -50,17 +69,18 @@
                Placement="Bottom"
                StaysOpen="False"
                AllowsTransparency="True"
-               PopupAnimation="Fade">
-            <Border Margin="0,4,0,0"
-                    Background="{DynamicResource CardBackgroundBrush}"
+               PopupAnimation="Slide">
+            <Border Margin="0,4,0,12"
+                    Background="{DynamicResource SurfaceBackgroundBrush}"
                     BorderBrush="{DynamicResource CardBorderBrush}"
                     BorderThickness="1"
-                    CornerRadius="12">
+                    CornerRadius="0">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="15" Direction="270" Opacity="0.15" ShadowDepth="5" Color="Black"/>
                 </Border.Effect>
                 <Calendar x:Name="CalendarControl"
                           Margin="8"
+                          BorderThickness="0"
                           SelectedDate="{Binding SelectedDate, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"
                           DisplayDate="{Binding SelectedDate, RelativeSource={RelativeSource AncestorType=UserControl}, TargetNullValue={x:Static System:DateTime.Today}, Mode=OneWay}"
                           xmlns:System="clr-namespace:System;assembly=mscorlib"/>

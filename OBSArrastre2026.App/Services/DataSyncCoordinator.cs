@@ -53,22 +53,34 @@ public sealed class DataSyncCoordinator : IDataSyncCoordinator
         var localDbfFile = Path.Combine(_rawPath, dbfFilename);
         var jsonFile = Path.Combine(_stagingPath, jsonFilename);
 
-        // Fallback: Si no está en Data/Import/Raw, buscar en la carpeta source_data de la raíz (solo para desarrollo)
+        // Fallback: Si no está en Data/Import/Raw, buscar en carpetas probables
         string dbfFile = localDbfFile;
         if (!File.Exists(dbfFile))
         {
-            var projectRoot = FindProjectRoot(AppDomain.CurrentDomain.BaseDirectory);
-            if (projectRoot != null)
+            var searchPaths = new[] 
             {
-                var sourceDataPath = Path.Combine(projectRoot, "source_data", dbfFilename);
-                if (File.Exists(sourceDataPath))
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "source_data", dbfFilename),
+                Path.Combine(FindProjectRoot(AppDomain.CurrentDomain.BaseDirectory) ?? "", "source_data", dbfFilename),
+                Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory)?.FullName ?? "", "source_data", dbfFilename),
+                Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory)?.Parent?.FullName ?? "", "source_data", dbfFilename)
+            };
+
+            foreach (var path in searchPaths)
+            {
+                if (!string.IsNullOrEmpty(path) && File.Exists(path))
                 {
-                    dbfFile = sourceDataPath;
+                    dbfFile = path;
+                    System.Diagnostics.Debug.WriteLine($"Sincronización: Encontrado archivo origen en {path}");
+                    break;
                 }
             }
         }
 
-        if (!File.Exists(dbfFile)) return;
+        if (!File.Exists(dbfFile))
+        {
+            System.Diagnostics.Debug.WriteLine($"Sincronización error: No se encontró el archivo origen para {dbfFilename}. Buscado en {dbfFile}");
+            return;
+        }
 
         // 1. Decidir si regenerar el JSON intermedio (solo si el DBF es más nuevo)
         bool dbfChanged = !File.Exists(jsonFile) || File.GetLastWriteTime(dbfFile) > File.GetLastWriteTime(jsonFile);

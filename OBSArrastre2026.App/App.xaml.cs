@@ -55,8 +55,13 @@ public partial class App : Application
                 // Validación y ViewModels
                 services.AddValidatorsFromAssemblyContaining<App>();
                 
-                services.AddSingleton<Func<Action, MareaEditViewModel>>(sp => 
-                    (Action onClose) => new MareaEditViewModel(onClose, sp.GetRequiredService<IValidator<MareaEditViewModel>>()));
+                services.AddSingleton<Func<Action, string?, MareaEditViewModel>>(sp => 
+                    (onClose, mareaId) => new MareaEditViewModel(
+                        onClose, 
+                        sp.GetRequiredService<IValidator<MareaEditViewModel>>(),
+                        sp.GetRequiredService<IMareaService>(),
+                        sp.GetRequiredService<IBuqueService>(),
+                        mareaId));
 
                 services.AddSingleton<MainWindowViewModel>();
                 services.AddSingleton<MainWindow>();
