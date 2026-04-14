@@ -56,7 +56,35 @@ public sealed class MareaEtapaItemViewModel : ObservableObject
             if (SetProperty(ref _fechaArribo, value))
             {
                 OnPropertyChanged(nameof(SummaryText));
+                OnPropertyChanged(nameof(HoraArribo));
             }
+        }
+    }
+
+    public TimeSpan HoraZarpada
+    {
+        get => _fechaZarpada.TimeOfDay;
+        set
+        {
+            FechaZarpada = _fechaZarpada.Date + value;
+            OnPropertyChanged(nameof(HoraZarpada));
+        }
+    }
+
+    public TimeSpan? HoraArribo
+    {
+        get => _fechaArribo?.TimeOfDay;
+        set
+        {
+            if (value.HasValue)
+            {
+                FechaArribo = (_fechaArribo?.Date ?? DateTime.Today) + value.Value;
+            }
+            else
+            {
+                FechaArribo = null;
+            }
+            OnPropertyChanged(nameof(HoraArribo));
         }
     }
 
