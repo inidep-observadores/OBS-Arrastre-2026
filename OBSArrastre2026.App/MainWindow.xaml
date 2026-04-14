@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:views="clr-namespace:OBSArrastre2026.App.Views"
         xmlns:vm="clr-namespace:OBSArrastre2026.App.ViewModels"
+        xmlns:controls="clr-namespace:OBSArrastre2026.App.Controls"
         mc:Ignorable="d"
         Title="{Binding Title}"
         Width="1460"
@@ -18,6 +19,69 @@
     <Window.Resources>
         <DataTemplate DataType="{x:Type vm:MareaEditViewModel}">
             <views:MareaEditView />
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:MareaListItemViewModel}">
+            <Border Style="{StaticResource TableRowStyle}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="0.9*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryTextBrush}"
+                               Text="{Binding CodigoDisplay}" />
+                    <TextBlock Grid.Column="1"
+                               Style="{StaticResource BodySecondaryStyle}"
+                               Text="{Binding BuqueNombre}" />
+                    <TextBlock Grid.Column="2"
+                               Style="{StaticResource BodySecondaryStyle}"
+                               Text="{Binding FechaInicioDisplay}" />
+                    <TextBlock Grid.Column="3"
+                               Style="{StaticResource BodySecondaryStyle}"
+                               Text="{Binding FechaFinDisplay}" />
+                    <TextBlock Grid.Column="4"
+                               Style="{StaticResource BodySecondaryStyle}"
+                               Text="{Binding Comentarios}" />
+                    <Border Grid.Column="5"
+                            Padding="10,4"
+                            HorizontalAlignment="Left"
+                            CornerRadius="7">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="{DynamicResource AccentMutedBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Estado}" Value="En curso">
+                                        <Setter Property="Background" Value="{DynamicResource SuccessBackgroundBrush}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Estado}" Value="Cerrada">
+                                        <Setter Property="Background" Value="{DynamicResource AccentMutedBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock FontSize="11" FontWeight="SemiBold" Text="{Binding Estado}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Estado}" Value="En curso">
+                                            <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Estado}" Value="Cerrada">
+                                            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Border>
+                </Grid>
+            </Border>
         </DataTemplate>
     </Window.Resources>
 
@@ -375,6 +439,7 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
 
@@ -396,7 +461,65 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
 
-                            <Border Grid.Row="1"
+                            <!-- Barra de Filtros Mareas -->
+                            <Border Grid.Row="1" 
+                                    Style="{StaticResource SurfaceBorderStyle}"
+                                    Padding="16,12"
+                                    Margin="0,0,0,16">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <StackPanel Margin="0,0,16,0">
+                                            <Label Content="Año" Style="{StaticResource FormLabelStyle}"/>
+                                            <ComboBox Width="90" 
+                                                      Style="{StaticResource PremiumComboBoxStyle}"
+                                                      ItemsSource="{Binding Anios}"
+                                                      SelectedItem="{Binding MareasFilterAnio}"/>
+                                        </StackPanel>
+
+                                        <StackPanel Margin="0,0,16,0">
+                                            <Label Content="Buque" Style="{StaticResource FormLabelStyle}"/>
+                                            <ComboBox Width="180" 
+                                                      Style="{StaticResource PremiumComboBoxStyle}"
+                                                      ItemsSource="{Binding Buques}"
+                                                      SelectedItem="{Binding MareasFilterBuque}"
+                                                      DisplayMemberPath="Nombre"/>
+                                        </StackPanel>
+
+                                        <StackPanel Margin="0,0,16,0">
+                                            <Label Content="Rango de Fechas" Style="{StaticResource FormLabelStyle}"/>
+                                            <StackPanel Orientation="Horizontal">
+                                                <controls:DatePickerPremium Width="130" SelectedDate="{Binding MareasFilterFechaDesde}"/>
+                                                <TextBlock Text=" - " VerticalAlignment="Center" Margin="4,18,4,0"/>
+                                                <controls:DatePickerPremium Width="130" SelectedDate="{Binding MareasFilterFechaHasta}"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="3" Margin="8,0,16,0">
+                                        <Label Content="Búsqueda" Style="{StaticResource FormLabelStyle}"/>
+                                        <TextBox Style="{StaticResource PremiumTextBoxStyle}"
+                                                 Text="{Binding MareasSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                                 Tag="Código o comentarios..."/>
+                                    </StackPanel>
+
+                                    <Button Grid.Column="4" 
+                                            Style="{StaticResource PrimaryButtonStyle}"
+                                            Command="{Binding ApplyMareaFiltersCommand}"
+                                            Content="Filtrar"
+                                            VerticalAlignment="Bottom"
+                                            Padding="24,10"/>
+                                </Grid>
+                            </Border>
+
+                            <Border Grid.Row="2"
                                     Margin="0,6,0,4"
                                     Padding="18,10"
                                     BorderBrush="{DynamicResource TableRowBorderBrush}"
@@ -419,122 +542,10 @@
                                 </Grid>
                             </Border>
 
-                            <ScrollViewer Grid.Row="2"
+                            <ScrollViewer Grid.Row="3"
                                           Style="{StaticResource SlimScrollViewerStyle}"
                                           VerticalScrollBarVisibility="Auto">
                                 <ItemsControl ItemsSource="{Binding Records}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border Style="{StaticResource TableRowStyle}">
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="1.2*" />
-                                                        <ColumnDefinition Width="1.1*" />
-                                                        <ColumnDefinition Width="1.1*" />
-                                                        <ColumnDefinition Width="1.1*" />
-                                                        <ColumnDefinition Width="1.2*" />
-                                                        <ColumnDefinition Width="0.9*" />
-                                                    </Grid.ColumnDefinitions>
-                                                    <TextBlock FontWeight="SemiBold"
-                                                               Foreground="{DynamicResource PrimaryTextBrush}"
-                                                               Text="{Binding Column1}" />
-                                                    <TextBlock Grid.Column="1"
-                                                               Style="{StaticResource BodySecondaryStyle}"
-                                                               Text="{Binding Column2}" />
-                                                    <TextBlock Grid.Column="2"
-                                                               Style="{StaticResource BodySecondaryStyle}"
-                                                               Text="{Binding Column3}" />
-                                                    <TextBlock Grid.Column="3"
-                                                               Style="{StaticResource BodySecondaryStyle}"
-                                                               Text="{Binding Column4}" />
-                                                    <TextBlock Grid.Column="4"
-                                                               Style="{StaticResource BodySecondaryStyle}"
-                                                               Text="{Binding Column5}" />
-                                                    <Border Grid.Column="5"
-                                                            Padding="10,4"
-                                                            HorizontalAlignment="Left"
-                                                            CornerRadius="7">
-                                                        <Border.Style>
-                                                            <Style TargetType="Border">
-                                                                <Setter Property="Background" Value="{DynamicResource AccentMutedBrush}" />
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding Badge}" Value="En curso">
-                                                                        <Setter Property="Background" Value="{DynamicResource SuccessBackgroundBrush}" />
-                                                                    </DataTrigger>
-                                                                    <DataTrigger Binding="{Binding Badge}" Value="Validado">
-                                                                        <Setter Property="Background" Value="{DynamicResource SuccessBackgroundBrush}" />
-                                                                    </DataTrigger>
-                                                                    <DataTrigger Binding="{Binding Badge}" Value="Lista">
-                                                                        <Setter Property="Background" Value="{DynamicResource SuccessBackgroundBrush}" />
-                                                                    </DataTrigger>
-                                                                    <DataTrigger Binding="{Binding Badge}" Value="Completa">
-                                                                        <Setter Property="Background" Value="{DynamicResource SuccessBackgroundBrush}" />
-                                                                    </DataTrigger>
-                                                                    <DataTrigger Binding="{Binding Badge}" Value="Cerrado">
-                                                                        <Setter Property="Background" Value="{DynamicResource SuccessBackgroundBrush}" />
-                                                                    </DataTrigger>
-                                                                    <DataTrigger Binding="{Binding Badge}" Value="Cerrada">
-                                                                        <Setter Property="Background" Value="{DynamicResource SuccessBackgroundBrush}" />
-                                                                    </DataTrigger>
-                                                                    <DataTrigger Binding="{Binding Badge}" Value="Auditada">
-                                                                        <Setter Property="Background" Value="{DynamicResource SuccessBackgroundBrush}" />
-                                                                    </DataTrigger>
-                                                                    <DataTrigger Binding="{Binding Badge}" Value="Revision">
-                                                                        <Setter Property="Background" Value="{DynamicResource WarningBackgroundBrush}" />
-                                                                    </DataTrigger>
-                                                                    <DataTrigger Binding="{Binding Badge}" Value="Observado">
-                                                                        <Setter Property="Background" Value="{DynamicResource WarningBackgroundBrush}" />
-                                                                    </DataTrigger>
-                                                                    <DataTrigger Binding="{Binding Badge}" Value="Pendiente">
-                                                                        <Setter Property="Background" Value="{DynamicResource WarningBackgroundBrush}" />
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </Border.Style>
-                                                        <TextBlock FontSize="11" FontWeight="SemiBold" Text="{Binding Badge}">
-                                                            <TextBlock.Style>
-                                                                <Style TargetType="TextBlock">
-                                                                    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
-                                                                    <Style.Triggers>
-                                                                        <DataTrigger Binding="{Binding Badge}" Value="En curso">
-                                                                            <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
-                                                                        </DataTrigger>
-                                                                        <DataTrigger Binding="{Binding Badge}" Value="Validado">
-                                                                            <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
-                                                                        </DataTrigger>
-                                                                        <DataTrigger Binding="{Binding Badge}" Value="Lista">
-                                                                            <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
-                                                                        </DataTrigger>
-                                                                        <DataTrigger Binding="{Binding Badge}" Value="Completa">
-                                                                            <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
-                                                                        </DataTrigger>
-                                                                        <DataTrigger Binding="{Binding Badge}" Value="Cerrado">
-                                                                            <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
-                                                                        </DataTrigger>
-                                                                        <DataTrigger Binding="{Binding Badge}" Value="Cerrada">
-                                                                            <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
-                                                                        </DataTrigger>
-                                                                        <DataTrigger Binding="{Binding Badge}" Value="Auditada">
-                                                                            <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
-                                                                        </DataTrigger>
-                                                                        <DataTrigger Binding="{Binding Badge}" Value="Revision">
-                                                                            <Setter Property="Foreground" Value="{DynamicResource WarningForegroundBrush}" />
-                                                                        </DataTrigger>
-                                                                        <DataTrigger Binding="{Binding Badge}" Value="Observado">
-                                                                            <Setter Property="Foreground" Value="{DynamicResource WarningForegroundBrush}" />
-                                                                        </DataTrigger>
-                                                                        <DataTrigger Binding="{Binding Badge}" Value="Pendiente">
-                                                                            <Setter Property="Foreground" Value="{DynamicResource WarningForegroundBrush}" />
-                                                                        </DataTrigger>
-                                                                    </Style.Triggers>
-                                                                </Style>
-                                                            </TextBlock.Style>
-                                                        </TextBlock>
-                                                    </Border>
-                                                </Grid>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
                                 </ItemsControl>
                             </ScrollViewer>
                         </Grid>

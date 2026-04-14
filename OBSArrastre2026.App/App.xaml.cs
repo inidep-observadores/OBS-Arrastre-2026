@@ -43,6 +43,7 @@ public partial class App : Application
 
                 services.AddSingleton<IDatabaseInitializer, DatabaseInitializer>();
                 services.AddSingleton<IBuqueService, BuqueService>();
+                services.AddSingleton<IMareaService, MareaService>();
 
                 // Servicios de sincronización de datos
                 services.AddSingleton<IDbfExtractorService, DbfExtractorService>();

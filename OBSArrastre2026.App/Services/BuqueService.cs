@@ -19,6 +19,7 @@ public sealed class BuqueService(IDbContextFactory<AppDbContext> dbContextFactor
             .AsNoTracking()
             .OrderBy(x => x.Nombre)
             .Select(x => new BuqueListItemViewModel(
+                x.Id,
                 x.Nombre,
                 x.Matricula,
                 x.IdRadial,

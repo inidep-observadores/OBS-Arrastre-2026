@@ -1,0 +1,34 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": ".NET (coreclr) - WPF",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/OBSArrastre2026.App/bin/Debug/net10.0-windows/OBSArrastre2026.App.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}/OBSArrastre2026.App",
+            "console": "internalConsole"
+        },
+        {
+            "name": ".NET (dotnet) - WPF",
+            "type": "dotnet",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/OBSArrastre2026.App/bin/Debug/net10.0-windows/OBSArrastre2026.App.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}/OBSArrastre2026.App",
+            "console": "internalConsole"
+        },
+        {
+            "name": "C# - WPF",
+            "type": "csharp",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/OBSArrastre2026.App/bin/Debug/net10.0-windows/OBSArrastre2026.App.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}/OBSArrastre2026.App"
+        }
+    ]
+}
