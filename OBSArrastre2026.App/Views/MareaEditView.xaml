@@ -241,29 +241,13 @@
                                                         </Grid.RowDefinitions>
 
                                                         <StackPanel>
-                                                            <Label Content="Fecha/Hora Zarpada" Style="{StaticResource FormLabelStyle}" />
-                                                            <Grid>
-                                                                <Grid.ColumnDefinitions>
-                                                                    <ColumnDefinition Width="3*" />
-                                                                    <ColumnDefinition Width="10" />
-                                                                    <ColumnDefinition Width="2*" />
-                                                                </Grid.ColumnDefinitions>
-                                                                <controls:DatePickerPremium SelectedDate="{Binding FechaZarpada}" Loaded="EtapaDatePicker_Loaded" />
-                                                                <controls:TimePickerPremium Grid.Column="2" SelectedTime="{Binding HoraZarpada}" />
-                                                            </Grid>
+                                                            <Label Content="Fecha Zarpada" Style="{StaticResource FormLabelStyle}" />
+                                                            <controls:DatePickerPremium SelectedDate="{Binding FechaZarpada}" Loaded="EtapaDatePicker_Loaded" />
                                                         </StackPanel>
 
                                                         <StackPanel Grid.Column="2">
-                                                            <Label Content="Fecha/Hora Arribo" Style="{StaticResource FormLabelStyle}" />
-                                                            <Grid>
-                                                                <Grid.ColumnDefinitions>
-                                                                    <ColumnDefinition Width="3*" />
-                                                                    <ColumnDefinition Width="10" />
-                                                                    <ColumnDefinition Width="2*" />
-                                                                </Grid.ColumnDefinitions>
-                                                                <controls:DatePickerPremium SelectedDate="{Binding FechaArribo}" />
-                                                                <controls:TimePickerPremium Grid.Column="2" SelectedTime="{Binding HoraArribo}" />
-                                                            </Grid>
+                                                            <Label Content="Fecha Arribo" Style="{StaticResource FormLabelStyle}" />
+                                                            <controls:DatePickerPremium SelectedDate="{Binding FechaArribo}" />
                                                         </StackPanel>
 
                                                         <StackPanel Grid.Row="2" Grid.ColumnSpan="3">
