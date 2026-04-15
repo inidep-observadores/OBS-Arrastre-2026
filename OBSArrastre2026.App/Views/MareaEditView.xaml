@@ -51,6 +51,12 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Command="{Binding ImportDbfCommand}"
+                                Content="Importar DBF"
+                                Margin="0,0,12,0"
+                                Style="{StaticResource ThemeButtonStyle}"
+                                Foreground="{DynamicResource AccentBrush}"
+                                Padding="20,10" />
                         <Button Command="{Binding CancelCommand}"
                                 Content="Cancelar"
                                 Margin="0,0,12,0"

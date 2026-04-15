@@ -41,6 +41,7 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
         SaveCommand = new AsyncRelayCommand(SaveAsync);
         CancelCommand = new RelayCommand(Cancel);
         AddEtapaCommand = new RelayCommand(AddEtapa);
+        ImportDbfCommand = new RelayCommand(ImportDbf);
 
         _ = InitializeAsync();
     }
@@ -133,6 +134,29 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
     public ICommand AddEtapaCommand { get; }
+    public ICommand ImportDbfCommand { get; }
+
+    public Action<object?>? ShowCustomDialog { get; set; }
+
+    private void ImportDbf()
+    {
+        if (AnioInidep < 2000 || NumeroInidep <= 0)
+        {
+            // Podríamos mostrar un mensaje de que se requiere año y número
+            return;
+        }
+
+        var importVm = new ImportDbfViewModel(NumeroInidep, AnioInidep, files => 
+        {
+            ShowCustomDialog?.Invoke(null); // Cerrar diálogos
+            if (files != null)
+            {
+                // TODO: En la siguiente etapa se implementará la lógica de procesamiento
+            }
+        });
+
+        ShowCustomDialog?.Invoke(importVm);
+    }
 
     private async Task InitializeAsync()
     {

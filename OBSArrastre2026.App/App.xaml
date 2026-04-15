@@ -623,5 +623,102 @@
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
+
+        <!-- Diálogo de Importación DBF -->
+        <DataTemplate DataType="{x:Type vm:ImportDbfViewModel}">
+            <Border Width="650" 
+                    Background="{DynamicResource CardBackgroundBrush}"
+                    BorderBrush="{DynamicResource CardBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="0"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="40" ShadowDepth="10" Opacity="0.15" Color="Black"/>
+                </Border.Effect>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="24,20">
+                        <StackPanel>
+                            <TextBlock Text="IMPORTAR ARCHIVOS DBF" 
+                                       FontSize="18" FontWeight="Bold" 
+                                       Foreground="{DynamicResource PrimaryTextBrush}" />
+                            <TextBlock Text="{Binding PatternNote}" 
+                                       FontSize="12" 
+                                       Foreground="{DynamicResource SecondaryTextBrush}" 
+                                       Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Grid Grid.Row="1" Margin="24">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" MinHeight="200" MaxHeight="400" />
+                        </Grid.RowDefinitions>
+
+                        <Button Command="{Binding AddFilesCommand}" 
+                                Content="+ Seleccionar Archivos" 
+                                Style="{StaticResource ThemeButtonStyle}" 
+                                Foreground="{DynamicResource AccentBrush}"
+                                HorizontalAlignment="Left"
+                                Margin="0,0,0,20" />
+
+                        <!-- Header Tabla -->
+                        <Grid Grid.Row="1" Margin="0,0,0,8" VerticalAlignment="Bottom">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="100" />
+                                <ColumnDefinition Width="150" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Nombre del Archivo" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource SecondaryTextBrush}" Margin="12,0,0,0"/>
+                            <TextBlock Grid.Column="1" Text="Tamaño" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource SecondaryTextBrush}" />
+                            <TextBlock Grid.Column="2" Text="Fecha Modificación" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource SecondaryTextBrush}" />
+                        </Grid>
+
+                        <ScrollViewer Grid.Row="2" Style="{StaticResource SlimScrollViewerStyle}">
+                            <ItemsControl ItemsSource="{Binding SelectedFiles}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="{DynamicResource SidebarBorderBrush}" BorderThickness="0,0,0,1" Padding="12,12">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="100" />
+                                                    <ColumnDefinition Width="150" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding Name}" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="1" Text="{Binding SizeDisplay}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="2" Text="{Binding DateDisplay}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <Border Grid.Row="2" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="24,20">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="Cancelar" 
+                                    Command="{Binding CancelCommand}"
+                                    Style="{StaticResource ThemeButtonStyle}"
+                                    Margin="0,0,12,0"
+                                    Width="120" />
+                            <Button Content="Aceptar" 
+                                    Command="{Binding AcceptCommand}"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Width="120" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+        </DataTemplate>
     </Application.Resources>
 </Application>

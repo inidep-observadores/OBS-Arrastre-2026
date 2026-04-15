@@ -23,7 +23,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private bool _isDashboardVisible;
     private AppThemeMode _currentThemeMode;
     private object? _currentEditViewModel;
-    private MessageDialogViewModel? _activeDialog;
+    private object? _activeDialog;
 
     // Filtros de Mareas
     private int? _mareasFilterAnio;
@@ -49,7 +49,7 @@ public sealed class MainWindowViewModel : ObservableObject
         SetSystemThemeCommand = new RelayCommand(() => ApplyTheme(AppThemeMode.System));
         SetLightThemeCommand = new RelayCommand(() => ApplyTheme(AppThemeMode.Light));
         SetDarkThemeCommand = new RelayCommand(() => ApplyTheme(AppThemeMode.Dark));
-        PrimaryActionCommand = new RelayCommand(OpenNewMareaForm);
+        PrimaryActionCommand = new RelayCommand(OpenCreateMareaForm);
         ApplyMareaFiltersCommand = new AsyncCommand(LoadMareasAsync);
         EditMareaCommand = new RelayCommand<MareaListItemViewModel>(OpenEditMareaForm);
 
@@ -170,7 +170,7 @@ public sealed class MainWindowViewModel : ObservableObject
         private set => SetProperty(ref _currentEditViewModel, value);
     }
 
-    public MessageDialogViewModel? ActiveDialog
+    public object? ActiveDialog
     {
         get => _activeDialog;
         private set => SetProperty(ref _activeDialog, value);
@@ -394,24 +394,28 @@ public sealed class MainWindowViewModel : ObservableObject
         }
     }
 
-    private void OpenNewMareaForm()
+    private void OpenCreateMareaForm()
     {
-        CurrentEditViewModel = _mareaEditFactory(() => 
+        var vm = _mareaEditFactory(() => 
         {
             CurrentEditViewModel = null;
             _ = LoadMareasAsync(); // Recargar lista al cerrar
         }, null);
+        vm.ShowCustomDialog = diag => ActiveDialog = diag;
+        CurrentEditViewModel = vm;
     }
 
     private void OpenEditMareaForm(MareaListItemViewModel? item)
     {
         if (item == null) return;
         
-        CurrentEditViewModel = _mareaEditFactory(() => 
+        var vm = _mareaEditFactory(() => 
         {
             CurrentEditViewModel = null;
             _ = LoadMareasAsync(); // Recargar lista al cerrar
         }, item.ID);
+        vm.ShowCustomDialog = diag => ActiveDialog = diag;
+        CurrentEditViewModel = vm;
     }
 
     private void ApplyTheme(AppThemeMode mode)
