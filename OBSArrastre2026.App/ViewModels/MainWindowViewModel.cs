@@ -23,6 +23,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private bool _isDashboardVisible;
     private AppThemeMode _currentThemeMode;
     private object? _currentEditViewModel;
+    private MessageDialogViewModel? _activeDialog;
 
     // Filtros de Mareas
     private int? _mareasFilterAnio;
@@ -167,6 +168,17 @@ public sealed class MainWindowViewModel : ObservableObject
     {
         get => _currentEditViewModel;
         private set => SetProperty(ref _currentEditViewModel, value);
+    }
+
+    public MessageDialogViewModel? ActiveDialog
+    {
+        get => _activeDialog;
+        private set => SetProperty(ref _activeDialog, value);
+    }
+
+    public void ShowMessage(string title, string message, MessageDialogType type = MessageDialogType.Info)
+    {
+        ActiveDialog = new MessageDialogViewModel(title, message, type, () => ActiveDialog = null);
     }
 
     public bool IsDashboardVisible
@@ -349,11 +361,10 @@ public sealed class MainWindowViewModel : ObservableObject
             // Si ambas están presentes y el rango es inválido, advertimos y cancelamos la búsqueda.
             if (filterDesde.HasValue && filterHasta.HasValue && filterHasta.Value < filterDesde.Value)
             {
-                System.Windows.MessageBox.Show(
-                    "La fecha de fin (" + filterHasta.Value.ToShortDateString() + ") no puede ser anterior a la de inicio (" + filterDesde.Value.ToShortDateString() + ").",
+                ShowMessage(
                     "Rango de Fechas Inválido",
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Warning);
+                    "La fecha de fin (" + filterHasta.Value.ToShortDateString() + ") no puede ser anterior a la de inicio (" + filterDesde.Value.ToShortDateString() + ").",
+                    MessageDialogType.Warning);
                 return;
             }
 

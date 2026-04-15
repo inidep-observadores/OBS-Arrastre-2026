@@ -546,5 +546,82 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <!-- Diálogo de Mensajes Premium -->
+        <DataTemplate DataType="{x:Type vm:MessageDialogViewModel}">
+            <Border Width="450" 
+                    Background="{DynamicResource CardBackgroundBrush}"
+                    BorderBrush="{DynamicResource CardBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="0"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="40" ShadowDepth="10" Opacity="0.15" Color="Black"/>
+                </Border.Effect>
+                
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Header/Accent Bar -->
+                    <Border Grid.Row="0" Height="4" x:Name="TypeBar" Background="{DynamicResource AccentBrush}" />
+
+                    <Border Grid.Row="1" Padding="40,32,40,24">
+                        <StackPanel>
+                            <Grid HorizontalAlignment="Center" Margin="0,0,0,24">
+                                <!-- Icon according to type -->
+                                <Path x:Name="IconPath" 
+                                      Width="48" Height="48" 
+                                      Stretch="Uniform" 
+                                      Fill="{DynamicResource AccentBrush}"
+                                      Data="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10,10-4.48,10-10S17.52,2,12,2z M13,17h-2v-2h2V17z M13,13h-2V7h2V13z" />
+                            </Grid>
+
+                            <TextBlock Text="{Binding Title}" 
+                                       HorizontalAlignment="Center"
+                                       FontSize="20" FontWeight="Bold" 
+                                       Foreground="{DynamicResource PrimaryTextBrush}"
+                                       Margin="0,0,0,12"
+                                       TextAlignment="Center"/>
+
+                            <TextBlock Text="{Binding Message}" 
+                                       HorizontalAlignment="Center"
+                                       FontSize="15" 
+                                       Foreground="{DynamicResource SecondaryTextBrush}"
+                                       TextAlignment="Center"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="2" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="32,20">
+                        <Button Content="Entendido" 
+                                Command="{Binding CloseCommand}"
+                                Style="{StaticResource PrimaryButtonStyle}"
+                                HorizontalAlignment="Stretch" />
+                    </Border>
+                </Grid>
+            </Border>
+            
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Type}" Value="Success">
+                    <Setter TargetName="TypeBar" Property="Background" Value="{DynamicResource SuccessForegroundBrush}" />
+                    <Setter TargetName="IconPath" Property="Fill" Value="{DynamicResource SuccessForegroundBrush}" />
+                    <Setter TargetName="IconPath" Property="Data" Value="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10,10-4.48,10-10S17.52,2,12,2z M10,17l-5-5l1.41-1.41L10,14.17l7.59-7.59L19,8L10,17z" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="Warning">
+                    <Setter TargetName="TypeBar" Property="Background" Value="{DynamicResource WarningForegroundBrush}" />
+                    <Setter TargetName="IconPath" Property="Fill" Value="{DynamicResource WarningForegroundBrush}" />
+                    <Setter TargetName="IconPath" Property="Data" Value="M12,2L1,21h22L12,2z M13,18h-2v-2h2V18z M13,14h-2v-4h2V14z" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="Error">
+                    <Setter TargetName="TypeBar" Property="Background" Value="{DynamicResource DangerForegroundBrush}" />
+                    <Setter TargetName="IconPath" Property="Fill" Value="{DynamicResource DangerForegroundBrush}" />
+                    <Setter TargetName="IconPath" Property="Data" Value="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10,10-4.48,10-10S17.52,2,12,2z M15.59,7L12,10.59L8.41,7L7,8.41L10.59,12L7,15.59L8.41,17L12,13.41L15.59,17L17,15.59L13.41,12L17,8.41L15.59,7z" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
     </Application.Resources>
 </Application>
