@@ -16,6 +16,7 @@
         <SolidColorBrush x:Key="SecondaryTextBrush" Color="#475569" />
         <SolidColorBrush x:Key="SurfaceBackgroundBrush" Color="#F8FAFC" />
         <SolidColorBrush x:Key="HoverBackgroundBrush" Color="#F1F5F9" />
+        <SolidColorBrush x:Key="WarningBrush" Color="#F59E0B" />
 
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
 
@@ -593,6 +594,53 @@
                                        Foreground="{DynamicResource SecondaryTextBrush}"
                                        TextAlignment="Center"
                                        TextWrapping="Wrap"/>
+
+                            <!-- More info button -->
+                            <Button x:Name="BtnDetails"
+                                    Content="Ver detalles técnicos"
+                                    Command="{Binding ToggleDetailsCommand}"
+                                    Margin="0,20,0,0"
+                                    Padding="10,4"
+                                    Visibility="{Binding HasDetails, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                    Style="{StaticResource ThemeButtonStyle}"
+                                    Foreground="{DynamicResource AccentBrush}"
+                                    HorizontalAlignment="Center" />
+
+                            <!-- Details content -->
+                            <Grid x:Name="DetailsGrid" Visibility="Collapsed">
+                                <Border Background="{DynamicResource SurfaceBackgroundBrush}" 
+                                        BorderBrush="{DynamicResource CardBorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="0" Margin="0,16,0,0" Padding="16">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
+                                        
+                                        <Button Command="{Binding CopyToClipboardCommand}"
+                                                Content="Copiar al portapapeles"
+                                                Style="{StaticResource ThemeButtonStyle}"
+                                                Foreground="{DynamicResource AccentBrush}"
+                                                FontSize="11" Height="28" Padding="12,0"
+                                                HorizontalAlignment="Right"
+                                                Margin="0,0,0,12" />
+
+                                        <TextBox Grid.Row="1"
+                                                 Text="{Binding Details, Mode=OneWay}"
+                                                 IsReadOnly="True"
+                                                 AcceptsReturn="True"
+                                                 TextWrapping="Wrap"
+                                                 BorderThickness="0"
+                                                 Background="Transparent"
+                                                 FontSize="11"
+                                                 Foreground="{DynamicResource SecondaryTextBrush}"
+                                                 FontFamily="Consolas, Cascadia Code, Courier New"
+                                                 MaxHeight="180"
+                                                 VerticalScrollBarVisibility="Auto" />
+                                    </Grid>
+                                </Border>
+                            </Grid>
                         </StackPanel>
                     </Border>
 
@@ -621,7 +669,80 @@
                     <Setter TargetName="IconPath" Property="Fill" Value="{DynamicResource DangerForegroundBrush}" />
                     <Setter TargetName="IconPath" Property="Data" Value="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10,10-4.48,10-10S17.52,2,12,2z M15.59,7L12,10.59L8.41,7L7,8.41L10.59,12L7,15.59L8.41,17L12,13.41L15.59,17L17,15.59L13.41,12L17,8.41L15.59,7z" />
                 </DataTrigger>
+
+                <DataTrigger Binding="{Binding IsDetailsExpanded}" Value="True">
+                    <Setter TargetName="DetailsGrid" Property="Visibility" Value="Visible" />
+                    <Setter TargetName="BtnDetails" Property="Content" Value="Ocultar detalles técnicos" />
+                </DataTrigger>
             </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- Plantilla para el Diálogo de Confirmación -->
+        <DataTemplate DataType="{x:Type vm:ConfirmationDialogViewModel}">
+            <Border Background="{DynamicResource CardBackgroundBrush}" 
+                    CornerRadius="16" 
+                    Width="420"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="40" ShadowDepth="10" Opacity="0.15" Color="Black"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Header / Color Accent -->
+                    <Border Height="6" Background="{DynamicResource WarningBrush}" CornerRadius="16,16,0,0" VerticalAlignment="Top" />
+
+                    <!-- Content -->
+                    <Border Grid.Row="1" Padding="32,40,32,32">
+                        <StackPanel>
+                        <Border Width="64" Height="64" Background="{DynamicResource WarningBrush}" CornerRadius="32" Margin="0,0,0,24">
+                            <TextBlock Text="?" FontSize="36" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,2" />
+                        </Border>
+
+                        <TextBlock Text="{Binding Title}" 
+                                   FontSize="22" 
+                                   FontWeight="Bold" 
+                                   Foreground="{DynamicResource PrimaryTextBrush}" 
+                                   HorizontalAlignment="Center"
+                                   TextAlignment="Center"
+                                   Margin="0,0,0,12"/>
+
+                        <TextBlock Text="{Binding Message}" 
+                                   FontSize="15" 
+                                   Foreground="{DynamicResource SecondaryTextBrush}" 
+                                   TextWrapping="Wrap"
+                                   TextAlignment="Center"
+                                   LineHeight="22"/>
+                    </StackPanel>
+                </Border>
+
+                    <!-- Actions -->
+                    <Border Grid.Row="2" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="24,20" CornerRadius="0,0,16,16">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button Content="Cancelar" 
+                                    Command="{Binding CancelCommand}"
+                                    Style="{StaticResource ThemeButtonStyle}"
+                                    Height="48"
+                                    Margin="0,0,8,0"/>
+                            <Button Grid.Column="1"
+                                    Content="Confirmar" 
+                                    Command="{Binding ConfirmCommand}"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Height="48"
+                                    Margin="8,0,0,0"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
         </DataTemplate>
 
         <!-- Diálogo de Importación DBF -->
@@ -707,7 +828,7 @@
                         <Border Grid.Row="0" Grid.RowSpan="3" Background="{DynamicResource CardBackgroundBrush}" Opacity="0.8" Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                                 <ProgressBar IsIndeterminate="True" Width="200" Height="4" Foreground="{DynamicResource AccentBrush}" />
-                                <TextBlock Text="Validando archivos legados..." Margin="0,16,0,0" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding BusyMessage}" Margin="0,16,0,0" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Border>
                     </Grid>

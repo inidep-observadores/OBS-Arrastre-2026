@@ -19,4 +19,7 @@ public interface IMareaService
         DateTime? fechaHasta = null,
         string? busquedaTextual = null,
         CancellationToken cancellationToken = default);
+
+    Task<bool> HasExistingDataAsync(string mareaId, CancellationToken cancellationToken = default);
+    Task ClearMareaDataAsync(string mareaId, CancellationToken cancellationToken = default);
 }

@@ -19,6 +19,9 @@ public sealed class ItemSubmuestraConfiguration : IEntityTypeConfiguration<ItemS
         builder.Property(x => x.Estadio).HasColumnName("Estadio");
         builder.Property(x => x.ReplecionGastrica).HasColumnName("ReplecionGastrica");
         builder.Property(x => x.Edad).HasColumnName("Edad");
+        builder.Property(x => x.LargoTotalMm).HasColumnName("LargoTotalMm");
+        builder.Property(x => x.LargoEstandarMm).HasColumnName("LargoEstandarMm");
+        builder.Property(x => x.PesoTotalGramos).HasColumnName("PesoTotalGramos");
         builder.Property(x => x.Comentarios).HasColumnName("Comentarios");
 
         builder.HasOne(x => x.Muestra)

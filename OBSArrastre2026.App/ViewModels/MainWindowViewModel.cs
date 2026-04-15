@@ -176,9 +176,20 @@ public sealed class MainWindowViewModel : ObservableObject
         private set => SetProperty(ref _activeDialog, value);
     }
 
-    public void ShowMessage(string title, string message, MessageDialogType type = MessageDialogType.Info)
+    public void ShowMessage(string title, string message, string? details = null, MessageDialogType type = MessageDialogType.Info)
     {
-        ActiveDialog = new MessageDialogViewModel(title, message, type, () => ActiveDialog = null);
+        ActiveDialog = new MessageDialogViewModel(title, message, details, type, () => ActiveDialog = null);
+    }
+
+    public Task<bool> ShowConfirmationAsync(string title, string message)
+    {
+        var tcs = new TaskCompletionSource<bool>();
+        ActiveDialog = new ConfirmationDialogViewModel(title, message, result => 
+        {
+            ActiveDialog = null;
+            tcs.SetResult(result);
+        });
+        return tcs.Task;
     }
 
     public bool IsDashboardVisible
@@ -364,6 +375,7 @@ public sealed class MainWindowViewModel : ObservableObject
                 ShowMessage(
                     "Rango de Fechas Inválido",
                     "La fecha de fin (" + filterHasta.Value.ToShortDateString() + ") no puede ser anterior a la de inicio (" + filterDesde.Value.ToShortDateString() + ").",
+                    null,
                     MessageDialogType.Warning);
                 return;
             }
@@ -402,7 +414,8 @@ public sealed class MainWindowViewModel : ObservableObject
             _ = LoadMareasAsync(); // Recargar lista al cerrar
         }, null);
         vm.ShowCustomDialog = diag => ActiveDialog = diag;
-        vm.ShowMessage = (t, m, type) => ShowMessage(t, m, type);
+        vm.ShowMessage = (t, m, d, type) => ShowMessage(t, m, d, type);
+        vm.ShowConfirmation = (t, m) => ShowConfirmationAsync(t, m);
         CurrentEditViewModel = vm;
     }
 
@@ -416,7 +429,8 @@ public sealed class MainWindowViewModel : ObservableObject
             _ = LoadMareasAsync(); // Recargar lista al cerrar
         }, item.ID);
         vm.ShowCustomDialog = diag => ActiveDialog = diag;
-        vm.ShowMessage = (t, m, type) => ShowMessage(t, m, type);
+        vm.ShowMessage = (t, m, d, type) => ShowMessage(t, m, d, type);
+        vm.ShowConfirmation = (t, m) => ShowConfirmationAsync(t, m);
         CurrentEditViewModel = vm;
     }
 

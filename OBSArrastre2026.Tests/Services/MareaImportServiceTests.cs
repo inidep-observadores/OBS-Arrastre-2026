@@ -2,6 +2,9 @@ using FluentAssertions;
 using NSubstitute;
 using OBSArrastre2026.App.Models.Import;
 using OBSArrastre2026.App.Services;
+using OBSArrastre2026.App.Data;
+using OBSArrastre2026.App.Data.Entities;
+using Microsoft.EntityFrameworkCore;
 using Xunit;
 
 namespace OBSArrastre2026.Tests.Services;
@@ -10,11 +13,12 @@ public class MareaImportServiceTests
 {
     private readonly IDbfExtractorService _extractor = Substitute.For<IDbfExtractorService>();
     private readonly IMareaReportService _report = Substitute.For<IMareaReportService>();
+    private readonly IDbContextFactory<AppDbContext> _dbFactory = Substitute.For<IDbContextFactory<AppDbContext>>();
     private readonly MareaImportService _service;
 
     public MareaImportServiceTests()
     {
-        _service = new MareaImportService(_extractor, _report);
+        _service = new MareaImportService(_extractor, _report, _dbFactory);
     }
 
     [Fact]
@@ -34,7 +38,7 @@ public class MareaImportServiceTests
             .Returns(new byte[] { 1, 2, 3 });
 
         // Act
-        var result = await _service.ProcessMareaImportAsync("C:\\Temp", "TEST", 100, 2026);
+        var result = await _service.ProcessMareaImportAsync("C:\\Temp", "TEST", 100, 2026, new List<MareaEtapa>());
 
         // Assert
         result.Should().NotBeNull();

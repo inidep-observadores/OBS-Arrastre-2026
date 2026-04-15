@@ -44,7 +44,7 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
         SaveCommand = new AsyncRelayCommand(SaveAsync);
         CancelCommand = new RelayCommand(Cancel);
         AddEtapaCommand = new RelayCommand(AddEtapa);
-        ImportDbfCommand = new RelayCommand(ImportDbf);
+        ImportDbfCommand = new AsyncRelayCommand(ImportDbf);
 
         _ = InitializeAsync();
     }
@@ -137,38 +137,88 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
     public ICommand AddEtapaCommand { get; }
-    public ICommand ImportDbfCommand { get; }
+    public AsyncRelayCommand ImportDbfCommand { get; }
 
     public Action<object?>? ShowCustomDialog { get; set; }
+    public Func<string, string, Task<bool>>? ShowConfirmation { get; set; }
 
-    private void ImportDbf()
+    private async Task ImportDbf()
     {
         if (AnioInidep < 2000 || NumeroInidep <= 0)
         {
-            // Podríamos mostrar un mensaje de que se requiere año y número
+            ShowMessage?.Invoke("Validación", "Se requiere Año y Número de Marea válidos para importar.", null, MessageDialogType.Warning);
             return;
         }
 
+        if (string.IsNullOrEmpty(_mareaId))
+        {
+            ShowMessage?.Invoke("Marea No Guardada", "Debe guardar la marea antes de intentar importar datos.", null, MessageDialogType.Warning);
+            return;
+        }
+
+        // 1. Verificar si hay datos
+        bool hasData = await _mareaService.HasExistingDataAsync(_mareaId);
+        if (hasData)
+        {
+            bool confirm = await (ShowConfirmation?.Invoke("Datos Existentes", 
+                "Esta marea ya tiene lances o producción cargada. Si continúa, estos datos se borrarán para realizar una importación limpia. ¿Desea proceder?") ?? Task.FromResult(false));
+            
+            if (!confirm) return;
+
+            // 2. Limpiar datos
+            try 
+            {
+                IsLoading = true;
+                await _mareaService.ClearMareaDataAsync(_mareaId);
+            }
+            catch (Exception ex)
+            {
+                ShowMessage?.Invoke("Error", $"No se pudo limpiar la marea: {ex.Message}", ex.ToString(), MessageDialogType.Error);
+                return;
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        // 3. Obtener datos de la marea para validación de etapas
+        var mareaFull = await _mareaService.GetMareaAsync(_mareaId);
+        if (mareaFull == null || !mareaFull.Etapas.Any())
+        {
+            ShowMessage?.Invoke("Sin Etapas", "No se puede importar datos si la marea no tiene al menos una etapa cargada.", null, MessageDialogType.Warning);
+            return;
+        }
+
+        // 4. Abrir diálogo de selección
         var importVm = new ImportDbfViewModel(
+            _mareaId,
             NumeroInidep, 
             AnioInidep, 
             _mareaImportService,
             SelectedBuque?.Nombre ?? "Sin Nombre",
+            mareaFull.Etapas,
             files => 
             {
                 ShowCustomDialog?.Invoke(null); // Cerrar diálogos
                 if (files != null)
                 {
-                    // Éxito: Mostrar mensaje (el diálogo ya se cerró)
-                    ShowMessage?.Invoke("Importación", "La validación finalizó con éxito. Los datos están listos para ser procesados.", MessageDialogType.Success);
+                    // Éxito: El proceso de importación se realizó dentro del importVm
+                    _ = RefreshDetailsAsync();
                 }
             });
 
-        importVm.ShowMessage = (title, msg, type) => ShowMessage?.Invoke(title, msg, type);
+        importVm.ShowMessage = (title, msg, details, type) => ShowMessage?.Invoke(title, msg, details, type);
+        importVm.ShowConfirmation = (title, msg) => ShowConfirmation?.Invoke(title, msg) ?? Task.FromResult(false);
         ShowCustomDialog?.Invoke(importVm);
     }
 
-    public Action<string, string, MessageDialogType>? ShowMessage { get; set; }
+    private async Task RefreshDetailsAsync()
+    {
+        // Podríamos recargar los lances/etapas aquí si es necesario
+    }
+
+    public Action<string, string, string?, MessageDialogType>? ShowMessage { get; set; }
 
     private async Task InitializeAsync()
     {

@@ -52,7 +52,11 @@ public partial class App : Application
                 services.AddSingleton<IJsonImportService, JsonImportService>();
                 services.AddSingleton<IDataSyncCoordinator, DataSyncCoordinator>();
                 services.AddSingleton<IMareaReportService, MareaReportService>();
-                services.AddSingleton<IMareaImportService, MareaImportService>();
+                services.AddSingleton<IMareaImportService, MareaImportService>(sp => 
+                    new MareaImportService(
+                        sp.GetRequiredService<IDbfExtractorService>(),
+                        sp.GetRequiredService<IMareaReportService>(),
+                        sp.GetRequiredService<IDbContextFactory<AppDbContext>>()));
 
                 // Validación y ViewModels
                 services.AddValidatorsFromAssemblyContaining<App>();

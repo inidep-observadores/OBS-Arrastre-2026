@@ -108,8 +108,8 @@ public sealed class DbfExtractorService : IDbfExtractorService
                 var espCode = GetDouble(reader, colMap, $"ESPECIE_{i}");
                 if (espCode > 0)
                 {
-                    c.Especies[(int)espCode] = GetDouble(reader, colMap, $"KG_{i}");
-                    c.DescartesPorEspecie[(int)espCode] = GetDouble(reader, colMap, $"DESCAR_{i}");
+                    c.Especies[(long)espCode] = GetDouble(reader, colMap, $"KG_{i}");
+                    c.DescartesPorEspecie[(long)espCode] = GetDouble(reader, colMap, $"DESCAR_{i}");
                 }
             }
             list.Add(c);
@@ -134,7 +134,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
                 Lance = GetDouble(reader, colMap, "LANCE"),
                 Fecha = GetDateTime(reader, colMap, "FECHA") ?? DateTime.MinValue,
                 Especie = GetString(reader, colMap, "ESPECIE"),
-                CodEspec = (int)GetDouble(reader, colMap, "COD_ESPEC"),
+                CodEspec = (long)GetDouble(reader, colMap, "COD_ESPEC"),
                 Area = GetDouble(reader, colMap, "AREA"),
                 PrimTalla = (int)GetDouble(reader, colMap, "PRIM_TALLA"),
                 UltTalla = (int)GetDouble(reader, colMap, "ULT_TALLA"),
@@ -200,7 +200,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
                 Marea = GetDouble(reader, colMap, "MAREA"),
                 Lance = GetDouble(reader, colMap, "LANCE"),
                 Fecha = GetDateTime(reader, colMap, "FECHA") ?? DateTime.MinValue,
-                CodEspecIE = (int)GetDouble(reader, colMap, "CODIGO"),
+                CodEspecIE = (long)GetDouble(reader, colMap, "CODIGO"),
             };
 
             for (int i = 1; i <= 70; i++)

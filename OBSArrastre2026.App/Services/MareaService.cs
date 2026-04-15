@@ -128,4 +128,46 @@ public sealed class MareaService(IDbContextFactory<AppDbContext> dbContextFactor
             .ThenByDescending(x => x.FechaInicio)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<bool> HasExistingDataAsync(string mareaId, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        
+        var stageIds = await dbContext.MareaEtapas
+            .Where(e => e.MareaID == mareaId)
+            .Select(e => e.ID)
+            .ToListAsync(cancellationToken);
+
+        if (!stageIds.Any()) return false;
+
+        var hasLances = await dbContext.Lances.AnyAsync(l => stageIds.Contains(l.MareaEtapaId), cancellationToken);
+        if (hasLances) return true;
+
+        var hasProduccion = await dbContext.RegistrosProduccion.AnyAsync(p => stageIds.Contains(p.MareaEtapaId), cancellationToken);
+        return hasProduccion;
+    }
+
+    public async Task ClearMareaDataAsync(string mareaId, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        
+        var stageIds = await dbContext.MareaEtapas
+            .Where(e => e.MareaID == mareaId)
+            .Select(e => e.ID)
+            .ToListAsync(cancellationToken);
+
+        if (!stageIds.Any()) return;
+
+        // Borrar producción
+        await dbContext.RegistrosProduccion
+            .Where(p => stageIds.Contains(p.MareaEtapaId))
+            .ExecuteDeleteAsync(cancellationToken);
+
+        // Borrar lances
+        await dbContext.Lances
+            .Where(l => stageIds.Contains(l.MareaEtapaId))
+            .ExecuteDeleteAsync(cancellationToken);
+            
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
 }
