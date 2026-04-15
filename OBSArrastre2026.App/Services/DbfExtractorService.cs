@@ -229,19 +229,49 @@ public sealed class DbfExtractorService : IDbfExtractorService
 
     private string GetString(DbfDataReader.DbfDataReader reader, Dictionary<string, int> map, string name)
     {
-        if (map.TryGetValue(name, out int index)) return reader.GetString(index)?.Trim() ?? "";
+        if (map.TryGetValue(name, out int index))
+        {
+            var value = reader.GetValue(index);
+            return value?.ToString()?.Trim() ?? "";
+        }
         return "";
     }
 
     private double GetDouble(DbfDataReader.DbfDataReader reader, Dictionary<string, int> map, string name)
     {
-        if (map.TryGetValue(name, out int index)) return reader.GetDouble(index);
+        if (map.TryGetValue(name, out int index))
+        {
+            var value = reader.GetValue(index);
+            if (value == null || value is DBNull) return 0;
+            
+            try 
+            {
+                return Convert.ToDouble(value);
+            }
+            catch 
+            {
+                return 0;
+            }
+        }
         return 0;
     }
 
     private DateTime? GetDateTime(DbfDataReader.DbfDataReader reader, Dictionary<string, int> map, string name)
     {
-        if (map.TryGetValue(name, out int index)) return reader.GetDateTime(index);
+        if (map.TryGetValue(name, out int index))
+        {
+            var value = reader.GetValue(index);
+            if (value == null || value is DBNull) return null;
+
+            try 
+            {
+                return Convert.ToDateTime(value);
+            }
+            catch 
+            {
+                return null;
+            }
+        }
         return null;
     }
 

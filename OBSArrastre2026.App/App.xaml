@@ -702,6 +702,14 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                         </ScrollViewer>
+
+                        <!-- Overlay de Carga -->
+                        <Border Grid.Row="0" Grid.RowSpan="3" Background="{DynamicResource CardBackgroundBrush}" Opacity="0.8" Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <ProgressBar IsIndeterminate="True" Width="200" Height="4" Foreground="{DynamicResource AccentBrush}" />
+                                <TextBlock Text="Validando archivos legados..." Margin="0,16,0,0" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
                     </Grid>
 
                     <Border Grid.Row="2" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="24,20">

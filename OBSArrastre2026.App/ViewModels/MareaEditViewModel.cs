@@ -13,6 +13,7 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
 {
     private readonly IMareaService _mareaService;
     private readonly IBuqueService _buqueService;
+    private readonly IMareaImportService _mareaImportService;
     private readonly Action _onClose;
     private string? _mareaId;
     private int _anioInidep;
@@ -29,11 +30,13 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
         IValidator<MareaEditViewModel> validator,
         IMareaService mareaService,
         IBuqueService buqueService,
+        IMareaImportService mareaImportService,
         string? mareaId = null) : base(validator)
     {
         _onClose = onClose;
         _mareaService = mareaService;
         _buqueService = buqueService;
+        _mareaImportService = mareaImportService;
         _mareaId = mareaId;
         
         _fechaInicio = DateTime.Today;
@@ -146,17 +149,26 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
             return;
         }
 
-        var importVm = new ImportDbfViewModel(NumeroInidep, AnioInidep, files => 
-        {
-            ShowCustomDialog?.Invoke(null); // Cerrar diálogos
-            if (files != null)
+        var importVm = new ImportDbfViewModel(
+            NumeroInidep, 
+            AnioInidep, 
+            _mareaImportService,
+            SelectedBuque?.Nombre ?? "Sin Nombre",
+            files => 
             {
-                // TODO: En la siguiente etapa se implementará la lógica de procesamiento
-            }
-        });
+                ShowCustomDialog?.Invoke(null); // Cerrar diálogos
+                if (files != null)
+                {
+                    // Éxito: Mostrar mensaje (el diálogo ya se cerró)
+                    ShowMessage?.Invoke("Importación", "La validación finalizó con éxito. Los datos están listos para ser procesados.", MessageDialogType.Success);
+                }
+            });
 
+        importVm.ShowMessage = (title, msg, type) => ShowMessage?.Invoke(title, msg, type);
         ShowCustomDialog?.Invoke(importVm);
     }
+
+    public Action<string, string, MessageDialogType>? ShowMessage { get; set; }
 
     private async Task InitializeAsync()
     {

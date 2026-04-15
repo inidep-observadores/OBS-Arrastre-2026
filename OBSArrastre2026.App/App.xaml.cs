@@ -63,6 +63,7 @@ public partial class App : Application
                         sp.GetRequiredService<IValidator<MareaEditViewModel>>(),
                         sp.GetRequiredService<IMareaService>(),
                         sp.GetRequiredService<IBuqueService>(),
+                        sp.GetRequiredService<IMareaImportService>(),
                         mareaId));
 
                 services.AddSingleton<MainWindowViewModel>();

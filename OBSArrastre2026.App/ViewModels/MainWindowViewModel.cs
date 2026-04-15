@@ -402,6 +402,7 @@ public sealed class MainWindowViewModel : ObservableObject
             _ = LoadMareasAsync(); // Recargar lista al cerrar
         }, null);
         vm.ShowCustomDialog = diag => ActiveDialog = diag;
+        vm.ShowMessage = (t, m, type) => ShowMessage(t, m, type);
         CurrentEditViewModel = vm;
     }
 
@@ -415,6 +416,7 @@ public sealed class MainWindowViewModel : ObservableObject
             _ = LoadMareasAsync(); // Recargar lista al cerrar
         }, item.ID);
         vm.ShowCustomDialog = diag => ActiveDialog = diag;
+        vm.ShowMessage = (t, m, type) => ShowMessage(t, m, type);
         CurrentEditViewModel = vm;
     }
 
