@@ -486,7 +486,11 @@
                                             <ComboBox Width="90" 
                                                       Style="{StaticResource PremiumComboBoxStyle}"
                                                       ItemsSource="{Binding Anios}"
-                                                      SelectedItem="{Binding MareasFilterAnio}"/>
+                                                      SelectedItem="{Binding MareasFilterAnio}">
+                                                <ComboBox.InputBindings>
+                                                    <KeyBinding Key="Enter" Command="{Binding ApplyMareaFiltersCommand}" />
+                                                </ComboBox.InputBindings>
+                                            </ComboBox>
                                         </StackPanel>
 
                                         <StackPanel Margin="0,0,16,0">
@@ -495,15 +499,27 @@
                                                       Style="{StaticResource PremiumComboBoxStyle}"
                                                       ItemsSource="{Binding Buques}"
                                                       SelectedItem="{Binding MareasFilterBuque}"
-                                                      DisplayMemberPath="Nombre"/>
+                                                      DisplayMemberPath="Nombre">
+                                                <ComboBox.InputBindings>
+                                                    <KeyBinding Key="Enter" Command="{Binding ApplyMareaFiltersCommand}" />
+                                                </ComboBox.InputBindings>
+                                            </ComboBox>
                                         </StackPanel>
 
                                         <StackPanel Margin="0,0,16,0">
                                             <Label Content="Rango de Fechas" Style="{StaticResource FormLabelStyle}"/>
                                             <StackPanel Orientation="Horizontal">
-                                                <controls:DatePickerPremium Width="130" SelectedDate="{Binding MareasFilterFechaDesde}"/>
+                                                <controls:DatePickerPremium Width="150" SelectedDate="{Binding MareasFilterFechaDesde}">
+                                                    <controls:DatePickerPremium.InputBindings>
+                                                        <KeyBinding Key="Enter" Command="{Binding ApplyMareaFiltersCommand}" />
+                                                    </controls:DatePickerPremium.InputBindings>
+                                                </controls:DatePickerPremium>
                                                 <TextBlock Text=" - " VerticalAlignment="Center" Margin="4,18,4,0"/>
-                                                <controls:DatePickerPremium Width="130" SelectedDate="{Binding MareasFilterFechaHasta}"/>
+                                                <controls:DatePickerPremium Width="150" SelectedDate="{Binding MareasFilterFechaHasta}">
+                                                    <controls:DatePickerPremium.InputBindings>
+                                                        <KeyBinding Key="Enter" Command="{Binding ApplyMareaFiltersCommand}" />
+                                                    </controls:DatePickerPremium.InputBindings>
+                                                </controls:DatePickerPremium>
                                             </StackPanel>
                                         </StackPanel>
                                     </StackPanel>
@@ -512,7 +528,11 @@
                                         <Label Content="Búsqueda" Style="{StaticResource FormLabelStyle}"/>
                                         <TextBox Style="{StaticResource PremiumTextBoxStyle}"
                                                  Text="{Binding MareasSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                                 Tag="Número o comentarios..."/>
+                                                 Tag="Número o comentarios...">
+                                            <TextBox.InputBindings>
+                                                <KeyBinding Key="Enter" Command="{Binding ApplyMareaFiltersCommand}" />
+                                            </TextBox.InputBindings>
+                                        </TextBox>
                                     </StackPanel>
 
                                     <Button Grid.Column="4" 

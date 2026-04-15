@@ -342,11 +342,26 @@ public sealed class MainWindowViewModel : ObservableObject
     {
         try
         {
+            DateTime? filterDesde = _mareasFilterFechaDesde;
+            DateTime? filterHasta = _mareasFilterFechaHasta;
+
+            // Validación estricta: fecha fin >= fecha inicio. 
+            // Si ambas están presentes y el rango es inválido, advertimos y cancelamos la búsqueda.
+            if (filterDesde.HasValue && filterHasta.HasValue && filterHasta.Value < filterDesde.Value)
+            {
+                System.Windows.MessageBox.Show(
+                    "La fecha de fin (" + filterHasta.Value.ToShortDateString() + ") no puede ser anterior a la de inicio (" + filterDesde.Value.ToShortDateString() + ").",
+                    "Rango de Fechas Inválido",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+
             var mareas = await _mareaService.GetMareasAsync(
                 _mareasFilterAnio,
                 _mareasFilterBuque?.ID,
-                _mareasFilterFechaDesde,
-                _mareasFilterFechaHasta,
+                filterDesde,
+                filterHasta,
                 _mareasSearchText);
 
             var viewModels = mareas.Select(m => new MareaListItemViewModel(m)).ToList();
