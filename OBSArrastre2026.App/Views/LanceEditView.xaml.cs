@@ -9,4 +9,12 @@ public partial class LanceEditView : UserControl
     {
         InitializeComponent();
     }
+
+    private void CerrarEdicion_Click(object sender, System.Windows.RoutedEventArgs e)
+    {
+        if (DataContext is LanceEditViewModel vm)
+        {
+            vm.SelectedCatchItem = null;
+        }
+    }
 }

@@ -129,14 +129,54 @@ public sealed class CatchItemViewModel : ObservableObject
         }
     }
 
+    public int NumeroOrden => _entity.NumeroOrden;
+    public string EspecieNombreVulgar => SelectedEspecie?.NombreVulgar ?? "---";
+    public string EspecieNombreCientifico => SelectedEspecie?.NombreCientifico ?? "---";
+
+    public string DatoCapturaDisplay
+    {
+        get
+        {
+            string unidad = TipoDatoCaptura == TipoDatoCaptura.Kilogramos ? "Kg" : "%";
+            return $"{DatoCaptura:N2} {unidad}";
+        }
+    }
+
+    public string DatoDescartePorcentajeDisplay
+    {
+        get
+        {
+            if (TipoDatoDescarte == TipoDatoDescarte.Porcentaje)
+                return $"{DatoDescarte:N2}%";
+            
+            return string.Empty; // Según el usuario, si cargó en kilos no se muestra el porcentaje
+        }
+    }
+
+    public string DatoDescarteKilosDisplay
+    {
+        get
+        {
+            if (TipoDatoDescarte == TipoDatoDescarte.Kilogramos)
+                return $"{DatoDescarte:N2}";
+
+            // Si es porcentaje, intentamos calcular sobre la captura de esta especie (si está en kilos)
+            if (TipoDatoDescarte == TipoDatoDescarte.Porcentaje && TipoDatoCaptura == TipoDatoCaptura.Kilogramos)
+            {
+                return $"{(DatoCaptura * DatoDescarte / 100.0):N2}";
+            }
+
+            return "---";
+        }
+    }
+
     public string SummaryText
     {
         get
         {
             if (SelectedEspecie == null) return "Nueva especie...";
             
-            string unidadCaptura = TipoDatoCaptura == TipoDatoCaptura.Kilogramos ? "Kg" : "%";
-            return $"{SelectedEspecie.NombreVulgar} - {DatoCaptura} {unidadCaptura}";
+            return $"{SelectedEspecie.NombreVulgar} - {DatoCapturaDisplay}";
         }
     }
 

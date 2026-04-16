@@ -22,6 +22,16 @@ public partial class DatePickerPremium : UserControl
         set => SetValue(SelectedDateProperty, value);
     }
 
+    public static readonly DependencyProperty EsCompactoProperty =
+        DependencyProperty.Register(nameof(EsCompacto), typeof(bool), typeof(DatePickerPremium),
+            new PropertyMetadata(false));
+
+    public bool EsCompacto
+    {
+        get => (bool)GetValue(EsCompactoProperty);
+        set => SetValue(EsCompactoProperty, value);
+    }
+
     public DatePickerPremium()
     {
         InitializeComponent();

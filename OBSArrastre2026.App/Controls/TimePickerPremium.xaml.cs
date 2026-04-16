@@ -18,6 +18,16 @@ public partial class TimePickerPremium : UserControl
         set => SetValue(SelectedTimeProperty, value);
     }
 
+    public static readonly DependencyProperty EsCompactoProperty =
+        DependencyProperty.Register(nameof(EsCompacto), typeof(bool), typeof(TimePickerPremium),
+            new PropertyMetadata(false));
+
+    public bool EsCompacto
+    {
+        get => (bool)GetValue(EsCompactoProperty);
+        set => SetValue(EsCompactoProperty, value);
+    }
+
     private bool _isUpdating;
 
     public TimePickerPremium()
