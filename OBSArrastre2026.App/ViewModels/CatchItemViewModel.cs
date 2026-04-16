@@ -44,6 +44,24 @@ public sealed class CatchItemViewModel : ObservableObject
             if (SetProperty(ref _searchText, value))
             {
                 OnPropertyChanged(nameof(FilteredEspecies));
+                
+                // Si el texto se vacía, limpiamos la especie seleccionada
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    SelectedEspecie = null;
+                    IsExpanded = false;
+                }
+                else
+                {
+                    // Si el usuario escribe algo que no coincide con la especie actual, abrimos el desplegable
+                    string currentName = SelectedEspecie?.NombreVulgar ?? string.Empty;
+                    string currentFull = SelectedEspecie != null ? $"{SelectedEspecie.NombreVulgar} ({SelectedEspecie.NombreCientifico})" : string.Empty;
+                    
+                    if (value != currentName && value != currentFull)
+                    {
+                        IsExpanded = true;
+                    }
+                }
             }
         }
     }
@@ -57,12 +75,18 @@ public sealed class CatchItemViewModel : ObservableObject
             {
                 _entity.Especie = value;
                 _entity.EspecieID = value?.ID;
+                
                 if (value != null)
                 {
-                    _searchText = $"{value.NombreVulgar} ({value.NombreCientifico})";
+                    // Al seleccionar, actualizamos el texto de búsqueda al nombre vulgar
+                    // para que coincida con TextSearch.TextPath="NombreVulgar"
+                    _searchText = value.NombreVulgar;
                     OnPropertyChanged(nameof(SearchText));
-                    OnPropertyChanged(nameof(SummaryText));
+                    IsExpanded = false;
                 }
+                
+                OnPropertyChanged(nameof(EspecieNombreVulgar));
+                OnPropertyChanged(nameof(EspecieNombreCientifico));
             }
         }
     }
@@ -129,7 +153,18 @@ public sealed class CatchItemViewModel : ObservableObject
         }
     }
 
-    public int NumeroOrden => _entity.NumeroOrden;
+    public int NumeroOrden 
+    { 
+        get => _entity.NumeroOrden;
+        set 
+        {
+            if (_entity.NumeroOrden != value)
+            {
+                _entity.NumeroOrden = value;
+                OnPropertyChanged();
+            }
+        }
+    }
     public string EspecieNombreVulgar => SelectedEspecie?.NombreVulgar ?? "---";
     public string EspecieNombreCientifico => SelectedEspecie?.NombreCientifico ?? "---";
 

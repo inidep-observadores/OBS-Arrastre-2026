@@ -64,6 +64,17 @@
             <Setter Property="Padding" Value="12,10" />
             <Setter Property="BorderThickness" Value="0,0,0,1" />
             <Setter Property="BorderBrush" Value="{DynamicResource SidebarBorderBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+        </Style>
+
+        <Style x:Key="DataGridRightHeaderStyle" TargetType="DataGridColumnHeader" BasedOn="{StaticResource DataGridHeaderStyle}">
+            <Setter Property="HorizontalContentAlignment" Value="Right" />
+        </Style>
+
+        <Style x:Key="RightGridText" TargetType="TextBlock" BasedOn="{StaticResource BodySecondaryStyle}">
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,0,12,0" />
         </Style>
 
         <Style x:Key="LanceDataGridStyle" TargetType="DataGrid">
@@ -438,11 +449,11 @@
                                           SelectedItem="{Binding SelectedCatchItem}"
                                           Style="{StaticResource LanceDataGridStyle}">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="ORD" Binding="{Binding NumeroOrden}" Width="45" ElementStyle="{StaticResource CenterGridText}" />
+                                        <DataGridTextColumn Header="ORD" Binding="{Binding NumeroOrden}" Width="40" ElementStyle="{StaticResource CenterGridText}" />
                                         <DataGridTextColumn Header="ESPECIE" Binding="{Binding EspecieNombreVulgar}" Width="*" FontWeight="SemiBold" FontSize="13" />
-                                        <DataGridTextColumn Header="CAPTURA" Binding="{Binding DatoCapturaDisplay}" Width="110" />
-                                        <DataGridTextColumn Header="DESC. (%)" Binding="{Binding DatoDescartePorcentajeDisplay}" Width="90" Foreground="{DynamicResource SecondaryTextBrush}" />
-                                        <DataGridTextColumn Header="DESC. (KG)" Binding="{Binding DatoDescarteKilosDisplay}" Width="100" FontWeight="SemiBold" />
+                                        <DataGridTextColumn Header="CAPTURA" Binding="{Binding DatoCapturaDisplay}" Width="110" ElementStyle="{StaticResource RightGridText}" HeaderStyle="{StaticResource DataGridRightHeaderStyle}" />
+                                        <DataGridTextColumn Header="DESC. (%)" Binding="{Binding DatoDescartePorcentajeDisplay}" Width="100" ElementStyle="{StaticResource RightGridText}" HeaderStyle="{StaticResource DataGridRightHeaderStyle}" Foreground="{DynamicResource SecondaryTextBrush}" />
+                                        <DataGridTextColumn Header="DESC. (KG)" Binding="{Binding DatoDescarteKilosDisplay}" Width="110" ElementStyle="{StaticResource RightGridText}" HeaderStyle="{StaticResource DataGridRightHeaderStyle}" FontWeight="SemiBold" />
                                         <DataGridTemplateColumn Width="60">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
@@ -492,18 +503,22 @@
                             <ScrollViewer Grid.Row="1" Style="{StaticResource SlimScrollViewerStyle}" Padding="24">
                                 <StackPanel>
                                     <Label Content="Buscador de Especie" Style="{StaticResource FormLabelStyle}" />
-                                    <ComboBox ItemsSource="{Binding SelectedCatchItem.FilteredEspecies}"
+                                    <ComboBox x:Name="EspecieComboBox"
+                                              ItemsSource="{Binding SelectedCatchItem.FilteredEspecies}"
                                               SelectedItem="{Binding SelectedCatchItem.SelectedEspecie}"
                                               IsEditable="True"
+                                              IsTextSearchEnabled="False"
+                                              TextSearch.TextPath="NombreVulgar"
                                               Text="{Binding SelectedCatchItem.SearchText, UpdateSourceTrigger=PropertyChanged}"
                                               Style="{StaticResource PremiumComboBoxStyle}"
+                                              IsDropDownOpen="{Binding SelectedCatchItem.IsExpanded}"
+                                              DropDownOpened="EspecieComboBox_DropDownOpened"
                                               Margin="0,0,0,24">
                                         <ComboBox.ItemTemplate>
                                             <DataTemplate>
-                                                <StackPanel Margin="0,4">
-                                                    <TextBlock Text="{Binding NombreVulgar}" FontWeight="Bold" FontSize="13" />
-                                                    <TextBlock Text="{Binding NombreCientifico}" FontStyle="Italic" FontSize="11" Opacity="0.6" Margin="0,1,0,0" />
-                                                </StackPanel>
+                                                <TextBlock Text="{Binding NombreVulgar, StringFormat='{}{0} '}" FontWeight="Bold">
+                                                    <Run Text="{Binding NombreCientifico, StringFormat='({0})'}" FontWeight="Normal" FontStyle="Italic" Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                </TextBlock>
                                             </DataTemplate>
                                         </ComboBox.ItemTemplate>
                                     </ComboBox>
@@ -513,10 +528,10 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="12" />
-                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="140" />
                                         </Grid.ColumnDefinitions>
                                         <TextBox Text="{Binding SelectedCatchItem.DatoCaptura}" Style="{StaticResource PremiumTextBoxStyle}" />
-                                        <ComboBox Grid.Column="2" Width="90"
+                                        <ComboBox Grid.Column="2"
                                                   ItemsSource="{Binding Source={StaticResource TipoDatoCapturaEnum}}"
                                                   SelectedItem="{Binding SelectedCatchItem.TipoDatoCaptura}"
                                                   Style="{StaticResource PremiumComboBoxStyle}" />
@@ -527,10 +542,10 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="12" />
-                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="140" />
                                         </Grid.ColumnDefinitions>
                                         <TextBox Text="{Binding SelectedCatchItem.DatoDescarte}" Style="{StaticResource PremiumTextBoxStyle}" />
-                                        <ComboBox Grid.Column="2" Width="90"
+                                        <ComboBox Grid.Column="2"
                                                   ItemsSource="{Binding Source={StaticResource TipoDatoDescarteEnum}}"
                                                   SelectedItem="{Binding SelectedCatchItem.TipoDatoDescarte}"
                                                   Style="{StaticResource PremiumComboBoxStyle}" />

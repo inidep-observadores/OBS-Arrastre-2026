@@ -254,21 +254,6 @@
                         </StackPanel>
                     </Border>
                     
-                    <Border Style="{StaticResource SurfaceBorderStyle}"
-                            Padding="16"
-                            Background="{DynamicResource SidebarSecondaryBackgroundBrush}">
-                        <StackPanel>
-                            <TextBlock FontSize="10"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource SecondaryTextBrush}"
-                                       Text="ESTADO DEL SISTEMA" />
-                            <TextBlock Margin="0,6,0,0"
-                                       FontSize="16"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource PrimaryTextBrush}"
-                                       Text="Premium v2026" />
-                        </StackPanel>
-                    </Border>
                 </StackPanel>
             </Grid>
         </Border>

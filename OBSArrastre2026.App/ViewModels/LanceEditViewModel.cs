@@ -191,6 +191,7 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
                         vm.RequestDeletion = HandleCatchItemDeletion;
                         ItemsCaptura.Add(vm);
                     }
+                    SincronizarOrden();
                 }
             }
         }
@@ -214,11 +215,21 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
         };
         ItemsCaptura.Add(vm);
         SelectedCatchItem = vm;
+        SincronizarOrden();
     }
 
     private void HandleCatchItemDeletion(CatchItemViewModel vm)
     {
         ItemsCaptura.Remove(vm);
+        SincronizarOrden();
+    }
+
+    private void SincronizarOrden()
+    {
+        for (int i = 0; i < ItemsCaptura.Count; i++)
+        {
+            ItemsCaptura[i].NumeroOrden = i + 1;
+        }
     }
 
     private async Task SaveAsync()

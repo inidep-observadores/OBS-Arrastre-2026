@@ -512,6 +512,19 @@
                                                       Margin="{TemplateBinding Padding}"
                                                       SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
                                                       IsHitTestVisible="false"/>
+
+                                    <TextBox x:Name="PART_EditableTextBox"
+                                             Style="{x:Null}"
+                                             Focusable="True"
+                                             Background="Transparent"
+                                             BorderThickness="0"
+                                             Padding="{TemplateBinding Padding}"
+                                             VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                             HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                             IsReadOnly="{Binding IsReadOnly, RelativeSource={RelativeSource TemplatedParent}}"
+                                             Visibility="Collapsed"
+                                             Foreground="{TemplateBinding Foreground}"
+                                             FontSize="{TemplateBinding FontSize}" />
                                     
                                     <Path x:Name="arrow" 
                                           Grid.Column="1"
@@ -525,6 +538,11 @@
                             </Border>
                         </Grid>
                         <ControlTemplate.Triggers>
+                            <Trigger Property="IsEditable" Value="True">
+                                <Setter Property="IsTabStop" Value="False" />
+                                <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="contentPresenter" Property="Visibility" Value="Collapsed" />
+                            </Trigger>
                             <Trigger Property="IsMouseOver" Value="true">
                                 <Setter Property="BorderBrush" TargetName="border" Value="{DynamicResource AccentBrush}"/>
                             </Trigger>
