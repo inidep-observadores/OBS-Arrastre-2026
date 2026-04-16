@@ -14,7 +14,9 @@ public sealed class MainWindowViewModel : ObservableObject
     private readonly IThemeService _themeService;
     private readonly IMareaService _mareaService;
     private readonly IBuqueService _buqueService;
+    private readonly ILanceService _lanceService;
     private readonly Func<Action, string?, MareaEditViewModel> _mareaEditFactory;
+    private readonly Func<Action, string, string?, LanceEditViewModel> _lanceEditFactory;
     private NavigationItemViewModel? _selectedNavigationItem;
     private string _pageTitle = string.Empty;
     private string _pageDescription = string.Empty;
@@ -31,19 +33,29 @@ public sealed class MainWindowViewModel : ObservableObject
     private DateTime? _mareasFilterFechaDesde;
     private DateTime? _mareasFilterFechaHasta;
     private string _mareasSearchText = string.Empty;
+    
+    // Filtros de Lances
+    private DateTime? _lancesFilterFechaDesde;
+    private DateTime? _lancesFilterFechaHasta;
+    private int? _lancesFilterNroLance;
+    private string _lancesFilterEspecie = string.Empty;
 
     public MainWindowViewModel(
         IMockShellDataService mockShellDataService, 
         IThemeService themeService,
         IMareaService mareaService,
         IBuqueService buqueService,
-        Func<Action, string?, MareaEditViewModel> mareaEditFactory)
+        ILanceService lanceService,
+        Func<Action, string?, MareaEditViewModel> mareaEditFactory,
+        Func<Action, string, string?, LanceEditViewModel> lanceEditFactory)
     {
         _mockShellDataService = mockShellDataService;
         _themeService = themeService;
         _mareaService = mareaService;
         _buqueService = buqueService;
+        _lanceService = lanceService;
         _mareaEditFactory = mareaEditFactory;
+        _lanceEditFactory = lanceEditFactory;
 
         SearchPlaceholder = "Buscar...";
         SetSystemThemeCommand = new RelayCommand(() => ApplyTheme(AppThemeMode.System));
@@ -52,6 +64,9 @@ public sealed class MainWindowViewModel : ObservableObject
         PrimaryActionCommand = new RelayCommand(OpenCreateMareaForm);
         ApplyMareaFiltersCommand = new AsyncCommand(LoadMareasAsync);
         EditMareaCommand = new RelayCommand<MareaListItemViewModel>(OpenEditMareaForm);
+        
+        ApplyLanceFiltersCommand = new AsyncCommand(LoadLancesAsync);
+        EditLanceCommand = new RelayCommand<LanceListItemViewModel>(OpenEditLanceForm);
 
         _mareasFilterAnio = DateTime.Today.Year;
 
@@ -95,6 +110,8 @@ public sealed class MainWindowViewModel : ObservableObject
     public ICommand PrimaryActionCommand { get; }
 
     public ICommand EditMareaCommand { get; }
+    public ICommand ApplyLanceFiltersCommand { get; }
+    public ICommand EditLanceCommand { get; }
 
     public NavigationItemViewModel? SelectedNavigationItem
     {
@@ -162,6 +179,30 @@ public sealed class MainWindowViewModel : ObservableObject
     {
         get => _mareasSearchText;
         set => SetProperty(ref _mareasSearchText, value);
+    }
+
+    public DateTime? LancesFilterFechaDesde
+    {
+        get => _lancesFilterFechaDesde;
+        set => SetProperty(ref _lancesFilterFechaDesde, value);
+    }
+
+    public DateTime? LancesFilterFechaHasta
+    {
+        get => _lancesFilterFechaHasta;
+        set => SetProperty(ref _lancesFilterFechaHasta, value);
+    }
+
+    public int? LancesFilterNroLance
+    {
+        get => _lancesFilterNroLance;
+        set => SetProperty(ref _lancesFilterNroLance, value);
+    }
+
+    public string LancesFilterEspecie
+    {
+        get => _lancesFilterEspecie;
+        set => SetProperty(ref _lancesFilterEspecie, value);
     }
 
     public object? CurrentEditViewModel
@@ -267,6 +308,27 @@ public sealed class MainWindowViewModel : ObservableObject
                 mareaSection.Column3Header,
                 mareaSection.Column4Header,
                 mareaSection.Column5Header);
+
+            ClearDashboardCollections();
+            IsDashboardVisible = false;
+            return;
+        }
+
+        if (section == NavigationSection.Lances)
+        {
+            _ = LoadLancesAsync();
+            var lanceSection = _mockShellDataService.GetListSection(section);
+            PageEyebrow = lanceSection.Eyebrow;
+            PageTitle = lanceSection.Title;
+            PageDescription = lanceSection.Description;
+            PrimaryActionLabel = lanceSection.PrimaryActionLabel;
+            
+            SetColumnHeaders(
+                lanceSection.Column1Header,
+                lanceSection.Column2Header,
+                lanceSection.Column3Header,
+                lanceSection.Column4Header,
+                lanceSection.Column5Header);
 
             ClearDashboardCollections();
             IsDashboardVisible = false;
@@ -432,6 +494,51 @@ public sealed class MainWindowViewModel : ObservableObject
         vm.ShowMessage = (t, m, d, type) => ShowMessage(t, m, d, type);
         vm.ShowConfirmation = (t, m) => ShowConfirmationAsync(t, m);
         CurrentEditViewModel = vm;
+    }
+
+    private async Task LoadLancesAsync()
+    {
+        try
+        {
+            var lances = await _lanceService.GetLancesAsync(
+                null, 
+                LancesFilterFechaDesde, 
+                LancesFilterFechaHasta, 
+                LancesFilterNroLance, 
+                LancesFilterEspecie);
+
+            var viewModels = lances.Select(l => new LanceListItemViewModel(l)).ToList();
+            
+            Records.Clear();
+            foreach (var vm in viewModels) Records.Add(vm);
+
+            ActiveFilters.Clear();
+            if (LancesFilterFechaDesde.HasValue) ActiveFilters.Add($"Desde: {LancesFilterFechaDesde.Value:dd/MM/yyyy}");
+            if (LancesFilterNroLance.HasValue) ActiveFilters.Add($"Lance: {LancesFilterNroLance}");
+            if (!string.IsNullOrWhiteSpace(LancesFilterEspecie)) ActiveFilters.Add($"Especie: {LancesFilterEspecie}");
+        }
+        catch (Exception) { /* Log error */ }
+    }
+
+    private void OpenEditLanceForm(LanceListItemViewModel? item)
+    {
+        if (item == null) return;
+        
+        var vm = _lanceEditFactory(() => 
+        {
+            CurrentEditViewModel = null;
+            _ = LoadLancesAsync();
+        }, item.Lance.MareaEtapaId, item.ID);
+        
+        vm.ShowCustomDialog = diag => ActiveDialog = diag;
+        vm.ShowMessage = (t, m, d, type) => ShowMessage(t, m, d, type);
+        vm.ShowConfirmation = (t, m) => ShowConfirmationAsync(t, m);
+        CurrentEditViewModel = vm;
+    }
+
+    private void OpenCreateLanceForm()
+    {
+        ShowMessage("Nuevo Lance", "Para crear un nuevo lance, debe hacerlo desde la sección de Mareas > Etapas para mantener la consistencia de datos.", null, MessageDialogType.Info);
     }
 
     private void ApplyTheme(AppThemeMode mode)

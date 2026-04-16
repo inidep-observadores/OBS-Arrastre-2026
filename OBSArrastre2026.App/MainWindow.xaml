@@ -6,6 +6,7 @@
         xmlns:views="clr-namespace:OBSArrastre2026.App.Views"
         xmlns:vm="clr-namespace:OBSArrastre2026.App.ViewModels"
         xmlns:controls="clr-namespace:OBSArrastre2026.App.Controls"
+        xmlns:models="clr-namespace:OBSArrastre2026.App.Models"
         mc:Ignorable="d"
         Title="{Binding Title}"
         Width="1460"
@@ -21,7 +22,12 @@
             <views:MareaEditView />
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type vm:LanceEditViewModel}">
+            <views:LanceEditView />
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:MareaListItemViewModel}">
+            <!-- ... contenido existente mapeado a Marea ... -->
             <Border Style="{StaticResource TableRowStyle}" Cursor="Hand">
                 <Border.InputBindings>
                     <MouseBinding MouseAction="LeftDoubleClick" 
@@ -37,34 +43,18 @@
                         <ColumnDefinition Width="1.2*" />
                         <ColumnDefinition Width="0.9*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock FontWeight="SemiBold"
-                               Foreground="{DynamicResource PrimaryTextBrush}"
-                               Text="{Binding CodigoDisplay}" />
-                    <TextBlock Grid.Column="1"
-                               Style="{StaticResource BodySecondaryStyle}"
-                               Text="{Binding BuqueNombre}" />
-                    <TextBlock Grid.Column="2"
-                               Style="{StaticResource BodySecondaryStyle}"
-                               Text="{Binding FechaInicioDisplay}" />
-                    <TextBlock Grid.Column="3"
-                               Style="{StaticResource BodySecondaryStyle}"
-                               Text="{Binding FechaFinDisplay}" />
-                    <TextBlock Grid.Column="4"
-                               Style="{StaticResource BodySecondaryStyle}"
-                               Text="{Binding Comentarios}" />
-                    <Border Grid.Column="5"
-                            Padding="10,4"
-                            HorizontalAlignment="Left"
-                            CornerRadius="0">
+                    <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Text="{Binding CodigoDisplay}" />
+                    <TextBlock Grid.Column="1" Style="{StaticResource BodySecondaryStyle}" Text="{Binding BuqueNombre}" />
+                    <TextBlock Grid.Column="2" Style="{StaticResource BodySecondaryStyle}" Text="{Binding FechaInicioDisplay}" />
+                    <TextBlock Grid.Column="3" Style="{StaticResource BodySecondaryStyle}" Text="{Binding FechaFinDisplay}" />
+                    <TextBlock Grid.Column="4" Style="{StaticResource BodySecondaryStyle}" Text="{Binding Comentarios}" />
+                    <Border Grid.Column="5" Padding="10,4" HorizontalAlignment="Left" CornerRadius="0">
                         <Border.Style>
                             <Style TargetType="Border">
                                 <Setter Property="Background" Value="{DynamicResource AccentMutedBrush}" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding Estado}" Value="En curso">
                                         <Setter Property="Background" Value="{DynamicResource SuccessBackgroundBrush}" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding Estado}" Value="Cerrada">
-                                        <Setter Property="Background" Value="{DynamicResource AccentMutedBrush}" />
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
@@ -77,14 +67,37 @@
                                         <DataTrigger Binding="{Binding Estado}" Value="En curso">
                                             <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
                                         </DataTrigger>
-                                        <DataTrigger Binding="{Binding Estado}" Value="Cerrada">
-                                            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
-                                        </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </TextBlock.Style>
                         </TextBlock>
                     </Border>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:LanceListItemViewModel}">
+            <Border Style="{StaticResource TableRowStyle}" Cursor="Hand">
+                <Border.InputBindings>
+                    <MouseBinding MouseAction="LeftDoubleClick" 
+                                  Command="{Binding DataContext.EditLanceCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  CommandParameter="{Binding}"/>
+                </Border.InputBindings>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="0.9*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Text="{Binding NroLance}" />
+                    <TextBlock Grid.Column="1" Style="{StaticResource BodySecondaryStyle}" Text="{Binding FechaDisplay}" />
+                    <TextBlock Grid.Column="2" Style="{StaticResource BodySecondaryStyle}" Text="{Binding LatitudDisplay}" />
+                    <TextBlock Grid.Column="3" Style="{StaticResource BodySecondaryStyle}" Text="{Binding LongitudDisplay}" />
+                    <TextBlock Grid.Column="4" Style="{StaticResource BodySecondaryStyle}" Text="{Binding CapturaTotal, StringFormat={}{0} kg}" />
+                    <TextBlock Grid.Column="5" Style="{StaticResource BodySecondaryStyle}" Text="{Binding HoraInicio}" />
                 </Grid>
             </Border>
         </DataTemplate>
@@ -468,9 +481,18 @@
 
                             <!-- Barra de Filtros Mareas -->
                             <Border Grid.Row="1" 
-                                    Style="{StaticResource SurfaceBorderStyle}"
                                     Padding="16,12"
                                     Margin="0,0,0,16">
+                                <Border.Style>
+                                    <Style TargetType="Border" BasedOn="{StaticResource SurfaceBorderStyle}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Mareas}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
@@ -538,6 +560,78 @@
                                     <Button Grid.Column="4" 
                                             Style="{StaticResource PrimaryButtonStyle}"
                                             Command="{Binding ApplyMareaFiltersCommand}"
+                                            Content="Filtrar"
+                                            VerticalAlignment="Bottom"
+                                            Padding="24,10"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Barra de Filtros Lances -->
+                            <Border Grid.Row="1" 
+                                    Padding="16,12"
+                                    Margin="0,0,0,16">
+                                <Border.Style>
+                                    <Style TargetType="Border" BasedOn="{StaticResource SurfaceBorderStyle}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Lances}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <StackPanel Margin="0,0,16,0">
+                                            <Label Content="Rango de Fechas" Style="{StaticResource FormLabelStyle}"/>
+                                            <StackPanel Orientation="Horizontal">
+                                                <controls:DatePickerPremium Width="150" SelectedDate="{Binding LancesFilterFechaDesde}">
+                                                    <controls:DatePickerPremium.InputBindings>
+                                                        <KeyBinding Key="Enter" Command="{Binding ApplyLanceFiltersCommand}" />
+                                                    </controls:DatePickerPremium.InputBindings>
+                                                </controls:DatePickerPremium>
+                                                <TextBlock Text=" - " VerticalAlignment="Center" Margin="4,18,4,0"/>
+                                                <controls:DatePickerPremium Width="150" SelectedDate="{Binding LancesFilterFechaHasta}">
+                                                    <controls:DatePickerPremium.InputBindings>
+                                                        <KeyBinding Key="Enter" Command="{Binding ApplyLanceFiltersCommand}" />
+                                                    </controls:DatePickerPremium.InputBindings>
+                                                </controls:DatePickerPremium>
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                        <StackPanel Margin="0,0,16,0">
+                                            <Label Content="Nro. Lance" Style="{StaticResource FormLabelStyle}"/>
+                                            <TextBox Width="100" 
+                                                     Style="{StaticResource PremiumTextBoxStyle}"
+                                                     Text="{Binding LancesFilterNroLance}">
+                                                <TextBox.InputBindings>
+                                                    <KeyBinding Key="Enter" Command="{Binding ApplyLanceFiltersCommand}" />
+                                                </TextBox.InputBindings>
+                                            </TextBox>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="2" Margin="8,0,16,0">
+                                        <Label Content="Especie" Style="{StaticResource FormLabelStyle}"/>
+                                        <TextBox Style="{StaticResource PremiumTextBoxStyle}"
+                                                 Text="{Binding LancesFilterEspecie, UpdateSourceTrigger=PropertyChanged}"
+                                                 Tag="Buscar especie...">
+                                            <TextBox.InputBindings>
+                                                <KeyBinding Key="Enter" Command="{Binding ApplyLanceFiltersCommand}" />
+                                            </TextBox.InputBindings>
+                                        </TextBox>
+                                    </StackPanel>
+
+                                    <Button Grid.Column="3" 
+                                            Style="{StaticResource PrimaryButtonStyle}"
+                                            Command="{Binding ApplyLanceFiltersCommand}"
                                             Content="Filtrar"
                                             VerticalAlignment="Bottom"
                                             Padding="24,10"/>

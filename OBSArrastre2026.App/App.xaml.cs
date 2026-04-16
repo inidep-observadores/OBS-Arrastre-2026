@@ -46,6 +46,7 @@ public partial class App : Application
                 services.AddSingleton<IDatabaseInitializer, DatabaseInitializer>();
                 services.AddSingleton<IBuqueService, BuqueService>();
                 services.AddSingleton<IMareaService, MareaService>();
+                services.AddSingleton<ILanceService, LanceService>();
 
                 // Servicios de sincronización de datos
                 services.AddSingleton<IDbfExtractorService, DbfExtractorService>();
@@ -69,6 +70,14 @@ public partial class App : Application
                         sp.GetRequiredService<IBuqueService>(),
                         sp.GetRequiredService<IMareaImportService>(),
                         mareaId));
+
+                services.AddSingleton<Func<Action, string, string?, LanceEditViewModel>>(sp => 
+                    (onClose, mareaEtapaId, lanceId) => new LanceEditViewModel(
+                        onClose, 
+                        sp.GetRequiredService<IValidator<LanceEditViewModel>>(),
+                        sp.GetRequiredService<ILanceService>(),
+                        mareaEtapaId,
+                        lanceId));
 
                 services.AddSingleton<MainWindowViewModel>();
                 services.AddSingleton<MainWindow>();
