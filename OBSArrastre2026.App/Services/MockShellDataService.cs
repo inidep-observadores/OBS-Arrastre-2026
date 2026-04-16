@@ -18,10 +18,10 @@ public sealed class MockShellDataService : IMockShellDataService
     [
         new(NavigationSection.Inicio, "Inicio", "Panel de control general", "◌"),
         new(NavigationSection.Mareas, "Mareas", "Cabeceras y estado operativo", "◇"),
-        new(NavigationSection.Lances, "Lances", "Actividad de captura por etapa", "△"),
-        new(NavigationSection.Muestras, "Muestras", "Muestreo biologico y control", "▣"),
-        new(NavigationSection.Submuestras, "Submuestras", "Detalle por individuo", "▤"),
-        new(NavigationSection.Produccion, "Produccion", "Registros diarios de proceso", "◫")
+        new(NavigationSection.Lances, "Lances", "Registro y control de capturas", "△", true),
+        new(NavigationSection.Muestras, "Muestras", "Muestreo biologico y control", "▣", true),
+        new(NavigationSection.Submuestras, "Submuestras", "Detalle por individuo", "▤", true),
+        new(NavigationSection.Produccion, "Produccion", "Registros diarios de proceso", "◫", true)
     ];
 
     public DashboardContent GetDashboard() =>
@@ -75,9 +75,9 @@ public sealed class MockShellDataService : IMockShellDataService
             "Nuevo lance",
             "Nro",
             "Fecha",
-            "Posicion inicio",
-            "Profundidad",
-            "Condicion",
+            "Latitud",
+            "Longitud",
+            "Captura Total",
             ["Marea activa", "Con coordenadas", "Ultimas 72 hs"],
             [
                 new("084", "09 Abr 2026 06:20", "44.12 / -62.91", "95-110 m", "Mar 3 / Viento 40°", "Validado"),

@@ -48,7 +48,6 @@ CREATE TABLE mareas (
     ID TEXT NOT NULL CONSTRAINT pk_mareas PRIMARY KEY,
     AnioInidep INTEGER NOT NULL,
     NumeroInidep INTEGER NOT NULL,
-    Codigo TEXT NULL,
     Comentarios TEXT NULL,
     FechaInicio TEXT NOT NULL,
     FechaFin TEXT NULL,
@@ -72,8 +71,8 @@ CREATE TABLE marea_etapas (
 	NombreOficialPesca TEXT,
 	AnioMareaBuque INTEGER,
 	NumeroMareaBuque INTEGER,
-	CONSTRAINT fk_marea_etapas_especies_especie_objetivo_id FOREIGN KEY (EspecieObjetivoID) REFERENCES especies(ID),
-	CONSTRAINT fk_marea_etapas_mareas_marea_id FOREIGN KEY (MareaID) REFERENCES mareas(ID)
+	CONSTRAINT fk_marea_etapas_especies_especie_objetivo_id FOREIGN KEY (EspecieObjetivoID) REFERENCES especies(ID) ON DELETE SET NULL,
+	CONSTRAINT fk_marea_etapas_mareas_marea_id FOREIGN KEY (MareaID) REFERENCES mareas(ID) ON DELETE CASCADE
 );
 
 CREATE INDEX ix_marea_etapas_marea_id ON marea_etapas(MareaID);
@@ -155,8 +154,8 @@ CREATE TABLE muestras (
     DiscriminaSexo INTEGER NOT NULL,
     HayIndeterminados INTEGER NOT NULL,
     PesoMuestra_PesoGramos REAL NULL,
-    CONSTRAINT fk_muestras_especies_especie_id FOREIGN KEY (EspecieID) REFERENCES especies (ID),
-    CONSTRAINT fk_muestras_lances_lance_id FOREIGN KEY (LanceID) REFERENCES lances (ID)
+    CONSTRAINT fk_muestras_especies_especie_id FOREIGN KEY (EspecieID) REFERENCES especies (ID) ON DELETE RESTRICT,
+    CONSTRAINT fk_muestras_lances_lance_id FOREIGN KEY (LanceID) REFERENCES lances (ID) ON DELETE CASCADE
 );
 
 CREATE INDEX ix_muestras_especie_id ON muestras (EspecieID);
@@ -175,7 +174,7 @@ CREATE TABLE frecuencias_de_tallas (
     NroLangostinosMachoMaduros INTEGER NOT NULL,
     NroLangostinosHembraMaduras INTEGER NOT NULL,
     NroLangostinosHembraImpregnadas INTEGER NOT NULL,
-    CONSTRAINT fk_frecuencias_de_tallas_muestras_muestra_id FOREIGN KEY (MuestraID) REFERENCES muestras (ID)
+    CONSTRAINT fk_frecuencias_de_tallas_muestras_muestra_id FOREIGN KEY (MuestraID) REFERENCES muestras (ID) ON DELETE CASCADE
 );
 
 CREATE INDEX ix_frecuencias_de_tallas_muestra_id ON frecuencias_de_tallas (MuestraID);
@@ -190,7 +189,7 @@ CREATE TABLE frecuencias_de_tallas_con_estadio (
     EstadiosHembras TEXT NULL,
     EstadiosMachos TEXT NULL,
     NroIndeterminados INTEGER NOT NULL,
-    CONSTRAINT fk_frecuencias_de_tallas_con_estadio_muestras_muestra_id FOREIGN KEY (MuestraID) REFERENCES muestras (ID)
+    CONSTRAINT fk_frecuencias_de_tallas_con_estadio_muestras_muestra_id FOREIGN KEY (MuestraID) REFERENCES muestras (ID) ON DELETE CASCADE
 );
 
 CREATE INDEX ix_frecuencias_de_tallas_con_estadio_muestra_id ON frecuencias_de_tallas_con_estadio (MuestraID);
@@ -207,8 +206,8 @@ CREATE TABLE items_captura (
     DatoCaptura REAL NOT NULL,
     TipoDatoDescarte INTEGER NOT NULL,
     DatoDescarte REAL NOT NULL,
-    CONSTRAINT fk_items_captura_especies_especie_id FOREIGN KEY (EspecieID) REFERENCES especies (ID),
-    CONSTRAINT fk_items_captura_lances_lance_id FOREIGN KEY (LanceID) REFERENCES lances (ID)
+    CONSTRAINT fk_items_captura_especies_especie_id FOREIGN KEY (EspecieID) REFERENCES especies (ID) ON DELETE RESTRICT,
+    CONSTRAINT fk_items_captura_lances_lance_id FOREIGN KEY (LanceID) REFERENCES lances (ID) ON DELETE CASCADE
 );
 
 CREATE INDEX ix_items_captura_especie_id ON items_captura (EspecieID);
@@ -226,7 +225,7 @@ CREATE TABLE items_submuestras (
     ReplecionGastrica INTEGER NULL,
     Edad REAL NULL,
     Comentarios TEXT NULL,
-    CONSTRAINT fk_items_submuestras_muestras_muestra_id FOREIGN KEY (MuestraID) REFERENCES muestras (ID)
+    CONSTRAINT fk_items_submuestras_muestras_muestra_id FOREIGN KEY (MuestraID) REFERENCES muestras (ID) ON DELETE CASCADE
 );
 
 CREATE INDEX ix_items_submuestras_muestra_id ON items_submuestras (MuestraID);
@@ -243,7 +242,7 @@ CREATE TABLE item_contenido_gastrico (
     Porcentaje REAL NOT NULL,
     CantPiezas INTEGER NOT NULL,
     Comentarios TEXT NULL,
-    CONSTRAINT fk_item_contenido_gastrico_items_submuestras_item_submuestra_id FOREIGN KEY (ItemSubmuestraID) REFERENCES items_submuestras (ID)
+    CONSTRAINT fk_item_contenido_gastrico_items_submuestras_item_submuestra_id FOREIGN KEY (ItemSubmuestraID) REFERENCES items_submuestras (ID) ON DELETE CASCADE
 );
 
 CREATE INDEX ix_item_contenido_gastrico_item_submuestra_id ON item_contenido_gastrico (ItemSubmuestraID);

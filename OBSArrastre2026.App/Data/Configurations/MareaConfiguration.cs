@@ -18,7 +18,6 @@ public sealed class MareaConfiguration : IEntityTypeConfiguration<Marea>
 
         builder.Property(x => x.AnioInidep).HasColumnName("AnioInidep").IsRequired();
         builder.Property(x => x.NumeroInidep).HasColumnName("NumeroInidep").IsRequired();
-        builder.Property(x => x.Codigo).HasColumnName("Codigo");
         builder.Property(x => x.Comentarios).HasColumnName("Comentarios");
         builder.Property(x => x.FechaInicio).HasColumnName("FechaInicio").IsRequired();
         builder.Property(x => x.FechaFin).HasColumnName("FechaFin");

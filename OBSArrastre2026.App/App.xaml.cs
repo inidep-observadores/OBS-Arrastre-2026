@@ -1,5 +1,6 @@
-using System;
 using System.Windows;
+using System.Windows.Input;
+using System.Windows.Controls;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -32,6 +33,7 @@ public partial class App : Application
                 services.AddSingleton(sp => sp.GetRequiredService<IOptions<DatabaseOptions>>().Value);
 
                 services.AddSingleton<IDatabasePathProvider, DatabasePathProvider>();
+                services.AddSingleton<IUserSettingsService, UserSettingsService>();
                 services.AddSingleton<IThemeService, ThemeService>();
                 services.AddSingleton<IMockShellDataService, MockShellDataService>();
 
@@ -42,25 +44,80 @@ public partial class App : Application
                 });
 
                 services.AddSingleton<IDatabaseInitializer, DatabaseInitializer>();
+                services.AddSingleton<IActiveMareaManager, ActiveMareaManager>();
                 services.AddSingleton<IBuqueService, BuqueService>();
+                services.AddSingleton<IMareaService, MareaService>();
+                services.AddSingleton<ILanceService, LanceService>();
 
                 // Servicios de sincronización de datos
                 services.AddSingleton<IDbfExtractorService, DbfExtractorService>();
                 services.AddSingleton<IJsonImportService, JsonImportService>();
                 services.AddSingleton<IDataSyncCoordinator, DataSyncCoordinator>();
                 services.AddSingleton<IMareaReportService, MareaReportService>();
-                services.AddSingleton<IMareaImportService, MareaImportService>();
+                services.AddSingleton<IMareaImportService, MareaImportService>(sp => 
+                    new MareaImportService(
+                        sp.GetRequiredService<IDbfExtractorService>(),
+                        sp.GetRequiredService<IMareaReportService>(),
+                        sp.GetRequiredService<IDbContextFactory<AppDbContext>>()));
 
                 // Validación y ViewModels
                 services.AddValidatorsFromAssemblyContaining<App>();
                 
-                services.AddSingleton<Func<Action, MareaEditViewModel>>(sp => 
-                    (Action onClose) => new MareaEditViewModel(onClose, sp.GetRequiredService<IValidator<MareaEditViewModel>>()));
+                services.AddSingleton<Func<Action, string?, MareaEditViewModel>>(sp => 
+                    (onClose, mareaId) => new MareaEditViewModel(
+                        onClose, 
+                        sp.GetRequiredService<IValidator<MareaEditViewModel>>(),
+                        sp.GetRequiredService<IMareaService>(),
+                        sp.GetRequiredService<IBuqueService>(),
+                        sp.GetRequiredService<IMareaImportService>(),
+                        mareaId));
+
+                services.AddSingleton<Func<Action, string, string?, LanceEditViewModel>>(sp => 
+                    (onClose, mareaEtapaId, lanceId) => new LanceEditViewModel(
+                        onClose, 
+                        sp.GetRequiredService<IValidator<LanceEditViewModel>>(),
+                        sp.GetRequiredService<ILanceService>(),
+                        mareaEtapaId,
+                        lanceId));
 
                 services.AddSingleton<MainWindowViewModel>();
                 services.AddSingleton<MainWindow>();
             })
             .Build();
+
+        // Registro de navegación global "Enter as Tab"
+        EventManager.RegisterClassHandler(typeof(UIElement), UIElement.PreviewKeyDownEvent, new KeyEventHandler(OnPreviewKeyDown));
+
+        // Selección automática de texto al recibir foco en TextBox
+        EventManager.RegisterClassHandler(typeof(TextBox), TextBox.GotFocusEvent, new RoutedEventHandler(OnTextBoxGotFocus));
+    }
+
+    private void OnTextBoxGotFocus(object sender, RoutedEventArgs e)
+    {
+        if (sender is TextBox tb)
+        {
+            tb.SelectAll();
+        }
+    }
+
+    private void OnPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            var element = Keyboard.FocusedElement as UIElement;
+            if (element == null) return;
+
+            // Excepción: Permitir el Enter normal en TextBox que acepten retornos
+            if (element is TextBox tb && tb.AcceptsReturn) return;
+
+            // Navegar al siguiente/anterior elemento
+            var direction = (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift 
+                            ? FocusNavigationDirection.Previous 
+                            : FocusNavigationDirection.Next;
+
+            e.Handled = true;
+            element.MoveFocus(new TraversalRequest(direction));
+        }
     }
 
     protected override async void OnStartup(StartupEventArgs e)
@@ -73,9 +130,21 @@ public partial class App : Application
         await _host.Services.GetRequiredService<IDatabaseInitializer>().InitializeAsync();
         await _host.Services.GetRequiredService<IDataSyncCoordinator>().SyncAllAsync();
 
-        _host.Services.GetRequiredService<IThemeService>().ApplyTheme(AppThemeMode.System);
+        // Cargar preferencias de usuario
+        var settingsService = _host.Services.GetRequiredService<IUserSettingsService>();
+        var settings = settingsService.GetSettings();
+
+        // Aplicar tema guardado
+        _host.Services.GetRequiredService<IThemeService>().ApplyTheme(settings.ThemeMode);
 
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
+        
+        // Aplicar estado de la ventana (Maximizada por defecto si no hay registro)
+        mainWindow.WindowState = settings.WindowState;
+        
+        // Inicializar gestión de marea activa
+        await _host.Services.GetRequiredService<IActiveMareaManager>().InitializeAsync();
+
         mainWindow.Show();
     }
 

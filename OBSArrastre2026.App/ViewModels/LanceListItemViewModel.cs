@@ -1,0 +1,39 @@
+using System;
+using OBSArrastre2026.App.Data.Entities;
+
+namespace OBSArrastre2026.App.ViewModels;
+
+public sealed class LanceListItemViewModel(Lance lance)
+{
+    public Lance Lance { get; } = lance;
+
+    public int NroLance => Lance.NroLance;
+    
+    public string FechaDisplay => Lance.Fecha;
+    
+    public string HoraInicio => Lance.HoraInicio ?? "-";
+    
+    public string LatitudDisplay => FormatCoordinate(Lance.LatitudInicioDecimal, true);
+    
+    public string LongitudDisplay => FormatCoordinate(Lance.LongitudInicioDecimal, false);
+    
+    public string CapturaTotal => Lance.CapturaTotalKg?.ToString("N0") ?? "0";
+
+    public string ID => Lance.Id;
+
+    private string FormatCoordinate(double? value, bool isLatitude)
+    {
+        if (!value.HasValue) return "-";
+        
+        double absolute = Math.Abs(value.Value);
+        int degrees = (int)absolute;
+        double minutes = (absolute - degrees) * 60;
+        
+        string quadrant = isLatitude 
+            ? (value.Value >= 0 ? "N" : "S") 
+            : (value.Value >= 0 ? "E" : "O");
+            
+        // Formato GGº MM,M C (C= cuadrante N,S,E,O)
+        return $"{degrees}º {minutes:00.1}' {quadrant}".Replace('.', ',');
+    }
+}

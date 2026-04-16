@@ -2,6 +2,9 @@ using FluentAssertions;
 using NSubstitute;
 using OBSArrastre2026.App.Models.Import;
 using OBSArrastre2026.App.Services;
+using OBSArrastre2026.App.Data.Entities;
+using OBSArrastre2026.App.Data;
+using Microsoft.EntityFrameworkCore;
 using Xunit;
 using System.IO;
 
@@ -11,11 +14,12 @@ public class MareaIntegrationTests
 {
     private readonly IDbfExtractorService _extractor = Substitute.For<IDbfExtractorService>();
     private readonly IMareaReportService _reportService = Substitute.For<IMareaReportService>();
+    private readonly IDbContextFactory<AppDbContext> _dbFactory = Substitute.For<IDbContextFactory<AppDbContext>>();
     private readonly MareaImportService _importService;
 
     public MareaIntegrationTests()
     {
-        _importService = new MareaImportService(_extractor, _reportService);
+        _importService = new MareaImportService(_extractor, _reportService, _dbFactory);
     }
 
     [Fact]
@@ -63,7 +67,7 @@ public class MareaIntegrationTests
             _reportService.GenerateValidationPdf(Arg.Any<MareaValidationReport>()).Returns(new byte[] { 1, 2, 3 });
 
             // Act
-            var result = await _importService.ProcessMareaImportAsync(tempPath, "TEST", 100, 2026);
+                        var result = await _importService.ProcessMareaImportAsync(tempPath, "TEST", 100, 2026, new List<MareaEtapa>());
 
             // Assert
             result.Should().NotBeNull();
@@ -104,7 +108,7 @@ public class MareaIntegrationTests
             _reportService.GenerateValidationPdf(Arg.Any<MareaValidationReport>()).Returns(new byte[] { 1, 2, 3 });
 
             // Act
-            var result = await _importService.ProcessMareaImportAsync(tempPath, "TEST", 100, 2026);
+                        var result = await _importService.ProcessMareaImportAsync(tempPath, "TEST", 100, 2026, new List<MareaEtapa>());
 
             // Assert
             result.Issues.Should().Contain(i => i.Category == "Captura" && i.Level == ValidationLevel.AutoFixed);

@@ -12,6 +12,11 @@ public sealed class ItemSubmuestra
     public int? Estadio { get; set; }
     public int? ReplecionGastrica { get; set; }
     public double? Edad { get; set; }
+    
+    public int? LargoTotalMm { get; set; }
+    public int? LargoEstandarMm { get; set; }
+    public double? PesoTotalGramos { get; set; }
+
     public string? Comentarios { get; set; }
 
     // Navigation properties

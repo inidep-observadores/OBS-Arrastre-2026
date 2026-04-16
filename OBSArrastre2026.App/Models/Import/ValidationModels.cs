@@ -25,6 +25,12 @@ public class MareaValidationReport
     
     public List<ValidationIssue> Issues { get; } = new();
     
+    // Datos extraídos para posterior commit
+    public List<LegacyCaptura> Capturas { get; set; } = new();
+    public List<LegacyMuestra> Muestras { get; set; } = new();
+    public List<LegacySubmuestra> Submuestras { get; set; } = new();
+    public List<LegacyLg> Lgs { get; set; } = new();
+    
     public int TotalLances { get; set; }
     public int LancesConErrores => Issues.Count(i => i.Level == ValidationLevel.Error);
     public int LancesConAdvertencias => Issues.Count(i => i.Level == ValidationLevel.Warning);

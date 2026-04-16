@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OBSArrastre2026.App.Data;
 
@@ -10,9 +11,11 @@ using OBSArrastre2026.App.Data;
 namespace OBSArrastre2026.App.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260414135921_RemoveMareaCodigo")]
+    partial class RemoveMareaCodigo
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.5");
@@ -360,14 +363,6 @@ namespace OBSArrastre2026.App.Migrations
                         .HasColumnType("INTEGER")
                         .HasColumnName("Estadio");
 
-                    b.Property<int?>("LargoEstandarMm")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("LargoEstandarMm");
-
-                    b.Property<int?>("LargoTotalMm")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("LargoTotalMm");
-
                     b.Property<string>("MuestraID")
                         .HasColumnType("TEXT")
                         .HasColumnName("MuestraID");
@@ -375,10 +370,6 @@ namespace OBSArrastre2026.App.Migrations
                     b.Property<int>("NroEjemplar")
                         .HasColumnType("INTEGER")
                         .HasColumnName("NroEjemplar");
-
-                    b.Property<double?>("PesoTotalGramos")
-                        .HasColumnType("REAL")
-                        .HasColumnName("PesoTotalGramos");
 
                     b.Property<int?>("ReplecionGastrica")
                         .HasColumnType("INTEGER")

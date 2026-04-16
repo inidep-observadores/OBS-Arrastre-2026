@@ -1,6 +1,8 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using OBSArrastre2026.App.Models;
 using OBSArrastre2026.App.Services;
 
@@ -10,7 +12,12 @@ public sealed class MainWindowViewModel : ObservableObject
 {
     private readonly IMockShellDataService _mockShellDataService;
     private readonly IThemeService _themeService;
-    private readonly Func<Action, MareaEditViewModel> _mareaEditFactory;
+    private readonly IMareaService _mareaService;
+    private readonly IBuqueService _buqueService;
+    private readonly ILanceService _lanceService;
+    private readonly Func<Action, string?, MareaEditViewModel> _mareaEditFactory;
+    private readonly Func<Action, string, string?, LanceEditViewModel> _lanceEditFactory;
+    private readonly IActiveMareaManager _activeMareaManager;
     private NavigationItemViewModel? _selectedNavigationItem;
     private string _pageTitle = string.Empty;
     private string _pageDescription = string.Empty;
@@ -19,21 +26,52 @@ public sealed class MainWindowViewModel : ObservableObject
     private bool _isDashboardVisible;
     private AppThemeMode _currentThemeMode;
     private object? _currentEditViewModel;
+    private object? _activeDialog;
+
+    // Filtros de Mareas
+    private int? _mareasFilterAnio;
+    private BuqueListItemViewModel? _mareasFilterBuque;
+    private DateTime? _mareasFilterFechaDesde;
+    private DateTime? _mareasFilterFechaHasta;
+    private string _mareasSearchText = string.Empty;
+    
+    // Filtros de Lances
+    private DateTime? _lancesFilterFechaDesde;
+    private DateTime? _lancesFilterFechaHasta;
+    private int? _lancesFilterNroLance;
+    private string _lancesFilterEspecie = string.Empty;
 
     public MainWindowViewModel(
         IMockShellDataService mockShellDataService, 
         IThemeService themeService,
-        Func<Action, MareaEditViewModel> mareaEditFactory)
+        IMareaService mareaService,
+        IBuqueService buqueService,
+        ILanceService lanceService,
+        IActiveMareaManager activeMareaManager,
+        Func<Action, string?, MareaEditViewModel> mareaEditFactory,
+        Func<Action, string, string?, LanceEditViewModel> lanceEditFactory)
     {
         _mockShellDataService = mockShellDataService;
         _themeService = themeService;
+        _mareaService = mareaService;
+        _buqueService = buqueService;
+        _lanceService = lanceService;
+        _activeMareaManager = activeMareaManager;
         _mareaEditFactory = mareaEditFactory;
+        _lanceEditFactory = lanceEditFactory;
 
-        SearchPlaceholder = "Buscar en la maqueta...";
+        SearchPlaceholder = "Buscar...";
         SetSystemThemeCommand = new RelayCommand(() => ApplyTheme(AppThemeMode.System));
         SetLightThemeCommand = new RelayCommand(() => ApplyTheme(AppThemeMode.Light));
         SetDarkThemeCommand = new RelayCommand(() => ApplyTheme(AppThemeMode.Dark));
-        PrimaryActionCommand = new RelayCommand(OpenNewMareaForm);
+        PrimaryActionCommand = new RelayCommand(OpenCreateMareaForm);
+        ApplyMareaFiltersCommand = new AsyncCommand(LoadMareasAsync);
+        EditMareaCommand = new RelayCommand<MareaListItemViewModel>(OpenEditMareaForm);
+        
+        ApplyLanceFiltersCommand = new AsyncCommand(LoadLancesAsync);
+        EditLanceCommand = new RelayCommand<LanceListItemViewModel>(OpenEditLanceForm);
+
+        _mareasFilterAnio = DateTime.Today.Year;
 
         foreach (var navigationItem in _mockShellDataService.GetNavigationItems())
         {
@@ -42,7 +80,42 @@ public sealed class MainWindowViewModel : ObservableObject
 
         _currentThemeMode = _themeService.CurrentMode;
         SelectedNavigationItem = NavigationItems.FirstOrDefault();
+
+        _ = LoadFilterDataAsync();
+
+        UpdateNavigationState();
+
+        _activeMareaManager.PropertyChanged += (s, e) => 
+        {
+            if (e.PropertyName == nameof(IActiveMareaManager.ActiveMareaId))
+            {
+                OnPropertyChanged(nameof(ActiveMareaManager));
+                UpdateNavigationState();
+                _ = RefreshCurrentSectionAsync();
+            }
+        };
     }
+
+    private void UpdateNavigationState()
+    {
+        bool hasActiveMarea = !string.IsNullOrEmpty(_activeMareaManager.ActiveMareaId);
+
+        foreach (var item in NavigationItems)
+        {
+            if (item.RequiresActiveMarea)
+            {
+                item.IsEnabled = hasActiveMarea;
+            }
+        }
+
+        // Si estamos en una sección que ahora está deshabilitada, redirigir a Mareas
+        if (!hasActiveMarea && SelectedNavigationItem != null && SelectedNavigationItem.RequiresActiveMarea)
+        {
+            SelectedNavigationItem = NavigationItems.FirstOrDefault(x => x.Section == NavigationSection.Mareas);
+        }
+    }
+
+    public IActiveMareaManager ActiveMareaManager => _activeMareaManager;
 
     public string Title => "OBS Arrastre 2026";
 
@@ -58,7 +131,11 @@ public sealed class MainWindowViewModel : ObservableObject
 
     public ObservableCollection<string> ActiveFilters { get; } = [];
 
-    public ObservableCollection<MockRecordRowViewModel> Records { get; } = [];
+    public ObservableCollection<object> Records { get; } = [];
+
+    public ObservableCollection<BuqueListItemViewModel> Buques { get; } = [];
+
+    public ObservableCollection<int> Anios { get; } = [];
 
     public ICommand SetSystemThemeCommand { get; }
 
@@ -68,11 +145,20 @@ public sealed class MainWindowViewModel : ObservableObject
 
     public ICommand PrimaryActionCommand { get; }
 
+    public ICommand EditMareaCommand { get; }
+    public ICommand ApplyLanceFiltersCommand { get; }
+    public ICommand EditLanceCommand { get; }
+
     public NavigationItemViewModel? SelectedNavigationItem
     {
         get => _selectedNavigationItem;
         set
         {
+            if (value != null && !value.IsEnabled)
+            {
+                return;
+            }
+
             if (!SetProperty(ref _selectedNavigationItem, value) || value is null)
             {
                 return;
@@ -106,10 +192,86 @@ public sealed class MainWindowViewModel : ObservableObject
         private set => SetProperty(ref _primaryActionLabel, value);
     }
 
+    public int? MareasFilterAnio
+    {
+        get => _mareasFilterAnio;
+        set => SetProperty(ref _mareasFilterAnio, value);
+    }
+
+    public BuqueListItemViewModel? MareasFilterBuque
+    {
+        get => _mareasFilterBuque;
+        set => SetProperty(ref _mareasFilterBuque, value);
+    }
+
+    public DateTime? MareasFilterFechaDesde
+    {
+        get => _mareasFilterFechaDesde;
+        set => SetProperty(ref _mareasFilterFechaDesde, value);
+    }
+
+    public DateTime? MareasFilterFechaHasta
+    {
+        get => _mareasFilterFechaHasta;
+        set => SetProperty(ref _mareasFilterFechaHasta, value);
+    }
+
+    public string MareasSearchText
+    {
+        get => _mareasSearchText;
+        set => SetProperty(ref _mareasSearchText, value);
+    }
+
+    public DateTime? LancesFilterFechaDesde
+    {
+        get => _lancesFilterFechaDesde;
+        set => SetProperty(ref _lancesFilterFechaDesde, value);
+    }
+
+    public DateTime? LancesFilterFechaHasta
+    {
+        get => _lancesFilterFechaHasta;
+        set => SetProperty(ref _lancesFilterFechaHasta, value);
+    }
+
+    public int? LancesFilterNroLance
+    {
+        get => _lancesFilterNroLance;
+        set => SetProperty(ref _lancesFilterNroLance, value);
+    }
+
+    public string LancesFilterEspecie
+    {
+        get => _lancesFilterEspecie;
+        set => SetProperty(ref _lancesFilterEspecie, value);
+    }
+
     public object? CurrentEditViewModel
     {
         get => _currentEditViewModel;
         private set => SetProperty(ref _currentEditViewModel, value);
+    }
+
+    public object? ActiveDialog
+    {
+        get => _activeDialog;
+        private set => SetProperty(ref _activeDialog, value);
+    }
+
+    public void ShowMessage(string title, string message, string? details = null, MessageDialogType type = MessageDialogType.Info)
+    {
+        ActiveDialog = new MessageDialogViewModel(title, message, details, type, () => ActiveDialog = null);
+    }
+
+    public Task<bool> ShowConfirmationAsync(string title, string message)
+    {
+        var tcs = new TaskCompletionSource<bool>();
+        ActiveDialog = new ConfirmationDialogViewModel(title, message, result => 
+        {
+            ActiveDialog = null;
+            tcs.SetResult(result);
+        });
+        return tcs.Task;
     }
 
     public bool IsDashboardVisible
@@ -160,11 +322,73 @@ public sealed class MainWindowViewModel : ObservableObject
 
     public string Column5Header { get; private set; } = string.Empty;
 
+    public ICommand ApplyMareaFiltersCommand { get; }
+    
+    public ICommand ClearActiveMareaCommand => new AsyncRelayCommand(() => _activeMareaManager.SetActiveMareaAsync(null));
+
+    private async Task RefreshCurrentSectionAsync()
+    {
+        if (SelectedNavigationItem == null) return;
+        
+        if (SelectedNavigationItem.Section == NavigationSection.Mareas)
+        {
+            await LoadMareasAsync();
+        }
+        else if (SelectedNavigationItem.Section == NavigationSection.Lances)
+        {
+            await LoadLancesAsync();
+        }
+    }
+
     private void LoadSection(NavigationSection section)
     {
         if (section == NavigationSection.Inicio)
         {
             LoadDashboard();
+            return;
+        }
+
+        if (section == NavigationSection.Mareas)
+        {
+            _ = LoadMareasAsync();
+            
+            // Configurar metadatos básicos de la marea para la shell
+            var mareaSection = _mockShellDataService.GetListSection(section);
+            PageEyebrow = mareaSection.Eyebrow;
+            PageTitle = mareaSection.Title;
+            PageDescription = mareaSection.Description;
+            PrimaryActionLabel = mareaSection.PrimaryActionLabel;
+            
+            SetColumnHeaders(
+                mareaSection.Column1Header,
+                mareaSection.Column2Header,
+                mareaSection.Column3Header,
+                mareaSection.Column4Header,
+                mareaSection.Column5Header);
+
+            ClearDashboardCollections();
+            IsDashboardVisible = false;
+            return;
+        }
+
+        if (section == NavigationSection.Lances)
+        {
+            _ = LoadLancesAsync();
+            var lanceSection = _mockShellDataService.GetListSection(section);
+            PageEyebrow = lanceSection.Eyebrow;
+            PageTitle = lanceSection.Title;
+            PageDescription = lanceSection.Description;
+            PrimaryActionLabel = lanceSection.PrimaryActionLabel;
+            
+            SetColumnHeaders(
+                lanceSection.Column1Header,
+                lanceSection.Column2Header,
+                lanceSection.Column3Header,
+                lanceSection.Column4Header,
+                lanceSection.Column5Header);
+
+            ClearDashboardCollections();
+            IsDashboardVisible = false;
             return;
         }
 
@@ -205,9 +429,183 @@ public sealed class MainWindowViewModel : ObservableObject
         IsDashboardVisible = true;
     }
 
-    private void OpenNewMareaForm()
+    private async Task LoadFilterDataAsync()
     {
-        CurrentEditViewModel = _mareaEditFactory(() => CurrentEditViewModel = null);
+        try
+        {
+            // Cargar años únicos desde las mareas existentes
+            var anios = await _mareaService.GetAniosExistentesAsync();
+            Anios.Clear();
+            foreach (var anio in anios)
+            {
+                Anios.Add(anio);
+            }
+
+            // Si no hay años pero tenemos un filtro por defecto (año actual), 
+            // nos aseguramos de que el año actual esté en la lista para que sea seleccionable.
+            if (Anios.Count == 0 || !Anios.Contains(DateTime.Today.Year))
+            {
+                // Opcional: Podríamos añadir el año actual siempre, o solo si el usuario
+                // quiere poder filtrar por "el presente" aun sin datos.
+                // Anios.Add(DateTime.Today.Year); 
+                // Pero respetando el pedido: "extraer años únicos". 
+                // Si la lista está vacía, es porque no hay mareas.
+            }
+
+            // Cargar buques
+            var buques = await _buqueService.GetBuquesAsync();
+            Buques.Clear();
+            foreach (var buque in buques)
+            {
+                Buques.Add(buque);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error cargando datos de filtro: {ex.Message}");
+            // Si falla la carga de buques, reintentamos una vez tras un breve delay 
+            // por si la sincronización inicial estaba terminando
+            _ = Task.Delay(2000).ContinueWith(async _ => 
+            {
+                try {
+                    var b = await _buqueService.GetBuquesAsync();
+                    if (b.Any()) {
+                        App.Current.Dispatcher.Invoke(() => {
+                            Buques.Clear();
+                            foreach(var x in b) Buques.Add(x);
+                        });
+                    }
+                } catch { /* Ignorar reintento silencioso */ }
+            });
+        }
+    }
+
+    private async Task LoadMareasAsync()
+    {
+        try
+        {
+            DateTime? filterDesde = _mareasFilterFechaDesde;
+            DateTime? filterHasta = _mareasFilterFechaHasta;
+
+            // Validación estricta: fecha fin >= fecha inicio. 
+            // Si ambas están presentes y el rango es inválido, advertimos y cancelamos la búsqueda.
+            if (filterDesde.HasValue && filterHasta.HasValue && filterHasta.Value < filterDesde.Value)
+            {
+                ShowMessage(
+                    "Rango de Fechas Inválido",
+                    "La fecha de fin (" + filterHasta.Value.ToShortDateString() + ") no puede ser anterior a la de inicio (" + filterDesde.Value.ToShortDateString() + ").",
+                    null,
+                    MessageDialogType.Warning);
+                return;
+            }
+
+            var mareas = await _mareaService.GetMareasAsync(
+                _mareasFilterAnio,
+                _mareasFilterBuque?.ID,
+                filterDesde,
+                filterHasta,
+                _mareasSearchText);
+
+            var viewModels = mareas.Select(m => new MareaListItemViewModel(m, _activeMareaManager)).ToList();
+            
+            Records.Clear();
+            foreach (var vm in viewModels)
+            {
+                Records.Add(vm);
+            }
+
+            // Actualizar filtros activos visuales
+            ActiveFilters.Clear();
+            if (_mareasFilterAnio.HasValue) ActiveFilters.Add($"Año: {_mareasFilterAnio}");
+            if (_mareasFilterBuque != null) ActiveFilters.Add($"Buque: {_mareasFilterBuque.Nombre}");
+            if (_activeMareaManager.ActiveMarea != null) ActiveFilters.Add($"Marea Activa: {_activeMareaManager.ActiveMarea.NumeroInidep}/{_activeMareaManager.ActiveMarea.AnioInidep}");
+        }
+        catch (Exception)
+        {
+            // Log error
+        }
+    }
+
+    private void OpenCreateMareaForm()
+    {
+        var vm = _mareaEditFactory(() => 
+        {
+            CurrentEditViewModel = null;
+            _ = LoadMareasAsync(); // Recargar lista al cerrar
+        }, null);
+        vm.ShowCustomDialog = diag => ActiveDialog = diag;
+        vm.ShowMessage = (t, m, d, type) => ShowMessage(t, m, d, type);
+        vm.ShowConfirmation = (t, m) => ShowConfirmationAsync(t, m);
+        CurrentEditViewModel = vm;
+    }
+
+    private void OpenEditMareaForm(MareaListItemViewModel? item)
+    {
+        if (item == null) return;
+        
+        var vm = _mareaEditFactory(() => 
+        {
+            CurrentEditViewModel = null;
+            _ = LoadMareasAsync(); // Recargar lista al cerrar
+        }, item.ID);
+        vm.ShowCustomDialog = diag => ActiveDialog = diag;
+        vm.ShowMessage = (t, m, d, type) => ShowMessage(t, m, d, type);
+        vm.ShowConfirmation = (t, m) => ShowConfirmationAsync(t, m);
+        CurrentEditViewModel = vm;
+    }
+
+    private async Task LoadLancesAsync()
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(_activeMareaManager.ActiveMareaId))
+            {
+                Records.Clear();
+                ActiveFilters.Clear();
+                return;
+            }
+
+            var lances = await _lanceService.GetLancesAsync(
+                null, 
+                _activeMareaManager.ActiveMareaId,
+                LancesFilterFechaDesde, 
+                LancesFilterFechaHasta, 
+                LancesFilterNroLance, 
+                LancesFilterEspecie);
+
+            var viewModels = lances.Select(l => new LanceListItemViewModel(l)).ToList();
+            
+            Records.Clear();
+            foreach (var vm in viewModels) Records.Add(vm);
+
+            ActiveFilters.Clear();
+            if (LancesFilterFechaDesde.HasValue) ActiveFilters.Add($"Desde: {LancesFilterFechaDesde.Value:dd/MM/yyyy}");
+            if (LancesFilterNroLance.HasValue) ActiveFilters.Add($"Lance: {LancesFilterNroLance}");
+            if (!string.IsNullOrWhiteSpace(LancesFilterEspecie)) ActiveFilters.Add($"Especie: {LancesFilterEspecie}");
+            if (_activeMareaManager.ActiveMarea != null) ActiveFilters.Add($"Marea Activa: {_activeMareaManager.ActiveMarea.NumeroInidep}/{_activeMareaManager.ActiveMarea.AnioInidep}");
+        }
+        catch (Exception) { /* Log error */ }
+    }
+
+    private void OpenEditLanceForm(LanceListItemViewModel? item)
+    {
+        if (item == null) return;
+        
+        var vm = _lanceEditFactory(() => 
+        {
+            CurrentEditViewModel = null;
+            _ = LoadLancesAsync();
+        }, item.Lance.MareaEtapaId, item.ID);
+        
+        vm.ShowCustomDialog = diag => ActiveDialog = diag;
+        vm.ShowMessage = (t, m, d, type) => ShowMessage(t, m, d, type);
+        vm.ShowConfirmation = (t, m) => ShowConfirmationAsync(t, m);
+        CurrentEditViewModel = vm;
+    }
+
+    private void OpenCreateLanceForm()
+    {
+        ShowMessage("Nuevo Lance", "Para crear un nuevo lance, debe hacerlo desde la sección de Mareas > Etapas para mantener la consistencia de datos.", null, MessageDialogType.Info);
     }
 
     private void ApplyTheme(AppThemeMode mode)

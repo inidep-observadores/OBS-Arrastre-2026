@@ -5,12 +5,17 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:OBSArrastre2026.App.Views"
              xmlns:vm="clr-namespace:OBSArrastre2026.App.ViewModels"
+             xmlns:controls="clr-namespace:OBSArrastre2026.App.Controls"
              mc:Ignorable="d" 
              d:DesignHeight="800" d:DesignWidth="1000">
+    <UserControl.InputBindings>
+        <KeyBinding Key="Esc" Command="{Binding CancelCommand}" />
+        <KeyBinding Key="N" Modifiers="Control" Command="{Binding AddEtapaCommand}" />
+    </UserControl.InputBindings>
     <AdornerDecorator>
         <Border Background="{DynamicResource ShellBackgroundBrush}"
                 Padding="40"
-                CornerRadius="24"
+                CornerRadius="0"
                 MaxWidth="960"
                 VerticalAlignment="Center"
                 BorderBrush="{DynamicResource SidebarBorderBrush}"
@@ -46,6 +51,12 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Command="{Binding ImportDbfCommand}"
+                                Content="Importar DBF"
+                                Margin="0,0,12,0"
+                                Style="{StaticResource ThemeButtonStyle}"
+                                Foreground="{DynamicResource AccentBrush}"
+                                Padding="20,10" />
                         <Button Command="{Binding CancelCommand}"
                                 Content="Cancelar"
                                 Margin="0,0,12,0"
@@ -82,35 +93,42 @@
                                     <!-- Fila 1 -->
                                     <StackPanel>
                                         <Label Content="Año Inidep" Style="{StaticResource FormLabelStyle}" />
-                                        <TextBox Text="{Binding AnioInidep}" Style="{StaticResource PremiumTextBoxStyle}" TabIndex="1" />
+                                        <TextBox x:Name="AnioInput" Text="{Binding AnioInidep}" Style="{StaticResource PremiumTextBoxStyle}" />
                                     </StackPanel>
 
                                     <StackPanel Grid.Column="2">
                                         <Label Content="Número Inidep" Style="{StaticResource FormLabelStyle}" />
-                                        <TextBox Text="{Binding NumeroInidep}" Style="{StaticResource PremiumTextBoxStyle}" TabIndex="2" />
+                                        <TextBox Text="{Binding NumeroInidep}" Style="{StaticResource PremiumTextBoxStyle}" />
                                     </StackPanel>
 
                                     <StackPanel Grid.Column="4">
-                                        <Label Content="Código" Style="{StaticResource FormLabelStyle}" />
-                                        <TextBox Text="{Binding Codigo}" Style="{StaticResource PremiumTextBoxStyle}" TabIndex="3" />
+                                        <Label Content="Código (calculado)" Style="{StaticResource FormLabelStyle}" />
+                                        <TextBox Text="{Binding CodigoDisplay, Mode=OneWay}" 
+                                                 Style="{StaticResource PremiumTextBoxStyle}" 
+                                                 IsReadOnly="True" 
+                                                 Focusable="False" 
+                                                 Background="Transparent"
+                                                 BorderBrush="Transparent"
+                                                 Opacity="0.7" />
                                     </StackPanel>
 
                                     <!-- Fila 2 -->
                                     <StackPanel Grid.Row="2">
                                         <Label Content="Buque" Style="{StaticResource FormLabelStyle}" />
-                                        <ComboBox SelectedValue="{Binding BuqueID}" Style="{StaticResource PremiumComboBoxStyle}" TabIndex="4">
-                                            <ComboBoxItem Content="Mar Azul (Buque Mock)" IsSelected="True" />
-                                        </ComboBox>
+                                        <ComboBox ItemsSource="{Binding Buques}"
+                                                  DisplayMemberPath="Nombre"
+                                                  SelectedItem="{Binding SelectedBuque}"
+                                                  Style="{StaticResource PremiumComboBoxStyle}" />
                                     </StackPanel>
 
                                     <StackPanel Grid.Row="2" Grid.Column="2">
                                         <Label Content="Fecha Inicio" Style="{StaticResource FormLabelStyle}" />
-                                        <TextBox Text="{Binding FechaInicio, StringFormat=dd/MM/yyyy}" Style="{StaticResource PremiumTextBoxStyle}" TabIndex="5" />
+                                        <controls:DatePickerPremium SelectedDate="{Binding FechaInicio}" />
                                     </StackPanel>
 
                                     <StackPanel Grid.Row="2" Grid.Column="4">
                                         <Label Content="Fecha Fin" Style="{StaticResource FormLabelStyle}" />
-                                        <TextBox Text="{Binding FechaFin, StringFormat=dd/MM/yyyy}" Style="{StaticResource PremiumTextBoxStyle}" TabIndex="6" />
+                                        <controls:DatePickerPremium SelectedDate="{Binding FechaFin}" />
                                     </StackPanel>
                                 </Grid>
                                 
@@ -120,8 +138,7 @@
                                              Style="{StaticResource PremiumTextBoxStyle}" 
                                              MinHeight="80" 
                                              AcceptsReturn="True" 
-                                             TextWrapping="Wrap" 
-                                             TabIndex="7" />
+                                             TextWrapping="Wrap" />
                                 </StackPanel>
                             </StackPanel>
                         </Border>
@@ -178,11 +195,24 @@
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="*" />
                                                             <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="30" />
+                                                            <ColumnDefinition Width="Auto" />
                                                         </Grid.ColumnDefinitions>
                                                         <TextBlock Text="{Binding SummaryText}" 
                                                                    FontWeight="SemiBold" 
                                                                    Foreground="{DynamicResource PrimaryTextBrush}" />
-                                                        <TextBlock Grid.Column="1" FontWeight="Bold" VerticalAlignment="Center">
+
+                                                        <Button Grid.Column="1"
+                                                                Command="{Binding RemoveCommand}"
+                                                                Content="✕"
+                                                                ToolTip="Eliminar etapa"
+                                                                Style="{StaticResource ThemeButtonStyle}"
+                                                                Foreground="#FF5252"
+                                                                Padding="10,0"
+                                                                FontSize="14"
+                                                                VerticalAlignment="Center" />
+
+                                                        <TextBlock Grid.Column="3" FontWeight="Bold" VerticalAlignment="Center">
                                                             <TextBlock.Style>
                                                                 <Style TargetType="TextBlock">
                                                                     <Setter Property="Text" Value="▶" />
@@ -218,12 +248,12 @@
 
                                                         <StackPanel>
                                                             <Label Content="Fecha Zarpada" Style="{StaticResource FormLabelStyle}" />
-                                                            <TextBox Text="{Binding FechaZarpada, StringFormat=dd/MM/yyyy}" Style="{StaticResource PremiumTextBoxStyle}" />
+                                                            <controls:DatePickerPremium SelectedDate="{Binding FechaZarpada}" Loaded="EtapaDatePicker_Loaded" />
                                                         </StackPanel>
 
                                                         <StackPanel Grid.Column="2">
                                                             <Label Content="Fecha Arribo" Style="{StaticResource FormLabelStyle}" />
-                                                            <TextBox Text="{Binding FechaArribo, StringFormat=dd/MM/yyyy}" Style="{StaticResource PremiumTextBoxStyle}" />
+                                                            <controls:DatePickerPremium SelectedDate="{Binding FechaArribo}" />
                                                         </StackPanel>
 
                                                         <StackPanel Grid.Row="2" Grid.ColumnSpan="3">
