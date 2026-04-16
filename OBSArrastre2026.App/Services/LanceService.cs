@@ -13,6 +13,7 @@ public sealed class LanceService(IDbContextFactory<AppDbContext> dbContextFactor
 {
     public async Task<IReadOnlyList<Lance>> GetLancesAsync(
         string? mareaEtapaId = null,
+        string? mareaId = null,
         DateTime? fechaDesde = null,
         DateTime? fechaHasta = null,
         int? nroLance = null,
@@ -30,6 +31,11 @@ public sealed class LanceService(IDbContextFactory<AppDbContext> dbContextFactor
         if (!string.IsNullOrEmpty(mareaEtapaId))
         {
             query = query.Where(x => x.MareaEtapaId == mareaEtapaId);
+        }
+
+        if (!string.IsNullOrEmpty(mareaId))
+        {
+            query = query.Where(x => x.MareaEtapa!.MareaID == mareaId);
         }
 
         if (fechaDesde.HasValue)
@@ -58,8 +64,7 @@ public sealed class LanceService(IDbContextFactory<AppDbContext> dbContextFactor
         }
 
         return await query
-            .OrderByDescending(x => x.Fecha)
-            .ThenByDescending(x => x.HoraInicio)
+            .OrderBy(x => x.NroLance)
             .ToListAsync(cancellationToken);
     }
 

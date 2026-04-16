@@ -44,6 +44,7 @@ public partial class App : Application
                 });
 
                 services.AddSingleton<IDatabaseInitializer, DatabaseInitializer>();
+                services.AddSingleton<IActiveMareaManager, ActiveMareaManager>();
                 services.AddSingleton<IBuqueService, BuqueService>();
                 services.AddSingleton<IMareaService, MareaService>();
                 services.AddSingleton<ILanceService, LanceService>();
@@ -141,6 +142,9 @@ public partial class App : Application
         // Aplicar estado de la ventana (Maximizada por defecto si no hay registro)
         mainWindow.WindowState = settings.WindowState;
         
+        // Inicializar gestión de marea activa
+        await _host.Services.GetRequiredService<IActiveMareaManager>().InitializeAsync();
+
         mainWindow.Show();
     }
 

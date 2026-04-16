@@ -17,6 +17,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private readonly ILanceService _lanceService;
     private readonly Func<Action, string?, MareaEditViewModel> _mareaEditFactory;
     private readonly Func<Action, string, string?, LanceEditViewModel> _lanceEditFactory;
+    private readonly IActiveMareaManager _activeMareaManager;
     private NavigationItemViewModel? _selectedNavigationItem;
     private string _pageTitle = string.Empty;
     private string _pageDescription = string.Empty;
@@ -46,6 +47,7 @@ public sealed class MainWindowViewModel : ObservableObject
         IMareaService mareaService,
         IBuqueService buqueService,
         ILanceService lanceService,
+        IActiveMareaManager activeMareaManager,
         Func<Action, string?, MareaEditViewModel> mareaEditFactory,
         Func<Action, string, string?, LanceEditViewModel> lanceEditFactory)
     {
@@ -54,6 +56,7 @@ public sealed class MainWindowViewModel : ObservableObject
         _mareaService = mareaService;
         _buqueService = buqueService;
         _lanceService = lanceService;
+        _activeMareaManager = activeMareaManager;
         _mareaEditFactory = mareaEditFactory;
         _lanceEditFactory = lanceEditFactory;
 
@@ -79,7 +82,40 @@ public sealed class MainWindowViewModel : ObservableObject
         SelectedNavigationItem = NavigationItems.FirstOrDefault();
 
         _ = LoadFilterDataAsync();
+
+        UpdateNavigationState();
+
+        _activeMareaManager.PropertyChanged += (s, e) => 
+        {
+            if (e.PropertyName == nameof(IActiveMareaManager.ActiveMareaId))
+            {
+                OnPropertyChanged(nameof(ActiveMareaManager));
+                UpdateNavigationState();
+                _ = RefreshCurrentSectionAsync();
+            }
+        };
     }
+
+    private void UpdateNavigationState()
+    {
+        bool hasActiveMarea = !string.IsNullOrEmpty(_activeMareaManager.ActiveMareaId);
+
+        foreach (var item in NavigationItems)
+        {
+            if (item.RequiresActiveMarea)
+            {
+                item.IsEnabled = hasActiveMarea;
+            }
+        }
+
+        // Si estamos en una sección que ahora está deshabilitada, redirigir a Mareas
+        if (!hasActiveMarea && SelectedNavigationItem != null && SelectedNavigationItem.RequiresActiveMarea)
+        {
+            SelectedNavigationItem = NavigationItems.FirstOrDefault(x => x.Section == NavigationSection.Mareas);
+        }
+    }
+
+    public IActiveMareaManager ActiveMareaManager => _activeMareaManager;
 
     public string Title => "OBS Arrastre 2026";
 
@@ -118,6 +154,11 @@ public sealed class MainWindowViewModel : ObservableObject
         get => _selectedNavigationItem;
         set
         {
+            if (value != null && !value.IsEnabled)
+            {
+                return;
+            }
+
             if (!SetProperty(ref _selectedNavigationItem, value) || value is null)
             {
                 return;
@@ -282,6 +323,22 @@ public sealed class MainWindowViewModel : ObservableObject
     public string Column5Header { get; private set; } = string.Empty;
 
     public ICommand ApplyMareaFiltersCommand { get; }
+    
+    public ICommand ClearActiveMareaCommand => new AsyncRelayCommand(() => _activeMareaManager.SetActiveMareaAsync(null));
+
+    private async Task RefreshCurrentSectionAsync()
+    {
+        if (SelectedNavigationItem == null) return;
+        
+        if (SelectedNavigationItem.Section == NavigationSection.Mareas)
+        {
+            await LoadMareasAsync();
+        }
+        else if (SelectedNavigationItem.Section == NavigationSection.Lances)
+        {
+            await LoadLancesAsync();
+        }
+    }
 
     private void LoadSection(NavigationSection section)
     {
@@ -449,7 +506,7 @@ public sealed class MainWindowViewModel : ObservableObject
                 filterHasta,
                 _mareasSearchText);
 
-            var viewModels = mareas.Select(m => new MareaListItemViewModel(m)).ToList();
+            var viewModels = mareas.Select(m => new MareaListItemViewModel(m, _activeMareaManager)).ToList();
             
             Records.Clear();
             foreach (var vm in viewModels)
@@ -461,6 +518,7 @@ public sealed class MainWindowViewModel : ObservableObject
             ActiveFilters.Clear();
             if (_mareasFilterAnio.HasValue) ActiveFilters.Add($"Año: {_mareasFilterAnio}");
             if (_mareasFilterBuque != null) ActiveFilters.Add($"Buque: {_mareasFilterBuque.Nombre}");
+            if (_activeMareaManager.ActiveMarea != null) ActiveFilters.Add($"Marea Activa: {_activeMareaManager.ActiveMarea.NumeroInidep}/{_activeMareaManager.ActiveMarea.AnioInidep}");
         }
         catch (Exception)
         {
@@ -500,8 +558,16 @@ public sealed class MainWindowViewModel : ObservableObject
     {
         try
         {
+            if (string.IsNullOrEmpty(_activeMareaManager.ActiveMareaId))
+            {
+                Records.Clear();
+                ActiveFilters.Clear();
+                return;
+            }
+
             var lances = await _lanceService.GetLancesAsync(
                 null, 
+                _activeMareaManager.ActiveMareaId,
                 LancesFilterFechaDesde, 
                 LancesFilterFechaHasta, 
                 LancesFilterNroLance, 
@@ -516,6 +582,7 @@ public sealed class MainWindowViewModel : ObservableObject
             if (LancesFilterFechaDesde.HasValue) ActiveFilters.Add($"Desde: {LancesFilterFechaDesde.Value:dd/MM/yyyy}");
             if (LancesFilterNroLance.HasValue) ActiveFilters.Add($"Lance: {LancesFilterNroLance}");
             if (!string.IsNullOrWhiteSpace(LancesFilterEspecie)) ActiveFilters.Add($"Especie: {LancesFilterEspecie}");
+            if (_activeMareaManager.ActiveMarea != null) ActiveFilters.Add($"Marea Activa: {_activeMareaManager.ActiveMarea.NumeroInidep}/{_activeMareaManager.ActiveMarea.AnioInidep}");
         }
         catch (Exception) { /* Log error */ }
     }

@@ -10,6 +10,7 @@ public interface ILanceService
 {
     Task<IReadOnlyList<Lance>> GetLancesAsync(
         string? mareaEtapaId = null,
+        string? mareaId = null,
         DateTime? fechaDesde = null,
         DateTime? fechaHasta = null,
         int? nroLance = null,

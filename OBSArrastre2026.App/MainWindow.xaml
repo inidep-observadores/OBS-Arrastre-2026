@@ -42,6 +42,7 @@
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.2*" />
                         <ColumnDefinition Width="0.9*" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Text="{Binding CodigoDisplay}" />
                     <TextBlock Grid.Column="1" Style="{StaticResource BodySecondaryStyle}" Text="{Binding BuqueNombre}" />
@@ -72,6 +73,24 @@
                             </TextBlock.Style>
                         </TextBlock>
                     </Border>
+                    
+                    <!-- Botón para Establecer como Activa -->
+                    <Button Grid.Column="6" 
+                            Command="{Binding SetActiveCommand}"
+                            ToolTip="Establecer como marea activa"
+                            Margin="8,0,0,0">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource ThemeButtonStyle}">
+                                <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <TextBlock Text="★" FontSize="18" VerticalAlignment="Center" />
+                    </Button>
                 </Grid>
             </Border>
         </DataTemplate>
@@ -156,45 +175,101 @@
                          ItemContainerStyle="{StaticResource SidebarItemStyle}">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Grid>
+                            <Grid x:Name="RootGrid" Background="Transparent">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="28" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
 
-                                <TextBlock HorizontalAlignment="Center"
+                                <TextBlock x:Name="IconText"
+                                           HorizontalAlignment="Center"
                                            VerticalAlignment="Center"
                                            FontSize="14"
                                            Foreground="{DynamicResource SecondaryTextBrush}"
                                            Text="{Binding Glyph}" />
 
-                                <TextBlock Grid.Column="1"
+                                <TextBlock x:Name="TitleText"
+                                           Grid.Column="1"
                                            VerticalAlignment="Center"
                                            FontSize="14"
                                            FontWeight="SemiBold"
                                            Foreground="{DynamicResource PrimaryTextBrush}"
                                            Text="{Binding Title}" />
                             </Grid>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding IsEnabled}" Value="False">
+                                    <Setter TargetName="RootGrid" Property="Opacity" Value="0.3" />
+                                    <Setter TargetName="IconText" Property="Foreground" Value="Gray" />
+                                    <Setter TargetName="TitleText" Property="Foreground" Value="Gray" />
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
 
-                <Border Grid.Row="2"
-                        Style="{StaticResource SurfaceBorderStyle}"
-                        Padding="16"
-                        Background="{DynamicResource SidebarSecondaryBackgroundBrush}">
-                    <StackPanel>
-                        <TextBlock FontSize="10"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource SecondaryTextBrush}"
-                                   Text="ESTADO DEL SISTEMA" />
-                        <TextBlock Margin="0,6,0,0"
-                                   FontSize="16"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource PrimaryTextBrush}"
-                                   Text="Premium v2026" />
-                    </StackPanel>
-                </Border>
+                <StackPanel Grid.Row="2">
+                    <Border Style="{StaticResource SurfaceBorderStyle}"
+                            Margin="0,0,0,12"
+                            Padding="16"
+                            Background="{DynamicResource SidebarSecondaryBackgroundBrush}">
+                        <StackPanel>
+                            <TextBlock FontSize="10"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SecondaryTextBrush}"
+                                       Text="MAREA ACTIVA" />
+                            
+                            <Grid Margin="0,8,0,0" Visibility="{Binding ActiveMareaManager.ActiveMarea, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=invert}">
+                                <StackPanel>
+                                    <TextBlock FontSize="16"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource PrimaryTextBrush}">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0}/{1}">
+                                                <Binding Path="ActiveMareaManager.ActiveMarea.NumeroInidep" />
+                                                <Binding Path="ActiveMareaManager.ActiveMarea.AnioInidep" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                    <TextBlock Margin="0,4,0,0"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource SecondaryTextBrush}"
+                                               Text="{Binding ActiveMareaManager.ActiveMarea.Buque.Nombre}" />
+                                    
+                                    <Button Command="{Binding ClearActiveMareaCommand}"
+                                            Style="{StaticResource ThemeButtonStyle}"
+                                            HorizontalAlignment="Left"
+                                            Margin="-8,8,0,0"
+                                            Padding="8,4">
+                                        <TextBlock Text="Limpiar" FontSize="11" Foreground="{DynamicResource DangerBrush}" />
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Margin="0,8,0,0"
+                                       FontSize="13"
+                                       FontStyle="Italic"
+                                       Foreground="{DynamicResource SecondaryTextBrush}"
+                                       Text="Ninguna seleccionada"
+                                       Visibility="{Binding ActiveMareaManager.ActiveMarea, Converter={StaticResource NullToVisibilityConverter}}" />
+                        </StackPanel>
+                    </Border>
+                    
+                    <Border Style="{StaticResource SurfaceBorderStyle}"
+                            Padding="16"
+                            Background="{DynamicResource SidebarSecondaryBackgroundBrush}">
+                        <StackPanel>
+                            <TextBlock FontSize="10"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SecondaryTextBrush}"
+                                       Text="ESTADO DEL SISTEMA" />
+                            <TextBlock Margin="0,6,0,0"
+                                       FontSize="16"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource PrimaryTextBrush}"
+                                       Text="Premium v2026" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
             </Grid>
         </Border>
 
@@ -649,8 +724,10 @@
                                         <ColumnDefinition Width="1.1*" />
                                         <ColumnDefinition Width="1.1*" />
                                         <ColumnDefinition Width="1.1*" />
+                                        <ColumnDefinition Width="1.1*" />
                                         <ColumnDefinition Width="1.2*" />
                                         <ColumnDefinition Width="0.9*" />
+                                        <ColumnDefinition Width="40" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column1Header}" />
                                     <TextBlock Grid.Column="1" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column2Header}" />

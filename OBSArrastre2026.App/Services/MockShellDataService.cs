@@ -18,10 +18,10 @@ public sealed class MockShellDataService : IMockShellDataService
     [
         new(NavigationSection.Inicio, "Inicio", "Panel de control general", "◌"),
         new(NavigationSection.Mareas, "Mareas", "Cabeceras y estado operativo", "◇"),
-        new(NavigationSection.Lances, "Lances", "Registro y control de capturas", "△"),
-        new(NavigationSection.Muestras, "Muestras", "Muestreo biologico y control", "▣"),
-        new(NavigationSection.Submuestras, "Submuestras", "Detalle por individuo", "▤"),
-        new(NavigationSection.Produccion, "Produccion", "Registros diarios de proceso", "◫")
+        new(NavigationSection.Lances, "Lances", "Registro y control de capturas", "△", true),
+        new(NavigationSection.Muestras, "Muestras", "Muestreo biologico y control", "▣", true),
+        new(NavigationSection.Submuestras, "Submuestras", "Detalle por individuo", "▤", true),
+        new(NavigationSection.Produccion, "Produccion", "Registros diarios de proceso", "◫", true)
     ];
 
     public DashboardContent GetDashboard() =>

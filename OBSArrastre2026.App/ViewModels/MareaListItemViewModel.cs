@@ -1,11 +1,22 @@
-using System;
+using System.Windows.Input;
+using CommunityToolkit.Mvvm.Input;
 using OBSArrastre2026.App.Data.Entities;
+using OBSArrastre2026.App.Services;
 
 namespace OBSArrastre2026.App.ViewModels;
 
-public sealed class MareaListItemViewModel(Marea marea)
+public sealed class MareaListItemViewModel
 {
-    public Marea Marea { get; } = marea;
+    private readonly IActiveMareaManager _activeMareaManager;
+
+    public MareaListItemViewModel(Marea marea, IActiveMareaManager activeMareaManager)
+    {
+        Marea = marea;
+        _activeMareaManager = activeMareaManager;
+        SetActiveCommand = new AsyncRelayCommand(() => _activeMareaManager.SetActiveMareaAsync(Marea.ID));
+    }
+
+    public Marea Marea { get; }
 
     public string CodigoDisplay => $"{Marea.NumeroInidep}/{Marea.AnioInidep % 100:D2}";
     
@@ -21,6 +32,7 @@ public sealed class MareaListItemViewModel(Marea marea)
     
     public string ID => Marea.ID;
 
-    // Mapeo opcional para mantener compatibilidad con la estructura genérica si fuera necesario
-    // Pero usaremos propiedades específicas en el nuevo DataTemplate
+    public bool IsActive => _activeMareaManager.ActiveMareaId == Marea.ID;
+
+    public ICommand SetActiveCommand { get; }
 }
