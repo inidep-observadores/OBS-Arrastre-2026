@@ -203,7 +203,7 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
                 ShowCustomDialog?.Invoke(null); // Cerrar diálogos
                 if (files != null)
                 {
-                    // Éxito: El proceso de importación se realizó dentro del importVm
+                    ShowMessage?.Invoke("Éxito", "La importación finalizó correctamente. Los lances y muestras han sido guardados en la base de datos.", null, MessageDialogType.Success);
                     _ = RefreshDetailsAsync();
                 }
             });

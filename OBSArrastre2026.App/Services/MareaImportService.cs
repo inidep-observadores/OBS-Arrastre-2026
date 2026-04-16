@@ -153,10 +153,10 @@ public class MareaImportService : IMareaImportService
                 Fecha = c.Fecha.ToString("yyyy-MM-dd"),
                 HoraInicio = FormatTime(c.HoraInic),
                 HoraFinal = FormatTime(c.HoraFinal),
-                LatitudInicioDecimal = c.LatInic,
-                LongitudInicioDecimal = c.LongInic,
-                LatitudFinalDecimal = c.LatFinal,
-                LongitudFinalDecimal = c.LongFinal,
+                LatitudInicioDecimal = LegacyDecoder.DecodeCoordinate(c.LatInic),
+                LongitudInicioDecimal = LegacyDecoder.DecodeCoordinate(c.LongInic),
+                LatitudFinalDecimal = LegacyDecoder.DecodeCoordinate(c.LatFinal),
+                LongitudFinalDecimal = LegacyDecoder.DecodeCoordinate(c.LongFinal),
                 ProfundidadInicioM = (int)c.ProfInic,
                 ProfundidadFinalM = (int)c.ProfFinal,
                 CapturaTotalKg = c.CaptTotal,
@@ -289,12 +289,7 @@ public class MareaImportService : IMareaImportService
 
     private TimeSpan ParseLegacyTime(double time)
     {
-        // 14.30 -> 14h 30m
-        int hours = (int)time;
-        int minutes = (int)((time - hours) * 100 + 0.5);
-        if (hours >= 24) hours = 0;
-        if (minutes >= 60) minutes = 0;
-        return new TimeSpan(hours, minutes, 0);
+        return LegacyDecoder.DecodeTime(time);
     }
 
     private string FormatTime(double time)

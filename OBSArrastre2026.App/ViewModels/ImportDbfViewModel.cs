@@ -173,7 +173,6 @@ public sealed partial class ImportDbfViewModel : ObservableObject
             await _importService.ImportAsync(_mareaId, report);
 
             IsBusy = false;
-            ShowMessage?.Invoke("Éxito", "La importación finalizó correctamente. Los lances y muestras han sido guardados en la base de datos.", null, MessageDialogType.Success);
             _onFinished(SelectedFiles.Select(f => f.FullPath));
         }
         catch (Exception ex)

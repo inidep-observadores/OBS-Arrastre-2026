@@ -131,19 +131,19 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel>
                                         <Label Content="Lat. inicial" Style="{StaticResource FormLabelStyle}" />
-                                        <TextBox Text="{Binding LatitudInicioDecimal}" Style="{StaticResource PremiumTextBoxStyle}" />
+                                        <controls:CoordinatePickerPremium SelectedValue="{Binding LatitudInicioDecimal}" IsLatitude="True" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
                                         <Label Content="Long. inicial" Style="{StaticResource FormLabelStyle}" />
-                                        <TextBox Text="{Binding LongitudInicioDecimal}" Style="{StaticResource PremiumTextBoxStyle}" />
+                                        <controls:CoordinatePickerPremium SelectedValue="{Binding LongitudInicioDecimal}" IsLatitude="False" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="4">
                                         <Label Content="Lat. final" Style="{StaticResource FormLabelStyle}" />
-                                        <TextBox Text="{Binding LatitudFinalDecimal}" Style="{StaticResource PremiumTextBoxStyle}" />
+                                        <controls:CoordinatePickerPremium SelectedValue="{Binding LatitudFinalDecimal}" IsLatitude="True" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="6">
                                         <Label Content="Long. final" Style="{StaticResource FormLabelStyle}" />
-                                        <TextBox Text="{Binding LongitudFinalDecimal}" Style="{StaticResource PremiumTextBoxStyle}" />
+                                        <controls:CoordinatePickerPremium SelectedValue="{Binding LongitudFinalDecimal}" IsLatitude="False" />
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
