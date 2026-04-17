@@ -15,14 +15,19 @@ public static class LegacyDecoder
     {
         if (value == null || value == 0) return 0;
 
-        double absoluteValue = Math.Abs(value.Value);
-        double degrees = Math.Floor(absoluteValue);
-        double minutesRaw = (absoluteValue - degrees) * 100; // El decimal .30 se convierte en 30
+        // Formato legacy: DD.mmd (Grados.MinutosDécima)
+        // Ejemplo: 40.441 -> 40 grados, 44 minutos, 1 décima de minuto.
+        double val = Math.Abs(value.Value);
+        
+        int degrees = (int)Math.Truncate(val);
+        
+        // Extraer la parte decimal (los .441) y convertir a minutos reales
+        // Usamos Round para evitar 0.440999999998 de la aritmética double
+        double minutesPart = Math.Round(val - degrees, 3) * 100; // 0.441 -> 44.1
+        
+        double decimalDegrees = degrees + (minutesPart / 60.0);
 
-        // Si minutesRaw es por ejemplo 30.5, significa 30 minutos y 0.5 décimas
-        double decimalDegrees = degrees + (minutesRaw / 60.0);
-
-        return decimalDegrees * -1; // Siempre SW en este dominio
+        return decimalDegrees * -1; // Siempre Hemisferio Sur / Oeste (SW)
     }
 
     /// <summary>

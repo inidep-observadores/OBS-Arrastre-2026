@@ -22,7 +22,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
     {
         var records = new List<Dictionary<string, object?>>();
 
-        using (var dbfReader = new DbfDataReader.DbfDataReader(dbfPath))
+        using (var dbfReader = new DbfDataReader.DbfDataReader(dbfPath, _dbfOptions))
         {
             var columns = dbfReader.DbfTable.Columns;
 
@@ -51,7 +51,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
     {
         var records = new List<Dictionary<string, object?>>();
 
-        using (var dbfReader = new DbfDataReader.DbfDataReader(dbfPath))
+        using (var dbfReader = new DbfDataReader.DbfDataReader(dbfPath, _dbfOptions))
         {
             var columns = dbfReader.DbfTable.Columns;
 

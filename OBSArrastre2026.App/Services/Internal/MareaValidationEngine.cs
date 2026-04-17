@@ -14,6 +14,8 @@ public sealed class MareaValidationEngine
         List<LegacyCaptura> capturas,
         List<LegacyMuestra> muestras,
         List<LegacySubmuestra> submuestras,
+        List<LegacyLg> lgs,
+        List<LegacyTracking> tracking,
         List<LegacyProduccion> produccion,
         HashSet<string> nombresVulgaresExistentes)
     {
@@ -25,11 +27,18 @@ public sealed class MareaValidationEngine
             TotalLances = capturas.Count
         };
 
-        ValidateBaseConsistency(report, barcoMareaActual, nroMareaActual, capturas, muestras, submuestras);
+        ValidateBaseConsistency(report, barcoMareaActual, nroMareaActual, capturas, muestras, submuestras, lgs, tracking, produccion);
         ValidateLances(report, capturas);
         ValidateSamples(report, muestras, capturas);
         ValidateSubSamples(report, submuestras, muestras);
         ValidateProduction(report, produccion, nombresVulgaresExistentes);
+        
+        report.Capturas = capturas;
+        report.Muestras = muestras;
+        report.Submuestras = submuestras;
+        report.Lgs = lgs;
+        report.Tracking = tracking;
+        report.Produccion = produccion;
 
         return report;
     }
@@ -48,9 +57,9 @@ public sealed class MareaValidationEngine
                 $"La especie de producción '{esp}' no fue encontrada por Nombre Vulgar en el catálogo local. El registro se importará pero sin vínculo a la especie.", "Archivo P*");
         }
 
-        // 2. Regla de negocio: Unicidad de Fecha-Producto-Categoría (Warning)
+        // 2. Regla de negocio: Unicidad de Fecha-Producto-Categoría-Especie (Warning)
         var duplicates = produccion
-            .GroupBy(p => new { p.Fecha, p.Producto, p.Categoria })
+            .GroupBy(p => new { p.Fecha, p.Producto, p.Categoria, p.Especie })
             .Where(g => g.Count() > 1);
 
         foreach (var group in duplicates)
@@ -67,16 +76,56 @@ public sealed class MareaValidationEngine
         int mareaActual, 
         List<LegacyCaptura> capturas, 
         List<LegacyMuestra> muestras, 
-        List<LegacySubmuestra> submuestras)
+        List<LegacySubmuestra> submuestras,
+        List<LegacyLg> lgs,
+        List<LegacyTracking> tracking,
+        List<LegacyProduccion> produccion)
     {
-        // REQ-3.1.1: Consistencia de Barco y Marea
+        var bActual = barcoActual.Trim().ToUpper();
+
+        // 1. CAPTURAS
         foreach (var c in capturas)
         {
-            if (c.Barco.Trim() != barcoActual.Trim())
-                report.AddIssue(ValidationLevel.Error, "Consistencia", $"Barco en captura ({c.Barco}) no coincide con marea activa ({barcoActual})", $"Lance {c.Lance}");
+            if (c.Barco.Trim().ToUpper() != bActual)
+                report.AddIssue(ValidationLevel.Fatal, "Consistencia", $"Barco en captura ({c.Barco}) no coincide con marea activa ({barcoActual})", $"Lance {c.Lance}");
             
             if ((int)c.Marea != mareaActual)
                 report.AddIssue(ValidationLevel.Error, "Consistencia", $"Nro Marea en captura ({c.Marea}) no coincide con marea activa ({mareaActual})", $"Lance {c.Lance}");
+        }
+
+        // 2. MUESTRAS
+        foreach (var m in muestras)
+        {
+            if (m.Barco.Trim().ToUpper() != bActual)
+                report.AddIssue(ValidationLevel.Fatal, "Consistencia", $"Barco en muestra ({m.Barco}) no coincide con marea activa ({barcoActual})", $"Lance {m.Lance}");
+        }
+
+        // 3. SUBMUES
+        foreach (var s in submuestras)
+        {
+            if (s.Barco.Trim().ToUpper() != bActual)
+                report.AddIssue(ValidationLevel.Fatal, "Consistencia", $"Barco en submuestra ({s.Barco}) no coincide con marea activa ({barcoActual})", $"Lance {s.Lance} Ej {s.NEjemplar}");
+        }
+
+        // 4. LG
+        foreach (var l in lgs)
+        {
+            if (l.Barco.Trim().ToUpper() != bActual)
+                report.AddIssue(ValidationLevel.Fatal, "Consistencia", $"Barco en archivo LG ({l.Barco}) no coincide con marea activa ({barcoActual})", $"Lance {l.Lance}");
+        }
+
+        // 5. SEGUIMIENTO (T*) - Aquí el campo es "Buque"
+        foreach (var t in tracking)
+        {
+            if (t.Buque.Trim().ToUpper() != bActual)
+                report.AddIssue(ValidationLevel.Fatal, "Consistencia", $"Barco en seguimiento satelital ({t.Buque}) no coincide con marea activa ({barcoActual})", "Seguimiento T*");
+        }
+
+        // 6. PRODUCCIÓN (P*)
+        foreach (var p in produccion)
+        {
+            if (p.Barco.Trim().ToUpper() != bActual)
+                report.AddIssue(ValidationLevel.Fatal, "Consistencia", $"Barco en producción ({p.Barco}) no coincide con marea activa ({barcoActual})", $"Fecha {p.Fecha:yyyy-MM-dd}");
         }
     }
 
@@ -86,16 +135,19 @@ public sealed class MareaValidationEngine
         {
             string ctx = $"Lance {c.Lance}";
 
-            // REQ-2.2.3: Rangos de coordenadas
-            if (c.LatInic < -60 || c.LatInic > 0)
-                report.AddIssue(ValidationLevel.Warning, "Geografía", $"Latitud inicial ({c.LatInic}) fuera de rango operativo", ctx);
+            // REQ-2.2.3: Rangos de coordenadas (Normalizar primero a decimal negativo)
+            double latDec = LegacyDecoder.DecodeCoordinate(c.LatInic);
+            double lonDec = LegacyDecoder.DecodeCoordinate(c.LongInic);
+
+            if (latDec < -65 || latDec > -30)
+                report.AddIssue(ValidationLevel.Warning, "Geografía", $"Latitud inicial ({c.LatInic} -> {latDec:F3}) fuera de rango operativo (30°S - 65°S)", ctx);
 
             ValidateLanceDetails(report, c);
 
-            // REQ-3.3.1: Cálculo y validación de Área (base = INT(lat)*100 + INT(lon))
-            double calculatedArea = CalculateArea(c.LatInic, c.LongInic);
-            if (calculatedArea < 3500)
-                report.AddIssue(ValidationLevel.Warning, "Geografía", $"Área calculada ({calculatedArea}) es inusualmente baja (< 3500)", ctx);
+            // REQ-3.3.1: Cálculo y validación de Área
+            double calculatedArea = CalculateArea(latDec, lonDec);
+            if (calculatedArea < 3000)
+                report.AddIssue(ValidationLevel.Warning, "Geografía", $"Área calculada ({calculatedArea}) es inusualmente baja", ctx);
 
             // REQ-3.5.1: Recalcular CAPT_TOTAL
             double sumEspecies = c.Especies.Values.Sum();

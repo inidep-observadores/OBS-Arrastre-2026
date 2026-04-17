@@ -4,6 +4,7 @@ using OBSArrastre2026.App.Data;
 using OBSArrastre2026.App.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 using System.IO;
+using System.Text;
 
 namespace OBSArrastre2026.App.Services;
 
@@ -33,32 +34,72 @@ public class MareaImportService : IMareaImportService
         _dbContextFactory = dbContextFactory;
     }
 
+    private string? ResolveFilePath(string basePath, char prefix, int marea, int anio)
+    {
+        if (!Directory.Exists(basePath)) return null;
+
+        string yearSuffix = $"{(anio % 100):D2}.DBF";
+        string mareaStr = marea.ToString();
+
+        // Buscar todos los archivos que empiecen con el prefijo y terminen con el año
+        var candidateFiles = Directory.GetFiles(basePath, $"{prefix}*.DBF");
+
+        foreach (var path in candidateFiles)
+        {
+            string fileName = Path.GetFileNameWithoutExtension(path).ToUpper();
+            if (fileName.Length < 3) continue; // Mínimo "X" + Marea + "YY"
+
+            // El nombre debe empezar con el prefijo
+            if (fileName[0] != char.ToUpper(prefix)) continue;
+
+            // El nombre debe terminar con el año (2 dígitos)
+            if (!fileName.EndsWith(yearSuffix.Replace(".DBF", ""))) continue;
+
+            // La parte central debe coincidir numéricamente con la marea
+            string middlePart = fileName.Substring(1, fileName.Length - 3);
+            if (int.TryParse(middlePart, out int foundMarea) && foundMarea == marea)
+            {
+                return path;
+            }
+        }
+
+        return null;
+    }
+
     public async Task<MareaValidationReport> ProcessMareaImportAsync(string basePath, string barco, int marea, int anio, IEnumerable<MareaEtapa> etapas)
     {
-        // 1. Determinar nombres de archivos
-        string suffix = $"{marea}{anio % 100:D2}.DBF";
-        string cPath = Path.Combine(basePath, $"C{suffix}");
-        string mPath = Path.Combine(basePath, $"M{suffix}");
-        string xPath = Path.Combine(basePath, $"X{suffix}");
-        string sPath = Path.Combine(basePath, $"S{suffix}");
-        string lPath = Path.Combine(basePath, $"L{suffix}");
-        string tPath = Path.Combine(basePath, $"T{suffix}");
-        string pPath = Path.Combine(basePath, $"P{suffix}");
+        // 1. Resolver rutas de forma flexible (Marea 3 Año 2026 -> S326, S0326, S00326, etc.)
+        string? cPath = ResolveFilePath(basePath, 'C', marea, anio);
+        string? mPath = ResolveFilePath(basePath, 'M', marea, anio);
+        string? xPath = ResolveFilePath(basePath, 'X', marea, anio);
+        string? sPath = ResolveFilePath(basePath, 'S', marea, anio);
+        string? lPath = ResolveFilePath(basePath, 'L', marea, anio);
+        string? tPath = ResolveFilePath(basePath, 'T', marea, anio);
+        string? pPath = ResolveFilePath(basePath, 'P', marea, anio);
 
-        // 2. Extraer datos
-        var capturas = await _extractor.ReadCapturasAsync(cPath);
-        var muestras = await _extractor.ReadMuestrasAsync(mPath);
-        var submuestras = await _extractor.ReadSubmuestrasAsync(sPath);
-        var lgs = await _extractor.ReadLgAsync(lPath);
-        var produccion = await _extractor.ReadProduccionAsync(pPath);
+        var report = new MareaValidationReport();
+
+        // Verificar archivos obligatorios (usando nombres amigables para el reporte si no se encuentran)
+        string suffix = $"{marea:D2}{anio % 100:D2}.DBF"; // Nombre sugerido para el error
+        if (cPath == null) report.AddIssue(ValidationLevel.Error, "Sistema", $"El archivo de CAPTURA obligatorio no se encuentra (esperado C*{suffix})");
+        if (mPath == null) report.AddIssue(ValidationLevel.Error, "Sistema", $"El archivo de MUESTRA obligatorio no se encuentra (esperado M*{suffix})");
+        if (sPath == null) report.AddIssue(ValidationLevel.Warning, "Sistema", $"El archivo de SUBMUESTRA no se encuentra (esperado S*{suffix})");
+        if (pPath == null) report.AddIssue(ValidationLevel.Error, "Sistema", $"El archivo de PRODUCCIÓN obligatorio no se encuentra (esperado P*{suffix})");
+
+        // 2. Extraer datos (si los paths fueron resueltos)
+        var capturas = cPath != null ? await _extractor.ReadCapturasAsync(cPath) : new();
+        var muestras = mPath != null ? await _extractor.ReadMuestrasAsync(mPath) : new();
+        var submuestras = sPath != null ? await _extractor.ReadSubmuestrasAsync(sPath) : new();
+        var lgs = lPath != null ? await _extractor.ReadLgAsync(lPath) : new();
+        var produccion = pPath != null ? await _extractor.ReadProduccionAsync(pPath) : new();
         
         // Registro de archivos encontrados para la UI
         var archivosEncontrados = new List<string>();
-        if (File.Exists(cPath)) archivosEncontrados.Add(Path.GetFileName(cPath));
-        if (File.Exists(mPath)) archivosEncontrados.Add(Path.GetFileName(mPath));
-        if (File.Exists(sPath)) archivosEncontrados.Add(Path.GetFileName(sPath));
-        if (File.Exists(lPath)) archivosEncontrados.Add(Path.GetFileName(lPath));
-        if (File.Exists(pPath)) archivosEncontrados.Add(Path.GetFileName(pPath));
+        if (cPath != null) archivosEncontrados.Add(Path.GetFileName(cPath));
+        if (mPath != null) archivosEncontrados.Add(Path.GetFileName(mPath));
+        if (sPath != null) archivosEncontrados.Add(Path.GetFileName(sPath));
+        if (lPath != null) archivosEncontrados.Add(Path.GetFileName(lPath));
+        if (pPath != null) archivosEncontrados.Add(Path.GetFileName(pPath));
 
         // 3. Lógica de fusión X*
         if (File.Exists(xPath))
@@ -91,17 +132,8 @@ public class MareaImportService : IMareaImportService
         }
 
         // 4. Validar (se llamará de nuevo tras cargar el catálogo en el paso 5)
-        // Eliminamos la llamada prematura para centralizarla tras cargar especies
-        var report = new MareaValidationReport();
         report.ArchivosProcesados = archivosEncontrados;
 
-        // Validar buque en tracking si existe
-        var firstTrack = tracking.FirstOrDefault();
-        if (firstTrack != null && !string.Equals(firstTrack.Buque, barco, StringComparison.OrdinalIgnoreCase))
-        {
-            report.AddIssue(ValidationLevel.Fatal, "Seguimiento", $"El buque en el archivo de seguimiento ({firstTrack.Buque}) no coincide con el buque de la marea ({barco}).", "Archivo T*");
-        }
-        
         // 4b. Validar asignación a etapas y existencia de especies
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
         var especiesExistentes = await dbContext.Especies
@@ -143,16 +175,8 @@ public class MareaImportService : IMareaImportService
         }
 
         // 5. Validar y Guardar datos en el reporte para el paso de commit
-        report = _validator.ValidateMarea(barco, anio, marea, capturas, muestras, submuestras, produccion, setNombresVulgares);
-        report.Tracking = tracking;
+        report = _validator.ValidateMarea(barco, anio, marea, capturas, muestras, submuestras, lgs, tracking, produccion, setNombresVulgares);
         report.ArchivosProcesados = archivosEncontrados;
-
-        report.Capturas = capturas;
-        report.Muestras = muestras;
-        report.Submuestras = submuestras;
-        report.Lgs = lgs;
-        report.Tracking = tracking;
-        report.Produccion = produccion;
 
         // 6. Generar Reporte PDF
         var pdfBytes = _reporter.GenerateValidationPdf(report);
@@ -173,10 +197,18 @@ public class MareaImportService : IMareaImportService
 
         if (marea == null) throw new InvalidOperationException("Marea no encontrada");
 
-        // Cargar catálogo de especies para resolución de IDs (GUIDs)
-        var especieMap = await dbContext.Especies
-            .Where(e => e.CodigoInidep != null)
-            .ToDictionaryAsync(e => e.CodigoInidep!, e => e.ID);
+        // Cargar catálogo de especies con múltiples índices para resolución flexible
+        var especiesCatalogo = await dbContext.Especies.ToListAsync();
+        
+        var especieByCodigoMap = especiesCatalogo
+            .Where(e => !string.IsNullOrEmpty(e.CodigoInidep))
+            .GroupBy(e => e.CodigoInidep!)
+            .ToDictionary(g => g.Key, g => g.First().ID);
+
+        var especieByCientificoMap = especiesCatalogo
+            .Where(e => !string.IsNullOrEmpty(e.NombreCientifico))
+            .GroupBy(e => e.NombreCientifico!.Trim().ToUpper().Normalize(NormalizationForm.FormC))
+            .ToDictionary(g => g.Key, g => g.First().ID);
 
         // Map Capturas -> Lances
         var lanceMap = new Dictionary<double, Lance>();
@@ -185,7 +217,7 @@ public class MareaImportService : IMareaImportService
             var lanceTime = GetLanceDateTime(c);
             var etapa = marea.Etapas.FirstOrDefault(e => lanceTime >= e.FechaZarpada && lanceTime <= (e.FechaArribo ?? DateTime.MaxValue));
             
-            if (etapa == null) continue; // No debería pasar tras validación
+            if (etapa == null) continue;
 
             var lance = new Lance
             {
@@ -201,13 +233,12 @@ public class MareaImportService : IMareaImportService
                 ProfundidadInicioM = (int)c.ProfInic,
                 ProfundidadFinalM = (int)c.ProfFinal,
                 CapturaTotalKg = c.CaptTotal,
-                // Otros mapeos...
             };
 
-            // Items de Captura (Especies)
+            // Items de Captura (Especies por código)
             foreach (var kvp in c.Especies)
             {
-                if (kvp.Value > 0 && especieMap.TryGetValue(kvp.Key.ToString(), out var especieId))
+                if (kvp.Value > 0 && especieByCodigoMap.TryGetValue(kvp.Key.ToString(), out var especieId))
                 {
                     lance.ItemsCaptura.Add(new ItemCaptura
                     {
@@ -226,42 +257,55 @@ public class MareaImportService : IMareaImportService
         var muestraMap = new Dictionary<string, Muestra>();
         foreach (var rm in report.Muestras)
         {
-            if (lanceMap.TryGetValue(rm.Lance, out var lance) && 
-                especieMap.TryGetValue(rm.CodEspec.ToString(), out var especieId))
+            if (lanceMap.TryGetValue(rm.Lance, out var lance))
             {
-                var muestra = new Muestra
+                // Resolución de especie: Priorizar código, luego nombre científico
+                string? especieId = null;
+                if (rm.CodEspec > 0) especieByCodigoMap.TryGetValue(rm.CodEspec.ToString(), out especieId);
+                
+                if (especieId == null && !string.IsNullOrEmpty(rm.Especie))
                 {
-                    Lance = lance,
-                    EspecieID = especieId,
-                    PesoMuestra_PesoGramos = rm.PesoMues * 1000,
-                    Intervalo = rm.Intervalo,
-                    // Otros mapeos...
-                };
-
-                // Tallas
-                foreach (var tally in rm.Tallies)
-                {
-                    muestra.FrecuenciasTallas.Add(new FrecuenciaTalla
-                    {
-                        Talla = tally.Size,
-                        NroMachos = tally.Males,
-                        NroHembras = tally.Females,
-                        NroIndeterminados = tally.Indeterminate
-                    });
+                    var normName = rm.Especie.Trim().ToUpper().Normalize(NormalizationForm.FormC);
+                    especieByCientificoMap.TryGetValue(normName, out especieId);
                 }
 
-                dbContext.Muestras.Add(muestra);
-                string key = $"{rm.Lance}_{rm.CodEspec}";
-                muestraMap[key] = muestra;
+                if (especieId != null)
+                {
+                    var muestra = new Muestra
+                    {
+                        Lance = lance,
+                        EspecieID = especieId,
+                        PesoMuestra_PesoGramos = rm.PesoMues * 1000,
+                        Intervalo = rm.Intervalo,
+                    };
+
+                    foreach (var tally in rm.Tallies)
+                    {
+                        muestra.FrecuenciasTallas.Add(new FrecuenciaTalla
+                        {
+                            Talla = tally.Size,
+                            NroMachos = tally.Males,
+                            NroHembras = tally.Females,
+                            NroIndeterminados = tally.Indeterminate
+                        });
+                    }
+
+                    dbContext.Muestras.Add(muestra);
+                    
+                    // La clave de vinculación con submuestras DEBE ser por Nombre Científico normalizado
+                    // ya que es el único campo confiable en ambos archivos (M y S) según el usuario.
+                    string speciesKey = rm.Especie.Trim().ToUpper().Normalize(NormalizationForm.FormC);
+                    string key = $"{rm.Lance}_{speciesKey}";
+                    muestraMap[key] = muestra;
+                }
             }
         }
 
         // Map Submuestras
         foreach (var rs in report.Submuestras)
         {
-            // Intentar encontrar la muestra correspondiente por Lance + Especie
-            // rs.Especie suele contener el código en formato string en estos DBF
-            if (muestraMap.TryGetValue($"{rs.Lance}_{rs.Especie}", out var muestra))
+            string speciesKey = rs.Especie.Trim().ToUpper().Normalize(NormalizationForm.FormC);
+            if (muestraMap.TryGetValue($"{rs.Lance}_{speciesKey}", out var muestra))
             {
                 muestra.ItemsSubmuestras.Add(new ItemSubmuestra
                 {
@@ -303,10 +347,16 @@ public class MareaImportService : IMareaImportService
         if (report.Produccion.Any())
         {
             var existingProducts = await dbContext.Productos.ToDictionaryAsync(p => p.Codigo, p => p.Id);
-            var especieNameMap = await dbContext.Especies
+            var existenteEspecies = await dbContext.Especies
+                .Select(e => new { e.ID, e.NombreVulgar })
                 .Where(e => e.NombreVulgar != null)
-                .GroupBy(e => e.NombreVulgar!.Trim().ToUpper())
-                .ToDictionaryAsync(g => g.Key, g => g.First().ID);
+                .ToListAsync();
+
+            var especieNameMap = existenteEspecies
+                .GroupBy(e => e.NombreVulgar!.Trim().ToUpper().Normalize(NormalizationForm.FormC))
+                .ToDictionary(
+                    g => g.Key, 
+                    g => g.First().ID);
 
             foreach (var rp in report.Produccion)
             {
@@ -314,8 +364,8 @@ public class MareaImportService : IMareaImportService
                 {
                     var newProduct = new Producto
                     {
-                        Codigo = rp.Producto,
-                        Descripcion = $"{rp.Especie} - {rp.Producto}".Trim(' ', '-'),
+                        Codigo = rp.Producto?.Trim() ?? string.Empty,
+                        Descripcion = $"{rp.Especie?.Trim()} - {rp.Producto?.Trim()}".Trim(' ', '-'),
                         Orden = 99 // Al final
                     };
                     dbContext.Productos.Add(newProduct);
@@ -335,7 +385,8 @@ public class MareaImportService : IMareaImportService
                     string? speciesId = null;
                     if (!string.IsNullOrEmpty(rp.Especie))
                     {
-                        especieNameMap.TryGetValue(rp.Especie.Trim().ToUpper(), out speciesId);
+                        var searchName = rp.Especie.Trim().ToUpper().Normalize(NormalizationForm.FormC);
+                        especieNameMap.TryGetValue(searchName, out speciesId);
                     }
 
                     dbContext.RegistrosProduccion.Add(new RegistroProduccion
