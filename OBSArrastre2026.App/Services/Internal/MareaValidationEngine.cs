@@ -28,7 +28,7 @@ public sealed class MareaValidationEngine
         };
 
         ValidateBaseConsistency(report, barcoMareaActual, nroMareaActual, capturas, muestras, submuestras, lgs, tracking, produccion);
-        ValidateLances(report, capturas);
+        ValidateLances(report, capturas, tracking);
         ValidateSamples(report, muestras, capturas);
         ValidateSubSamples(report, submuestras, muestras);
         ValidateProduction(report, produccion, nombresVulgaresExistentes);
@@ -129,7 +129,7 @@ public sealed class MareaValidationEngine
         }
     }
 
-    private void ValidateLances(MareaValidationReport report, List<LegacyCaptura> capturas)
+    private void ValidateLances(MareaValidationReport report, List<LegacyCaptura> capturas, List<LegacyTracking> tracking)
     {
         foreach (var c in capturas)
         {
@@ -160,7 +160,16 @@ public sealed class MareaValidationEngine
             // REQ-5.3: Coherencia Temporal
             if (c.HoraInic > c.HoraFinal)
                 report.AddIssue(ValidationLevel.Warning, "Tiempo", "Hora de inicio es posterior a hora de fin", ctx);
+
+            // Nueva Validación: Coherencia con Tracking (Posición y Velocidad)
+            ValidateLanceTrackingConsistency(report, c, tracking);
+
+            // Nueva Validación: Velocidad interna del lance (Inicio vs Fin)
+            ValidateInternalLanceSpeed(report, c);
         }
+
+        // Nueva Validación: Velocidad entre lances (Fin de N vs Inicio de N+1)
+        ValidateSpeedBetweenLances(report, capturas);
 
         // REQ-5.1: Duplicados de Lance
         var duplicates = capturas.GroupBy(x => x.Lance).Where(g => g.Count() > 1).Select(g => g.Key);
@@ -250,5 +259,159 @@ public sealed class MareaValidationEngine
         if (latMin > 30 && lonMin <= 30) return baseArea + 0.4;
 
         return baseArea;
+    }
+
+    private void ValidateLanceTrackingConsistency(MareaValidationReport report, LegacyCaptura c, List<LegacyTracking> tracking)
+    {
+        if (tracking == null || !tracking.Any()) return;
+
+        string ctx = $"Lance {c.Lance}";
+
+        // Tiempos del lance (Ya vienen en UTC-3 según confirmación del usuario)
+        var timeStart = c.Fecha.Date.Add(LegacyDecoder.DecodeTime(c.HoraInic));
+        var timeEnd = c.Fecha.Date.Add(LegacyDecoder.DecodeTime(c.HoraFinal));
+
+        // Validar punto de inicio
+        ValidatePointWithTrack(report, ctx, "Inicio", timeStart, 
+            LegacyDecoder.DecodeCoordinate(c.LatInic), LegacyDecoder.DecodeCoordinate(c.LongInic), tracking);
+
+        // Validar punto de fin
+        ValidatePointWithTrack(report, ctx, "Fin", timeEnd, 
+            LegacyDecoder.DecodeCoordinate(c.LatFinal), LegacyDecoder.DecodeCoordinate(c.LongFinal), tracking);
+    }
+
+    private void ValidateInternalLanceSpeed(MareaValidationReport report, LegacyCaptura c)
+    {
+        string ctx = $"Lance {c.Lance}";
+        
+        var timeStart = c.Fecha.Date.Add(LegacyDecoder.DecodeTime(c.HoraInic));
+        var timeEnd = c.Fecha.Date.Add(LegacyDecoder.DecodeTime(c.HoraFinal));
+        
+        // Si el lance cruzó la medianoche (fecha de fin es el día siguiente)
+        if (timeEnd < timeStart) timeEnd = timeEnd.AddDays(1);
+
+        double timeDiffHours = (timeEnd - timeStart).TotalHours;
+        if (timeDiffHours <= 0) return; // Se valida consistencia horaria básica en otro lado
+
+        double latStart = LegacyDecoder.DecodeCoordinate(c.LatInic);
+        double lonStart = LegacyDecoder.DecodeCoordinate(c.LongInic);
+        double latEnd = LegacyDecoder.DecodeCoordinate(c.LatFinal);
+        double lonEnd = LegacyDecoder.DecodeCoordinate(c.LongFinal);
+
+        double distNm = CalculateDistanceNauticalMiles(latStart, lonStart, latEnd, lonEnd);
+        double speedKnots = distNm / timeDiffHours;
+
+        if (speedKnots > 15)
+        {
+            report.AddIssue(ValidationLevel.Warning, "Geografía", 
+                $"Velocidad de arrastre excesiva: {speedKnots:F1} nudos (calculada entre inicio y fin del lance). " +
+                $"Distancia: {distNm:F2} mn en {timeDiffHours*60:F1} min.", ctx);
+        }
+    }
+
+    private void ValidateSpeedBetweenLances(MareaValidationReport report, List<LegacyCaptura> capturas)
+    {
+        if (capturas.Count < 2) return;
+
+        // Ordenar lances cronológicamente por inicio
+        var sorted = capturas
+            .Select(c => new { 
+                Captura = c, 
+                Start = c.Fecha.Date.Add(LegacyDecoder.DecodeTime(c.HoraInic)),
+                End = c.Fecha.Date.Add(LegacyDecoder.DecodeTime(c.HoraFinal)) 
+            })
+            .OrderBy(x => x.Start)
+            .ToList();
+
+        // Asegurar que manejamos cruce de medianoche en los 'End' individuales si es necesario
+        // (Aunque para el ordenamiento 'Start' suele ser suficiente si los lances no duran +24h)
+        
+        for (int i = 0; i < sorted.Count - 1; i++)
+        {
+            var current = sorted[i];
+            var next = sorted[i + 1];
+
+            var currentEnd = current.End;
+            if (currentEnd < current.Start) currentEnd = currentEnd.AddDays(1);
+
+            // Tiempo entre Fin(i) e Inicio(i+1)
+            double timeDiffHours = (next.Start - currentEnd).TotalHours;
+            
+            // Si hay solapamiento o están muy pegados, la validación de velocidad puede ser ruidosa.
+            // Solo evaluamos si hay un gap positivo de tiempo.
+            if (timeDiffHours <= 0) continue; 
+
+            double latEnd = LegacyDecoder.DecodeCoordinate(current.Captura.LatFinal);
+            double lonEnd = LegacyDecoder.DecodeCoordinate(current.Captura.LongFinal);
+            double latStartNext = LegacyDecoder.DecodeCoordinate(next.Captura.LatInic);
+            double lonStartNext = LegacyDecoder.DecodeCoordinate(next.Captura.LongInic);
+
+            double distNm = CalculateDistanceNauticalMiles(latEnd, lonEnd, latStartNext, lonStartNext);
+            double speedKnots = distNm / timeDiffHours;
+
+            if (speedKnots > 15)
+            {
+                report.AddIssue(ValidationLevel.Warning, "Geografía", 
+                    $"Velocidad excesiva para navegar entre lances ({current.Captura.Lance} -> {next.Captura.Lance}): {speedKnots:F1} nudos. " +
+                    $"Distancia: {distNm:F2} mn en {timeDiffHours*60:F1} min entre el fin de uno y el inicio del siguiente.", 
+                    $"Lance {current.Captura.Lance}");
+            }
+        }
+    }
+
+    private void ValidatePointWithTrack(MareaValidationReport report, string lanceCtx, string pointType, DateTime lanceTime, double lanceLat, double lanceLon, List<LegacyTracking> tracking)
+    {
+        // El track viene en UTC, debemos ajustarlo a UTC-3 para comparar con el lance
+        var closest = tracking
+            .OrderBy(t => Math.Abs((t.GetUtcDateTime().AddHours(-3) - lanceTime).TotalSeconds))
+            .FirstOrDefault();
+
+        if (closest == null) return;
+
+        var trackTime = closest.GetUtcDateTime().AddHours(-3);
+        double timeDiffHours = Math.Abs((lanceTime - trackTime).TotalHours);
+        
+        // Si la diferencia de tiempo es muy pequeña (ej: < 1 seg), evitamos división por cero o ruido excesivo
+        if (timeDiffHours < 0.00027) timeDiffHours = 0.00027; // ~1 segundo mínimo para el cálculo
+
+        double distNm = CalculateDistanceNauticalMiles(lanceLat, lanceLon, closest.Latitud, closest.Longitud);
+        double speedKnots = distNm / timeDiffHours;
+
+        if (speedKnots > 15)
+        {
+            report.AddIssue(ValidationLevel.Warning, "Geografía", 
+                $"Posible error de posición en {pointType}: La velocidad necesaria para alcanzar el punto de track más cercano ({trackTime:HH:mm}) es de {speedKnots:F1} nudos. " +
+                $"Pos. Lance: {FormatCoordShort(lanceLat, true)}, {FormatCoordShort(lanceLon, false)}. " +
+                $"Pos. Track: {FormatCoordShort(closest.Latitud, true)}, {FormatCoordShort(closest.Longitud, false)}. " +
+                $"(Distancia: {distNm:F2} mn, ΔT: {Math.Abs((lanceTime - trackTime).TotalMinutes):F1} min).", 
+                lanceCtx);
+        }
+    }
+
+    private double CalculateDistanceNauticalMiles(double lat1, double lon1, double lat2, double lon2)
+    {
+        const double EarthRadiusNauticalMiles = 3440.065;
+        var dLat = ToRadians(lat2 - lat1);
+        var dLon = ToRadians(lon2 - lon1);
+        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                Math.Cos(ToRadians(lat1)) * Math.Cos(ToRadians(lat2)) *
+                Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+        return EarthRadiusNauticalMiles * c;
+    }
+
+    private double ToRadians(double degrees) => degrees * Math.PI / 180.0;
+
+    private string FormatCoordShort(double decimalDegrees, bool isLat)
+    {
+        double absVal = Math.Abs(decimalDegrees);
+        int degrees = (int)Math.Truncate(absVal);
+        double minutes = (absVal - degrees) * 60;
+        
+        char quadrant = isLat 
+            ? (decimalDegrees >= 0 ? 'N' : 'S') 
+            : (decimalDegrees >= 0 ? 'E' : 'W');
+
+        return $"{degrees:D2}º {minutes:F1}' {quadrant}".Replace('.', ',');
     }
 }

@@ -26,7 +26,7 @@ public class MareaReportService : IMareaReportService
                 page.Size(PageSizes.A4);
                 page.Margin(1, Unit.Centimetre);
                 page.PageColor(Colors.White);
-                page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.Verdana));
+                page.DefaultTextStyle(x => x.FontSize(8).FontFamily(Fonts.Verdana));
 
                 ComposeHeader(page.Header(), report);
                 ComposeContent(page.Content(), report);
@@ -41,8 +41,8 @@ public class MareaReportService : IMareaReportService
         {
             row.RelativeItem().Column(col =>
             {
-                col.Item().Text("REPORTE DE AUDITORÍA DE MAREA").FontSize(20).SemiBold().FontColor(Colors.Blue.Medium);
-                col.Item().Text($"{report.Barco} - Marea {report.Marea} ({report.Año})").FontSize(14);
+                col.Item().Text("REPORTE DE AUDITORÍA DE MAREA").FontSize(14).SemiBold().FontColor(Colors.Blue.Medium);
+                col.Item().Text($"{report.Barco} - Marea {report.Marea} ({report.Año})").FontSize(10);
             });
 
             row.ConstantItem(100).Column(col =>
@@ -61,21 +61,21 @@ public class MareaReportService : IMareaReportService
             col.Item().PaddingBottom(10).BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Row(row =>
             {
                 row.RelativeItem().Column(c => {
-                    c.Item().Text("Total Lances").FontSize(9).FontColor(Colors.Grey.Medium);
-                    c.Item().Text(report.TotalLances.ToString()).FontSize(12).SemiBold();
+                    c.Item().Text("Total Lances").FontSize(7).FontColor(Colors.Grey.Medium);
+                    c.Item().Text(report.TotalLances.ToString()).FontSize(9).SemiBold();
                 });
                 row.RelativeItem().Column(c => {
-                    c.Item().Text("Errores").FontSize(9).FontColor(Colors.Grey.Medium);
-                    c.Item().Text(report.Issues.Count(i => i.Level == ValidationLevel.Error).ToString()).FontSize(12).SemiBold().FontColor(Colors.Red.Medium);
+                    c.Item().Text("Errores").FontSize(7).FontColor(Colors.Grey.Medium);
+                    c.Item().Text(report.Issues.Count(i => i.Level == ValidationLevel.Error).ToString()).FontSize(9).SemiBold().FontColor(Colors.Red.Medium);
                 });
                 row.RelativeItem().Column(c => {
-                    c.Item().Text("Correcciones Auto").FontSize(9).FontColor(Colors.Grey.Medium);
-                    c.Item().Text(report.Issues.Count(i => i.Level == ValidationLevel.AutoFixed).ToString()).FontSize(12).SemiBold().FontColor(Colors.Green.Medium);
+                    c.Item().Text("Correcciones Auto").FontSize(7).FontColor(Colors.Grey.Medium);
+                    c.Item().Text(report.Issues.Count(i => i.Level == ValidationLevel.AutoFixed).ToString()).FontSize(9).SemiBold().FontColor(Colors.Green.Medium);
                 });
             });
 
             // Lista de Issues
-            col.Item().PaddingTop(10).Text("Detalle de Observaciones").FontSize(14).SemiBold();
+            col.Item().PaddingTop(10).Text("Detalle de Observaciones").FontSize(11).SemiBold();
 
             if (!report.Issues.Any())
             {
@@ -105,14 +105,14 @@ public class MareaReportService : IMareaReportService
 
                     foreach (var issue in report.Issues.OrderByDescending(i => i.Level))
                     {
-                        table.Cell().Element(ContentStyle).Text(issue.Category).FontSize(9);
+                        table.Cell().Element(ContentStyle).Text(issue.Category).FontSize(7);
                         table.Cell().Element(ContentStyle).Column(c => {
-                            c.Item().Text(issue.Message);
+                            c.Item().Text(issue.Message).FontSize(8);
                             if (!string.IsNullOrEmpty(issue.CorrectedValue))
-                                c.Item().Text($"=> Corregido a: {issue.CorrectedValue}").FontSize(8).FontColor(Colors.Green.Medium);
+                                c.Item().Text($"=> Corregido a: {issue.CorrectedValue}").FontSize(7).FontColor(Colors.Green.Medium);
                         });
-                        table.Cell().Element(ContentStyle).Text(issue.Context ?? "").FontSize(9);
-                        table.Cell().Element(ContentStyle).Border(1).BorderColor(Colors.Grey.Medium).Height(15).Width(15).AlignCenter();
+                        table.Cell().Element(ContentStyle).Text(issue.Context ?? "").FontSize(7);
+                        table.Cell().Element(ContentStyle).Border(1).BorderColor(Colors.Grey.Medium).Height(12).Width(12).AlignCenter();
 
                         IContainer ContentStyle(IContainer container) 
                         {
