@@ -1,4 +1,8 @@
+using System.ComponentModel.DataAnnotations.Schema;
+using OBSArrastre2026.App.Models;
+
 namespace OBSArrastre2026.App.Data.Entities;
+
 
 public sealed class Lance
 {
@@ -45,4 +49,15 @@ public sealed class Lance
     // Navigation properties
     public ICollection<Muestra> Muestras { get; set; } = new List<Muestra>();
     public ICollection<ItemCaptura> ItemsCaptura { get; set; } = new List<ItemCaptura>();
+
+    [NotMapped]
+    public double SumaPesoMuestras => ItemsCaptura
+        .Where(i => i.TipoDatoCaptura == TipoDatoCaptura.Muestra)
+        .Sum(i => i.DatoCaptura);
+
+    [NotMapped]
+    public double SumaPesoCapturadoNoMuestreado => ItemsCaptura
+        .Where(i => i.TipoDatoCaptura != TipoDatoCaptura.Muestra)
+        .Sum(i => i.CapturaTotalKgCalculado);
 }
+

@@ -106,7 +106,18 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
     public double? TemperaturaRedC { get => _tempRed; set => SetProperty(ref _tempRed, value); }
 
     public int? PresionHpa { get => _presionHpa; set => SetProperty(ref _presionHpa, value); }
-    public double? CapturaTotalKg { get => _capturaTotalKg; set => SetProperty(ref _capturaTotalKg, value); }
+    public double? CapturaTotalKg 
+    { 
+        get => _capturaTotalKg; 
+        set 
+        { 
+            if (SetProperty(ref _capturaTotalKg, value))
+            {
+                NotificarCambioPesosEnItems();
+            }
+        } 
+    }
+
     public double? VelocidadArrastreNudos { get => _velocidadArrastre; set => SetProperty(ref _velocidadArrastre, value); }
     public int? RumboGrados { get => _rumbo; set => SetProperty(ref _rumbo, value); }
 
@@ -189,7 +200,9 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
                     {
                         var vm = new CatchItemViewModel(item, _allEspecies);
                         vm.RequestDeletion = HandleCatchItemDeletion;
+                        vm.NotifyParentOfWeightChange = NotificarCambioPesosEnItems;
                         ItemsCaptura.Add(vm);
+
                     }
                     SincronizarOrden();
                 }
@@ -211,8 +224,10 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
         };
         var vm = new CatchItemViewModel(newItem, _allEspecies)
         {
-            RequestDeletion = HandleCatchItemDeletion
+            RequestDeletion = HandleCatchItemDeletion,
+            NotifyParentOfWeightChange = NotificarCambioPesosEnItems
         };
+
         ItemsCaptura.Add(vm);
         SelectedCatchItem = vm;
         SincronizarOrden();
@@ -231,6 +246,15 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
             ItemsCaptura[i].NumeroOrden = i + 1;
         }
     }
+
+    private void NotificarCambioPesosEnItems()
+    {
+        foreach (var item in ItemsCaptura)
+        {
+            item.NotifyCalculatedWeightsChanged();
+        }
+    }
+
 
     private async Task SaveAsync()
     {

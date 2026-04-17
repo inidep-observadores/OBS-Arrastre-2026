@@ -114,44 +114,69 @@ public sealed class CatchItemViewModel : ObservableObject
         get => _entity.DatoCaptura;
         set 
         {
-            _entity.DatoCaptura = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(SummaryText));
+            if (_entity.DatoCaptura != value)
+            {
+                _entity.DatoCaptura = value;
+                OnPropertyChanged();
+                NotifyParentOfWeightChange?.Invoke();
+                NotifyCalculatedWeightsChanged();
+            }
         }
     }
 
+
+
+
     public TipoDatoCaptura TipoDatoCaptura
     {
-        get => (TipoDatoCaptura)_entity.TipoDatoCaptura;
+        get => _entity.TipoDatoCaptura;
         set 
         {
-            _entity.TipoDatoCaptura = (int)value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(SummaryText));
+            if (_entity.TipoDatoCaptura != value)
+            {
+                _entity.TipoDatoCaptura = value;
+                OnPropertyChanged();
+                NotifyParentOfWeightChange?.Invoke();
+                NotifyCalculatedWeightsChanged();
+            }
         }
     }
+
+
+
 
     public double DatoDescarte
     {
         get => _entity.DatoDescarte;
         set 
         {
-            _entity.DatoDescarte = value;
+            if (_entity.DatoDescarte != value)
+            {
+                _entity.DatoDescarte = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(DatoDescartePorcentajeDisplay));
+                OnPropertyChanged(nameof(DatoDescarteKilosDisplay));
+                OnPropertyChanged(nameof(SummaryText));
+            }
+        }
+    }
+
+
+
+
+    public TipoDatoDescarte TipoDatoDescarte
+    {
+        get => _entity.TipoDatoDescarte;
+        set 
+        {
+            _entity.TipoDatoDescarte = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(DatoDescartePorcentajeDisplay));
+            OnPropertyChanged(nameof(DatoDescarteKilosDisplay));
             OnPropertyChanged(nameof(SummaryText));
         }
     }
 
-    public TipoDatoDescarte TipoDatoDescarte
-    {
-        get => (TipoDatoDescarte)_entity.TipoDatoDescarte;
-        set 
-        {
-            _entity.TipoDatoDescarte = (int)value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(SummaryText));
-        }
-    }
 
     public int NumeroOrden 
     { 
@@ -172,19 +197,19 @@ public sealed class CatchItemViewModel : ObservableObject
     {
         get
         {
-            string unidad = TipoDatoCaptura == TipoDatoCaptura.Kilogramos ? "Kg" : "%";
+            string unidad = TipoDatoCaptura == TipoDatoCaptura.Porcentaje ? "%" : "Kg";
             return $"{DatoCaptura:N2} {unidad}";
         }
     }
+
+    public double CapturaTotalKg => _entity.CapturaTotalKgCalculado;
 
     public string DatoDescartePorcentajeDisplay
     {
         get
         {
-            if (TipoDatoDescarte == TipoDatoDescarte.Porcentaje)
-                return $"{DatoDescarte:N2}%";
-            
-            return string.Empty; // Según el usuario, si cargó en kilos no se muestra el porcentaje
+            double value = _entity.PorcentDescarteCalculado;
+            return value > 0 ? $"{value:N2}%" : "---";
         }
     }
 
@@ -192,18 +217,11 @@ public sealed class CatchItemViewModel : ObservableObject
     {
         get
         {
-            if (TipoDatoDescarte == TipoDatoDescarte.Kilogramos)
-                return $"{DatoDescarte:N2}";
-
-            // Si es porcentaje, intentamos calcular sobre la captura de esta especie (si está en kilos)
-            if (TipoDatoDescarte == TipoDatoDescarte.Porcentaje && TipoDatoCaptura == TipoDatoCaptura.Kilogramos)
-            {
-                return $"{(DatoCaptura * DatoDescarte / 100.0):N2}";
-            }
-
-            return "---";
+            double value = _entity.PesoDescarteCalculado;
+            return value > 0 ? $"{value:N2}" : "---";
         }
     }
+
 
     public string SummaryText
     {
@@ -215,9 +233,20 @@ public sealed class CatchItemViewModel : ObservableObject
         }
     }
 
+    public void NotifyCalculatedWeightsChanged()
+    {
+        OnPropertyChanged(nameof(DatoCapturaDisplay));
+        OnPropertyChanged(nameof(CapturaTotalKg));
+        OnPropertyChanged(nameof(DatoDescartePorcentajeDisplay));
+        OnPropertyChanged(nameof(DatoDescarteKilosDisplay));
+        OnPropertyChanged(nameof(SummaryText));
+    }
+
     public ICommand ToggleExpandedCommand { get; }
     public ICommand RemoveCommand { get; }
     public Action<CatchItemViewModel>? RequestDeletion { get; set; }
+    public Action? NotifyParentOfWeightChange { get; set; }
+
 
     public ItemCaptura ToEntity() => _entity;
 }
