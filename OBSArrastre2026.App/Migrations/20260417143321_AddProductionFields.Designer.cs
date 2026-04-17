@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OBSArrastre2026.App.Data;
 
@@ -10,9 +11,11 @@ using OBSArrastre2026.App.Data;
 namespace OBSArrastre2026.App.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260417143321_AddProductionFields")]
+    partial class AddProductionFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.5");
@@ -764,9 +767,9 @@ namespace OBSArrastre2026.App.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("comentarios");
 
-                    b.Property<string>("EspecieId")
+                    b.Property<string>("Especie")
                         .HasColumnType("TEXT")
-                        .HasColumnName("especie_id");
+                        .HasColumnName("especie");
 
                     b.Property<double?>("Factor")
                         .HasColumnType("REAL")
@@ -796,8 +799,6 @@ namespace OBSArrastre2026.App.Migrations
                         .HasColumnName("operarios");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("EspecieId");
 
                     b.HasIndex("Fecha")
                         .HasDatabaseName("idx_registros_produccion_fecha");
@@ -974,11 +975,6 @@ namespace OBSArrastre2026.App.Migrations
 
             modelBuilder.Entity("OBSArrastre2026.App.Data.Entities.RegistroProduccion", b =>
                 {
-                    b.HasOne("OBSArrastre2026.App.Data.Entities.Especie", "Especie")
-                        .WithMany()
-                        .HasForeignKey("EspecieId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("OBSArrastre2026.App.Data.Entities.Producto", "Producto")
                         .WithMany("RegistrosProduccion")
                         .HasForeignKey("IdProducto")
@@ -990,8 +986,6 @@ namespace OBSArrastre2026.App.Migrations
                         .HasForeignKey("MareaEtapaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Especie");
 
                     b.Navigation("MareaEtapa");
 

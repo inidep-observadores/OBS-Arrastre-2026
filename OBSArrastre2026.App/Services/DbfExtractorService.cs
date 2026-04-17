@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text;
 using System.Text.Json;
 using DbfDataReader;
 using OBSArrastre2026.App.Models.Import;
@@ -8,6 +9,15 @@ namespace OBSArrastre2026.App.Services;
 
 public sealed class DbfExtractorService : IDbfExtractorService
 {
+    private readonly DbfDataReaderOptions _dbfOptions;
+
+    public DbfExtractorService()
+    {
+        // El catálogo original de Clipper no tiene marca de CodePage en el header.
+        // Forzamos Windows-1252 (ANSI) ya que es el que resuelve los acentos correctamente según FoxPro.
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        _dbfOptions = new DbfDataReaderOptions { Encoding = Encoding.GetEncoding(1252) };
+    }
     public async Task ExtractBuquesAsync(string dbfPath, string jsonOutputPath)
     {
         var records = new List<Dictionary<string, object?>>();
@@ -80,7 +90,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
         var list = new List<LegacyCaptura>();
         if (!File.Exists(dbfPath)) return list;
 
-        using var reader = new DbfDataReader.DbfDataReader(dbfPath);
+        using var reader = new DbfDataReader.DbfDataReader(dbfPath, _dbfOptions);
         var colMap = GetColumnMap(reader);
 
         while (reader.Read())
@@ -122,7 +132,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
         var list = new List<LegacyMuestra>();
         if (!File.Exists(dbfPath)) return list;
 
-        using var reader = new DbfDataReader.DbfDataReader(dbfPath);
+        using var reader = new DbfDataReader.DbfDataReader(dbfPath, _dbfOptions);
         var colMap = GetColumnMap(reader);
 
         while (reader.Read())
@@ -161,7 +171,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
         var list = new List<LegacySubmuestra>();
         if (!File.Exists(dbfPath)) return list;
 
-        using var reader = new DbfDataReader.DbfDataReader(dbfPath);
+        using var reader = new DbfDataReader.DbfDataReader(dbfPath, _dbfOptions);
         var colMap = GetColumnMap(reader);
 
         while (reader.Read())
@@ -189,7 +199,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
         var list = new List<LegacyLg>();
         if (!File.Exists(dbfPath)) return list;
 
-        using var reader = new DbfDataReader.DbfDataReader(dbfPath);
+        using var reader = new DbfDataReader.DbfDataReader(dbfPath, _dbfOptions);
         var colMap = GetColumnMap(reader);
 
         while (reader.Read())
@@ -212,6 +222,56 @@ public sealed class DbfExtractorService : IDbfExtractorService
                 }
             }
             list.Add(lg);
+        }
+        return list;
+    }
+
+    public async Task<List<LegacyTracking>> ReadTrackingAsync(string dbfPath)
+    {
+        var list = new List<LegacyTracking>();
+        if (!File.Exists(dbfPath)) return list;
+
+        using var reader = new DbfDataReader.DbfDataReader(dbfPath, _dbfOptions);
+        var colMap = GetColumnMap(reader);
+
+        while (reader.Read())
+        {
+            list.Add(new LegacyTracking
+            {
+                Buque = GetString(reader, colMap, "BUQUE"),
+                Matricula = GetString(reader, colMap, "MATRICULA"),
+                FechaStr = GetString(reader, colMap, "FECHA"),
+                Latitud = GetDouble(reader, colMap, "LATITUD"),
+                Longitud = GetDouble(reader, colMap, "LONGITUD"),
+                Velocidad = GetDouble(reader, colMap, "VELOCIDAD"),
+                Rumbo = GetDouble(reader, colMap, "RUMBO")
+            });
+        }
+        return list;
+    }
+
+    public async Task<List<LegacyProduccion>> ReadProduccionAsync(string dbfPath)
+    {
+        var list = new List<LegacyProduccion>();
+        if (!File.Exists(dbfPath)) return list;
+
+        using var reader = new DbfDataReader.DbfDataReader(dbfPath, _dbfOptions);
+        var colMap = GetColumnMap(reader);
+
+        while (reader.Read())
+        {
+            list.Add(new LegacyProduccion
+            {
+                Barco = GetString(reader, colMap, "BARCO"),
+                Marea = GetDouble(reader, colMap, "MAREA"),
+                Fecha = GetDateTime(reader, colMap, "FECHA") ?? DateTime.MinValue,
+                Especie = GetString(reader, colMap, "ESPECIE"),
+                Producto = GetString(reader, colMap, "PRODUCTO"),
+                Categoria = GetString(reader, colMap, "CATEGORIA"),
+                Operarios = (int)GetDouble(reader, colMap, "OPERARIOS"),
+                Factor = GetDouble(reader, colMap, "FACTOR"),
+                Kilos = GetDouble(reader, colMap, "KILOS")
+            });
         }
         return list;
     }

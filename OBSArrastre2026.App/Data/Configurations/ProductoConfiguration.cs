@@ -15,7 +15,6 @@ public sealed class ProductoConfiguration : IEntityTypeConfiguration<Producto>
         builder.Property(x => x.Id).HasColumnName("id").IsRequired();
         builder.Property(x => x.Codigo).HasColumnName("codigo").IsRequired();
         builder.Property(x => x.Descripcion).HasColumnName("descripcion").IsRequired();
-        builder.Property(x => x.Categoria).HasColumnName("categoria").IsRequired();
         builder.Property(x => x.Orden).HasColumnName("orden").HasDefaultValue(0);
     }
 }

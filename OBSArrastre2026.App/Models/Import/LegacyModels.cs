@@ -88,3 +88,39 @@ public class LegacyLg
     public long CodEspecIE { get; set; }
     public Dictionary<int, double> Frecuencias { get; } = new(); // Índice -> Frecuencia
 }
+
+/// <summary>
+/// Representa un registro de seguimiento satelital (T*.DBF).
+/// </summary>
+public class LegacyTracking
+{
+    public string Buque { get; set; } = string.Empty;
+    public string Matricula { get; set; } = string.Empty;
+    public string FechaStr { get; set; } = string.Empty; // "YYYY-MM-DD HH:MM:SS"
+    public double Latitud { get; set; }
+    public double Longitud { get; set; }
+    public double Velocidad { get; set; }
+    public double Rumbo { get; set; }
+
+    public DateTime GetUtcDateTime()
+    {
+        if (DateTime.TryParse(FechaStr, out var dt)) return dt;
+        return DateTime.MinValue;
+    }
+}
+
+/// <summary>
+/// Representa un registro de producción (P*.DBF).
+/// </summary>
+public class LegacyProduccion
+{
+    public string Barco { get; set; } = string.Empty;
+    public double Marea { get; set; }
+    public DateTime Fecha { get; set; }
+    public string Especie { get; set; } = string.Empty;
+    public string Producto { get; set; } = string.Empty;
+    public string Categoria { get; set; } = string.Empty;
+    public int Operarios { get; set; }
+    public double Factor { get; set; }
+    public double Kilos { get; set; }
+}

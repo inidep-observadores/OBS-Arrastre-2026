@@ -13,7 +13,9 @@ public sealed class MareaValidationEngine
         int nroMareaActual,
         List<LegacyCaptura> capturas,
         List<LegacyMuestra> muestras,
-        List<LegacySubmuestra> submuestras)
+        List<LegacySubmuestra> submuestras,
+        List<LegacyProduccion> produccion,
+        HashSet<string> nombresVulgaresExistentes)
     {
         var report = new MareaValidationReport
         {
@@ -27,8 +29,36 @@ public sealed class MareaValidationEngine
         ValidateLances(report, capturas);
         ValidateSamples(report, muestras, capturas);
         ValidateSubSamples(report, submuestras, muestras);
+        ValidateProduction(report, produccion, nombresVulgaresExistentes);
 
         return report;
+    }
+
+    private void ValidateProduction(MareaValidationReport report, List<LegacyProduccion> produccion, HashSet<string> nombresVulgaresExistentes)
+    {
+        // 1. Validar existencia de especie por nombre
+        var especiesDesconocidas = produccion
+            .Select(p => p.Especie?.Trim().ToUpper())
+            .Where(name => !string.IsNullOrEmpty(name) && !nombresVulgaresExistentes.Contains(name))
+            .Distinct();
+
+        foreach (var esp in especiesDesconocidas)
+        {
+            report.AddIssue(ValidationLevel.Warning, "Catálogo Especies", 
+                $"La especie de producción '{esp}' no fue encontrada por Nombre Vulgar en el catálogo local. El registro se importará pero sin vínculo a la especie.", "Archivo P*");
+        }
+
+        // 2. Regla de negocio: Unicidad de Fecha-Producto-Categoría (Warning)
+        var duplicates = produccion
+            .GroupBy(p => new { p.Fecha, p.Producto, p.Categoria })
+            .Where(g => g.Count() > 1);
+
+        foreach (var group in duplicates)
+        {
+            report.AddIssue(ValidationLevel.Warning, "Producción", 
+                $"Existen {group.Count()} registros para el producto '{group.Key.Producto}' ({group.Key.Categoria}) el {group.Key.Fecha:yyyy-MM-dd}. Se importarán todos pero se recomienda verificar posibles duplicados.", 
+                $"Fecha {group.Key.Fecha:yyyy-MM-dd}");
+        }
     }
 
     private void ValidateBaseConsistency(

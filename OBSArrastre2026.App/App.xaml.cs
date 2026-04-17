@@ -40,7 +40,8 @@ public partial class App : Application
                 services.AddDbContextFactory<AppDbContext>((sp, options) =>
                 {
                     var databasePathProvider = sp.GetRequiredService<IDatabasePathProvider>();
-                    options.UseSqlite(databasePathProvider.GetConnectionString());
+                    options.UseSqlite(databasePathProvider.GetConnectionString())
+                           .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
                 });
 
                 services.AddSingleton<IDatabaseInitializer, DatabaseInitializer>();
@@ -122,6 +123,9 @@ public partial class App : Application
 
     protected override async void OnStartup(StartupEventArgs e)
     {
+        // Habilitar soporte para codificaciones legacy (IBM850, Windows-1252, etc.)
+        System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+
         base.OnStartup(e);
 
         await _host.StartAsync();

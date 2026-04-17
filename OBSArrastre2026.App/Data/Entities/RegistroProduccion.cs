@@ -13,6 +13,12 @@ public sealed class RegistroProduccion
     public Producto Producto { get; set; } = null!;
 
     public string? Categoria { get; set; }
+    
+    public string? EspecieId { get; set; }
+    public Especie? Especie { get; set; }
+
+    public double? Factor { get; set; }
+    public int? Operarios { get; set; }
     public double? Kg { get; set; }
     public string? Comentarios { get; set; }
 }

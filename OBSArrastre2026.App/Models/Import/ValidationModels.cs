@@ -30,6 +30,10 @@ public class MareaValidationReport
     public List<LegacyMuestra> Muestras { get; set; } = new();
     public List<LegacySubmuestra> Submuestras { get; set; } = new();
     public List<LegacyLg> Lgs { get; set; } = new();
+    public List<LegacyTracking> Tracking { get; set; } = new();
+    public List<LegacyProduccion> Produccion { get; set; } = new();
+    
+    public List<string> ArchivosProcesados { get; set; } = new();
     
     public int TotalLances { get; set; }
     public int LancesConErrores => Issues.Count(i => i.Level == ValidationLevel.Error);

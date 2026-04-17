@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OBSArrastre2026.App.Data;
 
@@ -10,9 +11,11 @@ using OBSArrastre2026.App.Data;
 namespace OBSArrastre2026.App.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260417134324_AddMareaTracking")]
+    partial class AddMareaTracking
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.5");
@@ -729,6 +732,11 @@ namespace OBSArrastre2026.App.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("id");
 
+                    b.Property<string>("Categoria")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("categoria");
+
                     b.Property<string>("Codigo")
                         .IsRequired()
                         .HasColumnType("TEXT")
@@ -764,14 +772,6 @@ namespace OBSArrastre2026.App.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("comentarios");
 
-                    b.Property<string>("EspecieId")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("especie_id");
-
-                    b.Property<double?>("Factor")
-                        .HasColumnType("REAL")
-                        .HasColumnName("factor_conversion");
-
                     b.Property<string>("Fecha")
                         .IsRequired()
                         .HasColumnType("TEXT")
@@ -791,13 +791,7 @@ namespace OBSArrastre2026.App.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("marea_etapa_id");
 
-                    b.Property<int?>("Operarios")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("operarios");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("EspecieId");
 
                     b.HasIndex("Fecha")
                         .HasDatabaseName("idx_registros_produccion_fecha");
@@ -808,8 +802,8 @@ namespace OBSArrastre2026.App.Migrations
                     b.HasIndex("MareaEtapaId")
                         .HasDatabaseName("idx_registros_produccion_marea_etapa_id");
 
-                    b.HasIndex("MareaEtapaId", "Fecha", "IdProducto", "Categoria")
-                        .HasDatabaseName("idx_registros_produccion_unico_logico");
+                    b.HasIndex("MareaEtapaId", "Fecha", "IdProducto")
+                        .IsUnique();
 
                     b.ToTable("registros_produccion", (string)null);
                 });
@@ -974,11 +968,6 @@ namespace OBSArrastre2026.App.Migrations
 
             modelBuilder.Entity("OBSArrastre2026.App.Data.Entities.RegistroProduccion", b =>
                 {
-                    b.HasOne("OBSArrastre2026.App.Data.Entities.Especie", "Especie")
-                        .WithMany()
-                        .HasForeignKey("EspecieId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("OBSArrastre2026.App.Data.Entities.Producto", "Producto")
                         .WithMany("RegistrosProduccion")
                         .HasForeignKey("IdProducto")
@@ -990,8 +979,6 @@ namespace OBSArrastre2026.App.Migrations
                         .HasForeignKey("MareaEtapaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Especie");
 
                     b.Navigation("MareaEtapa");
 
