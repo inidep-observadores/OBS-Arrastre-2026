@@ -5,6 +5,11 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using OBSArrastre2026.App.Models;
 using OBSArrastre2026.App.Services;
+using Mapsui;
+using Mapsui.Tiling;
+using Mapsui.Projections;
+using Mapsui.Widgets;
+using Mapsui.Widgets.ScaleBar;
 
 namespace OBSArrastre2026.App.ViewModels;
 
@@ -29,6 +34,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private AppThemeMode _currentThemeMode;
     private object? _currentEditViewModel;
     private object? _activeDialog;
+    private Mapsui.Map _map;
 
     // Filtros de Mareas
     private int? _mareasFilterAnio;
@@ -102,6 +108,45 @@ public sealed class MainWindowViewModel : ObservableObject
                 _ = RefreshCurrentSectionAsync();
             }
         };
+
+        _map = CreateArgenmap();
+    }
+
+    private Mapsui.Map CreateArgenmap()
+    {
+        var map = new Mapsui.Map();
+        
+        // Limpiar widgets predeterminados (debug/performance) que Mapsui v5 añade automáticamente
+        while (map.Widgets.Count > 0)
+        {
+            map.Widgets.TryDequeue(out _);
+        }
+
+        try
+        {
+            // Fallback temporal a OSM para asegurar compilación
+            map.Layers.Add(Mapsui.Tiling.OpenStreetMap.CreateTileLayer());
+        }
+        catch
+        {
+        }
+
+        // Solo añadimos el widget de escala, que es útil y profesional
+        map.Widgets.Enqueue(new Mapsui.Widgets.ScaleBar.ScaleBarWidget(map) 
+        { 
+            TextColor = Mapsui.Styles.Color.Black,
+            HorizontalAlignment = Mapsui.Widgets.HorizontalAlignment.Left,
+            VerticalAlignment = Mapsui.Widgets.VerticalAlignment.Bottom
+        });
+
+        // Centrar en Mar Argentino (aproximadamente -45, -60)
+        var (x, y) = SphericalMercator.FromLonLat(-60, -42);
+        
+        // En Mapsui 5.0 la navegación inicial se configura a través del Navigator
+        map.Navigator.CenterOn(new MPoint(x, y));
+        map.Navigator.ZoomTo(10000); // Resolución aproximada para ver el Mar Argentino
+
+        return map;
     }
 
     private void UpdateNavigationState()
@@ -158,6 +203,12 @@ public sealed class MainWindowViewModel : ObservableObject
     public ICommand EditLanceCommand { get; }
     public ICommand ClearMareaFiltersCommand { get; }
     public ICommand ClearLanceFiltersCommand { get; }
+
+    public Mapsui.Map Map
+    {
+        get => _map;
+        set => SetProperty(ref _map, value);
+    }
 
     public NavigationItemViewModel? SelectedNavigationItem
     {

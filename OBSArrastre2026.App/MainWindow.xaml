@@ -7,6 +7,7 @@
         xmlns:vm="clr-namespace:OBSArrastre2026.App.ViewModels"
         xmlns:controls="clr-namespace:OBSArrastre2026.App.Controls"
         xmlns:models="clr-namespace:OBSArrastre2026.App.Models"
+        xmlns:mapsui="clr-namespace:Mapsui.UI.Wpf;assembly=Mapsui.UI.Wpf"
         mc:Ignorable="d"
         Title="{Binding Title}"
         Width="1460"
@@ -541,12 +542,30 @@
                         </Grid>
 
                         <Grid Visibility="{Binding IsTableVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition>
+                                    <ColumnDefinition.Style>
+                                        <Style TargetType="ColumnDefinition">
+                                            <Setter Property="Width" Value="0" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Lances}">
+                                                    <Setter Property="Width" Value="1.4*" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ColumnDefinition.Style>
+                                </ColumnDefinition>
+                            </Grid.ColumnDefinitions>
+
+                            <Grid Grid.Column="0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
 
                             <ItemsControl ItemsSource="{Binding ActiveFilters}">
                                 <ItemsControl.ItemsPanel>
@@ -766,6 +785,43 @@
                                 <ItemsControl ItemsSource="{Binding Records}">
                                 </ItemsControl>
                             </ScrollViewer>
+                        </Grid>
+
+                        <GridSplitter Grid.Column="1" 
+                                      Width="6" 
+                                      HorizontalAlignment="Center" 
+                                      VerticalAlignment="Stretch"
+                                      Background="{DynamicResource SidebarBorderBrush}"
+                                      ShowsPreview="True">
+                            <GridSplitter.Style>
+                                <Style TargetType="GridSplitter">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Lances}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </GridSplitter.Style>
+                        </GridSplitter>
+
+                        <Border Grid.Column="2" 
+                                Margin="12,0,0,0" 
+                                BorderBrush="{DynamicResource TableRowBorderBrush}" 
+                                BorderThickness="1"
+                                ClipToBounds="True">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Lances}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <mapsui:MapControl Map="{Binding Map}" />
+                        </Border>
                         </Grid>
                     </Grid>
                 </Grid>
