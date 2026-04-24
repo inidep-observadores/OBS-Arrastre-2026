@@ -10,6 +10,12 @@ using Mapsui.Tiling;
 using Mapsui.Projections;
 using Mapsui.Widgets;
 using Mapsui.Widgets.ScaleBar;
+using Mapsui.Layers;
+using Mapsui.Nts;
+using Mapsui.Styles;
+using NetTopologySuite.Geometries;
+using Microsoft.EntityFrameworkCore;
+using OBSArrastre2026.App.Data;
 
 namespace OBSArrastre2026.App.ViewModels;
 
@@ -25,6 +31,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private readonly IActiveMareaManager _activeMareaManager;
     private readonly IMareaValidationService _validationService;
     private readonly IMareaReportService _reportService;
+    private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
     private NavigationItemViewModel? _selectedNavigationItem;
     private string _pageTitle = string.Empty;
     private string _pageDescription = string.Empty;
@@ -59,7 +66,8 @@ public sealed class MainWindowViewModel : ObservableObject
         Func<Action, string?, MareaEditViewModel> mareaEditFactory,
         Func<Action, string, string?, LanceEditViewModel> lanceEditFactory,
         IMareaValidationService validationService,
-        IMareaReportService reportService)
+        IMareaReportService reportService,
+        IDbContextFactory<AppDbContext> dbContextFactory)
     {
         _mockShellDataService = mockShellDataService;
         _themeService = themeService;
@@ -71,6 +79,7 @@ public sealed class MainWindowViewModel : ObservableObject
         _lanceEditFactory = lanceEditFactory;
         _validationService = validationService;
         _reportService = reportService;
+        _dbContextFactory = dbContextFactory;
 
         SearchPlaceholder = "Buscar...";
         SetSystemThemeCommand = new RelayCommand(() => ApplyTheme(AppThemeMode.System));
@@ -106,6 +115,7 @@ public sealed class MainWindowViewModel : ObservableObject
                 OnPropertyChanged(nameof(ActiveMareaManager));
                 UpdateNavigationState();
                 _ = RefreshCurrentSectionAsync();
+                _ = UpdateMapDataAsync();
             }
         };
 
@@ -711,8 +721,132 @@ public sealed class MainWindowViewModel : ObservableObject
             if (LancesFilterNroLance.HasValue) ActiveFilters.Add($"Lance: {LancesFilterNroLance}");
             if (!string.IsNullOrWhiteSpace(LancesFilterEspecie)) ActiveFilters.Add($"Especie: {LancesFilterEspecie}");
             if (_activeMareaManager.ActiveMarea != null) ActiveFilters.Add($"Marea Activa: {_activeMareaManager.ActiveMarea.NumeroInidep}/{_activeMareaManager.ActiveMarea.AnioInidep}");
+
+            _ = UpdateMapDataAsync();
         }
         catch (Exception) { /* Log error */ }
+    }
+
+    private async Task UpdateMapDataAsync()
+    {
+        if (_map == null) return;
+
+        // Limpiar capas previas de datos (Lances y Track)
+        var dataLayers = _map.Layers.Where(l => l.Name == "Lances" || l.Name == "Track").ToList();
+        foreach (var layer in dataLayers) _map.Layers.Remove(layer);
+
+        if (string.IsNullOrEmpty(_activeMareaManager.ActiveMareaId))
+        {
+            _map.RefreshGraphics();
+            return;
+        }
+
+        try
+        {
+            await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+
+            // 1. Obtener Lances
+            var lances = await dbContext.Lances
+                .Where(l => l.MareaEtapa.MareaID == _activeMareaManager.ActiveMareaId)
+                .ToListAsync();
+
+            // 2. Obtener Track
+            var trackPoints = await dbContext.TrackingPoints
+                .Where(t => t.MareaID == _activeMareaManager.ActiveMareaId)
+                .OrderBy(t => t.FechaHora)
+                .ToListAsync();
+
+            // 3. Crear capa de Track (Línea)
+            if (trackPoints.Count > 1)
+            {
+                var coordinates = trackPoints.Select(p => 
+                {
+                    var (x, y) = SphericalMercator.FromLonLat(p.Longitud, p.Latitud);
+                    return new Coordinate(x, y);
+                }).ToArray();
+
+                var lineString = new LineString(coordinates);
+                var trackLayer = new MemoryLayer
+                {
+                    Name = "Track",
+                    Features = new List<IFeature> { new GeometryFeature(lineString) },
+                    Style = new VectorStyle
+                    {
+                        Line = new Pen(Mapsui.Styles.Color.FromString("#FF4500"), 2) // Naranja vibrante
+                    }
+                };
+                _map.Layers.Add(trackLayer);
+            }
+
+            // 4. Crear capa de Lances (Segmentos individualizados)
+            var lanceFeatures = new List<IFeature>();
+            foreach (var lance in lances)
+            {
+                // Si tenemos inicio y fin, dibujamos el segmento de arrastre
+                if (lance.LatitudInicioDecimal.HasValue && lance.LongitudInicioDecimal.HasValue &&
+                    lance.LatitudFinalDecimal.HasValue && lance.LongitudFinalDecimal.HasValue)
+                {
+                    var (x1, y1) = SphericalMercator.FromLonLat(lance.LongitudInicioDecimal.Value, lance.LatitudInicioDecimal.Value);
+                    var (x2, y2) = SphericalMercator.FromLonLat(lance.LongitudFinalDecimal.Value, lance.LatitudFinalDecimal.Value);
+                    
+                    var line = new LineString(new[] { new Coordinate(x1, y1), new Coordinate(x2, y2) });
+                    var feature = new GeometryFeature(line);
+                    feature["Label"] = $"L{lance.NroLance}";
+                    lanceFeatures.Add(feature);
+                }
+                // Si solo tenemos inicio, dibujamos un punto (fallback)
+                else if (lance.LatitudInicioDecimal.HasValue && lance.LongitudInicioDecimal.HasValue)
+                {
+                    var (x, y) = SphericalMercator.FromLonLat(lance.LongitudInicioDecimal.Value, lance.LatitudInicioDecimal.Value);
+                    var feature = new GeometryFeature(new Point(x, y));
+                    feature["Label"] = $"L{lance.NroLance}";
+                    lanceFeatures.Add(feature);
+                }
+            }
+
+            if (lanceFeatures.Any())
+            {
+                var lancesLayer = new MemoryLayer
+                {
+                    Name = "Lances",
+                    Features = lanceFeatures,
+                    Style = new VectorStyle
+                    {
+                        Line = new Pen(Mapsui.Styles.Color.FromString("#00FFFF"), 4), // Cian grueso para los lances
+                        Fill = new Mapsui.Styles.Brush(Mapsui.Styles.Color.FromString("#00FFFF"))
+                    }
+                };
+                _map.Layers.Add(lancesLayer);
+            }
+
+            // 5. Ajustar vista al conjunto de datos
+            var extent = _map.Layers.Where(l => l.Name == "Lances" || l.Name == "Track")
+                                    .Select(l => l.Extent)
+                                    .Where(e => e != null)
+                                    .ToList();
+
+            if (extent.Any())
+            {
+                MRect? fullExtent = null;
+                foreach (var e in extent)
+                {
+                    if (fullExtent == null) fullExtent = e;
+                    else fullExtent = fullExtent.Join(e!);
+                }
+
+                if (fullExtent != null)
+                {
+                    _map.Navigator.ZoomToBox(fullExtent.Grow(fullExtent.Width * 0.2, fullExtent.Height * 0.2));
+                }
+            }
+
+            // En Mapsui 5.0, el refresco se hace notificando cambios en las capas o refrescando el navigator
+            _map.RefreshGraphics();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error actualizando mapa: {ex.Message}");
+        }
     }
 
     private async Task ClearLanceFiltersAsync()

@@ -18,6 +18,7 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="DbfDataReader" Version="1.1.0" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+    <PackageReference Include="Mapsui.Nts" Version="5.0.2" />
     <PackageReference Include="Mapsui.Wpf" Version="5.0.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.*">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
