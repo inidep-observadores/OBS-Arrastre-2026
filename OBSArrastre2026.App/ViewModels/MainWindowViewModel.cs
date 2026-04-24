@@ -70,6 +70,8 @@ public sealed class MainWindowViewModel : ObservableObject
         
         ApplyLanceFiltersCommand = new AsyncCommand(LoadLancesAsync);
         EditLanceCommand = new RelayCommand<LanceListItemViewModel>(OpenEditLanceForm);
+        ClearMareaFiltersCommand = new AsyncCommand(ClearMareaFiltersAsync);
+        ClearLanceFiltersCommand = new AsyncCommand(ClearLanceFiltersAsync);
 
         _mareasFilterAnio = DateTime.Today.Year;
 
@@ -135,7 +137,7 @@ public sealed class MainWindowViewModel : ObservableObject
 
     public ObservableCollection<BuqueListItemViewModel> Buques { get; } = [];
 
-    public ObservableCollection<int> Anios { get; } = [];
+    public ObservableCollection<int?> Anios { get; } = [];
 
     public ICommand SetSystemThemeCommand { get; }
 
@@ -148,6 +150,8 @@ public sealed class MainWindowViewModel : ObservableObject
     public ICommand EditMareaCommand { get; }
     public ICommand ApplyLanceFiltersCommand { get; }
     public ICommand EditLanceCommand { get; }
+    public ICommand ClearMareaFiltersCommand { get; }
+    public ICommand ClearLanceFiltersCommand { get; }
 
     public NavigationItemViewModel? SelectedNavigationItem
     {
@@ -195,55 +199,109 @@ public sealed class MainWindowViewModel : ObservableObject
     public int? MareasFilterAnio
     {
         get => _mareasFilterAnio;
-        set => SetProperty(ref _mareasFilterAnio, value);
+        set
+        {
+            if (SetProperty(ref _mareasFilterAnio, value))
+            {
+                _ = LoadMareasAsync();
+            }
+        }
     }
 
     public BuqueListItemViewModel? MareasFilterBuque
     {
         get => _mareasFilterBuque;
-        set => SetProperty(ref _mareasFilterBuque, value);
+        set
+        {
+            if (SetProperty(ref _mareasFilterBuque, value))
+            {
+                _ = LoadMareasAsync();
+            }
+        }
     }
 
     public DateTime? MareasFilterFechaDesde
     {
         get => _mareasFilterFechaDesde;
-        set => SetProperty(ref _mareasFilterFechaDesde, value);
+        set
+        {
+            if (SetProperty(ref _mareasFilterFechaDesde, value))
+            {
+                _ = LoadMareasAsync();
+            }
+        }
     }
 
     public DateTime? MareasFilterFechaHasta
     {
         get => _mareasFilterFechaHasta;
-        set => SetProperty(ref _mareasFilterFechaHasta, value);
+        set
+        {
+            if (SetProperty(ref _mareasFilterFechaHasta, value))
+            {
+                _ = LoadMareasAsync();
+            }
+        }
     }
 
     public string MareasSearchText
     {
         get => _mareasSearchText;
-        set => SetProperty(ref _mareasSearchText, value);
+        set
+        {
+            if (SetProperty(ref _mareasSearchText, value))
+            {
+                _ = LoadMareasAsync();
+            }
+        }
     }
 
     public DateTime? LancesFilterFechaDesde
     {
         get => _lancesFilterFechaDesde;
-        set => SetProperty(ref _lancesFilterFechaDesde, value);
+        set
+        {
+            if (SetProperty(ref _lancesFilterFechaDesde, value))
+            {
+                _ = LoadLancesAsync();
+            }
+        }
     }
 
     public DateTime? LancesFilterFechaHasta
     {
         get => _lancesFilterFechaHasta;
-        set => SetProperty(ref _lancesFilterFechaHasta, value);
+        set
+        {
+            if (SetProperty(ref _lancesFilterFechaHasta, value))
+            {
+                _ = LoadLancesAsync();
+            }
+        }
     }
 
     public int? LancesFilterNroLance
     {
         get => _lancesFilterNroLance;
-        set => SetProperty(ref _lancesFilterNroLance, value);
+        set
+        {
+            if (SetProperty(ref _lancesFilterNroLance, value))
+            {
+                _ = LoadLancesAsync();
+            }
+        }
     }
 
     public string LancesFilterEspecie
     {
         get => _lancesFilterEspecie;
-        set => SetProperty(ref _lancesFilterEspecie, value);
+        set
+        {
+            if (SetProperty(ref _lancesFilterEspecie, value))
+            {
+                _ = LoadLancesAsync();
+            }
+        }
     }
 
     public object? CurrentEditViewModel
@@ -436,6 +494,7 @@ public sealed class MainWindowViewModel : ObservableObject
             // Cargar años únicos desde las mareas existentes
             var anios = await _mareaService.GetAniosExistentesAsync();
             Anios.Clear();
+            Anios.Add(null);
             foreach (var anio in anios)
             {
                 Anios.Add(anio);
@@ -453,8 +512,9 @@ public sealed class MainWindowViewModel : ObservableObject
             }
 
             // Cargar buques
-            var buques = await _buqueService.GetBuquesAsync();
+            var buques = await _buqueService.GetBuquesAsync(onlyWithMareas: true);
             Buques.Clear();
+            Buques.Add(new BuqueListItemViewModel(null!, "(Todos)", 0, 0, null, null));
             foreach (var buque in buques)
             {
                 Buques.Add(buque);
@@ -468,10 +528,11 @@ public sealed class MainWindowViewModel : ObservableObject
             _ = Task.Delay(2000).ContinueWith(async _ => 
             {
                 try {
-                    var b = await _buqueService.GetBuquesAsync();
+                    var b = await _buqueService.GetBuquesAsync(onlyWithMareas: true);
                     if (b.Any()) {
                         App.Current.Dispatcher.Invoke(() => {
                             Buques.Clear();
+                            Buques.Add(new BuqueListItemViewModel(null!, "(Todos)", 0, 0, null, null));
                             foreach(var x in b) Buques.Add(x);
                         });
                     }
@@ -524,6 +585,16 @@ public sealed class MainWindowViewModel : ObservableObject
         {
             // Log error
         }
+    }
+
+    private async Task ClearMareaFiltersAsync()
+    {
+        MareasFilterAnio = null;
+        MareasFilterBuque = null;
+        MareasFilterFechaDesde = null;
+        MareasFilterFechaHasta = null;
+        MareasSearchText = string.Empty;
+        await LoadMareasAsync();
     }
 
     private void OpenCreateMareaForm()
@@ -585,6 +656,15 @@ public sealed class MainWindowViewModel : ObservableObject
             if (_activeMareaManager.ActiveMarea != null) ActiveFilters.Add($"Marea Activa: {_activeMareaManager.ActiveMarea.NumeroInidep}/{_activeMareaManager.ActiveMarea.AnioInidep}");
         }
         catch (Exception) { /* Log error */ }
+    }
+
+    private async Task ClearLanceFiltersAsync()
+    {
+        LancesFilterFechaDesde = null;
+        LancesFilterFechaHasta = null;
+        LancesFilterNroLance = null;
+        LancesFilterEspecie = string.Empty;
+        await LoadLancesAsync();
     }
 
     private void OpenEditLanceForm(LanceListItemViewModel? item)

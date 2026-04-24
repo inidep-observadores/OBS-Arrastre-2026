@@ -84,7 +84,7 @@
                                 <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                        <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
+                                        <Setter Property="Foreground" Value="{DynamicResource WarningForegroundBrush}" />
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
@@ -235,13 +235,6 @@
                                                Foreground="{DynamicResource SecondaryTextBrush}"
                                                Text="{Binding ActiveMareaManager.ActiveMarea.Buque.Nombre}" />
                                     
-                                    <Button Command="{Binding ClearActiveMareaCommand}"
-                                            Style="{StaticResource ThemeButtonStyle}"
-                                            HorizontalAlignment="Left"
-                                            Margin="-8,8,0,0"
-                                            Padding="8,4">
-                                        <TextBlock Text="Limpiar" FontSize="11" Foreground="{DynamicResource DangerBrush}" />
-                                    </Button>
                                 </StackPanel>
                             </Grid>
 
@@ -609,7 +602,7 @@
                                     <StackPanel Grid.Column="3" Margin="8,0,16,0">
                                         <Label Content="Búsqueda" Style="{StaticResource FormLabelStyle}"/>
                                         <TextBox Style="{StaticResource PremiumTextBoxStyle}"
-                                                 Text="{Binding MareasSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                                 Text="{Binding MareasSearchText}"
                                                  Tag="Número o comentarios...">
                                             <TextBox.InputBindings>
                                                 <KeyBinding Key="Enter" Command="{Binding ApplyMareaFiltersCommand}" />
@@ -617,12 +610,17 @@
                                         </TextBox>
                                     </StackPanel>
 
-                                    <Button Grid.Column="4" 
-                                            Style="{StaticResource PrimaryButtonStyle}"
-                                            Command="{Binding ApplyMareaFiltersCommand}"
-                                            Content="Filtrar"
-                                            VerticalAlignment="Bottom"
-                                            Padding="24,10"/>
+                                    <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Bottom">
+                                        <Button Style="{StaticResource ThemeButtonStyle}"
+                                                Command="{Binding ClearMareaFiltersCommand}"
+                                                Content="Limpiar"
+                                                Margin="0,0,12,0"
+                                                Padding="16,10"/>
+                                        <Button Style="{StaticResource PrimaryButtonStyle}"
+                                                Command="{Binding ApplyMareaFiltersCommand}"
+                                                Content="Filtrar"
+                                                Padding="24,10"/>
+                                    </StackPanel>
                                 </Grid>
                             </Border>
 
@@ -670,7 +668,7 @@
                                             <Label Content="Nro. Lance" Style="{StaticResource FormLabelStyle}"/>
                                             <TextBox Width="100" 
                                                      Style="{StaticResource PremiumTextBoxStyle}"
-                                                     Text="{Binding LancesFilterNroLance}">
+                                                     Text="{Binding LancesFilterNroLance, TargetNullValue=''}">
                                                 <TextBox.InputBindings>
                                                     <KeyBinding Key="Enter" Command="{Binding ApplyLanceFiltersCommand}" />
                                                 </TextBox.InputBindings>
@@ -681,7 +679,7 @@
                                     <StackPanel Grid.Column="2" Margin="8,0,16,0">
                                         <Label Content="Especie" Style="{StaticResource FormLabelStyle}"/>
                                         <TextBox Style="{StaticResource PremiumTextBoxStyle}"
-                                                 Text="{Binding LancesFilterEspecie, UpdateSourceTrigger=PropertyChanged}"
+                                                 Text="{Binding LancesFilterEspecie}"
                                                  Tag="Buscar especie...">
                                             <TextBox.InputBindings>
                                                 <KeyBinding Key="Enter" Command="{Binding ApplyLanceFiltersCommand}" />
@@ -689,12 +687,17 @@
                                         </TextBox>
                                     </StackPanel>
 
-                                    <Button Grid.Column="3" 
-                                            Style="{StaticResource PrimaryButtonStyle}"
-                                            Command="{Binding ApplyLanceFiltersCommand}"
-                                            Content="Filtrar"
-                                            VerticalAlignment="Bottom"
-                                            Padding="24,10"/>
+                                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Bottom">
+                                        <Button Style="{StaticResource ThemeButtonStyle}"
+                                                Command="{Binding ClearLanceFiltersCommand}"
+                                                Content="Limpiar"
+                                                Margin="0,0,12,0"
+                                                Padding="16,10"/>
+                                        <Button Style="{StaticResource PrimaryButtonStyle}"
+                                                Command="{Binding ApplyLanceFiltersCommand}"
+                                                Content="Filtrar"
+                                                Padding="24,10"/>
+                                    </StackPanel>
                                 </Grid>
                             </Border>
 
