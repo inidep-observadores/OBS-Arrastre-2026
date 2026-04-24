@@ -18,6 +18,8 @@ public sealed class MainWindowViewModel : ObservableObject
     private readonly Func<Action, string?, MareaEditViewModel> _mareaEditFactory;
     private readonly Func<Action, string, string?, LanceEditViewModel> _lanceEditFactory;
     private readonly IActiveMareaManager _activeMareaManager;
+    private readonly IMareaValidationService _validationService;
+    private readonly IMareaReportService _reportService;
     private NavigationItemViewModel? _selectedNavigationItem;
     private string _pageTitle = string.Empty;
     private string _pageDescription = string.Empty;
@@ -49,7 +51,9 @@ public sealed class MainWindowViewModel : ObservableObject
         ILanceService lanceService,
         IActiveMareaManager activeMareaManager,
         Func<Action, string?, MareaEditViewModel> mareaEditFactory,
-        Func<Action, string, string?, LanceEditViewModel> lanceEditFactory)
+        Func<Action, string, string?, LanceEditViewModel> lanceEditFactory,
+        IMareaValidationService validationService,
+        IMareaReportService reportService)
     {
         _mockShellDataService = mockShellDataService;
         _themeService = themeService;
@@ -59,6 +63,8 @@ public sealed class MainWindowViewModel : ObservableObject
         _activeMareaManager = activeMareaManager;
         _mareaEditFactory = mareaEditFactory;
         _lanceEditFactory = lanceEditFactory;
+        _validationService = validationService;
+        _reportService = reportService;
 
         SearchPlaceholder = "Buscar...";
         SetSystemThemeCommand = new RelayCommand(() => ApplyTheme(AppThemeMode.System));
@@ -567,7 +573,7 @@ public sealed class MainWindowViewModel : ObservableObject
                 filterHasta,
                 _mareasSearchText);
 
-            var viewModels = mareas.Select(m => new MareaListItemViewModel(m, _activeMareaManager)).ToList();
+            var viewModels = mareas.Select(m => new MareaListItemViewModel(m, _activeMareaManager, _validationService, _reportService)).ToList();
             
             Records.Clear();
             foreach (var vm in viewModels)

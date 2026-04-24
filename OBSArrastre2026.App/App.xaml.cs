@@ -60,6 +60,7 @@ public partial class App : Application
                         sp.GetRequiredService<IDbfExtractorService>(),
                         sp.GetRequiredService<IMareaReportService>(),
                         sp.GetRequiredService<IDbContextFactory<AppDbContext>>()));
+                services.AddSingleton<IMareaValidationService, MareaValidationService>();
 
                 // Validación y ViewModels
                 services.AddValidatorsFromAssemblyContaining<App>();

@@ -361,29 +361,63 @@ public sealed class MareaValidationEngine
 
     private void ValidatePointWithTrack(MareaValidationReport report, string lanceCtx, string pointType, DateTime lanceTime, double lanceLat, double lanceLon, List<LegacyTracking> tracking)
     {
-        // El track viene en UTC, debemos ajustarlo a UTC-3 para comparar con el lance
-        var closest = tracking
-            .OrderBy(t => Math.Abs((t.GetUtcDateTime().AddHours(-3) - lanceTime).TotalSeconds))
-            .FirstOrDefault();
+        if (tracking == null || !tracking.Any()) return;
 
-        if (closest == null) return;
+        // PARÁMETROS DE LA NUEVA ESTRATEGIA (Radio de Alcanzabilidad)
+        const double MaxCruisingSpeedKnots = 11.0; // Velocidad máxima supuesta para traslado
+        const double MaxErrorToleranceNm = 10.0;    // Solo alertar si la discrepancia supera las 10 millas
+        const int SearchWindowHours = 2;           // Buscar en una ventana de +/- 2 horas
 
-        var trackTime = closest.GetUtcDateTime().AddHours(-3);
-        double timeDiffHours = Math.Abs((lanceTime - trackTime).TotalHours);
-        
-        // Si la diferencia de tiempo es muy pequeña (ej: < 1 seg), evitamos división por cero o ruido excesivo
-        if (timeDiffHours < 0.00027) timeDiffHours = 0.00027; // ~1 segundo mínimo para el cálculo
+        double minDiscrepancyFound = double.MaxValue;
+        LegacyTracking bestPoint = null;
+        double bestPointDist = 0;
+        double bestPointTimeDiffMin = 0;
 
-        double distNm = CalculateDistanceNauticalMiles(lanceLat, lanceLon, closest.Latitud, closest.Longitud);
-        double speedKnots = distNm / timeDiffHours;
+        DateTime windowStart = lanceTime.AddHours(-SearchWindowHours);
+        DateTime windowEnd = lanceTime.AddHours(SearchWindowHours);
 
-        if (speedKnots > 15)
+        // 1. Encontrar el punto del track que más se "acerque" a la posición del lance 
+        // considerando lo que el barco pudo haber navegado en ese tiempo.
+        foreach (var t in tracking)
+        {
+            var trackTimeUtc3 = t.GetUtcDateTime().AddHours(-3);
+            
+            // Solo evaluamos puntos dentro de la ventana de búsqueda (evita que radios enormes anulen la validación)
+            if (trackTimeUtc3 >= windowStart && trackTimeUtc3 <= windowEnd)
+            {
+                double actualDist = CalculateDistanceNauticalMiles(lanceLat, lanceLon, t.Latitud, t.Longitud);
+                double timeDiffHours = Math.Abs((lanceTime - trackTimeUtc3).TotalHours);
+                
+                // Distancia que el buque PODRÍA haber recorrido a velocidad crucero
+                double maxReachDist = MaxCruisingSpeedKnots * timeDiffHours;
+                
+                // Discrepancia: Lo que le "falta" al buque para llegar incluso yendo a 11 nudos
+                double discrepancy = actualDist - maxReachDist;
+
+                if (discrepancy < minDiscrepancyFound)
+                {
+                    minDiscrepancyFound = discrepancy;
+                    bestPoint = t;
+                    bestPointDist = actualDist;
+                    bestPointTimeDiffMin = timeDiffHours * 60;
+                }
+            }
+        }
+
+        // 2. Si no se encontró ningún punto en la ventana de 4 horas, es una alerta de falta de datos
+        if (bestPoint == null)
+        {
+            // Opcionalmente reportar falta de cobertura de track
+            return;
+        }
+
+        // 3. VALIDACIÓN FINAL
+        // Si la discrepancia mínima encontrada es mayor a 10 millas, es un error geográfico claro
+        if (minDiscrepancyFound > MaxErrorToleranceNm)
         {
             report.AddIssue(ValidationLevel.Warning, "Geografía", 
-                $"Posible error de posición en {pointType}: La velocidad necesaria para alcanzar el punto de track más cercano ({trackTime:HH:mm}) es de {speedKnots:F1} nudos. " +
-                $"Pos. Lance: {FormatCoordShort(lanceLat, true)}, {FormatCoordShort(lanceLon, false)}. " +
-                $"Pos. Track: {FormatCoordShort(closest.Latitud, true)}, {FormatCoordShort(closest.Longitud, false)}. " +
-                $"(Distancia: {distNm:F2} mn, ΔT: {Math.Abs((lanceTime - trackTime).TotalMinutes):F1} min).", 
+                $"Inconsistencia en {pointType}: El buque se encuentra a {bestPointDist:F1} mn del track (Dif: {bestPointTimeDiffMin:F0} min). " +
+                $"Incluso a velocidad máxima, existe una discrepancia física de {minDiscrepancyFound:F1} mn.", 
                 lanceCtx);
         }
     }

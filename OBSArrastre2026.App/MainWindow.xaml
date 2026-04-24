@@ -43,6 +43,7 @@
                         <ColumnDefinition Width="1.2*" />
                         <ColumnDefinition Width="0.9*" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Text="{Binding CodigoDisplay}" />
                     <TextBlock Grid.Column="1" Style="{StaticResource BodySecondaryStyle}" Text="{Binding BuqueNombre}" />
@@ -91,6 +92,39 @@
                         </Button.Style>
                         <TextBlock Text="★" FontSize="18" VerticalAlignment="Center" />
                     </Button>
+                    
+                    <Grid Grid.Column="7" Margin="8,0,0,0">
+                        <!-- Botón normal -->
+                        <Button Command="{Binding ValidateCommand}"
+                                ToolTip="Validar datos y generar PDF">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource ThemeButtonStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsValidating}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <TextBlock Text="📋" FontSize="16" VerticalAlignment="Center" Foreground="{DynamicResource AccentBrush}"/>
+                        </Button>
+
+                        <!-- Indicador de progreso -->
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsValidating}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <ProgressBar IsIndeterminate="True" Width="16" Height="16" Margin="0,0,5,0" />
+                            <TextBlock Text="{Binding StatusText}" FontSize="10" FontStyle="Italic" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                        </StackPanel>
+                    </Grid>
                 </Grid>
             </Border>
         </DataTemplate>

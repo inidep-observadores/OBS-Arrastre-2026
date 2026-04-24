@@ -116,7 +116,11 @@ public class MareaReportService : IMareaReportService
 
                         IContainer ContentStyle(IContainer container) 
                         {
-                            var c = container.PaddingVertical(5).BorderBottom(1).BorderColor(Colors.Grey.Lighten3);
+                            var c = container.PaddingVertical(5)
+                                .PaddingRight(10) // Espacio entre columnas
+                                .BorderBottom(1)
+                                .BorderColor(Colors.Grey.Lighten3);
+                            
                             if (issue.Level == ValidationLevel.Error) c = c.Background(Colors.Red.Lighten5);
                             return c;
                         }

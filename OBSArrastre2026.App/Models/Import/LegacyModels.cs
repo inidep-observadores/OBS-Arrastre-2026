@@ -102,9 +102,15 @@ public class LegacyTracking
     public double Velocidad { get; set; }
     public double Rumbo { get; set; }
 
+    private DateTime? _cachedDateTime;
     public DateTime GetUtcDateTime()
     {
-        if (DateTime.TryParse(FechaStr, out var dt)) return dt;
+        if (_cachedDateTime.HasValue) return _cachedDateTime.Value;
+        if (DateTime.TryParse(FechaStr, out var dt))
+        {
+            _cachedDateTime = dt;
+            return dt;
+        }
         return DateTime.MinValue;
     }
 }
