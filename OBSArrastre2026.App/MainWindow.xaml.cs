@@ -276,4 +276,16 @@ public partial class MainWindow : Window
             _settingsService.UpdateSettings(s => s.WindowState = WindowState);
         }
     }
+
+    private void RecordsList_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            if (DataContext is MainWindowViewModel vm && vm.SelectedRecord != null)
+            {
+                vm.OpenSelectedRecordEditCommand.Execute(null);
+                e.Handled = true;
+            }
+        }
+    }
 }

@@ -99,6 +99,7 @@ public sealed class MainWindowViewModel : ObservableObject
         ApplyLanceFiltersCommand = new AsyncCommand(LoadLancesAsync);
         EditLanceCommand = new RelayCommand<LanceListItemViewModel>(OpenEditLanceForm);
         EditMuestraCommand = new RelayCommand<MuestraListItemViewModel>(OpenEditMuestraForm);
+        OpenSelectedRecordEditCommand = new RelayCommand(OpenSelectedRecordEdit);
         ClearMareaFiltersCommand = new AsyncCommand(ClearMareaFiltersAsync);
         ClearLanceFiltersCommand = new AsyncCommand(ClearLanceFiltersAsync);
 
@@ -176,13 +177,14 @@ public sealed class MainWindowViewModel : ObservableObject
 
     public ICommand SetDarkThemeCommand { get; }
 
-    public ICommand PrimaryActionCommand { get; }
+    public ICommand PrimaryActionCommand { get; private set; }
 
     public ICommand EditMareaCommand { get; }
     public ICommand ApplyMareaFiltersCommand { get; }
     public ICommand ApplyLanceFiltersCommand { get; }
     public ICommand EditLanceCommand { get; }
     public ICommand EditMuestraCommand { get; }
+    public ICommand OpenSelectedRecordEditCommand { get; }
     public ICommand ClearMareaFiltersCommand { get; }
     public ICommand ClearLanceFiltersCommand { get; }
 
@@ -211,6 +213,16 @@ public sealed class MainWindowViewModel : ObservableObject
         {
             Records.Add(vm);
         }
+    }
+
+    private void OpenSelectedRecordEdit()
+    {
+        if (SelectedRecord is MareaListItemViewModel mareaVm)
+            OpenEditMareaForm(mareaVm);
+        else if (SelectedRecord is LanceListItemViewModel lanceVm)
+            OpenEditLanceForm(lanceVm);
+        else if (SelectedRecord is MuestraListItemViewModel muestraVm)
+            OpenEditMuestraForm(muestraVm);
     }
 
     private void OpenEditMuestraForm(MuestraListItemViewModel? vm)
@@ -481,8 +493,6 @@ public sealed class MainWindowViewModel : ObservableObject
 
     public string Column5Header { get; private set; } = string.Empty;
 
-    public ICommand ApplyMareaFiltersCommand { get; }
-    
     public ICommand ClearActiveMareaCommand => new AsyncRelayCommand(() => _activeMareaManager.SetActiveMareaAsync(null));
 
     private async Task RefreshCurrentSectionAsync()
@@ -567,11 +577,11 @@ public sealed class MainWindowViewModel : ObservableObject
             PrimaryActionCommand = new RelayCommand(OpenCreateMuestraForm);
             
             SetColumnHeaders(
-                muestraSection.Column1Header,
-                muestraSection.Column2Header,
-                muestraSection.Column3Header,
-                muestraSection.Column4Header,
-                muestraSection.Column5Header);
+                "Nro. Lance",
+                "Fecha",
+                "Hora Virada",
+                "Especie",
+                "Peso");
 
             ClearDashboardCollections();
             IsDashboardVisible = false;

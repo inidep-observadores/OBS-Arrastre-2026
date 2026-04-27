@@ -24,9 +24,33 @@ public sealed class FrecuenciaTallaViewModel : ObservableObject
     public string Id { get; set; } = Guid.NewGuid().ToString();
 
     public double Talla { get => _talla; set => SetProperty(ref _talla, value); }
-    public int NroMachos { get => _nroMachos; set => SetProperty(ref _nroMachos, value); }
-    public int NroHembras { get => _nroHembras; set => SetProperty(ref _nroHembras, value); }
-    public int NroIndeterminados { get => _nroIndeterminados; set => SetProperty(ref _nroIndeterminados, value); }
+    public int NroMachos 
+    { 
+        get => _nroMachos; 
+        set 
+        {
+            if (SetProperty(ref _nroMachos, value))
+                OnPropertyChanged(nameof(Total));
+        } 
+    }
+    public int NroHembras 
+    { 
+        get => _nroHembras; 
+        set 
+        {
+            if (SetProperty(ref _nroHembras, value))
+                OnPropertyChanged(nameof(Total));
+        } 
+    }
+    public int NroIndeterminados 
+    { 
+        get => _nroIndeterminados; 
+        set 
+        {
+            if (SetProperty(ref _nroIndeterminados, value))
+                OnPropertyChanged(nameof(Total));
+        } 
+    }
 
     public int Total => NroMachos + NroHembras + NroIndeterminados;
 

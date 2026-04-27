@@ -21,10 +21,12 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
     private bool _isLoading;
 
     private string? _especieId;
-    private string? _comentarios;
-    private int _origen;
     private double? _pesoMuestraGramos;
     private List<Especie> _allEspecies = new();
+    
+    private bool _isExpanded;
+    private string _searchText = string.Empty;
+    private Especie? _selectedEspecie;
 
     public MuestraEditViewModel(
         Action onClose,
@@ -52,9 +54,94 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
 
     public bool IsLoading { get => _isLoading; set => SetProperty(ref _isLoading, value); }
     public List<Especie> Especies => _allEspecies;
-    public string? EspecieId { get => _especieId; set => SetProperty(ref _especieId, value); }
-    public string? Comentarios { get => _comentarios; set => SetProperty(ref _comentarios, value); }
-    public int Origen { get => _origen; set => SetProperty(ref _origen, value); }
+    
+    public string? EspecieId 
+    { 
+        get => _especieId; 
+        set 
+        {
+            if (SetProperty(ref _especieId, value))
+            {
+                if (value != null && SelectedEspecie?.ID != value)
+                {
+                    SelectedEspecie = _allEspecies.FirstOrDefault(e => e.ID == value);
+                }
+            }
+        }
+    }
+
+    public bool IsExpanded
+    {
+        get => _isExpanded;
+        set => SetProperty(ref _isExpanded, value);
+    }
+
+    public string SearchText
+    {
+        get => _searchText;
+        set
+        {
+            if (SetProperty(ref _searchText, value))
+            {
+                OnPropertyChanged(nameof(FilteredEspecies));
+                
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    SelectedEspecie = null;
+                    IsExpanded = false;
+                }
+                else
+                {
+                    string currentName = SelectedEspecie?.NombreVulgar ?? string.Empty;
+                    string currentFull = SelectedEspecie != null ? $"{SelectedEspecie.NombreVulgar} ({SelectedEspecie.NombreCientifico})" : string.Empty;
+                    
+                    if (value != currentName && value != currentFull)
+                    {
+                        IsExpanded = true;
+                    }
+                }
+            }
+        }
+    }
+
+    public Especie? SelectedEspecie
+    {
+        get => _selectedEspecie;
+        set
+        {
+            if (SetProperty(ref _selectedEspecie, value))
+            {
+                _especieId = value?.ID;
+                OnPropertyChanged(nameof(EspecieId));
+                
+                if (value != null)
+                {
+                    _searchText = value.NombreVulgar;
+                    OnPropertyChanged(nameof(SearchText));
+                    IsExpanded = false;
+                }
+            }
+        }
+    }
+
+    public IEnumerable<Especie> FilteredEspecies
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(SearchText) || (SelectedEspecie != null && SearchText == $"{SelectedEspecie.NombreVulgar} ({SelectedEspecie.NombreCientifico})"))
+            {
+                return _allEspecies.OrderByDescending(e => e.Frecuente).ThenBy(e => e.NombreVulgar).Take(20);
+            }
+
+            return _allEspecies
+                .Where(e => (e.NombreVulgar?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                             (e.NombreCientifico?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false))
+                .OrderByDescending(e => e.Frecuente)
+                .ThenBy(e => e.NombreVulgar)
+                .Take(50);
+        }
+    }
+
     public double? PesoMuestraGramos { get => _pesoMuestraGramos; set => SetProperty(ref _pesoMuestraGramos, value); }
 
     public ICommand SaveCommand { get; }
@@ -76,8 +163,6 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
                 if (muestra != null)
                 {
                     EspecieId = muestra.EspecieID;
-                    Comentarios = muestra.Comentarios;
-                    Origen = muestra.Origen;
                     PesoMuestraGramos = muestra.PesoMuestra_PesoGramos;
 
                     FrecuenciasTallas.Clear();
@@ -102,7 +187,18 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
 
     private void RemoveFrecuencia(FrecuenciaTallaViewModel? vm)
     {
-        if (vm != null) FrecuenciasTallas.Remove(vm);
+        if (vm == null) return;
+
+        var result = System.Windows.MessageBox.Show(
+            "¿Desea eliminar esta frecuencia de talla?",
+            "Confirmar eliminación",
+            System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Question);
+
+        if (result == System.Windows.MessageBoxResult.Yes)
+        {
+            FrecuenciasTallas.Remove(vm);
+        }
     }
 
     private async Task SaveAsync()
@@ -117,8 +213,6 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
                     ID = _muestraId ?? Guid.NewGuid().ToString(),
                     LanceID = _lanceId,
                     EspecieID = EspecieId,
-                    Comentarios = Comentarios,
-                    Origen = Origen,
                     PesoMuestra_PesoGramos = PesoMuestraGramos
                 };
 

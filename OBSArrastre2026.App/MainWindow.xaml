@@ -172,14 +172,12 @@
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.2*" />
-                        <ColumnDefinition Width="0.9*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Text="{Binding Id}" />
-                    <TextBlock Grid.Column="1" Style="{StaticResource BodySecondaryStyle}" Text="{Binding LanceDisplay}" />
-                    <TextBlock Grid.Column="2" Style="{StaticResource BodySecondaryStyle}" Text="{Binding EspecieDisplay}" />
-                    <TextBlock Grid.Column="3" Style="{StaticResource BodySecondaryStyle}" Text="{Binding ClaseDisplay}" />
+                    <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Text="{Binding LanceNro}" />
+                    <TextBlock Grid.Column="1" Style="{StaticResource BodySecondaryStyle}" Text="{Binding LanceFecha}" />
+                    <TextBlock Grid.Column="2" Style="{StaticResource BodySecondaryStyle}" Text="{Binding LanceHora}" />
+                    <TextBlock Grid.Column="3" Style="{StaticResource BodySecondaryStyle}" Text="{Binding EspecieDisplay}" />
                     <TextBlock Grid.Column="4" Style="{StaticResource BodySecondaryStyle}" Text="{Binding PesoDisplay}" />
-                    <TextBlock Grid.Column="5" Style="{StaticResource BodySecondaryStyle}" Text="{Binding EstadoDisplay}" />
                 </Grid>
             </Border>
         </DataTemplate>
@@ -793,9 +791,7 @@
                                         <ColumnDefinition Width="1.1*" />
                                         <ColumnDefinition Width="1.1*" />
                                         <ColumnDefinition Width="1.1*" />
-                                        <ColumnDefinition Width="1.1*" />
                                         <ColumnDefinition Width="1.2*" />
-                                        <ColumnDefinition Width="0.9*" />
                                         <ColumnDefinition Width="40" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column1Header}" />
@@ -803,11 +799,10 @@
                                     <TextBlock Grid.Column="2" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column3Header}" />
                                     <TextBlock Grid.Column="3" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column4Header}" />
                                     <TextBlock Grid.Column="4" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column5Header}" />
-                                    <TextBlock Grid.Column="5" Style="{StaticResource HeaderLabelStyle}" Text="Estado" />
                                 </Grid>
                             </Border>
 
-                            <ListBox Grid.Row="3"
+                            <ListBox x:Name="RecordsList" Grid.Row="3"
                                      ItemsSource="{Binding Records}"
                                      SelectedItem="{Binding SelectedRecord}"
                                      Background="Transparent"
@@ -815,16 +810,21 @@
                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                      HorizontalContentAlignment="Stretch"
                                      VirtualizingStackPanel.IsVirtualizing="True"
-                                     VirtualizingStackPanel.VirtualizationMode="Recycling">
+                                     VirtualizingStackPanel.VirtualizationMode="Recycling"
+                                     PreviewKeyDown="RecordsList_PreviewKeyDown">
+                                <ListBox.InputBindings>
+                                    <KeyBinding Key="Enter" Command="{Binding OpenSelectedRecordEditCommand}" />
+                                </ListBox.InputBindings>
                                 <ListBox.ItemContainerStyle>
                                     <Style TargetType="ListBoxItem">
                                         <Setter Property="Background" Value="Transparent" />
                                         <Setter Property="BorderThickness" Value="0" />
                                         <Setter Property="Padding" Value="0" />
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                                         <Setter Property="Template">
                                             <Setter.Value>
                                                 <ControlTemplate TargetType="ListBoxItem">
-                                                    <ContentPresenter />
+                                                    <ContentPresenter HorizontalAlignment="Stretch" />
                                                 </ControlTemplate>
                                             </Setter.Value>
                                         </Setter>

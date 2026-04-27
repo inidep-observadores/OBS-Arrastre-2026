@@ -112,7 +112,7 @@ public sealed class MockShellDataService : IMockShellDataService
             "Sexo",
             "Estadio",
             "Medida clave",
-            ["Con estadio", "Lecturas completas", "Ultima revision"],
+            [],
             [
                 new("SM-981", "M-2401", "Hembra", "III", "32.4 cm / 410 g", "Completa"),
                 new("SM-978", "M-2401", "Macho", "II", "30.8 cm / 380 g", "Completa"),

@@ -49,46 +49,30 @@
 
                             <StackPanel>
                                 <Label Content="Especie" Style="{StaticResource FormLabelStyle}" />
-                                <ComboBox ItemsSource="{Binding Especies}"
-                                          SelectedValue="{Binding EspecieId}"
-                                          SelectedValuePath="ID"
-                                          DisplayMemberPath="NombreVulgar"
-                                          Style="{StaticResource PremiumComboBoxStyle}" />
+                                <ComboBox ItemsSource="{Binding FilteredEspecies}"
+                                          SelectedItem="{Binding SelectedEspecie}"
+                                          IsEditable="True"
+                                          IsTextSearchEnabled="False"
+                                          TextSearch.TextPath="NombreVulgar"
+                                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                          Style="{StaticResource PremiumComboBoxStyle}"
+                                          IsDropDownOpen="{Binding IsExpanded}"
+                                          DropDownOpened="EspecieComboBox_DropDownOpened">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding NombreVulgar, StringFormat='{}{0} '}" FontWeight="Bold">
+                                                <Run Text="{Binding NombreCientifico, StringFormat='({0})'}" FontWeight="Normal" FontStyle="Italic" Foreground="{DynamicResource SecondaryTextBrush}" />
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
                             </StackPanel>
 
                             <StackPanel Grid.Column="2">
-                                <Label Content="Origen" Style="{StaticResource FormLabelStyle}" />
-                                <ComboBox SelectedIndex="{Binding Origen}" Style="{StaticResource PremiumComboBoxStyle}">
-                                    <ComboBoxItem Content="Sin Especificar" />
-                                    <ComboBoxItem Content="Biológica" />
-                                    <ComboBoxItem Content="Comercial" />
-                                    <ComboBoxItem Content="Control" />
-                                </ComboBox>
-                            </StackPanel>
-                        </Grid>
-
-                        <Grid Margin="0,24,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="24" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-
-                            <StackPanel>
                                 <Label Content="Peso Muestra (gramos)" Style="{StaticResource FormLabelStyle}" />
                                 <TextBox Text="{Binding PesoMuestraGramos}" Style="{StaticResource PremiumTextBoxStyle}" />
                             </StackPanel>
                         </Grid>
-
-                        <StackPanel Margin="0,24,0,0">
-                            <Label Content="Comentarios" Style="{StaticResource FormLabelStyle}" />
-                            <TextBox Text="{Binding Comentarios}" 
-                                     Style="{StaticResource PremiumTextBoxStyle}" 
-                                     Height="60" 
-                                     TextWrapping="Wrap" 
-                                     AcceptsReturn="True"
-                                     VerticalContentAlignment="Top" />
-                        </StackPanel>
 
                         <!-- SECCIÓN FRECUENCIAS -->
                         <Border Margin="0,32,0,0" Style="{StaticResource SurfaceBorderStyle}" Padding="0" ClipToBounds="True">
@@ -114,7 +98,8 @@
                                     </Grid>
                                 </Border>
 
-                                <DataGrid Grid.Row="1" 
+                                <DataGrid x:Name="FrecuenciasGrid"
+                                          Grid.Row="1" 
                                           ItemsSource="{Binding FrecuenciasTallas}" 
                                           AutoGenerateColumns="False"
                                           CanUserAddRows="False"

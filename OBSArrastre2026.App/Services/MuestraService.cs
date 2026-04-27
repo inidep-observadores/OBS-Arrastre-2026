@@ -17,6 +17,7 @@ public sealed class MuestraService(IDbContextFactory<AppDbContext> dbContextFact
         
         return await dbContext.Muestras
             .Include(m => m.Especie)
+            .Include(m => m.Lance)
             .Where(m => m.LanceID == lanceId)
             .AsNoTracking()
             .ToListAsync(cancellationToken);

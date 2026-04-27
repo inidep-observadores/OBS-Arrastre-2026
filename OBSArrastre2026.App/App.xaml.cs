@@ -13,6 +13,9 @@ using OBSArrastre2026.App.Models;
 using OBSArrastre2026.App.Services;
 using OBSArrastre2026.App.ViewModels;
 
+using OBSArrastre2026.App.Features.Mareas;
+using OBSArrastre2026.App.Features.Lances;
+
 namespace OBSArrastre2026.App;
 
 public partial class App : Application
@@ -66,7 +69,8 @@ public partial class App : Application
 
                 // Validación y ViewModels
                 services.AddValidatorsFromAssemblyContaining<App>();
-                services.AddTransient<IValidator<LanceEditViewModel>, LanceEditViewModelValidator>();
+                services.AddTransient<IValidator<MareaEditViewModel>, MareaValidator>();
+                services.AddTransient<IValidator<LanceEditViewModel>, LanceValidator>();
                 services.AddTransient<IValidator<MuestraEditViewModel>, MuestraEditViewModelValidator>();
 
                 services.AddTransient<MareaEditViewModel>();
@@ -79,7 +83,8 @@ public partial class App : Application
                         var validator = sp.GetRequiredService<IValidator<MareaEditViewModel>>();
                         var mareaService = sp.GetRequiredService<IMareaService>();
                         var buqueService = sp.GetRequiredService<IBuqueService>();
-                        return new MareaEditViewModel(onClose, validator, mareaService, buqueService, mareaId);
+                        var mareaImportService = sp.GetRequiredService<IMareaImportService>();
+                        return new MareaEditViewModel(onClose, validator, mareaService, buqueService, mareaImportService, mareaId);
                     });
 
                 services.AddSingleton<Func<Action, string, string?, LanceEditViewModel>>(sp =>
