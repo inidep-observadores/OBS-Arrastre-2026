@@ -7,7 +7,7 @@
         xmlns:vm="clr-namespace:OBSArrastre2026.App.ViewModels"
         xmlns:controls="clr-namespace:OBSArrastre2026.App.Controls"
         xmlns:models="clr-namespace:OBSArrastre2026.App.Models"
-        xmlns:mapsui="clr-namespace:Mapsui.UI.Wpf;assembly=Mapsui.UI.Wpf"
+        xmlns:gmap="clr-namespace:GMap.NET.WindowsPresentation;assembly=GMap.NET.WindowsPresentation"
         mc:Ignorable="d"
         Title="{Binding Title}"
         Width="1460"
@@ -820,7 +820,11 @@
                                     </Style.Triggers>
                                 </Style>
                             </Border.Style>
-                            <mapsui:MapControl Map="{Binding Map}" />
+                            <gmap:GMapControl x:Name="MainMap" 
+                                              MaxZoom="18"
+                                              MinZoom="2"
+                                              Zoom="10"
+                                              Loaded="MainMap_Loaded" />
                         </Border>
                         </Grid>
                     </Grid>

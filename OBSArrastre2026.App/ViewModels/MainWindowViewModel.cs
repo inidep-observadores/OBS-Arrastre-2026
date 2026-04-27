@@ -1,19 +1,12 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using OBSArrastre2026.App.Models;
 using OBSArrastre2026.App.Services;
-using Mapsui;
-using Mapsui.Tiling;
-using Mapsui.Projections;
-using Mapsui.Widgets;
-using Mapsui.Widgets.ScaleBar;
-using Mapsui.Layers;
-using Mapsui.Nts;
-using Mapsui.Styles;
-using NetTopologySuite.Geometries;
+using OBSArrastre2026.App.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 using OBSArrastre2026.App.Data;
 
@@ -41,7 +34,11 @@ public sealed class MainWindowViewModel : ObservableObject
     private AppThemeMode _currentThemeMode;
     private object? _currentEditViewModel;
     private object? _activeDialog;
-    private Mapsui.Map _map;
+    
+    // Datos para GMap.NET
+    public List<MareaTracking> CurrentTrack { get; private set; } = new();
+    public List<Lance> CurrentLances { get; private set; } = new();
+    public event Action? MapUpdateRequested;
 
     // Filtros de Mareas
     private int? _mareasFilterAnio;
@@ -106,8 +103,6 @@ public sealed class MainWindowViewModel : ObservableObject
 
         _ = LoadFilterDataAsync();
 
-        UpdateNavigationState();
-
         _activeMareaManager.PropertyChanged += (s, e) => 
         {
             if (e.PropertyName == nameof(IActiveMareaManager.ActiveMareaId))
@@ -119,45 +114,9 @@ public sealed class MainWindowViewModel : ObservableObject
             }
         };
 
-        _map = CreateArgenmap();
+        UpdateNavigationState();
     }
 
-    private Mapsui.Map CreateArgenmap()
-    {
-        var map = new Mapsui.Map();
-        
-        // Limpiar widgets predeterminados (debug/performance) que Mapsui v5 añade automáticamente
-        while (map.Widgets.Count > 0)
-        {
-            map.Widgets.TryDequeue(out _);
-        }
-
-        try
-        {
-            // Fallback temporal a OSM para asegurar compilación
-            map.Layers.Add(Mapsui.Tiling.OpenStreetMap.CreateTileLayer());
-        }
-        catch
-        {
-        }
-
-        // Solo añadimos el widget de escala, que es útil y profesional
-        map.Widgets.Enqueue(new Mapsui.Widgets.ScaleBar.ScaleBarWidget(map) 
-        { 
-            TextColor = Mapsui.Styles.Color.Black,
-            HorizontalAlignment = Mapsui.Widgets.HorizontalAlignment.Left,
-            VerticalAlignment = Mapsui.Widgets.VerticalAlignment.Bottom
-        });
-
-        // Centrar en Mar Argentino (aproximadamente -45, -60)
-        var (x, y) = SphericalMercator.FromLonLat(-60, -42);
-        
-        // En Mapsui 5.0 la navegación inicial se configura a través del Navigator
-        map.Navigator.CenterOn(new MPoint(x, y));
-        map.Navigator.ZoomTo(10000); // Resolución aproximada para ver el Mar Argentino
-
-        return map;
-    }
 
     private void UpdateNavigationState()
     {
@@ -214,11 +173,6 @@ public sealed class MainWindowViewModel : ObservableObject
     public ICommand ClearMareaFiltersCommand { get; }
     public ICommand ClearLanceFiltersCommand { get; }
 
-    public Mapsui.Map Map
-    {
-        get => _map;
-        set => SetProperty(ref _map, value);
-    }
 
     public NavigationItemViewModel? SelectedNavigationItem
     {
@@ -729,15 +683,11 @@ public sealed class MainWindowViewModel : ObservableObject
 
     private async Task UpdateMapDataAsync()
     {
-        if (_map == null) return;
-
-        // Limpiar capas previas de datos (Lances y Track)
-        var dataLayers = _map.Layers.Where(l => l.Name == "Lances" || l.Name == "Track").ToList();
-        foreach (var layer in dataLayers) _map.Layers.Remove(layer);
-
         if (string.IsNullOrEmpty(_activeMareaManager.ActiveMareaId))
         {
-            _map.RefreshGraphics();
+            CurrentTrack.Clear();
+            CurrentLances.Clear();
+            MapUpdateRequested?.Invoke();
             return;
         }
 
@@ -746,106 +696,22 @@ public sealed class MainWindowViewModel : ObservableObject
             await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
 
             // 1. Obtener Lances
-            var lances = await dbContext.Lances
+            CurrentLances = await dbContext.Lances
                 .Where(l => l.MareaEtapa.MareaID == _activeMareaManager.ActiveMareaId)
                 .ToListAsync();
 
             // 2. Obtener Track
-            var trackPoints = await dbContext.TrackingPoints
+            CurrentTrack = await dbContext.TrackingPoints
                 .Where(t => t.MareaID == _activeMareaManager.ActiveMareaId)
                 .OrderBy(t => t.FechaHora)
                 .ToListAsync();
 
-            // 3. Crear capa de Track (Línea)
-            if (trackPoints.Count > 1)
-            {
-                var coordinates = trackPoints.Select(p => 
-                {
-                    var (x, y) = SphericalMercator.FromLonLat(p.Longitud, p.Latitud);
-                    return new Coordinate(x, y);
-                }).ToArray();
-
-                var lineString = new LineString(coordinates);
-                var trackLayer = new MemoryLayer
-                {
-                    Name = "Track",
-                    Features = new List<IFeature> { new GeometryFeature(lineString) },
-                    Style = new VectorStyle
-                    {
-                        Line = new Pen(Mapsui.Styles.Color.FromString("#FF4500"), 2) // Naranja vibrante
-                    }
-                };
-                _map.Layers.Add(trackLayer);
-            }
-
-            // 4. Crear capa de Lances (Segmentos individualizados)
-            var lanceFeatures = new List<IFeature>();
-            foreach (var lance in lances)
-            {
-                // Si tenemos inicio y fin, dibujamos el segmento de arrastre
-                if (lance.LatitudInicioDecimal.HasValue && lance.LongitudInicioDecimal.HasValue &&
-                    lance.LatitudFinalDecimal.HasValue && lance.LongitudFinalDecimal.HasValue)
-                {
-                    var (x1, y1) = SphericalMercator.FromLonLat(lance.LongitudInicioDecimal.Value, lance.LatitudInicioDecimal.Value);
-                    var (x2, y2) = SphericalMercator.FromLonLat(lance.LongitudFinalDecimal.Value, lance.LatitudFinalDecimal.Value);
-                    
-                    var line = new LineString(new[] { new Coordinate(x1, y1), new Coordinate(x2, y2) });
-                    var feature = new GeometryFeature(line);
-                    feature["Label"] = $"L{lance.NroLance}";
-                    lanceFeatures.Add(feature);
-                }
-                // Si solo tenemos inicio, dibujamos un punto (fallback)
-                else if (lance.LatitudInicioDecimal.HasValue && lance.LongitudInicioDecimal.HasValue)
-                {
-                    var (x, y) = SphericalMercator.FromLonLat(lance.LongitudInicioDecimal.Value, lance.LatitudInicioDecimal.Value);
-                    var feature = new GeometryFeature(new Point(x, y));
-                    feature["Label"] = $"L{lance.NroLance}";
-                    lanceFeatures.Add(feature);
-                }
-            }
-
-            if (lanceFeatures.Any())
-            {
-                var lancesLayer = new MemoryLayer
-                {
-                    Name = "Lances",
-                    Features = lanceFeatures,
-                    Style = new VectorStyle
-                    {
-                        Line = new Pen(Mapsui.Styles.Color.FromString("#00FFFF"), 4), // Cian grueso para los lances
-                        Fill = new Mapsui.Styles.Brush(Mapsui.Styles.Color.FromString("#00FFFF"))
-                    }
-                };
-                _map.Layers.Add(lancesLayer);
-            }
-
-            // 5. Ajustar vista al conjunto de datos
-            var extent = _map.Layers.Where(l => l.Name == "Lances" || l.Name == "Track")
-                                    .Select(l => l.Extent)
-                                    .Where(e => e != null)
-                                    .ToList();
-
-            if (extent.Any())
-            {
-                MRect? fullExtent = null;
-                foreach (var e in extent)
-                {
-                    if (fullExtent == null) fullExtent = e;
-                    else fullExtent = fullExtent.Join(e!);
-                }
-
-                if (fullExtent != null)
-                {
-                    _map.Navigator.ZoomToBox(fullExtent.Grow(fullExtent.Width * 0.2, fullExtent.Height * 0.2));
-                }
-            }
-
-            // En Mapsui 5.0, el refresco se hace notificando cambios en las capas o refrescando el navigator
-            _map.RefreshGraphics();
+            // Notificar a la vista para que actualice GMap.NET
+            MapUpdateRequested?.Invoke();
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error actualizando mapa: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Error actualizando datos de mapa: {ex.Message}");
         }
     }
 
@@ -905,6 +771,22 @@ public sealed class MainWindowViewModel : ObservableObject
         OnPropertyChanged(nameof(Column3Header));
         OnPropertyChanged(nameof(Column4Header));
         OnPropertyChanged(nameof(Column5Header));
+    }
+
+    private string FormatCoordinate(double? value, bool isLatitude)
+    {
+        if (!value.HasValue) return "-";
+        
+        double absolute = Math.Abs(value.Value);
+        int degrees = (int)absolute;
+        double minutes = (absolute - degrees) * 60;
+        
+        string quadrant = isLatitude 
+            ? (value.Value >= 0 ? "N" : "S") 
+            : (value.Value >= 0 ? "E" : "O");
+            
+        // Formato GGº MM,M' C (C= cuadrante N,S,E,O)
+        return $"{degrees}º {minutes:00.1}' {quadrant}".Replace('.', ',');
     }
 
     private static void ReplaceItems<T>(ObservableCollection<T> target, IEnumerable<T> source)
