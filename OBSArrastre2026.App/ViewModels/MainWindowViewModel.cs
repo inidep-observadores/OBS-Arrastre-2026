@@ -26,10 +26,12 @@ public sealed class MainWindowViewModel : ObservableObject
     private readonly Func<Action, string, string?, LanceEditViewModel> _lanceEditFactory;
     private readonly Func<Action, string, string?, MuestraEditViewModel> _muestraEditFactory;
     private readonly Func<Action, string, SubmuestraEditViewModel> _submuestraEditFactory;
+    private readonly Func<Action, string?, ProduccionEditViewModel> _produccionEditFactory;
     private readonly ISubmuestraService _submuestraService;
     private readonly IActiveMareaManager _activeMareaManager;
     private readonly IMareaValidationService _validationService;
     private readonly IMareaReportService _reportService;
+    private readonly IProduccionService _produccionService;
     private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
     private NavigationItemViewModel? _selectedNavigationItem;
     private string _pageTitle = string.Empty;
@@ -75,6 +77,8 @@ public sealed class MainWindowViewModel : ObservableObject
         Func<Action, string, string?, MuestraEditViewModel> muestraEditFactory,
         Func<Action, string, SubmuestraEditViewModel> submuestraEditFactory,
         ISubmuestraService submuestraService,
+        IProduccionService produccionService,
+        Func<Action, string?, ProduccionEditViewModel> produccionEditFactory,
         IMareaValidationService validationService,
         IMareaReportService reportService,
         IDbContextFactory<AppDbContext> dbContextFactory)
@@ -94,6 +98,8 @@ public sealed class MainWindowViewModel : ObservableObject
         _reportService = reportService;
         _dbContextFactory = dbContextFactory;
         _submuestraService = submuestraService;
+        _produccionService = produccionService;
+        _produccionEditFactory = produccionEditFactory;
 
         SearchPlaceholder = "Buscar...";
         SetSystemThemeCommand = new RelayCommand(() => ApplyTheme(AppThemeMode.System));
@@ -224,6 +230,32 @@ public sealed class MainWindowViewModel : ObservableObject
         }
     }
 
+    private async Task LoadProduccionAsync()
+    {
+        var activeMarea = _activeMareaManager.ActiveMarea;
+        if (activeMarea == null)
+        {
+            Records.Clear();
+            return;
+        }
+
+        // Obtener registros de producción de todas las etapas de la marea activa
+        var produccion = new List<RegistroProduccion>();
+        foreach (var etapa in activeMarea.Etapas)
+        {
+            var etapaProduccion = await _produccionService.GetRegistrosProduccionAsync(etapa.ID);
+            produccion.AddRange(etapaProduccion);
+        }
+
+        var viewModels = produccion.Select(p => new ProduccionListItemViewModel(p)).ToList();
+        
+        Records.Clear();
+        foreach (var vm in viewModels)
+        {
+            Records.Add(vm);
+        }
+    }
+
     private void OpenSelectedRecordEdit()
     {
         if (SelectedRecord is MareaListItemViewModel mareaVm)
@@ -237,12 +269,32 @@ public sealed class MainWindowViewModel : ObservableObject
             else
                 OpenEditMuestraForm(muestraVm);
         }
+        else if (SelectedRecord is ProduccionListItemViewModel prodVm)
+        {
+            OpenEditProduccionForm(prodVm);
+            return;
+        }
     }
 
-    private void OpenEditSubmuestraForm(MuestraListItemViewModel? vm)
+    private void OpenEditSubmuestraForm(MuestraListItemViewModel vm)
     {
-        if (vm == null) return;
         CurrentEditViewModel = _submuestraEditFactory(() => { CurrentEditViewModel = null; _ = LoadSubmuestrasAsync(); }, vm.Muestra.ID);
+    }
+
+    private void OpenCreateProduccionForm()
+    {
+        CurrentEditViewModel = _produccionEditFactory(() => {
+            CurrentEditViewModel = null;
+            _ = LoadProduccionAsync();
+        }, null);
+    }
+
+    private void OpenEditProduccionForm(ProduccionListItemViewModel vm)
+    {
+        CurrentEditViewModel = _produccionEditFactory(() => {
+            CurrentEditViewModel = null;
+            _ = LoadProduccionAsync();
+        }, vm.Registro.Id);
     }
 
     private async Task LoadSubmuestrasAsync()
@@ -654,6 +706,28 @@ public sealed class MainWindowViewModel : ObservableObject
                 "Hora Virada",
                 "Especie",
                 "Peso");
+
+            ClearDashboardCollections();
+            IsDashboardVisible = false;
+            return;
+        }
+
+        if (section == NavigationSection.Produccion)
+        {
+            _ = LoadProduccionAsync();
+            var prodSection = _mockShellDataService.GetListSection(section);
+            PageEyebrow = prodSection.Eyebrow;
+            PageTitle = prodSection.Title;
+            PageDescription = prodSection.Description;
+            PrimaryActionLabel = prodSection.PrimaryActionLabel;
+            PrimaryActionCommand = new RelayCommand(OpenCreateProduccionForm);
+
+            SetColumnHeaders(
+                "Fecha",
+                "Especie",
+                "Producto",
+                "Factor",
+                "Kg");
 
             ClearDashboardCollections();
             IsDashboardVisible = false;

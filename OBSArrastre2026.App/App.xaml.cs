@@ -54,6 +54,8 @@ public partial class App : Application
                 services.AddSingleton<ILanceService, LanceService>();
                 services.AddSingleton<IMuestraService, MuestraService>();
                 services.AddSingleton<ISubmuestraService, SubmuestraService>();
+                services.AddSingleton<IProduccionService, ProduccionService>();
+                services.AddSingleton<IProductoService, ProductoService>();
 
                 // Servicios de sincronización de datos
                 services.AddSingleton<IDbfExtractorService, DbfExtractorService>();
@@ -72,6 +74,7 @@ public partial class App : Application
                 services.AddValidatorsFromAssemblyContaining<App>();
                 services.AddTransient<IValidator<MuestraEditViewModel>, MuestraEditViewModelValidator>();
                 services.AddTransient<IValidator<SubmuestraEditViewModel>, SubmuestraEditViewModelValidator>();
+                services.AddTransient<IValidator<ProduccionEditViewModel>, ProduccionEditViewModelValidator>();
 
                 services.AddTransient<MareaEditViewModel>();
                 services.AddTransient<LanceEditViewModel>();
@@ -112,6 +115,17 @@ public partial class App : Application
                         var submuestraService = sp.GetRequiredService<ISubmuestraService>();
                         var muestraService = sp.GetRequiredService<IMuestraService>();
                         return new SubmuestraEditViewModel(onClose, validator, submuestraService, muestraService, muestraId);
+                    });
+
+                services.AddTransient<ProduccionEditViewModel>();
+                services.AddSingleton<Func<Action, string?, ProduccionEditViewModel>>(sp =>
+                    (onClose, registroId) =>
+                    {
+                        var validator = sp.GetRequiredService<IValidator<ProduccionEditViewModel>>();
+                        var produccionService = sp.GetRequiredService<IProduccionService>();
+                        var productoService = sp.GetRequiredService<IProductoService>();
+                        var activeMareaManager = sp.GetRequiredService<IActiveMareaManager>();
+                        return new ProduccionEditViewModel(onClose, validator, produccionService, productoService, activeMareaManager, registroId);
                     });
 
                 services.AddSingleton<MainWindowViewModel>();
