@@ -23,8 +23,8 @@ public sealed class ProductoService(IDbContextFactory<AppDbContext> dbContextFac
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
         return await dbContext.Especies
-            .Where(e => e.Frecuente)
-            .OrderBy(e => e.NombreVulgar)
+            .OrderByDescending(e => e.Frecuente)
+            .ThenBy(e => e.NombreVulgar)
             .ToListAsync(cancellationToken);
     }
 }

@@ -65,19 +65,30 @@
 
                         <StackPanel Margin="0,0,0,24">
                             <Label Content="Especie" Style="{StaticResource FormLabelStyle}" />
-                            <ComboBox ItemsSource="{Binding Especies}"
+                            <ComboBox ItemsSource="{Binding FilteredEspecies}"
                                       SelectedItem="{Binding SelectedEspecie}"
-                                      DisplayMemberPath="NombreVulgar"
                                       IsEditable="True"
-                                      Style="{StaticResource PremiumComboBoxStyle}" />
+                                      IsTextSearchEnabled="False"
+                                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                      IsDropDownOpen="{Binding IsExpanded}"
+                                      Style="{StaticResource PremiumComboBoxStyle}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding NombreVulgar}" FontWeight="Bold">
+                                            <Run Text="{Binding NombreCientifico, StringFormat=' ({0})'}" FontWeight="Normal" FontStyle="Italic" Foreground="{DynamicResource SecondaryTextBrush}" />
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
                         </StackPanel>
 
                         <StackPanel Margin="0,0,0,24">
                             <Label Content="Producto" Style="{StaticResource FormLabelStyle}" />
                             <ComboBox ItemsSource="{Binding Productos}"
                                       SelectedItem="{Binding SelectedProducto}"
-                                      DisplayMemberPath="Descripcion"
+                                      DisplayMemberPath="Codigo"
                                       IsEditable="True"
+                                      TextSearch.TextPath="Codigo"
                                       Style="{StaticResource PremiumComboBoxStyle}" />
                         </StackPanel>
 
@@ -104,16 +115,7 @@
                             <TextBox Text="{Binding Kg}" FontSize="24" FontWeight="Bold" Style="{StaticResource PremiumTextBoxStyle}" />
                         </StackPanel>
 
-                        <StackPanel Margin="0,0,0,10">
-                            <Label Content="Comentarios" Style="{StaticResource FormLabelStyle}" />
-                            <TextBox Text="{Binding Comentarios}" 
-                                     Style="{StaticResource PremiumTextBoxStyle}" 
-                                     AcceptsReturn="True" 
-                                     Height="80" 
-                                     VerticalContentAlignment="Top"
-                                     Padding="10,8"/>
                         </StackPanel>
-                    </StackPanel>
                 </ScrollViewer>
 
                 <Grid Grid.Row="2" Margin="0,30,0,0">
