@@ -37,44 +37,36 @@ public partial class MainWindow : Window
 
     private void MainMap_Loaded(object sender, RoutedEventArgs e)
     {
-        // Réplica de la configuración del proyecto legacy (2019)
-        try
+        // El mapa debe configurarse en el Dispatcher para asegurar que
+        // WPF haya terminado de calcular el layout del control antes de pedir tiles.
+        Dispatcher.BeginInvoke(new Action(() =>
         {
-            // Comprobación de internet
-            IPHostEntry conn = Dns.GetHostEntry("www.google.com");
+            // Asignar proveedor Argenmap (IGN Argentina)
+            MainMap.MapProvider = ArgenmapProvider.Instance;
+
+            // Modo de acceso: usa servidor y caché local
             MainMap.Manager.Mode = AccessMode.ServerAndCache;
-        }
-        catch
-        {
-            MainMap.Manager.Mode = AccessMode.CacheOnly;
-            // Podríamos intentar importar cache local aquí si tuviéramos un archivo .gmdb
-            // MainMap.Manager.ImportFromGMDB(@".\ArgentinaGoogleSTD-L10.gmdb");
-        }
 
-        // Configuración de GMap.NET
-        GMapProvider.UserAgent = "OBS-Arrastre-2026-App-INIDEP (Observadores a bordo)";
-        
-        // Cambio al proveedor de Google Maps como en el proyecto legacy
-        MainMap.MapProvider = GoogleMapProvider.Instance;
-        
-        MainMap.MinZoom = 2;
-        MainMap.MaxZoom = 18;
-        MainMap.ShowCenter = false;
-        MainMap.IgnoreMarkerOnMouseWheel = true;
-        MainMap.MouseWheelZoomType = MouseWheelZoomType.MousePositionWithoutCenter;
-        MainMap.CanDragMap = true;
-        MainMap.DragButton = MouseButton.Left;
-        
-        // Centro inicial
-        MainMap.Position = new PointLatLng(-42, -60);
-        MainMap.Zoom = 5;
+            MainMap.MinZoom = 2;
+            MainMap.MaxZoom = 18;
+            MainMap.ShowCenter = false;
+            MainMap.IgnoreMarkerOnMouseWheel = true;
+            MainMap.MouseWheelZoomType = MouseWheelZoomType.MousePositionWithoutCenter;
+            MainMap.CanDragMap = true;
+            MainMap.DragButton = MouseButton.Left;
+            
+            // Centro inicial sobre Argentina
+            MainMap.Position = new PointLatLng(-42, -60);
+            MainMap.Zoom = 5;
 
-        // Notificar al ViewModel que el mapa está listo
-        if (DataContext is MainWindowViewModel vm)
-        {
-            // Forzar actualización inicial si ya hay datos
-            ViewModel_MapUpdateRequested();
-        }
+            // Dibujar marcadores si hay datos ya cargados
+            if (DataContext is MainWindowViewModel)
+            {
+                ViewModel_MapUpdateRequested();
+            }
+            
+            MainMap.ReloadMap();
+        }), System.Windows.Threading.DispatcherPriority.Loaded);
     }
 
     private void ViewModel_MapUpdateRequested()
