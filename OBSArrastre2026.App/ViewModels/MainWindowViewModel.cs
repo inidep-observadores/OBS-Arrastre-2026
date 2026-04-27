@@ -20,8 +20,10 @@ public sealed class MainWindowViewModel : ObservableObject
     private readonly IMareaService _mareaService;
     private readonly IBuqueService _buqueService;
     private readonly ILanceService _lanceService;
+    private readonly IMuestraService _muestraService;
     private readonly Func<Action, string?, MareaEditViewModel> _mareaEditFactory;
     private readonly Func<Action, string, string?, LanceEditViewModel> _lanceEditFactory;
+    private readonly Func<Action, string, string?, MuestraEditViewModel> _muestraEditFactory;
     private readonly IActiveMareaManager _activeMareaManager;
     private readonly IMareaValidationService _validationService;
     private readonly IMareaReportService _reportService;
@@ -63,9 +65,11 @@ public sealed class MainWindowViewModel : ObservableObject
         IMareaService mareaService,
         IBuqueService buqueService,
         ILanceService lanceService,
+        IMuestraService muestraService,
         IActiveMareaManager activeMareaManager,
         Func<Action, string?, MareaEditViewModel> mareaEditFactory,
         Func<Action, string, string?, LanceEditViewModel> lanceEditFactory,
+        Func<Action, string, string?, MuestraEditViewModel> muestraEditFactory,
         IMareaValidationService validationService,
         IMareaReportService reportService,
         IDbContextFactory<AppDbContext> dbContextFactory)
@@ -75,9 +79,11 @@ public sealed class MainWindowViewModel : ObservableObject
         _mareaService = mareaService;
         _buqueService = buqueService;
         _lanceService = lanceService;
+        _muestraService = muestraService;
         _activeMareaManager = activeMareaManager;
         _mareaEditFactory = mareaEditFactory;
         _lanceEditFactory = lanceEditFactory;
+        _muestraEditFactory = muestraEditFactory;
         _validationService = validationService;
         _reportService = reportService;
         _dbContextFactory = dbContextFactory;
@@ -92,6 +98,7 @@ public sealed class MainWindowViewModel : ObservableObject
         
         ApplyLanceFiltersCommand = new AsyncCommand(LoadLancesAsync);
         EditLanceCommand = new RelayCommand<LanceListItemViewModel>(OpenEditLanceForm);
+        EditMuestraCommand = new RelayCommand<MuestraListItemViewModel>(OpenEditMuestraForm);
         ClearMareaFiltersCommand = new AsyncCommand(ClearMareaFiltersAsync);
         ClearLanceFiltersCommand = new AsyncCommand(ClearLanceFiltersAsync);
 
@@ -172,11 +179,68 @@ public sealed class MainWindowViewModel : ObservableObject
     public ICommand PrimaryActionCommand { get; }
 
     public ICommand EditMareaCommand { get; }
+    public ICommand ApplyMareaFiltersCommand { get; }
     public ICommand ApplyLanceFiltersCommand { get; }
     public ICommand EditLanceCommand { get; }
+    public ICommand EditMuestraCommand { get; }
     public ICommand ClearMareaFiltersCommand { get; }
     public ICommand ClearLanceFiltersCommand { get; }
 
+    private async Task LoadMuestrasAsync()
+    {
+        var activeMarea = _activeMareaManager.ActiveMarea;
+        if (activeMarea == null)
+        {
+            Records.Clear();
+            return;
+        }
+
+        // Obtener lances de la marea activa para filtrar muestras
+        var lances = await _lanceService.GetLancesAsync(mareaId: activeMarea.ID);
+        var samples = new List<Muestra>();
+        foreach (var lance in lances)
+        {
+            var lanceSamples = await _muestraService.GetMuestrasAsync(lance.Id);
+            samples.AddRange(lanceSamples);
+        }
+
+        var viewModels = samples.Select(m => new MuestraListItemViewModel(m)).ToList();
+        
+        Records.Clear();
+        foreach (var vm in viewModels)
+        {
+            Records.Add(vm);
+        }
+    }
+
+    private void OpenEditMuestraForm(MuestraListItemViewModel? vm)
+    {
+        if (vm == null) return;
+        CurrentEditViewModel = _muestraEditFactory(() => { CurrentEditViewModel = null; _ = LoadMuestrasAsync(); }, vm.Muestra.LanceID!, vm.Muestra.ID);
+    }
+
+    private void OpenCreateMuestraForm()
+    {
+        var activeMarea = _activeMareaManager.ActiveMarea;
+        if (activeMarea == null) return;
+
+        _ = Task.Run(async () => {
+            var lances = await _lanceService.GetLancesAsync(mareaId: activeMarea.ID);
+            var lastLance = lances.OrderByDescending(l => l.NroLance).FirstOrDefault();
+            if (lastLance != null)
+            {
+                App.Current.Dispatcher.Invoke(() => {
+                    CurrentEditViewModel = _muestraEditFactory(() => { CurrentEditViewModel = null; _ = LoadMuestrasAsync(); }, lastLance.Id, null);
+                });
+            }
+            else
+            {
+                App.Current.Dispatcher.Invoke(() => {
+                    ShowMessage("Sin Lances", "Debe existir al menos un lance registrado en la marea para poder crear una muestra.", null, MessageDialogType.Warning);
+                });
+            }
+        });
+    }
 
     public NavigationItemViewModel? SelectedNavigationItem
     {
@@ -433,6 +497,10 @@ public sealed class MainWindowViewModel : ObservableObject
         {
             await LoadLancesAsync();
         }
+        else if (SelectedNavigationItem.Section == NavigationSection.Muestras)
+        {
+            await LoadMuestrasAsync();
+        }
     }
 
     private void LoadSection(NavigationSection section)
@@ -474,6 +542,7 @@ public sealed class MainWindowViewModel : ObservableObject
             PageTitle = lanceSection.Title;
             PageDescription = lanceSection.Description;
             PrimaryActionLabel = lanceSection.PrimaryActionLabel;
+            PrimaryActionCommand = new RelayCommand(OpenCreateLanceForm);
             
             SetColumnHeaders(
                 lanceSection.Column1Header,
@@ -481,6 +550,28 @@ public sealed class MainWindowViewModel : ObservableObject
                 lanceSection.Column3Header,
                 lanceSection.Column4Header,
                 lanceSection.Column5Header);
+
+            ClearDashboardCollections();
+            IsDashboardVisible = false;
+            return;
+        }
+
+        if (section == NavigationSection.Muestras)
+        {
+            _ = LoadMuestrasAsync();
+            var muestraSection = _mockShellDataService.GetListSection(section);
+            PageEyebrow = muestraSection.Eyebrow;
+            PageTitle = muestraSection.Title;
+            PageDescription = muestraSection.Description;
+            PrimaryActionLabel = muestraSection.PrimaryActionLabel;
+            PrimaryActionCommand = new RelayCommand(OpenCreateMuestraForm);
+            
+            SetColumnHeaders(
+                muestraSection.Column1Header,
+                muestraSection.Column2Header,
+                muestraSection.Column3Header,
+                muestraSection.Column4Header,
+                muestraSection.Column5Header);
 
             ClearDashboardCollections();
             IsDashboardVisible = false;

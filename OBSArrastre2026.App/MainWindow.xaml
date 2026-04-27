@@ -27,8 +27,12 @@
             <views:LanceEditView />
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type vm:MuestraEditViewModel}">
+            <views:MuestraEditView />
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:MareaListItemViewModel}">
-            <!-- ... contenido existente mapeado a Marea ... -->
+            <!-- ... -->
             <Border Style="{StaticResource TableRowStyle}" Cursor="Hand">
                 <Border.InputBindings>
                     <MouseBinding MouseAction="LeftDoubleClick" 
@@ -95,7 +99,6 @@
                     </Button>
                     
                     <Grid Grid.Column="7" Margin="8,0,0,0">
-                        <!-- Botón normal -->
                         <Button Command="{Binding ValidateCommand}"
                                 ToolTip="Validar datos y generar PDF">
                             <Button.Style>
@@ -110,7 +113,6 @@
                             <TextBlock Text="📋" FontSize="16" VerticalAlignment="Center" Foreground="{DynamicResource AccentBrush}"/>
                         </Button>
 
-                        <!-- Indicador de progreso -->
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <StackPanel.Style>
                                 <Style TargetType="StackPanel">
@@ -152,6 +154,32 @@
                     <TextBlock Grid.Column="3" Style="{StaticResource BodySecondaryStyle}" Text="{Binding LongitudDisplay}" />
                     <TextBlock Grid.Column="4" Style="{StaticResource BodySecondaryStyle}" Text="{Binding CapturaTotal, StringFormat={}{0} kg}" />
                     <TextBlock Grid.Column="5" Style="{StaticResource BodySecondaryStyle}" Text="{Binding HoraInicio}" />
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:MuestraListItemViewModel}">
+            <Border Style="{StaticResource TableRowStyle}" Cursor="Hand">
+                <Border.InputBindings>
+                    <MouseBinding MouseAction="LeftDoubleClick" 
+                                  Command="{Binding DataContext.EditMuestraCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  CommandParameter="{Binding}"/>
+                </Border.InputBindings>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="0.9*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Text="{Binding Id}" />
+                    <TextBlock Grid.Column="1" Style="{StaticResource BodySecondaryStyle}" Text="{Binding LanceDisplay}" />
+                    <TextBlock Grid.Column="2" Style="{StaticResource BodySecondaryStyle}" Text="{Binding EspecieDisplay}" />
+                    <TextBlock Grid.Column="3" Style="{StaticResource BodySecondaryStyle}" Text="{Binding ClaseDisplay}" />
+                    <TextBlock Grid.Column="4" Style="{StaticResource BodySecondaryStyle}" Text="{Binding PesoDisplay}" />
+                    <TextBlock Grid.Column="5" Style="{StaticResource BodySecondaryStyle}" Text="{Binding EstadoDisplay}" />
                 </Grid>
             </Border>
         </DataTemplate>

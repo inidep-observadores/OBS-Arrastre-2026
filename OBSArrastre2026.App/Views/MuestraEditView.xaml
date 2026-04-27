@@ -1,0 +1,168 @@
+<UserControl x:Class="OBSArrastre2026.App.Views.MuestraEditView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:vm="clr-namespace:OBSArrastre2026.App.ViewModels"
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="800">
+    <AdornerDecorator>
+        <Border Background="{DynamicResource ShellBackgroundBrush}"
+                Padding="40"
+                CornerRadius="0"
+                MaxWidth="800"
+                MaxHeight="600"
+                VerticalAlignment="Center"
+                BorderBrush="{DynamicResource SidebarBorderBrush}"
+                BorderThickness="1">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="60" Color="Black" Opacity="0.25" ShadowDepth="10" />
+            </Border.Effect>
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <StackPanel Margin="0,0,0,30">
+                    <TextBlock Text="MUESTRA BIOLÓGICA"
+                               FontSize="11"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource AccentBrush}" />
+                    <TextBlock Text="Edición de Muestra"
+                               FontSize="28"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryTextBrush}"
+                               Margin="0,4,0,0" />
+                </StackPanel>
+
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel>
+                                <Label Content="Especie" Style="{StaticResource FormLabelStyle}" />
+                                <ComboBox ItemsSource="{Binding Especies}"
+                                          SelectedValue="{Binding EspecieId}"
+                                          SelectedValuePath="ID"
+                                          DisplayMemberPath="NombreVulgar"
+                                          Style="{StaticResource PremiumComboBoxStyle}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2">
+                                <Label Content="Origen" Style="{StaticResource FormLabelStyle}" />
+                                <ComboBox SelectedIndex="{Binding Origen}" Style="{StaticResource PremiumComboBoxStyle}">
+                                    <ComboBoxItem Content="Sin Especificar" />
+                                    <ComboBoxItem Content="Biológica" />
+                                    <ComboBoxItem Content="Comercial" />
+                                    <ComboBoxItem Content="Control" />
+                                </ComboBox>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid Margin="0,24,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel>
+                                <Label Content="Peso Muestra (gramos)" Style="{StaticResource FormLabelStyle}" />
+                                <TextBox Text="{Binding PesoMuestraGramos}" Style="{StaticResource PremiumTextBoxStyle}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <StackPanel Margin="0,24,0,0">
+                            <Label Content="Comentarios" Style="{StaticResource FormLabelStyle}" />
+                            <TextBox Text="{Binding Comentarios}" 
+                                     Style="{StaticResource PremiumTextBoxStyle}" 
+                                     Height="60" 
+                                     TextWrapping="Wrap" 
+                                     AcceptsReturn="True"
+                                     VerticalContentAlignment="Top" />
+                        </StackPanel>
+
+                        <!-- SECCIÓN FRECUENCIAS -->
+                        <Border Margin="0,32,0,0" Style="{StaticResource SurfaceBorderStyle}" Padding="0" ClipToBounds="True">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+
+                                <Border Background="#FCFDFF" Padding="16,10" BorderBrush="{DynamicResource SidebarBorderBrush}" BorderThickness="0,0,0,1">
+                                    <Grid>
+                                        <TextBlock Text="FRECUENCIAS DE TALLA" Style="{StaticResource SectionHeaderStyle}" VerticalAlignment="Center" FontSize="11" />
+                                        <Button HorizontalAlignment="Right" 
+                                                Command="{Binding AddFrecuenciaCommand}"
+                                                Style="{StaticResource ThemeButtonStyle}"
+                                                Foreground="{DynamicResource AccentBrush}"
+                                                Padding="12,6">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="+ " FontWeight="Bold" />
+                                                <TextBlock Text="AÑADIR TALLA" FontSize="10" />
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+
+                                <DataGrid Grid.Row="1" 
+                                          ItemsSource="{Binding FrecuenciasTallas}" 
+                                          AutoGenerateColumns="False"
+                                          CanUserAddRows="False"
+                                          Background="Transparent"
+                                          BorderThickness="0"
+                                          GridLinesVisibility="Horizontal"
+                                          HorizontalGridLinesBrush="{DynamicResource SidebarBorderBrush}"
+                                          HeadersVisibility="Column"
+                                          MinHeight="200"
+                                          MaxHeight="300">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="TALLA" Binding="{Binding Talla}" Width="*" />
+                                        <DataGridTextColumn Header="MACHOS" Binding="{Binding NroMachos}" Width="80" />
+                                        <DataGridTextColumn Header="HEMBRAS" Binding="{Binding NroHembras}" Width="80" />
+                                        <DataGridTextColumn Header="INDET." Binding="{Binding NroIndeterminados}" Width="80" />
+                                        <DataGridTextColumn Header="TOTAL" Binding="{Binding Total, Mode=OneWay}" Width="80" IsReadOnly="True" FontWeight="Bold" />
+                                        <DataGridTemplateColumn Width="50">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Command="{Binding DataContext.RemoveFrecuenciaCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Content="✕"
+                                                            Style="{StaticResource ThemeButtonStyle}"
+                                                            Foreground="#FF5252" />
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <Grid Grid.Row="2" Margin="0,30,0,0">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="Cancelar"
+                                Command="{Binding CancelCommand}"
+                                Style="{StaticResource ThemeButtonStyle}"
+                                Padding="24,10"
+                                Margin="0,0,16,0" />
+                        <Button Content="Guardar Muestra"
+                                Command="{Binding SaveCommand}"
+                                Style="{StaticResource PrimaryButtonStyle}"
+                                Padding="32,12" />
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Border>
+    </AdornerDecorator>
+</UserControl>
