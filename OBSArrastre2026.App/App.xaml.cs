@@ -53,6 +53,7 @@ public partial class App : Application
                 services.AddSingleton<IMareaService, MareaService>();
                 services.AddSingleton<ILanceService, LanceService>();
                 services.AddSingleton<IMuestraService, MuestraService>();
+                services.AddSingleton<ISubmuestraService, SubmuestraService>();
 
                 // Servicios de sincronización de datos
                 services.AddSingleton<IDbfExtractorService, DbfExtractorService>();
@@ -69,13 +70,13 @@ public partial class App : Application
 
                 // Validación y ViewModels
                 services.AddValidatorsFromAssemblyContaining<App>();
-                services.AddTransient<IValidator<MareaEditViewModel>, MareaValidator>();
-                services.AddTransient<IValidator<LanceEditViewModel>, LanceValidator>();
                 services.AddTransient<IValidator<MuestraEditViewModel>, MuestraEditViewModelValidator>();
+                services.AddTransient<IValidator<SubmuestraEditViewModel>, SubmuestraEditViewModelValidator>();
 
                 services.AddTransient<MareaEditViewModel>();
                 services.AddTransient<LanceEditViewModel>();
                 services.AddTransient<MuestraEditViewModel>();
+                services.AddTransient<SubmuestraEditViewModel>();
 
                 services.AddSingleton<Func<Action, string?, MareaEditViewModel>>(sp =>
                     (onClose, mareaId) =>
@@ -88,11 +89,11 @@ public partial class App : Application
                     });
 
                 services.AddSingleton<Func<Action, string, string?, LanceEditViewModel>>(sp =>
-                    (onClose, mareaEtapaId, lanceId) =>
+                    (onClose, mareaId, lanceId) =>
                     {
                         var validator = sp.GetRequiredService<IValidator<LanceEditViewModel>>();
                         var lanceService = sp.GetRequiredService<ILanceService>();
-                        return new LanceEditViewModel(onClose, validator, lanceService, mareaEtapaId, lanceId);
+                        return new LanceEditViewModel(onClose, validator, lanceService, mareaId, lanceId);
                     });
 
                 services.AddSingleton<Func<Action, string, string?, MuestraEditViewModel>>(sp =>
@@ -102,6 +103,15 @@ public partial class App : Application
                         var muestraService = sp.GetRequiredService<IMuestraService>();
                         var lanceService = sp.GetRequiredService<ILanceService>();
                         return new MuestraEditViewModel(onClose, validator, muestraService, lanceService, lanceId, muestraId);
+                    });
+
+                services.AddSingleton<Func<Action, string, SubmuestraEditViewModel>>(sp =>
+                    (onClose, muestraId) =>
+                    {
+                        var validator = sp.GetRequiredService<IValidator<SubmuestraEditViewModel>>();
+                        var submuestraService = sp.GetRequiredService<ISubmuestraService>();
+                        var muestraService = sp.GetRequiredService<IMuestraService>();
+                        return new SubmuestraEditViewModel(onClose, validator, submuestraService, muestraService, muestraId);
                     });
 
                 services.AddSingleton<MainWindowViewModel>();

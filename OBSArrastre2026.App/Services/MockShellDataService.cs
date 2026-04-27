@@ -105,19 +105,17 @@ public sealed class MockShellDataService : IMockShellDataService
         NavigationSection.Submuestras => new(
             "Detalle por individuo",
             "Submuestras",
-            "Representacion mock de items_submuestras, preparada para alto detalle sin perder legibilidad.",
+            "Muestras que ya cuentan con ejemplares individuales procesados.",
             "Nueva submuestra",
-            "ID",
-            "Muestra",
-            "Sexo",
-            "Estadio",
-            "Medida clave",
+            "Nro. Lance",
+            "Fecha",
+            "Hora Virada",
+            "Especie",
+            "Peso",
             [],
             [
-                new("SM-981", "M-2401", "Hembra", "III", "32.4 cm / 410 g", "Completa"),
-                new("SM-978", "M-2401", "Macho", "II", "30.8 cm / 380 g", "Completa"),
-                new("SM-962", "M-2398", "Indeterminado", "I", "21.3 cm / 145 g", "Pendiente"),
-                new("SM-955", "M-2386", "Hembra", "IV", "34.1 cm / 432 g", "Auditada")
+                new("21", "24/04/2026", "14:30", "Merluza común", "45.2 kg", "SM-001"),
+                new("22", "24/04/2026", "18:45", "Abadejo", "12.8 kg", "SM-002")
             ]),
         NavigationSection.Produccion => new(
             "Parte operativo",

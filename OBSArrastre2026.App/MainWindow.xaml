@@ -31,6 +31,10 @@
             <views:MuestraEditView />
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type vm:SubmuestraEditViewModel}">
+            <views:SubmuestraEditView />
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:MareaListItemViewModel}">
             <!-- ... -->
             <Border Style="{StaticResource TableRowStyle}" Cursor="Hand">

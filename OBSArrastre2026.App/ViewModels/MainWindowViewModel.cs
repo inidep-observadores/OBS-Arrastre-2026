@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using System.Windows.Input;
@@ -24,6 +25,8 @@ public sealed class MainWindowViewModel : ObservableObject
     private readonly Func<Action, string?, MareaEditViewModel> _mareaEditFactory;
     private readonly Func<Action, string, string?, LanceEditViewModel> _lanceEditFactory;
     private readonly Func<Action, string, string?, MuestraEditViewModel> _muestraEditFactory;
+    private readonly Func<Action, string, SubmuestraEditViewModel> _submuestraEditFactory;
+    private readonly ISubmuestraService _submuestraService;
     private readonly IActiveMareaManager _activeMareaManager;
     private readonly IMareaValidationService _validationService;
     private readonly IMareaReportService _reportService;
@@ -70,6 +73,8 @@ public sealed class MainWindowViewModel : ObservableObject
         Func<Action, string?, MareaEditViewModel> mareaEditFactory,
         Func<Action, string, string?, LanceEditViewModel> lanceEditFactory,
         Func<Action, string, string?, MuestraEditViewModel> muestraEditFactory,
+        Func<Action, string, SubmuestraEditViewModel> submuestraEditFactory,
+        ISubmuestraService submuestraService,
         IMareaValidationService validationService,
         IMareaReportService reportService,
         IDbContextFactory<AppDbContext> dbContextFactory)
@@ -84,9 +89,11 @@ public sealed class MainWindowViewModel : ObservableObject
         _mareaEditFactory = mareaEditFactory;
         _lanceEditFactory = lanceEditFactory;
         _muestraEditFactory = muestraEditFactory;
+        _submuestraEditFactory = submuestraEditFactory;
         _validationService = validationService;
         _reportService = reportService;
         _dbContextFactory = dbContextFactory;
+        _submuestraService = submuestraService;
 
         SearchPlaceholder = "Buscar...";
         SetSystemThemeCommand = new RelayCommand(() => ApplyTheme(AppThemeMode.System));
@@ -99,6 +106,7 @@ public sealed class MainWindowViewModel : ObservableObject
         ApplyLanceFiltersCommand = new AsyncCommand(LoadLancesAsync);
         EditLanceCommand = new RelayCommand<LanceListItemViewModel>(OpenEditLanceForm);
         EditMuestraCommand = new RelayCommand<MuestraListItemViewModel>(OpenEditMuestraForm);
+        EditSubmuestraCommand = new RelayCommand<MuestraListItemViewModel>(OpenEditSubmuestraForm);
         OpenSelectedRecordEditCommand = new RelayCommand(OpenSelectedRecordEdit);
         ClearMareaFiltersCommand = new AsyncCommand(ClearMareaFiltersAsync);
         ClearLanceFiltersCommand = new AsyncCommand(ClearLanceFiltersAsync);
@@ -184,6 +192,7 @@ public sealed class MainWindowViewModel : ObservableObject
     public ICommand ApplyLanceFiltersCommand { get; }
     public ICommand EditLanceCommand { get; }
     public ICommand EditMuestraCommand { get; }
+    public ICommand EditSubmuestraCommand { get; }
     public ICommand OpenSelectedRecordEditCommand { get; }
     public ICommand ClearMareaFiltersCommand { get; }
     public ICommand ClearLanceFiltersCommand { get; }
@@ -222,12 +231,49 @@ public sealed class MainWindowViewModel : ObservableObject
         else if (SelectedRecord is LanceListItemViewModel lanceVm)
             OpenEditLanceForm(lanceVm);
         else if (SelectedRecord is MuestraListItemViewModel muestraVm)
-            OpenEditMuestraForm(muestraVm);
+        {
+            if (SelectedNavigationItem?.Section == NavigationSection.Submuestras)
+                OpenEditSubmuestraForm(muestraVm);
+            else
+                OpenEditMuestraForm(muestraVm);
+        }
+    }
+
+    private void OpenEditSubmuestraForm(MuestraListItemViewModel? vm)
+    {
+        if (vm == null) return;
+        CurrentEditViewModel = _submuestraEditFactory(() => { CurrentEditViewModel = null; _ = LoadSubmuestrasAsync(); }, vm.Muestra.ID);
+    }
+
+    private async Task LoadSubmuestrasAsync()
+    {
+        var activeMareaId = _activeMareaManager.ActiveMareaId;
+        if (string.IsNullOrEmpty(activeMareaId))
+        {
+            Records.Clear();
+            return;
+        }
+
+        var muestras = await _submuestraService.GetMuestrasConSubmuestrasAsync(activeMareaId);
+        var viewModels = muestras.Select(m => new MuestraListItemViewModel(m)).ToList();
+
+        Records.Clear();
+        foreach (var vm in viewModels)
+        {
+            Records.Add(vm);
+        }
     }
 
     private void OpenEditMuestraForm(MuestraListItemViewModel? vm)
     {
         if (vm == null) return;
+        
+        if (SelectedNavigationItem?.Section == NavigationSection.Submuestras)
+        {
+            OpenEditSubmuestraForm(vm);
+            return;
+        }
+
         CurrentEditViewModel = _muestraEditFactory(() => { CurrentEditViewModel = null; _ = LoadMuestrasAsync(); }, vm.Muestra.LanceID!, vm.Muestra.ID);
     }
 
@@ -511,6 +557,10 @@ public sealed class MainWindowViewModel : ObservableObject
         {
             await LoadMuestrasAsync();
         }
+        else if (SelectedNavigationItem.Section == NavigationSection.Submuestras)
+        {
+            await LoadSubmuestrasAsync();
+        }
     }
 
     private void LoadSection(NavigationSection section)
@@ -576,6 +626,28 @@ public sealed class MainWindowViewModel : ObservableObject
             PrimaryActionLabel = muestraSection.PrimaryActionLabel;
             PrimaryActionCommand = new RelayCommand(OpenCreateMuestraForm);
             
+            SetColumnHeaders(
+                "Nro. Lance",
+                "Fecha",
+                "Hora Virada",
+                "Especie",
+                "Peso");
+
+            ClearDashboardCollections();
+            IsDashboardVisible = false;
+            return;
+        }
+
+        if (section == NavigationSection.Submuestras)
+        {
+            _ = LoadSubmuestrasAsync();
+            var subSection = _mockShellDataService.GetListSection(section);
+            PageEyebrow = subSection.Eyebrow;
+            PageTitle = subSection.Title;
+            PageDescription = subSection.Description;
+            PrimaryActionLabel = subSection.PrimaryActionLabel;
+            PrimaryActionCommand = new RelayCommand(() => ShowMessage("En desarrollo", "La creación de submuestras individuales se realiza desde la edición de muestras."));
+
             SetColumnHeaders(
                 "Nro. Lance",
                 "Fecha",
