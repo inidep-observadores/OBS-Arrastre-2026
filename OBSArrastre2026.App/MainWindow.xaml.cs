@@ -174,11 +174,27 @@ public partial class MainWindow : Window
             }
         }
 
-        // 3. Ajustar vista si hay datos y NO hay una selección activa
-        if (MainMap.Markers.Any() && vm.SelectedRecord == null)
+        // 3. Ajustar vista si hay datos dinámicos y NO hay una selección activa
+        var dynamicMarkers = MainMap.Markers.Where(m => !_staticGeoJsonMarkers.Contains(m)).ToList();
+        if (dynamicMarkers.Any() && vm.SelectedRecord == null)
         {
-            // Pequeño delay para asegurar que el control esté listo para centrar
-            Dispatcher.BeginInvoke(new Action(() => MainMap.ZoomAndCenterMarkers(null)), System.Windows.Threading.DispatcherPriority.Background);
+            Dispatcher.BeginInvoke(new Action(() => 
+            {
+                var points = dynamicMarkers.Select(m => m.Position).ToList();
+                double minLat = points.Min(p => p.Lat);
+                double maxLat = points.Max(p => p.Lat);
+                double minLng = points.Min(p => p.Lng);
+                double maxLng = points.Max(p => p.Lng);
+
+                // Asegurar que el rectángulo tenga un tamaño mínimo para evitar fallos de SetZoomToFitRect
+                double width = Math.Max(maxLng - minLng, 0.01);
+                double height = Math.Max(maxLat - minLat, 0.01);
+
+                var rect = new RectLatLng(maxLat, minLng, width, height);
+                MainMap.SetZoomToFitRect(rect);
+                
+                if (MainMap.Zoom > 2) MainMap.Zoom--;
+            }), System.Windows.Threading.DispatcherPriority.Loaded); // Usamos Loaded para que ocurra tras el renderizado
         }
     }
 

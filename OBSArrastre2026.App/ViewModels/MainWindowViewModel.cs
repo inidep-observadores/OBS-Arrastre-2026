@@ -597,6 +597,8 @@ public sealed class MainWindowViewModel : ObservableObject
                 return;
             }
 
+            SelectedRecord = null;
+
             var mareas = await _mareaService.GetMareasAsync(
                 _mareasFilterAnio,
                 _mareasFilterBuque?.ID,
@@ -680,6 +682,8 @@ public sealed class MainWindowViewModel : ObservableObject
                 LancesFilterFechaHasta, 
                 LancesFilterNroLance, 
                 LancesFilterEspecie);
+
+            SelectedRecord = null;
 
             var viewModels = lances.Select(l => new LanceListItemViewModel(l)).ToList();
             
