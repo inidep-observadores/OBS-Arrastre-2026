@@ -9,6 +9,7 @@ using OBSArrastre2026.App.Services;
 using OBSArrastre2026.App.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 using OBSArrastre2026.App.Data;
+using GMap.NET;
 
 namespace OBSArrastre2026.App.ViewModels;
 
@@ -39,6 +40,9 @@ public sealed class MainWindowViewModel : ObservableObject
     public List<MareaTracking> CurrentTrack { get; private set; } = new();
     public List<Lance> CurrentLances { get; private set; } = new();
     public event Action? MapUpdateRequested;
+    public event Action<List<PointLatLng>>? MapFocusRequested;
+
+    private object? _selectedRecord;
 
     // Filtros de Mareas
     private int? _mareasFilterAnio;
@@ -321,6 +325,18 @@ public sealed class MainWindowViewModel : ObservableObject
             if (SetProperty(ref _lancesFilterEspecie, value))
             {
                 _ = LoadLancesAsync();
+            }
+        }
+    }
+
+    public object? SelectedRecord
+    {
+        get => _selectedRecord;
+        set
+        {
+            if (SetProperty(ref _selectedRecord, value))
+            {
+                OnRecordSelected(value);
             }
         }
     }
@@ -787,6 +803,30 @@ public sealed class MainWindowViewModel : ObservableObject
             
         // Formato GGº MM,M' C (C= cuadrante N,S,E,O)
         return $"{degrees}º {minutes:00.1}' {quadrant}".Replace('.', ',');
+    }
+
+    private void OnRecordSelected(object? record)
+    {
+        // 1. Notificar a la vista que debe redibujar para aplicar el resaltado de color
+        MapUpdateRequested?.Invoke();
+
+        // 2. Si es un lance, pedir el foco (encuadre de inicio y fin)
+        if (record is LanceListItemViewModel lanceVm)
+        {
+            var lance = lanceVm.Lance;
+            var points = new List<PointLatLng>();
+
+            if (lance.LatitudInicioDecimal.HasValue && lance.LongitudInicioDecimal.HasValue)
+                points.Add(new PointLatLng(lance.LatitudInicioDecimal.Value, lance.LongitudInicioDecimal.Value));
+
+            if (lance.LatitudFinalDecimal.HasValue && lance.LongitudFinalDecimal.HasValue)
+                points.Add(new PointLatLng(lance.LatitudFinalDecimal.Value, lance.LongitudFinalDecimal.Value));
+
+            if (points.Count > 0)
+            {
+                MapFocusRequested?.Invoke(points);
+            }
+        }
     }
 
     private static void ReplaceItems<T>(ObservableCollection<T> target, IEnumerable<T> source)

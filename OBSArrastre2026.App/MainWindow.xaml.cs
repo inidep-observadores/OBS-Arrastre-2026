@@ -36,6 +36,7 @@ public partial class MainWindow : Window
 
         // Suscribirse a actualizaciones de datos
         viewModel.MapUpdateRequested += ViewModel_MapUpdateRequested;
+        viewModel.MapFocusRequested += ViewModel_MapFocusRequested;
     }
 
     private void MainMap_Loaded(object sender, RoutedEventArgs e)
@@ -106,7 +107,7 @@ public partial class MainWindow : Window
             {
                 Shape = new Path
                 {
-                    Stroke = Brushes.DarkViolet,
+                    Stroke = new SolidColorBrush(Colors.DarkViolet) { Opacity = 0.5 },
                     StrokeThickness = 2,
                     ToolTip = "Track de la marea"
                 }
@@ -139,13 +140,18 @@ public partial class MainWindow : Window
                 {
                     var endPos = new PointLatLng(lance.LatitudFinalDecimal.Value, lance.LongitudFinalDecimal.Value);
                     
-                    // Línea del lance (Cian)
+                    // Determinar color (Azul si está seleccionado, Cian si no)
+                    bool isSelected = vm.SelectedRecord is LanceListItemViewModel selectedVm && selectedVm.ID == lance.Id;
+                    var lanceBrush = isSelected ? Brushes.Blue : Brushes.Cyan;
+                    var lanceThickness = isSelected ? 3.0 : 1.5;
+
+                    // Línea del lance
                     var lanceRoute = new GMapRoute(new List<PointLatLng> { startPos, endPos })
                     {
                         Shape = new Path
                         {
-                            Stroke = Brushes.Cyan,
-                            StrokeThickness = 1.5,
+                            Stroke = lanceBrush,
+                            StrokeThickness = lanceThickness,
                             ToolTip = $"Lance Nro: {lance.NroLance}"
                         }
                     };
@@ -168,8 +174,8 @@ public partial class MainWindow : Window
             }
         }
 
-        // 3. Ajustar vista si hay datos
-        if (MainMap.Markers.Any())
+        // 3. Ajustar vista si hay datos y NO hay una selección activa
+        if (MainMap.Markers.Any() && vm.SelectedRecord == null)
         {
             // Pequeño delay para asegurar que el control esté listo para centrar
             Dispatcher.BeginInvoke(new Action(() => MainMap.ZoomAndCenterMarkers(null)), System.Windows.Threading.DispatcherPriority.Background);
@@ -213,6 +219,38 @@ public partial class MainWindow : Window
         double min = (abs - deg) * 60;
         string q = isLat ? (val >= 0 ? "N" : "S") : (val >= 0 ? "E" : "O");
         return $"{deg}º {min:00.1}' {q}".Replace('.', ',');
+    }
+
+    private void ViewModel_MapFocusRequested(List<PointLatLng> points)
+    {
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (MainMap == null || points == null || points.Count < 2) 
+            {
+                if (points?.Count == 1)
+                {
+                    MainMap.Position = points[0];
+                    MainMap.Zoom = 12;
+                }
+                return;
+            }
+
+            // Calcular el rectángulo que abarca todos los puntos
+            double minLat = points.Min(p => p.Lat);
+            double maxLat = points.Max(p => p.Lat);
+            double minLng = points.Min(p => p.Lng);
+            double maxLng = points.Max(p => p.Lng);
+
+            // GMap.NET RectLatLng(top, left, width, height)
+            // top = maxLat, left = minLng
+            var rect = new RectLatLng(maxLat, minLng, maxLng - minLng, maxLat - minLat);
+            
+            // Ajustar el zoom y la posición
+            MainMap.SetZoomToFitRect(rect);
+
+            // Bajar un nivel de zoom para dejar margen en los bordes
+            if (MainMap.Zoom > 2) MainMap.Zoom--;
+        }));
     }
 
     private void MainWindow_StateChanged(object? sender, EventArgs e)
