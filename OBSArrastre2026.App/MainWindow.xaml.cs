@@ -21,12 +21,15 @@ namespace OBSArrastre2026.App;
 public partial class MainWindow : Window
 {
     private readonly IUserSettingsService _settingsService;
+    private readonly GeoJsonService _geoJsonService;
+    private readonly List<GMapMarker> _staticGeoJsonMarkers = new();
 
-    public MainWindow(MainWindowViewModel viewModel, IUserSettingsService settingsService)
+    public MainWindow(MainWindowViewModel viewModel, IUserSettingsService settingsService, GeoJsonService geoJsonService)
     {
         InitializeComponent();
         DataContext = viewModel;
         _settingsService = settingsService;
+        _geoJsonService = geoJsonService;
 
         StateChanged += MainWindow_StateChanged;
 
@@ -59,6 +62,16 @@ public partial class MainWindow : Window
             MainMap.Position = new PointLatLng(-42, -60);
             MainMap.Zoom = 5;
 
+            // Cargar capas GeoJSON (ZEE, Vedas, etc.)
+            var geoMarkers = _geoJsonService.LoadGeoJsonMarkers();
+            _staticGeoJsonMarkers.Clear();
+            _staticGeoJsonMarkers.AddRange(geoMarkers);
+            
+            foreach (var marker in _staticGeoJsonMarkers)
+            {
+                MainMap.Markers.Add(marker);
+            }
+
             // Dibujar marcadores si hay datos ya cargados
             if (DataContext is MainWindowViewModel)
             {
@@ -74,6 +87,13 @@ public partial class MainWindow : Window
         if (MainMap == null) return;
 
         MainMap.Markers.Clear();
+        
+        // 0. Re-dibujar capas estáticas
+        foreach (var marker in _staticGeoJsonMarkers)
+        {
+            MainMap.Markers.Add(marker);
+        }
+
         var vm = (MainWindowViewModel)DataContext;
 
         if (vm == null) return;
@@ -86,7 +106,7 @@ public partial class MainWindow : Window
             {
                 Shape = new Path
                 {
-                    Stroke = Brushes.OrangeRed,
+                    Stroke = Brushes.DarkViolet,
                     StrokeThickness = 2,
                     ToolTip = "Track de la marea"
                 }

@@ -61,6 +61,7 @@ public partial class App : Application
                         sp.GetRequiredService<IMareaReportService>(),
                         sp.GetRequiredService<IDbContextFactory<AppDbContext>>()));
                 services.AddSingleton<IMareaValidationService, MareaValidationService>();
+                services.AddSingleton<GeoJsonService>();
 
                 // Validación y ViewModels
                 services.AddValidatorsFromAssemblyContaining<App>();
