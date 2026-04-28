@@ -99,7 +99,7 @@ public partial class MainWindow : Window
 
         if (vm == null) return;
 
-        // 1. Dibujar Track de la marea (Naranja)
+        // 1. Dibujar Track de la marea (Violeta)
         if (vm.CurrentTrack.Any())
         {
             var points = vm.CurrentTrack.Select(p => new PointLatLng(p.Latitud, p.Longitud)).ToList();
@@ -113,6 +113,24 @@ public partial class MainWindow : Window
                 }
             };
             MainMap.Markers.Add(route);
+
+            // Marcadores para cada punto del track (muy pequeños, apenas más gruesos que el track)
+            foreach (var p in vm.CurrentTrack)
+            {
+                var pointPos = new PointLatLng(p.Latitud, p.Longitud);
+                var pointMarker = new GMapMarker(pointPos)
+                {
+                    Shape = new Ellipse
+                    {
+                        Width = 4,
+                        Height = 4,
+                        Fill = Brushes.DarkViolet,
+                        ToolTip = CreateTrackingToolTip(p)
+                    },
+                    Offset = new Point(-2, -2)
+                };
+                MainMap.Markers.Add(pointMarker);
+            }
         }
 
         // 2. Dibujar Lances
@@ -223,6 +241,32 @@ public partial class MainWindow : Window
                       $"FECHA: {fecha}\n" +
                       $"HORA: {hora}\n" +
                       $"POS: {lat}, {lon}";
+
+        return tip;
+    }
+
+    private object CreateTrackingToolTip(MareaTracking point)
+    {
+        var tip = new ToolTip
+        {
+            Background = Brushes.GhostWhite,
+            Foreground = Brushes.DarkViolet,
+            BorderBrush = Brushes.DarkViolet,
+            BorderThickness = new Thickness(2),
+            Padding = new Thickness(10),
+            FontSize = 13,
+            FontWeight = FontWeights.SemiBold
+        };
+
+        string lat = FormatCoord(point.Latitud, true);
+        string lon = FormatCoord(point.Longitud, false);
+
+        tip.Content = "PUNTO DE TRACK\n\n" +
+                      $"FECHA: {point.FechaHora:dd/MM/yyyy}\n" +
+                      $"HORA: {point.FechaHora:HH:mm}\n" +
+                      $"POS: {lat}, {lon}\n" +
+                      $"RUMBO: {point.Rumbo:0}º\n" +
+                      $"VELOCIDAD: {point.Velocidad:0.0} nudos";
 
         return tip;
     }

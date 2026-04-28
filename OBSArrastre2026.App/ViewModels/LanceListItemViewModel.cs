@@ -9,7 +9,17 @@ public sealed class LanceListItemViewModel(Lance lance)
 
     public int NroLance => Lance.NroLance;
     
-    public string FechaDisplay => Lance.Fecha;
+    public string FechaDisplay
+    {
+        get
+        {
+            if (DateTime.TryParse(Lance.Fecha, out var date))
+            {
+                return date.ToString("dd/MM/yyyy");
+            }
+            return Lance.Fecha;
+        }
+    }
     
     public string HoraInicio => Lance.HoraInicio ?? "-";
     
