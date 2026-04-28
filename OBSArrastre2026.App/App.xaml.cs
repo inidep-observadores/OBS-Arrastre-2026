@@ -178,9 +178,15 @@ public partial class App : Application
 
         await _host.StartAsync();
 
-        // Inicializar base de datos y realizar sembrado/sincronización de datos maestros
-        await _host.Services.GetRequiredService<IDatabaseInitializer>().InitializeAsync();
+        // Inicializar base de datos (migraciones)
+        var databaseInitializer = _host.Services.GetRequiredService<IDatabaseInitializer>();
+        await databaseInitializer.InitializeAsync();
+        
+        // Sincronizar datos maestros (especies, buques) necesarios para el catálogo
         await _host.Services.GetRequiredService<IDataSyncCoordinator>().SyncAllAsync();
+
+        // Sembrar catálogos que dependen de datos maestros
+        await databaseInitializer.SeedCatalogsAsync();
 
         // Cargar preferencias de usuario
         var settingsService = _host.Services.GetRequiredService<IUserSettingsService>();

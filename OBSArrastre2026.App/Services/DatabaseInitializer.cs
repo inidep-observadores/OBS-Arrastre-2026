@@ -7,6 +7,7 @@ namespace OBSArrastre2026.App.Services;
 public interface IDatabaseInitializer
 {
     Task InitializeAsync(CancellationToken cancellationToken = default);
+    Task SeedCatalogsAsync(CancellationToken cancellationToken = default);
 }
 
 public sealed class DatabaseInitializer(IDbContextFactory<AppDbContext> dbContextFactory) : IDatabaseInitializer
@@ -17,6 +18,11 @@ public sealed class DatabaseInitializer(IDbContextFactory<AppDbContext> dbContex
 
         // Asegurar que la base de datos esté actualizada con la última migración
         await dbContext.Database.MigrateAsync(cancellationToken);
+    }
+
+    public async Task SeedCatalogsAsync(CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
 
         // Sembrar datos de catálogo Largo-Peso
         await SeedLargoPesoAsync(dbContext, cancellationToken);
