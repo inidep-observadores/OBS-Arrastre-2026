@@ -36,8 +36,9 @@ public class MareaValidationReport
     public List<string> ArchivosProcesados { get; set; } = new();
     
     public int TotalLances { get; set; }
-    public int LancesConErrores => Issues.Count(i => i.Level == ValidationLevel.Error);
-    public int LancesConAdvertencias => Issues.Count(i => i.Level == ValidationLevel.Warning);
+    public int TotalErrors => Issues.Count(i => i.Level == ValidationLevel.Error || i.Level == ValidationLevel.Fatal);
+    public int TotalWarnings => Issues.Count(i => i.Level == ValidationLevel.Warning);
+    public int TotalAutoFixes => Issues.Count(i => i.Level == ValidationLevel.AutoFixed);
     
     public bool HasFatalErrors => Issues.Any(i => i.Level == ValidationLevel.Fatal);
 

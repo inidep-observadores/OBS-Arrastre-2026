@@ -134,11 +134,11 @@ public sealed class MareaValidationEngine
 
         foreach (var c in capturas.Where(c => c.Fecha.Date < minDate || c.Fecha.Date > maxDate))
         {
-            report.AddIssue(ValidationLevel.Error, "Consistencia Temporal", $"Lance {c.Lance} con fecha {c.Fecha:yyyy-MM-dd} fuera del rango de etapas de marea ({minDate:yyyy-MM-dd} al {maxDate:yyyy-MM-dd}).");
+            report.AddIssue(ValidationLevel.Fatal, "Consistencia Temporal", $"Lance {c.Lance} con fecha {c.Fecha:yyyy-MM-dd} fuera del rango de etapas de marea ({minDate:yyyy-MM-dd} al {maxDate:yyyy-MM-dd}).");
         }
         foreach (var m in muestras.Where(m => m.Fecha.Date < minDate || m.Fecha.Date > maxDate))
         {
-            report.AddIssue(ValidationLevel.Error, "Consistencia Temporal", $"Muestra (Lance {m.Lance}) con fecha {m.Fecha:yyyy-MM-dd} fuera del rango de etapas de marea.");
+            report.AddIssue(ValidationLevel.Fatal, "Consistencia Temporal", $"Muestra (Lance {m.Lance}) con fecha {m.Fecha:yyyy-MM-dd} fuera del rango de etapas de marea.");
         }
         foreach (var p in produccion.Where(p => p.Fecha.Date < minDate || p.Fecha.Date > maxDate))
         {

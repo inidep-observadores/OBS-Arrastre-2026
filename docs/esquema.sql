@@ -122,6 +122,7 @@ CREATE TABLE lances (
     temperatura_red_c REAL,
     presion_hpa INTEGER,
     captura_total_kg REAL,
+    descarte_total_kg REAL,
     velocidad_arrastre_nudos REAL,
     rumbo_grados INTEGER,
     malla_copo_mm INTEGER,

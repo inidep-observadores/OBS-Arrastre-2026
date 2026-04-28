@@ -13,6 +13,8 @@ public sealed class LanceListItemViewModel(Lance lance)
     
     public string HoraInicio => Lance.HoraInicio ?? "-";
     
+    public string HoraFin => Lance.HoraFinal ?? "-";
+    
     public string LatitudDisplay => FormatCoordinate(Lance.LatitudInicioDecimal, true);
     
     public string LongitudDisplay => FormatCoordinate(Lance.LongitudInicioDecimal, false);

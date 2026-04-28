@@ -118,7 +118,8 @@ public class MareaValidationService : IMareaValidationService
                     LongFinal = EncodeCoordinate(lance.LongitudFinalDecimal),
                     ProfInic = lance.ProfundidadInicioM ?? 0,
                     ProfFinal = lance.ProfundidadFinalM ?? 0,
-                    CaptTotal = lance.CapturaTotalKg ?? 0
+                    CaptTotal = lance.CapturaTotalKg ?? 0,
+                    Descarte = lance.DescarteTotalKg ?? 0
                 };
 
                 foreach (var ic in lance.ItemsCaptura)
@@ -224,7 +225,36 @@ public class MareaValidationService : IMareaValidationService
             largoPesoCatalogo
         );
 
-        report.ArchivosProcesados = new List<string> { "Datos de Base de Datos" };
+        // PERSISTIR CORRECCIONES: Si el motor corrigió totales, los guardamos en la DB
+        bool hayCambios = false;
+        foreach (var etapa in marea.Etapas)
+        {
+            foreach (var lance in etapa.Lances)
+            {
+                var legacyCaptura = capturas.FirstOrDefault(c => (int)c.Lance == lance.NroLance);
+                if (legacyCaptura != null)
+                {
+                    // Si el valor en el objeto legacy (corregido) difiere del de la DB, actualizamos
+                    if (Math.Abs((lance.CapturaTotalKg ?? 0) - legacyCaptura.CaptTotal) > 0.01)
+                    {
+                        lance.CapturaTotalKg = legacyCaptura.CaptTotal;
+                        hayCambios = true;
+                    }
+                    if (Math.Abs((lance.DescarteTotalKg ?? 0) - legacyCaptura.Descarte) > 0.01)
+                    {
+                        lance.DescarteTotalKg = legacyCaptura.Descarte;
+                        hayCambios = true;
+                    }
+                }
+            }
+        }
+
+        if (hayCambios)
+        {
+            await dbContext.SaveChangesAsync();
+        }
+
+        report.ArchivosProcesados = new List<string> { "Datos de Base de Datos (Auditados y Corregidos)" };
         return report;
     }
 

@@ -34,6 +34,7 @@ public sealed class Lance
     public int? PresionHpa { get; set; }
 
     public double? CapturaTotalKg { get; set; }
+    public double? DescarteTotalKg { get; set; }
     public double? VelocidadArrastreNudos { get; set; }
     public int? RumboGrados { get; set; }
 

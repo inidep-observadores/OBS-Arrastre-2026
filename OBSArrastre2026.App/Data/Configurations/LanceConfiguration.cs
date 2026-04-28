@@ -37,6 +37,7 @@ public sealed class LanceConfiguration : IEntityTypeConfiguration<Lance>
         builder.Property(x => x.PresionHpa).HasColumnName("presion_hpa");
 
         builder.Property(x => x.CapturaTotalKg).HasColumnName("captura_total_kg");
+        builder.Property(x => x.DescarteTotalKg).HasColumnName("descarte_total_kg");
         builder.Property(x => x.VelocidadArrastreNudos).HasColumnName("velocidad_arrastre_nudos");
         builder.Property(x => x.RumboGrados).HasColumnName("rumbo_grados");
 

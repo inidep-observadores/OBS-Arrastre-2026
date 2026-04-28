@@ -268,7 +268,8 @@ public class MareaImportService : IMareaImportService
                 LongitudFinalDecimal = LegacyDecoder.DecodeCoordinate(c.LongFinal),
                 ProfundidadInicioM = (int)c.ProfInic,
                 ProfundidadFinalM = (int)c.ProfFinal,
-                CapturaTotalKg = c.CaptTotal,
+                CapturaTotalKg = c.CaptTotal != 0 ? c.CaptTotal : (c.Especies.Values.Sum() > 0 ? c.Especies.Values.Sum() : 0),
+                DescarteTotalKg = c.Descarte != 0 ? c.Descarte : (c.DescartesPorEspecie.Values.Sum() > 0 ? c.DescartesPorEspecie.Values.Sum() : 0),
             };
 
             // Items de Captura (Especies por código)
@@ -288,6 +289,7 @@ public class MareaImportService : IMareaImportService
             dbContext.Lances.Add(lance);
             lanceMap[c.Lance] = lance;
         }
+        await dbContext.SaveChangesAsync();
 
         // Map Muestras
         var muestraMap = new Dictionary<string, Muestra>();

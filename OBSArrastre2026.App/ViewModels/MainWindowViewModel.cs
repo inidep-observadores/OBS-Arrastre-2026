@@ -593,14 +593,12 @@ public sealed class MainWindowViewModel : ObservableObject
     public bool IsDarkThemeActive => CurrentThemeMode == AppThemeMode.Dark;
 
     public string Column1Header { get; private set; } = string.Empty;
-
     public string Column2Header { get; private set; } = string.Empty;
-
     public string Column3Header { get; private set; } = string.Empty;
-
     public string Column4Header { get; private set; } = string.Empty;
-
     public string Column5Header { get; private set; } = string.Empty;
+    public string Column6Header { get; private set; } = string.Empty;
+    public string Column7Header { get; private set; } = string.Empty;
 
     public ICommand ClearActiveMareaCommand => new AsyncRelayCommand(() => _activeMareaManager.SetActiveMareaAsync(null));
 
@@ -672,7 +670,9 @@ public sealed class MainWindowViewModel : ObservableObject
                 lanceSection.Column2Header,
                 lanceSection.Column3Header,
                 lanceSection.Column4Header,
-                lanceSection.Column5Header);
+                lanceSection.Column5Header,
+                "Inicio",
+                "Fin");
 
             ClearDashboardCollections();
             IsDashboardVisible = false;
@@ -1036,19 +1036,23 @@ public sealed class MainWindowViewModel : ObservableObject
         TrendPoints.Clear();
     }
 
-    private void SetColumnHeaders(string column1, string column2, string column3, string column4, string column5)
+    private void SetColumnHeaders(string column1, string column2, string column3, string column4, string column5, string column6 = "", string column7 = "")
     {
         Column1Header = column1;
         Column2Header = column2;
         Column3Header = column3;
         Column4Header = column4;
         Column5Header = column5;
+        Column6Header = column6;
+        Column7Header = column7;
 
         OnPropertyChanged(nameof(Column1Header));
         OnPropertyChanged(nameof(Column2Header));
         OnPropertyChanged(nameof(Column3Header));
         OnPropertyChanged(nameof(Column4Header));
         OnPropertyChanged(nameof(Column5Header));
+        OnPropertyChanged(nameof(Column6Header));
+        OnPropertyChanged(nameof(Column7Header));
     }
 
     private string FormatCoordinate(double? value, bool isLatitude)

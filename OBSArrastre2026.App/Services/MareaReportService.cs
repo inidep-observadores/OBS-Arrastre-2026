@@ -66,11 +66,15 @@ public class MareaReportService : IMareaReportService
                 });
                 row.RelativeItem().Column(c => {
                     c.Item().Text("Errores").FontSize(7).FontColor(Colors.Grey.Medium);
-                    c.Item().Text(report.Issues.Count(i => i.Level == ValidationLevel.Error).ToString()).FontSize(9).SemiBold().FontColor(Colors.Red.Medium);
+                    c.Item().Text(report.TotalErrors.ToString()).FontSize(9).SemiBold().FontColor(Colors.Red.Medium);
+                });
+                row.RelativeItem().Column(c => {
+                    c.Item().Text("Advertencias").FontSize(7).FontColor(Colors.Grey.Medium);
+                    c.Item().Text(report.TotalWarnings.ToString()).FontSize(9).SemiBold().FontColor(Colors.Orange.Medium);
                 });
                 row.RelativeItem().Column(c => {
                     c.Item().Text("Correcciones Auto").FontSize(7).FontColor(Colors.Grey.Medium);
-                    c.Item().Text(report.Issues.Count(i => i.Level == ValidationLevel.AutoFixed).ToString()).FontSize(9).SemiBold().FontColor(Colors.Green.Medium);
+                    c.Item().Text(report.TotalAutoFixes.ToString()).FontSize(9).SemiBold().FontColor(Colors.Green.Medium);
                 });
             });
 
@@ -103,7 +107,18 @@ public class MareaReportService : IMareaReportService
                         static IContainer CellStyle(IContainer container) => container.DefaultTextStyle(x => x.SemiBold()).PaddingVertical(5).BorderBottom(1).BorderColor(Colors.Black);
                     });
 
-                    foreach (var issue in report.Issues.OrderByDescending(i => i.Level))
+                    var sortedIssues = report.Issues
+                        .OrderByDescending(i => i.Level)
+                        .ThenBy(i => i.Category)
+                        .ThenBy(i => 
+                        {
+                            if (string.IsNullOrEmpty(i.Context)) return 0;
+                            var match = System.Text.RegularExpressions.Regex.Match(i.Context, @"Lance\s+(\d+)");
+                            return match.Success ? int.Parse(match.Groups[1].Value) : 0;
+                        })
+                        .ThenBy(i => i.Message);
+
+                    foreach (var issue in sortedIssues)
                     {
                         table.Cell().Element(ContentStyle).Text(issue.Category).FontSize(7);
                         table.Cell().Element(ContentStyle).Column(c => {
