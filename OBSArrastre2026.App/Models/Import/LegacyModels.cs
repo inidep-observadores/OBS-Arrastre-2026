@@ -86,6 +86,8 @@ public class LegacyLg
     public double Lance { get; set; }
     public DateTime Fecha { get; set; }
     public long CodEspecIE { get; set; }
+    public double ParamA { get; set; }
+    public double ParamB { get; set; }
     public Dictionary<int, double> Frecuencias { get; } = new(); // Índice -> Frecuencia
 }
 

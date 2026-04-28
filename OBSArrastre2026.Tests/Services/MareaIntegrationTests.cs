@@ -19,6 +19,13 @@ public class MareaIntegrationTests
 
     public MareaIntegrationTests()
     {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        var dbContext = new AppDbContext(options);
+        
+        _dbFactory.CreateDbContextAsync().Returns(dbContext);
+
         _importService = new MareaImportService(_extractor, _reportService, _dbFactory);
     }
 

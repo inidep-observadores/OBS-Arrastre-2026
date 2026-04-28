@@ -247,7 +247,10 @@ public sealed class MainWindowViewModel : ObservableObject
             produccion.AddRange(etapaProduccion);
         }
 
-        var viewModels = produccion.Select(p => new ProduccionListItemViewModel(p)).ToList();
+        var viewModels = produccion
+            .OrderBy(p => p.Fecha)
+            .Select(p => new ProduccionListItemViewModel(p))
+            .ToList();
         
         Records.Clear();
         foreach (var vm in viewModels)

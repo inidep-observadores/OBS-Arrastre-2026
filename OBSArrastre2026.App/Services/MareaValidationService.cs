@@ -62,12 +62,19 @@ public class MareaValidationService : IMareaValidationService
             .OrderBy(t => t.FechaHora)
             .ToListAsync();
 
-        // Obtener catálogo de nombres vulgares para validación de producción
-        var nombresVulgares = await dbContext.Especies
-            .Select(e => e.NombreVulgar)
-            .Where(n => n != null)
+        // Obtener catálogo de especies para validación de producción
+        var especiesDB = await dbContext.Especies
+            .Where(e => e.NombreVulgar != null && e.CodigoInidep != null)
             .ToListAsync();
-        var setNombresVulgares = new HashSet<string>(nombresVulgares.Select(n => n!.Trim().ToUpper()));
+
+        var especiesDict = especiesDB
+            .GroupBy(e => e.NombreVulgar!.Trim().ToUpper())
+            .ToDictionary(g => g.Key, g => long.TryParse(g.First().CodigoInidep, out long c) ? c : 0);
+
+        // Extraer rangos de fechas de las etapas
+        var etapasFechas = marea.Etapas
+            .Select(e => (Inicio: e.FechaZarpada, Fin: e.FechaArribo ?? e.FechaZarpada))
+            .ToList();
 
         // Mapear a modelos Legacy para reutilizar el motor de validación
         var capturas = new List<LegacyCaptura>();
@@ -179,17 +186,31 @@ public class MareaValidationService : IMareaValidationService
             }
         }
 
+        // Obtener catálogo Largo-Peso para cálculos automáticos de peso de muestra
+        var largoPesoDB = await dbContext.EspeciesLargoPeso
+            .Include(lp => lp.Especie)
+            .ToListAsync();
+            
+        var largoPesoCatalogo = largoPesoDB
+            .Where(lp => lp.Especie?.CodigoInidep != null)
+            .ToDictionary(
+                lp => (EspecieId: lp.Especie!.CodigoInidep!, Sexo: lp.Sexo),
+                lp => (A: lp.ParamA, B: lp.ParamB)
+            );
+
         var report = _validator.ValidateMarea(
             marea.Buque?.Nombre ?? "",
             marea.AnioInidep,
             marea.NumeroInidep,
+            etapasFechas,
             capturas,
             muestrasList,
             submuestrasList,
             new List<LegacyLg>(),
             trackingList,
             produccionList,
-            setNombresVulgares
+            especiesDict,
+            largoPesoCatalogo
         );
 
         report.ArchivosProcesados = new List<string> { "Datos de Base de Datos" };

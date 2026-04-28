@@ -19,7 +19,7 @@ public sealed class ProduccionService(IDbContextFactory<AppDbContext> dbContextF
             .Include(r => r.Especie)
             .Include(r => r.Producto)
             .Where(r => r.MareaEtapaId == mareaEtapaId)
-            .OrderByDescending(r => r.Fecha)
+            .OrderBy(r => r.Fecha)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
     }

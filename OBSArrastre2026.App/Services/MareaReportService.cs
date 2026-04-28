@@ -109,7 +109,12 @@ public class MareaReportService : IMareaReportService
                         table.Cell().Element(ContentStyle).Column(c => {
                             c.Item().Text(issue.Message).FontSize(8);
                             if (!string.IsNullOrEmpty(issue.CorrectedValue))
-                                c.Item().Text($"=> Corregido a: {issue.CorrectedValue}").FontSize(7).FontColor(Colors.Green.Medium);
+                            {
+                                var correctionMsg = string.IsNullOrEmpty(issue.OriginalValue) 
+                                    ? $"=> Corregido a: {issue.CorrectedValue}" 
+                                    : $"{issue.OriginalValue} => Corregido a: {issue.CorrectedValue}";
+                                c.Item().Text(correctionMsg).FontSize(7).FontColor(Colors.Green.Medium);
+                            }
                         });
                         table.Cell().Element(ContentStyle).Text(issue.Context ?? "").FontSize(7);
                         table.Cell().Element(ContentStyle).Border(1).BorderColor(Colors.Grey.Medium).Height(12).Width(12).AlignCenter();

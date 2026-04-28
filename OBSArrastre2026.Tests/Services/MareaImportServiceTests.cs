@@ -1,3 +1,4 @@
+using System.IO;
 using FluentAssertions;
 using NSubstitute;
 using OBSArrastre2026.App.Models.Import;
@@ -18,6 +19,13 @@ public class MareaImportServiceTests
 
     public MareaImportServiceTests()
     {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        var dbContext = new AppDbContext(options);
+        
+        _dbFactory.CreateDbContextAsync().Returns(dbContext);
+        
         _service = new MareaImportService(_extractor, _report, _dbFactory);
     }
 
@@ -38,7 +46,13 @@ public class MareaImportServiceTests
             .Returns(new byte[] { 1, 2, 3 });
 
         // Act
-        var result = await _service.ProcessMareaImportAsync("C:\\Temp", "TEST", 100, 2026, new List<MareaEtapa>());
+        string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(tempDir);
+        File.WriteAllText(Path.Combine(tempDir, "C10026.DBF"), "");
+        File.WriteAllText(Path.Combine(tempDir, "M10026.DBF"), "");
+        File.WriteAllText(Path.Combine(tempDir, "P10026.DBF"), "");
+
+        var result = await _service.ProcessMareaImportAsync(tempDir, "TEST", 100, 2026, new List<MareaEtapa>());
 
         // Assert
         result.Should().NotBeNull();

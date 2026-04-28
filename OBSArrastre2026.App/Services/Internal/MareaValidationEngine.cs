@@ -11,13 +11,15 @@ public sealed class MareaValidationEngine
         string barcoMareaActual, 
         int anioMareaActual, 
         int nroMareaActual,
+        List<(DateTime Inicio, DateTime Fin)> etapasFechas,
         List<LegacyCaptura> capturas,
         List<LegacyMuestra> muestras,
         List<LegacySubmuestra> submuestras,
         List<LegacyLg> lgs,
         List<LegacyTracking> tracking,
         List<LegacyProduccion> produccion,
-        HashSet<string> nombresVulgaresExistentes)
+        Dictionary<string, long> especiesDict,
+        Dictionary<(string EspecieId, int Sexo), (double A, double B)> largoPesoCatalogo)
     {
         var report = new MareaValidationReport
         {
@@ -29,9 +31,10 @@ public sealed class MareaValidationEngine
 
         ValidateBaseConsistency(report, barcoMareaActual, nroMareaActual, capturas, muestras, submuestras, lgs, tracking, produccion);
         ValidateLances(report, capturas, tracking);
-        ValidateSamples(report, muestras, capturas);
+        ValidateSamples(report, muestras, capturas, lgs, largoPesoCatalogo, especiesDict);
         ValidateSubSamples(report, submuestras, muestras);
-        ValidateProduction(report, produccion, nombresVulgaresExistentes);
+        ValidateProduction(report, produccion, especiesDict, capturas);
+        ValidateTemporalConsistency(report, etapasFechas, capturas, muestras, produccion);
         
         report.Capturas = capturas;
         report.Muestras = muestras;
@@ -43,12 +46,13 @@ public sealed class MareaValidationEngine
         return report;
     }
 
-    private void ValidateProduction(MareaValidationReport report, List<LegacyProduccion> produccion, HashSet<string> nombresVulgaresExistentes)
+    private void ValidateProduction(MareaValidationReport report, List<LegacyProduccion> produccion, Dictionary<string, long> especiesDict, List<LegacyCaptura> capturas)
     {
         // 1. Validar existencia de especie por nombre
+        var setNombresVulgares = new HashSet<string>(especiesDict.Keys, StringComparer.OrdinalIgnoreCase);
         var especiesDesconocidas = produccion
             .Select(p => p.Especie?.Trim().ToUpper())
-            .Where(name => !string.IsNullOrEmpty(name) && !nombresVulgaresExistentes.Contains(name))
+            .Where(name => !string.IsNullOrEmpty(name) && !setNombresVulgares.Contains(name))
             .Distinct();
 
         foreach (var esp in especiesDesconocidas)
@@ -67,6 +71,76 @@ public sealed class MareaValidationEngine
             report.AddIssue(ValidationLevel.Warning, "Producción", 
                 $"Existen {group.Count()} registros para el producto '{group.Key.Producto}' ({group.Key.Categoria}) el {group.Key.Fecha:yyyy-MM-dd}. Se importarán todos pero se recomienda verificar posibles duplicados.", 
                 $"Fecha {group.Key.Fecha:yyyy-MM-dd}");
+        }
+
+        // 3. Reglas avanzadas de producción (P*)
+        foreach (var p in produccion)
+        {
+            string ctx = $"Fecha {p.Fecha:yyyy-MM-dd} Especie {p.Especie}";
+            // Factor vs Producto
+            if (p.Producto?.IndexOf("ENTERO", StringComparison.OrdinalIgnoreCase) >= 0 && p.Factor != 1)
+            {
+                report.AddIssue(ValidationLevel.Error, "Producción", $"Producto indica 'ENTERO' pero el factor de conversión es {p.Factor} (debería ser 1).", ctx);
+            }
+            // Límites
+            if (p.Factor > 10)
+            {
+                report.AddIssue(ValidationLevel.Warning, "Producción", $"Factor de conversión inusualmente alto: {p.Factor}.", ctx);
+            }
+            if (p.Kilos > 100000)
+            {
+                report.AddIssue(ValidationLevel.Warning, "Producción", $"Kilos producidos inusualmente altos: {p.Kilos}.", ctx);
+            }
+        }
+
+        // 4. Balance de Masa
+        var prodGroups = produccion
+            .Where(p => !string.IsNullOrEmpty(p.Especie) && especiesDict.ContainsKey(p.Especie.Trim().ToUpper()))
+            .GroupBy(p => especiesDict[p.Especie.Trim().ToUpper()]);
+
+        foreach (var prodGroup in prodGroups)
+        {
+            long codEspecie = prodGroup.Key;
+            double pesoVivoProduccion = prodGroup.Sum(p => p.Factor > 0 ? (p.Kilos / p.Factor) : p.Kilos);
+            double capturaTotalEspecie = capturas.Sum(c => c.Especies.ContainsKey(codEspecie) ? c.Especies[codEspecie] : 0);
+
+            if (capturaTotalEspecie > 0)
+            {
+                double diferencia = (pesoVivoProduccion - capturaTotalEspecie) / capturaTotalEspecie;
+                if (diferencia > 0.10)
+                {
+                    report.AddIssue(ValidationLevel.Error, "Producción", $"Balance de masa: Producción ({pesoVivoProduccion:F0} kg) excede la captura ({capturaTotalEspecie:F0} kg) en más del 10%.", $"Cod Especie {codEspecie}");
+                }
+                else if (diferencia > 0.02)
+                {
+                    report.AddIssue(ValidationLevel.Warning, "Producción", $"Balance de masa: Producción ({pesoVivoProduccion:F0} kg) excede la captura ({capturaTotalEspecie:F0} kg) en más del 2%.", $"Cod Especie {codEspecie}");
+                }
+            }
+        }
+    }
+
+    private void ValidateTemporalConsistency(
+        MareaValidationReport report, 
+        List<(DateTime Inicio, DateTime Fin)> etapasFechas,
+        List<LegacyCaptura> capturas,
+        List<LegacyMuestra> muestras,
+        List<LegacyProduccion> produccion)
+    {
+        if (etapasFechas == null || !etapasFechas.Any()) return;
+        var minDate = etapasFechas.Min(e => e.Inicio.Date);
+        var maxDate = etapasFechas.Max(e => e.Fin.Date);
+
+        foreach (var c in capturas.Where(c => c.Fecha.Date < minDate || c.Fecha.Date > maxDate))
+        {
+            report.AddIssue(ValidationLevel.Error, "Consistencia Temporal", $"Lance {c.Lance} con fecha {c.Fecha:yyyy-MM-dd} fuera del rango de etapas de marea ({minDate:yyyy-MM-dd} al {maxDate:yyyy-MM-dd}).");
+        }
+        foreach (var m in muestras.Where(m => m.Fecha.Date < minDate || m.Fecha.Date > maxDate))
+        {
+            report.AddIssue(ValidationLevel.Error, "Consistencia Temporal", $"Muestra (Lance {m.Lance}) con fecha {m.Fecha:yyyy-MM-dd} fuera del rango de etapas de marea.");
+        }
+        foreach (var p in produccion.Where(p => p.Fecha.Date < minDate || p.Fecha.Date > maxDate))
+        {
+            report.AddIssue(ValidationLevel.Error, "Consistencia Temporal", $"Producción con fecha {p.Fecha:yyyy-MM-dd} fuera del rango de etapas de marea.");
         }
     }
 
@@ -131,6 +205,8 @@ public sealed class MareaValidationEngine
 
     private void ValidateLances(MareaValidationReport report, List<LegacyCaptura> capturas, List<LegacyTracking> tracking)
     {
+        int countPorcentaje = 0;
+        int countKilos = 0;
         foreach (var c in capturas)
         {
             string ctx = $"Lance {c.Lance}";
@@ -146,7 +222,7 @@ public sealed class MareaValidationEngine
 
             // REQ-3.3.1: Cálculo y validación de Área
             double calculatedArea = CalculateArea(latDec, lonDec);
-            if (calculatedArea < 3000)
+            if (calculatedArea < 3500)
                 report.AddIssue(ValidationLevel.Warning, "Geografía", $"Área calculada ({calculatedArea}) es inusualmente baja", ctx);
 
             // REQ-3.5.1: Recalcular CAPT_TOTAL
@@ -155,6 +231,22 @@ public sealed class MareaValidationEngine
             {
                 report.AddIssue(ValidationLevel.AutoFixed, "Captura", "Captura total inconsistente con suma de especies. Se recalcula.", ctx, c.CaptTotal.ToString(), sumEspecies.ToString());
                 c.CaptTotal = sumEspecies;
+            }
+
+            // Totales de descarte
+            double sumDescartes = c.DescartesPorEspecie.Values.Sum();
+            if (Math.Abs(sumDescartes - c.Descarte) > 0.1)
+            {
+                report.AddIssue(ValidationLevel.AutoFixed, "Captura", "Descarte total inconsistente con suma de descartes por especie. Se recalcula.", ctx, c.Descarte.ToString(), sumDescartes.ToString());
+                c.Descarte = sumDescartes;
+            }
+
+            // Detección para conversión de descarte
+            if (c.CaptTotal > 0 && c.Descarte > 0)
+            {
+                double ratio = c.Descarte / c.CaptTotal;
+                if (ratio > 1.0) countPorcentaje++;
+                else if (ratio <= 1.0 && ratio > 0) countKilos++;
             }
 
             // REQ-5.3: Coherencia Temporal
@@ -185,6 +277,33 @@ public sealed class MareaValidationEngine
             if (sortedLances[i+1] - sortedLances[i] > 1)
                 report.AddIssue(ValidationLevel.Warning, "Estructura", $"Salto en la secuencia de lances detectado entre {sortedLances[i]} y {sortedLances[i+1]}");
         }
+
+        // Resolución de porcentaje de descarte
+        if (countPorcentaje > 0 && countKilos > 0)
+        {
+            report.AddIssue(ValidationLevel.Fatal, "Descarte", $"Datos mixtos de descarte: {countPorcentaje} lances en porcentaje, {countKilos} en kilos. Bloqueando importación.", "Toda la marea");
+        }
+        else if (countPorcentaje > 0)
+        {
+            report.AddIssue(ValidationLevel.AutoFixed, "Descarte", "Se detectó que TODOS los descartes están en porcentaje. Convertidos a kilos automáticamente.", "Toda la marea");
+            foreach (var c in capturas)
+            {
+                if (c.Descarte > 0)
+                {
+                    double pctDescarteTotal = c.Descarte;
+                    c.Descarte = (c.Descarte * c.CaptTotal) / 100.0;
+                    foreach (var key in c.DescartesPorEspecie.Keys.ToList())
+                    {
+                        if (c.DescartesPorEspecie[key] > 0)
+                        {
+                            // DESCAR_i = (DESCAR_i * KG_i) / 100
+                            double especieCaptura = c.Especies.ContainsKey(key) ? c.Especies[key] : 0;
+                            c.DescartesPorEspecie[key] = (c.DescartesPorEspecie[key] * especieCaptura) / 100.0;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private void ValidateLanceDetails(MareaValidationReport report, LegacyCaptura c)
@@ -206,7 +325,9 @@ public sealed class MareaValidationEngine
             report.AddIssue(ValidationLevel.Error, "Captura", "Lance sin registro de especies o captura total cero", ctx);
     }
 
-    private void ValidateSamples(MareaValidationReport report, List<LegacyMuestra> muestras, List<LegacyCaptura> capturas)
+    private void ValidateSamples(MareaValidationReport report, List<LegacyMuestra> muestras, List<LegacyCaptura> capturas, List<LegacyLg> lgs, 
+        Dictionary<(string EspecieId, int Sexo), (double A, double B)> largoPesoCatalogo,
+        Dictionary<string, long> especiesDict)
     {
         foreach (var m in muestras)
         {
@@ -222,6 +343,89 @@ public sealed class MareaValidationEngine
 
             if (m.Intervalo <= 0)
                 report.AddIssue(ValidationLevel.Error, "Biometría", "Intervalo de tallas inválido (<= 0)", ctx);
+
+            // Peso Alométrico
+            if (m.PesoMues <= 0)
+            {
+                double totalWeight = 0;
+                bool foundAnyParams = false;
+
+                // Intentar obtener parámetros fallback (general o del LG legado)
+                double fallbackA = 0, fallbackB = 0;
+                bool hasFallback = false;
+
+                if (!string.IsNullOrEmpty(m.Especie) && especiesDict.TryGetValue(m.Especie.Trim().ToUpper(), out long especieIdNum))
+                {
+                    string espId = especieIdNum.ToString();
+                    if (largoPesoCatalogo.TryGetValue((espId, 0), out var paramsGral))
+                    {
+                        fallbackA = paramsGral.A;
+                        fallbackB = paramsGral.B;
+                        hasFallback = true;
+                    }
+                }
+
+                if (!hasFallback)
+                {
+                    var lg = lgs.FirstOrDefault(l => l.CodEspecIE == m.CodEspec);
+                    if (lg != null && lg.ParamA > 0)
+                    {
+                        fallbackA = lg.ParamA;
+                        fallbackB = lg.ParamB;
+                        hasFallback = true;
+                    }
+                }
+
+                long speciesIdForLookup = 0;
+                if (!string.IsNullOrEmpty(m.Especie) && especiesDict != null)
+                {
+                    especiesDict.TryGetValue(m.Especie.Trim().ToUpper(), out speciesIdForLookup);
+                }
+
+                string espIdLookupStr = speciesIdForLookup.ToString();
+
+                if (hasFallback || (largoPesoCatalogo != null && largoPesoCatalogo.Any(k => k.Key.EspecieId == espIdLookupStr)))
+                {
+                    string espId = espIdLookupStr;
+                    foreach (var tally in m.Tallies)
+                    {
+                        double tallaCm = tally.Size; // Talla ya está en cm en el modelo decodificado usualmente, verificar
+                        
+                        // Aplicar por sexo si es posible
+                        double wMales = 0, wFemales = 0, wIndet = 0;
+
+                        if (tally.Males > 0)
+                        {
+                            var p = largoPesoCatalogo.GetValueOrDefault((espId, 1), (A: fallbackA, B: fallbackB));
+                            if (p.A > 0) { wMales = tally.Males * (p.A * Math.Pow(tallaCm, p.B)); foundAnyParams = true; }
+                        }
+                        if (tally.Females > 0)
+                        {
+                            var p = largoPesoCatalogo.GetValueOrDefault((espId, 2), (A: fallbackA, B: fallbackB));
+                            if (p.A > 0) { wFemales = tally.Females * (p.A * Math.Pow(tallaCm, p.B)); foundAnyParams = true; }
+                        }
+                        if (tally.Indeterminate > 0)
+                        {
+                            var p = largoPesoCatalogo.GetValueOrDefault((espId, 0), (A: fallbackA, B: fallbackB));
+                            if (p.A <= 0) p = (A: fallbackA, B: fallbackB);
+                            if (p.A > 0) { wIndet = tally.Indeterminate * (p.A * Math.Pow(tallaCm, p.B)); foundAnyParams = true; }
+                        }
+                        
+                        totalWeight += (wMales + wFemales + wIndet) / 1000.0; // P es en gramos, convertimos a kg
+                    }
+                }
+
+                if (foundAnyParams && totalWeight > 0)
+                {
+                    string oldVal = m.PesoMues.ToString();
+                    m.PesoMues = totalWeight;
+                    report.AddIssue(ValidationLevel.AutoFixed, "Biometría", "Peso de muestra era 0. Recalculado mediante relación Largo-Peso diferenciada por sexo.", ctx, oldVal, m.PesoMues.ToString("F2"));
+                }
+                else
+                {
+                    report.AddIssue(ValidationLevel.Error, "Biometría", "Peso de muestra es 0 y no se encontraron parámetros de relación Largo-Peso para calcularlo.", ctx);
+                }
+            }
         }
     }
 
@@ -230,6 +434,13 @@ public sealed class MareaValidationEngine
         foreach (var s in submuestras)
         {
             string ctx = $"Lance {s.Lance} - Ejemplar {s.NEjemplar}";
+
+            // Integridad: Verificar existencia de muestra padre
+            bool hasParent = muestras.Any(m => m.Lance == s.Lance && m.Especie?.Trim().ToUpper() == s.Especie?.Trim().ToUpper());
+            if (!hasParent)
+            {
+                report.AddIssue(ValidationLevel.Error, "Integridad", $"Submuestra huerfana: No existe muestra padre para la especie {s.Especie} en el lance {s.Lance}.", ctx);
+            }
 
             // REQ-4.2.1: Verificar Largo Total Atípico
             if (s.LargoTot > 250)

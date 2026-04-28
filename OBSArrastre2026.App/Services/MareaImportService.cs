@@ -87,11 +87,11 @@ public class MareaImportService : IMareaImportService
         if (pPath == null) report.AddIssue(ValidationLevel.Error, "Sistema", $"El archivo de PRODUCCIÓN obligatorio no se encuentra (esperado P*{suffix})");
 
         // 2. Extraer datos (si los paths fueron resueltos)
-        var capturas = cPath != null ? await _extractor.ReadCapturasAsync(cPath) : new();
-        var muestras = mPath != null ? await _extractor.ReadMuestrasAsync(mPath) : new();
-        var submuestras = sPath != null ? await _extractor.ReadSubmuestrasAsync(sPath) : new();
-        var lgs = lPath != null ? await _extractor.ReadLgAsync(lPath) : new();
-        var produccion = pPath != null ? await _extractor.ReadProduccionAsync(pPath) : new();
+        var capturas = cPath != null ? await _extractor.ReadCapturasAsync(cPath) ?? new() : new();
+        var muestras = mPath != null ? await _extractor.ReadMuestrasAsync(mPath) ?? new() : new();
+        var submuestras = sPath != null ? await _extractor.ReadSubmuestrasAsync(sPath) ?? new() : new();
+        var lgs = lPath != null ? await _extractor.ReadLgAsync(lPath) ?? new() : new();
+        var produccion = pPath != null ? await _extractor.ReadProduccionAsync(pPath) ?? new() : new();
         
         // Registro de archivos encontrados para la UI
         var archivosEncontrados = new List<string>();
@@ -105,7 +105,7 @@ public class MareaImportService : IMareaImportService
         if (File.Exists(xPath))
         {
             archivosEncontrados.Add(Path.GetFileName(xPath));
-            var extensiones = await _extractor.ReadMuestrasAsync(xPath);
+            var extensiones = await _extractor.ReadMuestrasAsync(xPath) ?? new();
             foreach (var ext in extensiones)
             {
                 var baseM = muestras.FirstOrDefault(m => 
@@ -117,6 +117,7 @@ public class MareaImportService : IMareaImportService
                     LegacyDecoder.MergeExtendedMuestras(baseM, ext);
                 }
                 else
+                if (ext != null)
                 {
                     muestras.Add(ext);
                 }
@@ -128,7 +129,7 @@ public class MareaImportService : IMareaImportService
         if (File.Exists(tPath))
         {
             archivosEncontrados.Add(Path.GetFileName(tPath));
-            tracking = await _extractor.ReadTrackingAsync(tPath);
+            tracking = await _extractor.ReadTrackingAsync(tPath) ?? new();
         }
 
         // 4. Validar (se llamará de nuevo tras cargar el catálogo en el paso 5)
@@ -142,11 +143,12 @@ public class MareaImportService : IMareaImportService
             .ToListAsync();
         var setEspeciesExistentes = new HashSet<string>(especiesExistentes!);
 
-        var nombresVulgares = await dbContext.Especies
-            .Select(e => e.NombreVulgar)
-            .Where(n => n != null)
+        var especiesDB = await dbContext.Especies
+            .Where(e => e.NombreVulgar != null && e.CodigoInidep != null)
             .ToListAsync();
-        var setNombresVulgares = new HashSet<string>(nombresVulgares.Select(n => n!.Trim().ToUpper()));
+        var especiesDict = especiesDB
+            .GroupBy(e => e.NombreVulgar!.Trim().ToUpper())
+            .ToDictionary(g => g.Key, g => long.TryParse(g.First().CodigoInidep, out long c) ? c : 0);
 
         foreach (var c in capturas)
         {
@@ -175,7 +177,20 @@ public class MareaImportService : IMareaImportService
         }
 
         // 5. Validar y Guardar datos en el reporte para el paso de commit
-        report = _validator.ValidateMarea(barco, anio, marea, capturas, muestras, submuestras, lgs, tracking, produccion, setNombresVulgares);
+        var etapasFechas = etapas.Select(e => (Inicio: e.FechaZarpada, Fin: e.FechaArribo ?? e.FechaZarpada)).ToList();
+
+        var largoPesoDB = await dbContext.EspeciesLargoPeso
+            .Include(lp => lp.Especie)
+            .ToListAsync();
+
+        var largoPesoCatalogo = largoPesoDB
+            .Where(lp => lp.Especie?.CodigoInidep != null)
+            .ToDictionary(
+                lp => (EspecieId: lp.Especie!.CodigoInidep!, Sexo: lp.Sexo),
+                lp => (A: lp.ParamA, B: lp.ParamB)
+            );
+
+        report = _validator.ValidateMarea(barco, anio, marea, etapasFechas, capturas, muestras, submuestras, lgs, tracking, produccion, especiesDict, largoPesoCatalogo);
         report.ArchivosProcesados = archivosEncontrados;
 
         // 6. Generar Reporte PDF

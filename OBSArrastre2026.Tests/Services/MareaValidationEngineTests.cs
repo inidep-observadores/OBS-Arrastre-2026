@@ -19,7 +19,7 @@ public class MareaValidationEngineTests
         };
 
         // Act
-        var report = _engine.ValidateMarea("BUQUE CORRECTO", 2026, 100, capturas, new(), new(), new(), new(), new(), new());
+        var report = _engine.ValidateMarea("BUQUE CORRECTO", 2026, 100, new(), capturas, new(), new(), new(), new(), new(), new(), new());
 
         // Assert
         report.Issues.Should().Contain(i => i.Level == ValidationLevel.Fatal && i.Category == "Consistencia");
@@ -42,7 +42,7 @@ public class MareaValidationEngineTests
         var capturas = new List<LegacyCaptura> { c };
 
         // Act
-        var report = _engine.ValidateMarea("B", 2026, 100, capturas, new(), new(), new(), new(), new(), new());
+        var report = _engine.ValidateMarea("B", 2026, 100, new(), capturas, new(), new(), new(), new(), new(), new(), new());
 
         // Assert
         report.Issues.Should().Contain(i => i.Level == ValidationLevel.AutoFixed && i.Category == "Captura");
@@ -69,7 +69,7 @@ public class MareaValidationEngineTests
         };
 
         // Act
-        var report = _engine.ValidateMarea("B", 2026, 100, new() { c }, new(), submuestras, new(), new(), new(), new());
+        var report = _engine.ValidateMarea("B", 2026, 100, new(), new() { c }, new(), submuestras, new(), new(), new(), new(), new());
 
         // Assert
         report.Issues.Should().Contain(i => i.Level == ValidationLevel.Warning && i.Category == "Biometría");
@@ -87,7 +87,7 @@ public class MareaValidationEngineTests
         var capturas = new List<LegacyCaptura> { c1, c2 };
 
         // Act
-        var report = _engine.ValidateMarea("B", 2026, 100, capturas, new(), new(), new(), new(), new(), new());
+        var report = _engine.ValidateMarea("B", 2026, 100, new(), capturas, new(), new(), new(), new(), new(), new(), new());
 
         // Assert
         report.Issues.Should().Contain(i => i.Category == "Estructura" && i.Message.Contains("Salto"));
@@ -101,7 +101,7 @@ public class MareaValidationEngineTests
         c.Especies[1] = 10;
 
         // Act
-        var report = _engine.ValidateMarea("B", 2026, 100, new() { c }, new(), new(), new(), new(), new(), new());
+        var report = _engine.ValidateMarea("B", 2026, 100, new(), new() { c }, new(), new(), new(), new(), new(), new(), new());
 
         // Assert
         report.Issues.Should().Contain(i => i.Category == "Geografía" && i.Message.Contains("inicial (-5m)"));
@@ -118,9 +118,39 @@ public class MareaValidationEngineTests
         };
 
         // Act
-        var report = _engine.ValidateMarea("B", 2026, 100, capturas, new(), new(), new(), new(), new(), new());
+        var report = _engine.ValidateMarea("B", 2026, 100, new(), capturas, new(), new(), new(), new(), new(), new(), new());
 
         // Assert
         report.Issues.Should().Contain(i => i.Category == "Captura" && i.Message.Contains("sin registro de especies"));
+    }
+
+    [Fact]
+    public void ValidateMarea_ShouldCalculateWeight_WhenWeightIsZero()
+    {
+        // Arrange
+        var capturas = new List<LegacyCaptura> { new() { Lance = 1, Barco = "B", Marea = 100 } };
+        capturas[0].Especies[7210040101] = 100;
+
+        var muestras = new List<LegacyMuestra>
+        {
+            new() { Lance = 1, Especie = "MERLUZA COMUN", CodEspec = 7210040101, PesoMues = 0 }
+        };
+        // Merluza Macho 40cm: a=0.01124, b=2.8340
+        // P = 0.01124 * 40^2.8340 = 385.64g
+        muestras[0].Tallies.Add(new DecodedTally(40, 10, 0, 0, 10)); // 10 machos de 40cm
+        // Peso esperado: 10 * 385.64 / 1000 = 3.8564 kg
+
+        var especiesDict = new Dictionary<string, long> { ["MERLUZA COMUN"] = 7210040101 };
+        var largoPeso = new Dictionary<(string, int), (double, double)>
+        {
+            [("7210040101", 1)] = (0.01124, 2.8340)
+        };
+
+        // Act
+        var report = _engine.ValidateMarea("B", 2026, 100, new(), capturas, muestras, new(), new(), new(), new(), especiesDict, largoPeso);
+
+        // Assert
+        report.Issues.Should().Contain(i => i.Level == ValidationLevel.AutoFixed && i.Message.Contains("Recalculado mediante relación Largo-Peso"));
+        muestras[0].PesoMues.Should().BeInRange(3.89, 3.91);
     }
 }

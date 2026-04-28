@@ -22,6 +22,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<AuditoriaMareaLote> AuditoriaMareaLotes => Set<AuditoriaMareaLote>();
     public DbSet<AuditoriaMareaRegistro> AuditoriaMareaRegistros => Set<AuditoriaMareaRegistro>();
     public DbSet<MareaTracking> TrackingPoints => Set<MareaTracking>();
+    public DbSet<EspecieLargoPeso> EspeciesLargoPeso => Set<EspecieLargoPeso>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
