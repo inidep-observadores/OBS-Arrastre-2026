@@ -812,7 +812,10 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel>
                                     <Label Content="Número Marea" Style="{StaticResource FormLabelStyle}" />
-                                    <TextBox Text="{Binding MareaNum, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource PremiumTextBoxStyle}" Tag="Ej: 326" />
+                                    <TextBox x:Name="txtMareaNum" 
+                                             Text="{Binding MareaNum, UpdateSourceTrigger=PropertyChanged}" 
+                                             Style="{StaticResource PremiumTextBoxStyle}" Tag="Ej: 326" 
+                                             FocusManager.FocusedElement="{Binding RelativeSource={RelativeSource Self}}"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
                                     <Label Content="Año" Style="{StaticResource FormLabelStyle}" />

@@ -145,7 +145,9 @@ public partial class App : Application
     {
         if (sender is TextBox tb)
         {
-            tb.SelectAll();
+            // Usamos Dispatcher para asegurar que la selección ocurra después de que 
+            // los eventos de mouse (que podrían deseleccionar) hayan terminado.
+            tb.Dispatcher.BeginInvoke(new Action(() => tb.SelectAll()));
         }
     }
 

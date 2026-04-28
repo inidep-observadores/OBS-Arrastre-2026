@@ -142,7 +142,7 @@ public class MareaValidationService : IMareaValidationService
                         Especie = m.Especie?.NombreCientifico ?? "",
                         CodEspec = long.TryParse(m.Especie?.CodigoInidep, out long c) ? c : 0,
                         Intervalo = (int)m.Intervalo,
-                        PesoMues = (m.PesoMuestra_PesoGramos ?? 0) / 1000.0,
+                        PesoMues = Math.Round((m.PesoMuestra_PesoGramos ?? 0) / 1000.0, 2),
                         Area = _validator.CalculateArea(lance.LatitudInicioDecimal ?? 0, lance.LongitudInicioDecimal ?? 0)
                     };
 
@@ -202,7 +202,7 @@ public class MareaValidationService : IMareaValidationService
         var largoPesoCatalogo = largoPesoDB
             .Where(lp => lp.Especie?.CodigoInidep != null)
             .ToDictionary(
-                lp => (EspecieId: lp.Especie!.CodigoInidep!, Sexo: lp.Sexo),
+                lp => (EspecieId: lp.Especie!.CodigoInidep!.Trim(), Sexo: lp.Sexo),
                 lp => (A: lp.ParamA, B: lp.ParamB)
             );
 

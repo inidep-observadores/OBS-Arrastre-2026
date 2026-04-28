@@ -382,9 +382,9 @@ public sealed class MareaValidationEngine
                     especiesDict.TryGetValue(m.Especie.Trim().ToUpper(), out speciesIdForLookup);
                 }
 
-                string espIdLookupStr = speciesIdForLookup.ToString();
+                string espIdLookupStr = speciesIdForLookup.ToString().Trim();
 
-                if (hasFallback || (largoPesoCatalogo != null && largoPesoCatalogo.Any(k => k.Key.EspecieId == espIdLookupStr)))
+                if (hasFallback || (largoPesoCatalogo != null && largoPesoCatalogo.Any(k => k.Key.EspecieId.Trim() == espIdLookupStr)))
                 {
                     string espId = espIdLookupStr;
                     
@@ -443,7 +443,7 @@ public sealed class MareaValidationEngine
                 if (foundAnyParams && totalWeight > 0)
                 {
                     string oldVal = m.PesoMues.ToString();
-                    m.PesoMues = totalWeight;
+                    m.PesoMues = Math.Round(totalWeight, 2);
                     report.AddIssue(ValidationLevel.AutoFixed, "Biometría", "Peso de muestra era 0. Recalculado mediante relación Largo-Peso diferenciada por sexo.", ctx, oldVal, m.PesoMues.ToString("F2"));
                 }
                 else
