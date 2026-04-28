@@ -144,11 +144,20 @@ public class MareaImportService : IMareaImportService
         var setEspeciesExistentes = new HashSet<string>(especiesExistentes!);
 
         var especiesDB = await dbContext.Especies
-            .Where(e => e.NombreVulgar != null && e.CodigoInidep != null)
+            .Where(e => e.CodigoInidep != null && (e.NombreVulgar != null || e.NombreCientifico != null))
             .ToListAsync();
-        var especiesDict = especiesDB
-            .GroupBy(e => e.NombreVulgar!.Trim().ToUpper())
-            .ToDictionary(g => g.Key, g => long.TryParse(g.First().CodigoInidep, out long c) ? c : 0);
+
+        var especiesDict = new Dictionary<string, long>();
+        foreach (var esp in especiesDB)
+        {
+            if (long.TryParse(esp.CodigoInidep, out long code))
+            {
+                if (!string.IsNullOrEmpty(esp.NombreVulgar))
+                    especiesDict[esp.NombreVulgar.Trim().ToUpper()] = code;
+                if (!string.IsNullOrEmpty(esp.NombreCientifico))
+                    especiesDict[esp.NombreCientifico.Trim().ToUpper()] = code;
+            }
+        }
 
         foreach (var c in capturas)
         {

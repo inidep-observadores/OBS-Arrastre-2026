@@ -31,10 +31,12 @@ public sealed class DatabaseInitializer(IDbContextFactory<AppDbContext> dbContex
             // Merluza común (M. hubbsi) - 7210040101
             new { Code = "7210040101", Sexo = 1, A = 0.01124, B = 2.8340, Medida = "LT", Obs = "Stock Patagónico" },
             new { Code = "7210040101", Sexo = 2, A = 0.00985, B = 2.8920, Medida = "LT", Obs = "Stock Patagónico" },
+            new { Code = "7210040101", Sexo = 0, A = 0.01050, B = 2.8630, Medida = "LT", Obs = "Promedio general" },
             
             // Abadejo (G. blacodes) - 7226030101
             new { Code = "7226030101", Sexo = 1, A = 0.00225, B = 3.2150, Medida = "LT", Obs = "Datos consolidados" },
             new { Code = "7226030101", Sexo = 2, A = 0.00238, B = 3.2080, Medida = "LT", Obs = "Datos consolidados" },
+            new { Code = "7226030101", Sexo = 0, A = 0.00231, B = 3.2115, Medida = "LT", Obs = "Promedio general" },
 
             // Merluza de cola (M. magellanicus) - 7210040201
             new { Code = "7210040201", Sexo = 1, A = 0.00791, B = 2.8150, Medida = "LT", Obs = "Campañas de invierno" },

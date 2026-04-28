@@ -376,8 +376,8 @@ public sealed class MareaValidationEngine
                     }
                 }
 
-                long speciesIdForLookup = 0;
-                if (!string.IsNullOrEmpty(m.Especie) && especiesDict != null)
+                long speciesIdForLookup = m.CodEspec; // Usar código numérico directo si existe
+                if (speciesIdForLookup == 0 && !string.IsNullOrEmpty(m.Especie) && especiesDict != null)
                 {
                     especiesDict.TryGetValue(m.Especie.Trim().ToUpper(), out speciesIdForLookup);
                 }
@@ -387,31 +387,50 @@ public sealed class MareaValidationEngine
                 if (hasFallback || (largoPesoCatalogo != null && largoPesoCatalogo.Any(k => k.Key.EspecieId == espIdLookupStr)))
                 {
                     string espId = espIdLookupStr;
+                    
+                    // Función local para obtener parámetros con fallback y promedios
+                    (double A, double B) GetSmartParams(int targetSex)
+                    {
+                        // 1. Intentar búsqueda exacta
+                        if (largoPesoCatalogo.TryGetValue((espId, targetSex), out var p)) return p;
+                        
+                        // 2. Si no es 0, intentar buscar el general (0)
+                        if (targetSex != 0 && largoPesoCatalogo.TryGetValue((espId, 0), out p)) return p;
+                        
+                        // 3. Si no hay general (o es el que buscamos), intentar promediar Macho (1) y Hembra (2)
+                        bool hasM = largoPesoCatalogo.TryGetValue((espId, 1), out var pM);
+                        bool hasF = largoPesoCatalogo.TryGetValue((espId, 2), out var pF);
+                        
+                        if (hasM && hasF) return ((pM.A + pF.A) / 2.0, (pM.B + pF.B) / 2.0);
+                        if (hasM) return pM;
+                        if (hasF) return pF;
+                        
+                        // 4. Fallback final a LG o 0
+                        return (fallbackA, fallbackB);
+                    }
+
                     foreach (var tally in m.Tallies)
                     {
-                        double tallaCm = tally.Size; // Talla ya está en cm en el modelo decodificado usualmente, verificar
-                        
-                        // Aplicar por sexo si es posible
+                        double tallaCm = tally.Size; 
                         double wMales = 0, wFemales = 0, wIndet = 0;
 
                         if (tally.Males > 0)
                         {
-                            var p = largoPesoCatalogo.GetValueOrDefault((espId, 1), (A: fallbackA, B: fallbackB));
+                            var p = GetSmartParams(1);
                             if (p.A > 0) { wMales = tally.Males * (p.A * Math.Pow(tallaCm, p.B)); foundAnyParams = true; }
                         }
                         if (tally.Females > 0)
                         {
-                            var p = largoPesoCatalogo.GetValueOrDefault((espId, 2), (A: fallbackA, B: fallbackB));
+                            var p = GetSmartParams(2);
                             if (p.A > 0) { wFemales = tally.Females * (p.A * Math.Pow(tallaCm, p.B)); foundAnyParams = true; }
                         }
                         if (tally.Indeterminate > 0)
                         {
-                            var p = largoPesoCatalogo.GetValueOrDefault((espId, 0), (A: fallbackA, B: fallbackB));
-                            if (p.A <= 0) p = (A: fallbackA, B: fallbackB);
+                            var p = GetSmartParams(0);
                             if (p.A > 0) { wIndet = tally.Indeterminate * (p.A * Math.Pow(tallaCm, p.B)); foundAnyParams = true; }
                         }
                         
-                        totalWeight += (wMales + wFemales + wIndet) / 1000.0; // P es en gramos, convertimos a kg
+                        totalWeight += (wMales + wFemales + wIndet) / 1000.0; 
                     }
                 }
 
@@ -423,7 +442,8 @@ public sealed class MareaValidationEngine
                 }
                 else
                 {
-                    report.AddIssue(ValidationLevel.Error, "Biometría", "Peso de muestra es 0 y no se encontraron parámetros de relación Largo-Peso para calcularlo.", ctx);
+                    string debugInfo = $"[ID Resuelto: {espIdLookupStr}, Nombre: '{m.Especie}', CodEspec Original: {m.CodEspec}]";
+                    report.AddIssue(ValidationLevel.Error, "Biometría", $"Peso de muestra es 0 y no se encontraron parámetros Largo-Peso. Detalles técnicos: {debugInfo}", ctx);
                 }
             }
         }
