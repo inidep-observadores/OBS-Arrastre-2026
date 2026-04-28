@@ -394,10 +394,16 @@ public sealed class MareaValidationEngine
                         // 1. Intentar búsqueda exacta
                         if (largoPesoCatalogo.TryGetValue((espId, targetSex), out var p)) return p;
                         
-                        // 2. Si no es 0, intentar buscar el general (0)
+                        // 2. Si es Indeterminado (0), intentar buscar el código legado (3) primero
+                        if (targetSex == 0 && largoPesoCatalogo.TryGetValue((espId, 3), out p)) return p;
+
+                        // 3. Si no es 0, intentar buscar el general (0)
                         if (targetSex != 0 && largoPesoCatalogo.TryGetValue((espId, 0), out p)) return p;
+
+                        // 4. Si el objetivo es 3 (indeterminado legado) pero no está, intentar el 0
+                        if (targetSex == 3 && largoPesoCatalogo.TryGetValue((espId, 0), out p)) return p;
                         
-                        // 3. Si no hay general (o es el que buscamos), intentar promediar Macho (1) y Hembra (2)
+                        // 5. Si no hay general (o es el que buscamos), intentar promediar Macho (1) y Hembra (2)
                         bool hasM = largoPesoCatalogo.TryGetValue((espId, 1), out var pM);
                         bool hasF = largoPesoCatalogo.TryGetValue((espId, 2), out var pF);
                         
@@ -405,7 +411,7 @@ public sealed class MareaValidationEngine
                         if (hasM) return pM;
                         if (hasF) return pF;
                         
-                        // 4. Fallback final a LG o 0
+                        // 6. Fallback final a LG o 0
                         return (fallbackA, fallbackB);
                     }
 
