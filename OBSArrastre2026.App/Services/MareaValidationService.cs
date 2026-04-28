@@ -202,7 +202,10 @@ public class MareaValidationService : IMareaValidationService
         var largoPesoCatalogo = largoPesoDB
             .Where(lp => lp.Especie?.CodigoInidep != null)
             .ToDictionary(
-                lp => (EspecieId: lp.Especie!.CodigoInidep!.Trim(), Sexo: lp.Sexo),
+                lp => {
+                    string rawId = lp.Especie!.CodigoInidep!.Trim();
+                    return (EspecieId: long.TryParse(rawId, out long n) ? n.ToString() : rawId, Sexo: lp.Sexo);
+                },
                 lp => (A: lp.ParamA, B: lp.ParamB)
             );
 

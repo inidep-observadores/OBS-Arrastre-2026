@@ -20,6 +20,7 @@ public sealed class Muestra
     public int DiscriminaSexo { get; set; }
     public int HayIndeterminados { get; set; }
     public double? PesoMuestra_PesoGramos { get; set; }
+    public int TipoMuestra { get; set; } = 1; // 1=Estandar, 2=Descarte
 
     // Navigation properties
     public ICollection<FrecuenciaTalla> FrecuenciasTallas { get; set; } = new List<FrecuenciaTalla>();

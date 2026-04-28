@@ -34,7 +34,7 @@ public class MareaImportService : IMareaImportService
         _dbContextFactory = dbContextFactory;
     }
 
-    private string? ResolveFilePath(string basePath, char prefix, int marea, int anio)
+    private string? ResolveFilePath(string basePath, string prefix, int marea, int anio)
     {
         if (!Directory.Exists(basePath)) return null;
 
@@ -47,16 +47,16 @@ public class MareaImportService : IMareaImportService
         foreach (var path in candidateFiles)
         {
             string fileName = Path.GetFileNameWithoutExtension(path).ToUpper();
-            if (fileName.Length < 3) continue; // Mínimo "X" + Marea + "YY"
+            if (fileName.Length < prefix.Length + 2) continue; 
 
             // El nombre debe empezar con el prefijo
-            if (fileName[0] != char.ToUpper(prefix)) continue;
+            if (!fileName.StartsWith(prefix.ToUpper())) continue;
 
             // El nombre debe terminar con el año (2 dígitos)
             if (!fileName.EndsWith(yearSuffix.Replace(".DBF", ""))) continue;
 
             // La parte central debe coincidir numéricamente con la marea
-            string middlePart = fileName.Substring(1, fileName.Length - 3);
+            string middlePart = fileName.Substring(prefix.Length, fileName.Length - (prefix.Length + 2));
             if (int.TryParse(middlePart, out int foundMarea) && foundMarea == marea)
             {
                 return path;
@@ -69,13 +69,14 @@ public class MareaImportService : IMareaImportService
     public async Task<MareaValidationReport> ProcessMareaImportAsync(string basePath, string barco, int marea, int anio, IEnumerable<MareaEtapa> etapas)
     {
         // 1. Resolver rutas de forma flexible (Marea 3 Año 2026 -> S326, S0326, S00326, etc.)
-        string? cPath = ResolveFilePath(basePath, 'C', marea, anio);
-        string? mPath = ResolveFilePath(basePath, 'M', marea, anio);
-        string? xPath = ResolveFilePath(basePath, 'X', marea, anio);
-        string? sPath = ResolveFilePath(basePath, 'S', marea, anio);
-        string? lPath = ResolveFilePath(basePath, 'L', marea, anio);
-        string? tPath = ResolveFilePath(basePath, 'T', marea, anio);
-        string? pPath = ResolveFilePath(basePath, 'P', marea, anio);
+        string? cPath = ResolveFilePath(basePath, "C", marea, anio);
+        string? mPath = ResolveFilePath(basePath, "M", marea, anio);
+        string? mdPath = ResolveFilePath(basePath, "MD", marea, anio); // Tallas de descarte
+        string? xPath = ResolveFilePath(basePath, "X", marea, anio);
+        string? sPath = ResolveFilePath(basePath, "S", marea, anio);
+        string? lPath = ResolveFilePath(basePath, "L", marea, anio);
+        string? tPath = ResolveFilePath(basePath, "T", marea, anio);
+        string? pPath = ResolveFilePath(basePath, "P", marea, anio);
 
         var report = new MareaValidationReport();
 
@@ -92,11 +93,22 @@ public class MareaImportService : IMareaImportService
         var submuestras = sPath != null ? await _extractor.ReadSubmuestrasAsync(sPath) ?? new() : new();
         var lgs = lPath != null ? await _extractor.ReadLgAsync(lPath) ?? new() : new();
         var produccion = pPath != null ? await _extractor.ReadProduccionAsync(pPath) ?? new() : new();
+
+        if (mdPath != null)
+        {
+            var muestrasDescarte = await _extractor.ReadMuestrasAsync(mdPath) ?? new();
+            foreach (var md in muestrasDescarte)
+            {
+                md.TipoMuestra = 2; // Descarte
+                muestras.Add(md);
+            }
+        }
         
         // Registro de archivos encontrados para la UI
         var archivosEncontrados = new List<string>();
         if (cPath != null) archivosEncontrados.Add(Path.GetFileName(cPath));
         if (mPath != null) archivosEncontrados.Add(Path.GetFileName(mPath));
+        if (mdPath != null) archivosEncontrados.Add(Path.GetFileName(mdPath));
         if (sPath != null) archivosEncontrados.Add(Path.GetFileName(sPath));
         if (lPath != null) archivosEncontrados.Add(Path.GetFileName(lPath));
         if (pPath != null) archivosEncontrados.Add(Path.GetFileName(pPath));
@@ -306,7 +318,8 @@ public class MareaImportService : IMareaImportService
                         ModoMedicionTalla = 1, // LT por defecto
                         Origen = 1, // Muestreo de Captura
                         DiscriminaSexo = rm.Tallies.Any(t => t.Males > 0 || t.Females > 0) ? 1 : 0,
-                        HayIndeterminados = rm.Tallies.Any(t => t.Indeterminate > 0) ? 1 : 0
+                        HayIndeterminados = rm.Tallies.Any(t => t.Indeterminate > 0) ? 1 : 0,
+                        TipoMuestra = rm.TipoMuestra
                     };
 
                     int totalEjemplares = rm.Tallies.Sum(t => t.Total);

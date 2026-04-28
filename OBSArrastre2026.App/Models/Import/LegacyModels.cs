@@ -53,6 +53,7 @@ public class LegacyMuestra
     public int Intervalo { get; set; }
     public double PesoMues { get; set; }
     public double FactPond { get; set; }
+    public int TipoMuestra { get; set; } = 1; // 1 = Estandar, 2 = Descarte
     
     // Tallas empaquetadas o decodificadas
     public List<DecodedTally> Tallies { get; } = new();

@@ -62,15 +62,32 @@ public static class LegacyDecoder
 
         try
         {
+            // Si es un número simple o cadena corta, asumimos que es un conteo directo (no empaquetado)
+            // En este caso, no conocemos la talla desde el valor, pero el orquestador sí (por el índice i)
+            // Sin embargo, para mantener compatibilidad con el loop de DbfExtractorService, 
+            // si la cadena es corta, devolvemos el valor como Total.
+            if (s.Length < 10)
+            {
+                if (int.TryParse(s, out int simpleCount))
+                {
+                    // IMPORTANTE: En este modo "simple", la talla NO viene en el string.
+                    // El DbfExtractorService deberá asignar la talla basándose en PRIM_TALLA + i*INTERVALO.
+                    return new DecodedTally(0, 0, 0, 0, simpleCount);
+                }
+            }
+
             // El formato observado en Raw es [Talla(2 o 3)][M(3)][H(3)][I(3)][T(3)]
-            // Total de dígitos suele ser 14 o 15.
-            
             int totalLen = s.Length;
-            int blockSize = 3; // Basado en inspección de Raw
-            int tallyPartLen = blockSize * 4; // 12 dígitos
+            int blockSize = 3; 
+            int tallyPartLen = blockSize * 4; 
             int sizePartLen = totalLen - tallyPartLen;
 
-            if (sizePartLen <= 0) return new DecodedTally(0, 0, 0, 0, 0);
+            if (sizePartLen <= 0) 
+            {
+                // Fallback final: si no es empaquetado pero parsea a int, es un conteo simple
+                if (int.TryParse(s, out int c)) return new DecodedTally(0, 0, 0, 0, c);
+                return new DecodedTally(0, 0, 0, 0, 0);
+            }
 
             int size = int.Parse(s.Substring(0, sizePartLen));
             int m = int.Parse(s.Substring(sizePartLen, blockSize));
@@ -78,9 +95,8 @@ public static class LegacyDecoder
             int i = int.Parse(s.Substring(sizePartLen + (blockSize * 2), blockSize));
             int t = int.Parse(s.Substring(sizePartLen + (blockSize * 3), blockSize));
 
-            // Regla de integridad: Si la suma individual != total indicado, se priorizan individuales
             int calculatedTotal = m + h + i;
-            if (calculatedTotal == 0 && t > 0) calculatedTotal = t; // Si solo cargaron el total (común en algunos casos)
+            if (calculatedTotal == 0 && t > 0) calculatedTotal = t; 
 
             return new DecodedTally(size, m, h, i, calculatedTotal);
         }

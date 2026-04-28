@@ -310,6 +310,17 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
             IsLoading = true;
             try
             {
+                // Verificar duplicados si es una marea nueva
+                if (string.IsNullOrEmpty(_mareaId))
+                {
+                    var existing = await _mareaService.FindMareaAsync(NumeroInidep, AnioInidep);
+                    if (existing != null)
+                    {
+                        ShowMessage?.Invoke("Marea Duplicada", $"Ya existe una marea registrada con el código {NumeroInidep}/{AnioInidep % 100:D2} para el buque {existing.Buque?.Nombre ?? "desconocido"}.", null, MessageDialogType.Warning);
+                        return;
+                    }
+                }
+
                 var marea = new Marea
                 {
                     ID = _mareaId ?? Guid.NewGuid().ToString(),

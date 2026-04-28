@@ -174,19 +174,30 @@ public sealed partial class ImportDbfViewModel : ObservableObject
         IsBusy = true;
         try
         {
-            // 0. Si no hay ID de marea, crear una marea básica
+            // 0. Si no hay ID de marea, intentar buscar una existente o crear una nueva
             if (string.IsNullOrEmpty(_mareaId))
             {
-                BusyMessage = "Creando nueva marea...";
-                var marea = new Marea
+                BusyMessage = "Verificando si la marea ya existe...";
+                var existing = await _mareaService.FindMareaAsync(_mareaNum, _anio);
+                if (existing != null)
                 {
-                    ID = Guid.NewGuid().ToString(),
-                    NumeroInidep = _mareaNum,
-                    AnioInidep = _anio,
-                    FechaInicio = DateTime.Today
-                };
-                await _mareaService.SaveMareaAsync(marea);
-                _mareaId = marea.ID;
+                    _mareaId = existing.ID;
+                    _etapas = existing.Etapas;
+                    _barco = existing.Buque?.Nombre ?? _barco;
+                }
+                else
+                {
+                    BusyMessage = "Creando nueva marea...";
+                    var marea = new Marea
+                    {
+                        ID = Guid.NewGuid().ToString(),
+                        NumeroInidep = _mareaNum,
+                        AnioInidep = _anio,
+                        FechaInicio = DateTime.Today
+                    };
+                    await _mareaService.SaveMareaAsync(marea);
+                    _mareaId = marea.ID;
+                }
             }
 
             BusyMessage = "Validando integridad de archivos...";

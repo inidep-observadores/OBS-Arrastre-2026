@@ -80,7 +80,9 @@ public sealed class MareaValidationEngine
             // Factor vs Producto
             if (p.Producto?.IndexOf("ENTERO", StringComparison.OrdinalIgnoreCase) >= 0 && p.Factor != 1)
             {
-                report.AddIssue(ValidationLevel.Error, "Producción", $"Producto indica 'ENTERO' pero el factor de conversión es {p.Factor} (debería ser 1).", ctx);
+                string oldFactor = p.Factor.ToString();
+                p.Factor = 1.0;
+                report.AddIssue(ValidationLevel.AutoFixed, "Producción", $"Producto indica 'ENTERO' pero el factor era {oldFactor}. Se corrige automáticamente a 1.0.", ctx, oldFactor, "1.0");
             }
             // Límites
             if (p.Factor > 10)
@@ -406,7 +408,7 @@ public sealed class MareaValidationEngine
 
             // REQ-4.3.1: Verificar Rangos de Talla
             if (m.UltTalla <= m.PrimTalla)
-                report.AddIssue(ValidationLevel.Error, "Biometría", $"Última talla ({m.UltTalla}) no es mayor que primera talla ({m.PrimTalla})", ctx);
+report.AddIssue(ValidationLevel.Error, "Biometría", $"Última talla ({m.UltTalla}) no es mayor que primera talla ({m.PrimTalla})", ctx);
 
             if (m.Intervalo <= 0)
                 report.AddIssue(ValidationLevel.Error, "Biometría", "Intervalo de tallas inválido (<= 0)", ctx);
@@ -414,6 +416,7 @@ public sealed class MareaValidationEngine
             // Peso Alométrico
             if (m.PesoMues <= 0)
             {
+                var lookupLogs = new List<string>();
                 double totalWeight = 0;
                 bool foundAnyParams = false;
 
@@ -458,33 +461,49 @@ public sealed class MareaValidationEngine
                     // Función local para obtener parámetros con fallback y promedios
                     (double A, double B) GetSmartParams(int targetSex)
                     {
-                        // 1. Intentar búsqueda exacta (con trim por seguridad)
-                        var key = (espId, targetSex);
-                        if (largoPesoCatalogo.TryGetValue(key, out var p)) return p;
-                        
-                        // 2. Si es Indeterminado (0), intentar buscar el código legado (3) primero
-                        if (targetSex == 0 && largoPesoCatalogo.TryGetValue((espId, 3), out p)) return p;
+                        (double A, double B) res = (0, 0);
+                        string method = "";
 
-                        // 3. Si no es 0, intentar buscar el general (0)
-                        if (targetSex != 0 && largoPesoCatalogo.TryGetValue((espId, 0), out p)) return p;
+                        // 1. Intentar búsqueda exacta
+                        if (largoPesoCatalogo.TryGetValue((espId, targetSex), out res)) method = $"Exacta(Sexo:{targetSex})";
+                        
+                        // Fallback por si hay ceros a la izquierda o discrepancias de formato numérico en el string
+                        if (res.A <= 0 && long.TryParse(espId, out long numericId))
+                        {
+                             string normalizedId = numericId.ToString();
+                             if (largoPesoCatalogo.TryGetValue((normalizedId, targetSex), out res)) method = $"ExactaNorm(Sexo:{targetSex})";
+                        }
+                        
+                        // 2. Fallbacks de sexo
+                        if (res.A <= 0)
+                        {
+                            if (targetSex == 0 && largoPesoCatalogo.TryGetValue((espId, 3), out res)) method = "IndetLegacy(3)";
+                            else if (targetSex != 0 && largoPesoCatalogo.TryGetValue((espId, 0), out res)) method = "General(0)";
+                            else if (targetSex == 3 && largoPesoCatalogo.TryGetValue((espId, 0), out res)) method = "General(0) for 3";
+                        }
 
-                        // 4. Si el objetivo es 3 (indeterminado legado) pero no está, intentar el 0
-                        if (targetSex == 3 && largoPesoCatalogo.TryGetValue((espId, 0), out p)) return p;
-                        
-                        // 5. Intentar cualquier sexo disponible para esta especie si lo anterior falló
-                        var anyEntry = largoPesoCatalogo.FirstOrDefault(k => k.Key.EspecieId == espId).Value;
-                        if (anyEntry.A > 0) return anyEntry;
+                        // 3. Cualquier sexo
+                        if (res.A <= 0)
+                        {
+                            var anyEntry = largoPesoCatalogo.FirstOrDefault(k => k.Key.EspecieId == espId);
+                            if (anyEntry.Key.EspecieId != null) { res = anyEntry.Value; method = $"CualquierSexo({anyEntry.Key.Sexo})"; }
+                        }
 
-                        // 6. Si no hay general (o es el que buscamos), intentar promediar Macho (1) y Hembra (2)
-                        bool hasM = largoPesoCatalogo.TryGetValue((espId, 1), out var pM);
-                        bool hasF = largoPesoCatalogo.TryGetValue((espId, 2), out var pF);
-                        
-                        if (hasM && hasF) return ((pM.A + pF.A) / 2.0, (pM.B + pF.B) / 2.0);
-                        if (hasM) return pM;
-                        if (hasF) return pF;
-                        
-                        // 7. Fallback final a LG o 0
-                        return (fallbackA, fallbackB);
+                        // 4. Promedios
+                        if (res.A <= 0)
+                        {
+                            bool hasM = largoPesoCatalogo.TryGetValue((espId, 1), out var pM);
+                            bool hasF = largoPesoCatalogo.TryGetValue((espId, 2), out var pF);
+                            if (hasM && hasF) { res = ((pM.A + pF.A) / 2.0, (pM.B + pF.B) / 2.0); method = "Promedio(1+2)"; }
+                            else if (hasM) { res = pM; method = "SoloMacho(1)"; }
+                            else if (hasF) { res = pF; method = "SoloHembra(2)"; }
+                        }
+
+                        // 5. Fallback final
+                        if (res.A <= 0 && hasFallback) { res = (fallbackA, fallbackB); method = "Fallback(LG/Gral)"; }
+
+                        if (res.A > 0) lookupLogs.Add($"{method}: A={res.A}, B={res.B}");
+                        return res;
                     }
 
                     foreach (var tally in m.Tallies)
@@ -502,10 +521,11 @@ public sealed class MareaValidationEngine
                             var p = GetSmartParams(2);
                             if (p.A > 0) { wFemales = tally.Females * (p.A * Math.Pow(tallaCm, p.B)); foundAnyParams = true; }
                         }
-                        if (tally.Indeterminate > 0)
+                        if (tally.Indeterminate > 0 || (tally.Males == 0 && tally.Females == 0 && tally.Total > 0))
                         {
                             var p = GetSmartParams(0);
-                            if (p.A > 0) { wIndet = tally.Indeterminate * (p.A * Math.Pow(tallaCm, p.B)); foundAnyParams = true; }
+                            int count = tally.Indeterminate > 0 ? tally.Indeterminate : tally.Total;
+                            if (p.A > 0) { wIndet = count * (p.A * Math.Pow(tallaCm, p.B)); foundAnyParams = true; }
                         }
                         
                         totalWeight += (wMales + wFemales + wIndet) / 1000.0; 
@@ -521,12 +541,13 @@ public sealed class MareaValidationEngine
                 else
                 {
                     int catalogCount = largoPesoCatalogo?.Count ?? 0;
+                    string logText = lookupLogs.Any() ? $" [Logs: {string.Join(" | ", lookupLogs.Distinct())}]" : "";
                     string catalogPreview = catalogCount > 0 
                         ? $" Catálogo ({catalogCount} regs): [{string.Join(", ", largoPesoCatalogo.Keys.Take(3).Select(k => $"{k.EspecieId}:{k.Sexo}"))}...]" 
                         : " Catálogo vacío";
                         
-                    string debugInfo = $"[ID Resuelto: {espIdLookupStr}, Nombre: '{m.Especie}', CodEspec Original: {m.CodEspec}]{catalogPreview}";
-                    report.AddIssue(ValidationLevel.Error, "Biometría", $"Peso de muestra es 0 y no se encontraron parámetros Largo-Peso. Detalles técnicos: {debugInfo}", ctx);
+                    string debugInfo = $"[ID Resuelto: {espIdLookupStr}, Nombre: '{m.Especie}', CodEspec Original: {m.CodEspec}]{catalogPreview}{logText}";
+                    report.AddIssue(ValidationLevel.Error, "Biometría", $"Peso de muestra es 0 y no se pudieron encontrar parámetros de biometría para la especie '{m.Especie}'.", ctx);
                 }
             }
         }

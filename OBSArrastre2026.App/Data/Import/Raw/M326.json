@@ -3,26 +3,26 @@
   "Anio": 2026,
   "Numero": 3,
   "Comentarios": null,
-  "FechaInicio": "2026-01-06T00:00:00-03:00",
-  "FechaFin": "2026-03-02T00:00:00-03:00",
+  "FechaInicio": "2026-01-06T00:00:00",
+  "FechaFin": "2026-03-02T00:00:00",
   "Etapas": [
     {
-      "FechaZarpada": "2026-01-06T00:00:00-03:00",
-      "FechaArribo": "2026-01-14T00:00:00-03:00",
+      "FechaZarpada": "2026-02-03T00:00:00",
+      "FechaArribo": "2026-03-02T00:00:00",
       "NombreCapitan": null,
       "AnioMareaBuque": null,
       "NumeroMareaBuque": null
     },
     {
-      "FechaZarpada": "2026-01-16T00:00:00-03:00",
-      "FechaArribo": "2026-02-01T00:00:00-03:00",
+      "FechaZarpada": "2026-01-06T00:00:00",
+      "FechaArribo": "2026-01-14T00:00:00",
       "NombreCapitan": null,
       "AnioMareaBuque": null,
       "NumeroMareaBuque": null
     },
     {
-      "FechaZarpada": "2026-02-03T00:00:00-03:00",
-      "FechaArribo": "2026-03-02T00:00:00-03:00",
+      "FechaZarpada": "2026-01-16T00:00:00",
+      "FechaArribo": "2026-02-01T00:00:00",
       "NombreCapitan": null,
       "AnioMareaBuque": null,
       "NumeroMareaBuque": null

@@ -158,7 +158,20 @@ public sealed class DbfExtractorService : IDbfExtractorService
                 var val = GetValue(reader, colMap, $"TALLA_{i}");
                 if (val != null && val.ToString() != "0")
                 {
-                    m.Tallies.Add(LegacyDecoder.DecodeTally(val));
+                    var decoded = LegacyDecoder.DecodeTally(val);
+                    
+                    // Si el decodificador no encontró la talla (por ser un valor simple no empaquetado)
+                    // la calculamos a partir del índice i y los parámetros de la muestra.
+                    if (decoded.Size == 0 && decoded.Total > 0)
+                    {
+                        int calculatedSize = (int)m.PrimTalla + ((i - 1) * (int)m.Intervalo);
+                        decoded = decoded with { Size = calculatedSize };
+                    }
+
+                    if (decoded.Total > 0)
+                    {
+                        m.Tallies.Add(decoded);
+                    }
                 }
             }
             list.Add(m);

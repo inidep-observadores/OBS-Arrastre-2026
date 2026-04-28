@@ -170,4 +170,14 @@ public sealed class MareaService(IDbContextFactory<AppDbContext> dbContextFactor
             
         await dbContext.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<Marea?> FindMareaAsync(int numero, int anio, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        
+        return await dbContext.Mareas
+            .Include(m => m.Buque)
+            .Include(m => m.Etapas)
+            .FirstOrDefaultAsync(m => m.NumeroInidep == numero && m.AnioInidep == anio, cancellationToken);
+    }
 }
