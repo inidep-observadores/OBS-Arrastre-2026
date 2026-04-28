@@ -1,0 +1,31 @@
+{
+  "BuqueNombre": "ARGENTINO",
+  "Anio": 2026,
+  "Numero": 36,
+  "Comentarios": null,
+  "FechaInicio": "2026-03-04T00:00:00",
+  "FechaFin": "2026-03-26T00:00:00",
+  "Etapas": [
+    {
+      "FechaZarpada": "2026-03-11T00:00:00",
+      "FechaArribo": "2026-03-17T00:00:00",
+      "NombreCapitan": null,
+      "AnioMareaBuque": null,
+      "NumeroMareaBuque": null
+    },
+    {
+      "FechaZarpada": "2026-03-04T00:00:00",
+      "FechaArribo": "2026-03-10T00:00:00",
+      "NombreCapitan": null,
+      "AnioMareaBuque": null,
+      "NumeroMareaBuque": null
+    },
+    {
+      "FechaZarpada": "2026-03-18T00:00:00",
+      "FechaArribo": "2026-03-26T00:00:00",
+      "NombreCapitan": null,
+      "AnioMareaBuque": null,
+      "NumeroMareaBuque": null
+    }
+  ]
+}

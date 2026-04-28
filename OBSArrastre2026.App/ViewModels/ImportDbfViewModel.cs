@@ -22,19 +22,24 @@ public sealed partial class ImportDbfViewModel : ObservableObject
 {
     private readonly Action<IEnumerable<string>?> _onFinished;
     private readonly IMareaImportService _importService;
-    private readonly int _mareaNum;
-    private readonly int _anio;
-    private readonly string _pattern;
-    private readonly string _barco;
-    private readonly string _mareaId;
-    private readonly IEnumerable<MareaEtapa> _etapas;
+    private readonly IJsonImportService _jsonImportService;
+    private readonly IMareaService _mareaService;
+    private int _mareaNum;
+    private int _anio;
+    private string _pattern = string.Empty;
+    private string _barco;
+    private string? _mareaId;
+    private IEnumerable<MareaEtapa> _etapas;
     private bool _isBusy;
+    private bool _isMareaInputVisible;
 
     public ImportDbfViewModel(
-        string mareaId,
+        string? mareaId,
         int mareaNum, 
         int anio, 
         IMareaImportService importService,
+        IJsonImportService jsonImportService,
+        IMareaService mareaService,
         string barco,
         IEnumerable<MareaEtapa> etapas,
         Action<IEnumerable<string>?> onFinished)
@@ -43,12 +48,15 @@ public sealed partial class ImportDbfViewModel : ObservableObject
         _mareaNum = mareaNum;
         _anio = anio;
         _importService = importService;
+        _jsonImportService = jsonImportService;
+        _mareaService = mareaService;
         _barco = barco;
         _etapas = etapas;
         _onFinished = onFinished;
-        _pattern = $"{mareaNum}{anio % 100:D2}";
+        _isMareaInputVisible = string.IsNullOrEmpty(mareaId);
+        UpdatePattern();
 
-        AddFilesCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(AddFiles, () => !IsBusy);
+        AddFilesCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(AddFiles, () => !IsBusy && (!IsMareaInputVisible || (MareaNum > 0 && Anio > 2000)));
         AcceptCommand = new AsyncRelayCommand(AcceptAsync, () => !IsBusy && SelectedFiles.Count > 0);
         CancelCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(() => _onFinished(null), () => !IsBusy);
     }
@@ -74,7 +82,45 @@ public sealed partial class ImportDbfViewModel : ObservableObject
         set => SetProperty(ref _busyMessage, value);
     }
 
-    public string PatternNote => $"Patrón esperado: *{_pattern}*.dbf";
+    public int MareaNum
+    {
+        get => _mareaNum;
+        set 
+        {
+            if (SetProperty(ref _mareaNum, value))
+            {
+                UpdatePattern();
+                (AddFilesCommand as IRelayCommand)?.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    public int Anio
+    {
+        get => _anio;
+        set 
+        {
+            if (SetProperty(ref _anio, value))
+            {
+                UpdatePattern();
+                (AddFilesCommand as IRelayCommand)?.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    public bool IsMareaInputVisible
+    {
+        get => _isMareaInputVisible;
+        set => SetProperty(ref _isMareaInputVisible, value);
+    }
+
+    private void UpdatePattern()
+    {
+        _pattern = $"{_mareaNum}{_anio % 100:D2}";
+        OnPropertyChanged(nameof(PatternNote));
+    }
+
+    public string PatternNote => $"Patrón esperado: *{_pattern}*.dbf / M{_pattern}.json";
     
     public ObservableCollection<DbfFileItem> SelectedFiles { get; } = [];
 
@@ -90,8 +136,8 @@ public sealed partial class ImportDbfViewModel : ObservableObject
         var dialog = new OpenFileDialog
         {
             Multiselect = true,
-            Filter = $"Archivos de Marea (*{_pattern}*.dbf)|*{_pattern}*.dbf|Todos los archivos (*.*)|*.*",
-            Title = "Seleccionar Archivos DBF de Marea"
+            Filter = $"Archivos de Marea (*{_pattern}*.dbf; M{_pattern}.json)|*{_pattern}*.dbf;M{_pattern}.json|Todos los archivos (*.*)|*.*",
+            Title = "Seleccionar Archivos de Marea (DBF y/o JSON)"
         };
 
         if (dialog.ShowDialog() == true)
@@ -125,15 +171,51 @@ public sealed partial class ImportDbfViewModel : ObservableObject
     {
         if (SelectedFiles.Count == 0) return;
 
-        BusyMessage = "Validando integridad de archivos...";
         IsBusy = true;
         try
         {
+            // 0. Si no hay ID de marea, crear una marea básica
+            if (string.IsNullOrEmpty(_mareaId))
+            {
+                BusyMessage = "Creando nueva marea...";
+                var marea = new Marea
+                {
+                    ID = Guid.NewGuid().ToString(),
+                    NumeroInidep = _mareaNum,
+                    AnioInidep = _anio,
+                    FechaInicio = DateTime.Today
+                };
+                await _mareaService.SaveMareaAsync(marea);
+                _mareaId = marea.ID;
+            }
+
+            BusyMessage = "Validando integridad de archivos...";
+            // 0. Verificar si hay archivo JSON para metadatos
+            var jsonFile = SelectedFiles.FirstOrDefault(f => f.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase));
+            if (jsonFile != null)
+            {
+                BusyMessage = "Importando metadatos de marea desde JSON...";
+                bool confirmMetadata = await (ShowConfirmation?.Invoke(
+                    "Importar Metadatos", 
+                    "Se ha detectado un archivo JSON de metadatos. ¿Deseas actualizar el Buque, Fechas y Etapas de la marea con la información del JSON?") ?? Task.FromResult(false));
+                
+                if (confirmMetadata)
+                {
+                    await _jsonImportService.UpdateMareaMetadataAsync(_mareaId, jsonFile.FullPath);
+                }
+            }
+
+            // Recargar etapas actualizadas (por si el JSON las cambió) para la validación de DBFs
+            var mareaUpdated = await _mareaService.GetMareaAsync(_mareaId);
+            var currentEtapas = mareaUpdated?.Etapas ?? _etapas;
+            var currentBarco = mareaUpdated?.Buque?.Nombre ?? _barco;
+
             // La carpeta base es la del primer archivo seleccionado
             string basePath = Path.GetDirectoryName(SelectedFiles[0].FullPath) ?? string.Empty;
 
             // 1. Validar (Incluyendo validación de etapas)
-            var report = await _importService.ProcessMareaImportAsync(basePath, _barco, _mareaNum, _anio, _etapas);
+            BusyMessage = "Validando integridad de archivos DBF...";
+            var report = await _importService.ProcessMareaImportAsync(basePath, currentBarco, _mareaNum, _anio, currentEtapas);
 
             if (report.HasFatalErrors)
             {

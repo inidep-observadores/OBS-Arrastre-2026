@@ -799,13 +799,31 @@
 
                     <Border Grid.Row="0" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="24,20">
                         <StackPanel>
-                            <TextBlock Text="IMPORTAR ARCHIVOS DBF" 
+                            <TextBlock Text="IMPORTAR MAREA (JSON/DBF)" 
                                        FontSize="18" FontWeight="Bold" 
                                        Foreground="{DynamicResource PrimaryTextBrush}" />
+                            
+                            <!-- Input para Numero y Año (Solo si es nueva marea) -->
+                            <Grid Visibility="{Binding IsMareaInputVisible, Converter={StaticResource BooleanToVisibilityConverter}}" Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <Label Content="Número Marea" Style="{StaticResource FormLabelStyle}" />
+                                    <TextBox Text="{Binding MareaNum, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource PremiumTextBoxStyle}" Tag="Ej: 326" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <Label Content="Año" Style="{StaticResource FormLabelStyle}" />
+                                    <TextBox Text="{Binding Anio, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource PremiumTextBoxStyle}" Tag="Ej: 2026" />
+                                </StackPanel>
+                            </Grid>
+
                             <TextBlock Text="{Binding PatternNote}" 
                                        FontSize="12" 
                                        Foreground="{DynamicResource SecondaryTextBrush}" 
-                                       Margin="0,4,0,0"/>
+                                       Margin="0,8,0,0"/>
                         </StackPanel>
                     </Border>
 

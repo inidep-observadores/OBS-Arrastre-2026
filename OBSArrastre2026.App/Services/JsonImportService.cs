@@ -149,6 +149,138 @@ public sealed class JsonImportService : IJsonImportService
             target.Frecuente = fr.GetBoolean();
     }
 
+    public async Task<(int Imported, int Ignored)> ImportMareasAsync(string[] filePaths)
+    {
+        int imported = 0;
+        int ignored = 0;
+
+        using var context = await _dbContextFactory.CreateDbContextAsync();
+
+        foreach (var path in filePaths)
+        {
+            if (!File.Exists(path)) { ignored++; continue; }
+
+            try
+            {
+                var json = await File.ReadAllTextAsync(path);
+                var mareaDto = JsonSerializer.Deserialize<PortableMareaDto>(json);
+                if (mareaDto == null) { ignored++; continue; }
+
+                // Buscar buque por nombre
+                var buque = await context.Buques.FirstOrDefaultAsync(b => b.Nombre == mareaDto.BuqueNombre);
+                if (buque == null) { ignored++; continue; }
+
+                // Verificar duplicado
+                bool exists = await context.Mareas.AnyAsync(m => 
+                    m.BuqueID == buque.Id && 
+                    m.AnioInidep == mareaDto.Anio && 
+                    m.NumeroInidep == mareaDto.Numero);
+
+                if (exists) { ignored++; continue; }
+
+                // Crear nueva marea
+                var marea = new Marea
+                {
+                    ID = Guid.NewGuid().ToString(),
+                    BuqueID = buque.Id,
+                    AnioInidep = mareaDto.Anio,
+                    NumeroInidep = mareaDto.Numero,
+                    Comentarios = mareaDto.Comentarios,
+                    FechaInicio = mareaDto.FechaInicio,
+                    FechaFin = mareaDto.FechaFin
+                };
+
+                foreach (var eDto in mareaDto.Etapas)
+                {
+                    marea.Etapas.Add(new MareaEtapa
+                    {
+                        ID = Guid.NewGuid().ToString(),
+                        FechaZarpada = eDto.FechaZarpada,
+                        FechaArribo = eDto.FechaArribo,
+                        NombreCapitan = eDto.NombreCapitan,
+                        AnioMareaBuque = eDto.AnioMareaBuque,
+                        NumeroMareaBuque = eDto.NumeroMareaBuque
+                    });
+                }
+
+                context.Mareas.Add(marea);
+                imported++;
+            }
+            catch
+            {
+                ignored++;
+            }
+        }
+
+        if (imported > 0)
+        {
+            await context.SaveChangesAsync();
+        }
+
+        return (imported, ignored);
+    }
+
+    public async Task UpdateMareaMetadataAsync(string mareaId, string jsonPath)
+    {
+        using var context = await _dbContextFactory.CreateDbContextAsync();
+        var marea = await context.Mareas.Include(m => m.Etapas).FirstOrDefaultAsync(m => m.ID == mareaId);
+        if (marea == null) return;
+
+        var json = await File.ReadAllTextAsync(jsonPath);
+        var dto = JsonSerializer.Deserialize<PortableMareaDto>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        if (dto == null) return;
+
+        // Actualizar buque si coincide el nombre
+        var buque = await context.Buques.FirstOrDefaultAsync(b => b.Nombre == dto.BuqueNombre);
+        if (buque != null) marea.BuqueID = buque.Id;
+
+        marea.AnioInidep = dto.Anio;
+        marea.NumeroInidep = dto.Numero;
+        marea.Comentarios = dto.Comentarios;
+        marea.FechaInicio = dto.FechaInicio;
+        marea.FechaFin = dto.FechaFin;
+
+        // Reemplazar etapas (Borrado físico seguido de inserción)
+        context.MareaEtapas.RemoveRange(marea.Etapas);
+        marea.Etapas.Clear();
+
+        foreach (var eDto in dto.Etapas)
+        {
+            marea.Etapas.Add(new MareaEtapa
+            {
+                ID = Guid.NewGuid().ToString(),
+                MareaID = marea.ID,
+                FechaZarpada = eDto.FechaZarpada,
+                FechaArribo = eDto.FechaArribo,
+                NombreCapitan = eDto.NombreCapitan,
+                AnioMareaBuque = eDto.AnioMareaBuque,
+                NumeroMareaBuque = eDto.NumeroMareaBuque
+            });
+        }
+
+        await context.SaveChangesAsync();
+    }
+
+    private class PortableMareaDto
+    {
+        public string BuqueNombre { get; set; } = string.Empty;
+        public int Anio { get; set; }
+        public int Numero { get; set; }
+        public string? Comentarios { get; set; }
+        public DateTime FechaInicio { get; set; }
+        public DateTime? FechaFin { get; set; }
+        public List<PortableEtapaDto> Etapas { get; set; } = new();
+    }
+
+    private class PortableEtapaDto
+    {
+        public DateTime FechaZarpada { get; set; }
+        public DateTime? FechaArribo { get; set; }
+        public string? NombreCapitan { get; set; }
+        public int? AnioMareaBuque { get; set; }
+        public int? NumeroMareaBuque { get; set; }
+    }
+
     private string? GetStringValue(JsonElement element, string propertyName)
     {
         if (!element.TryGetProperty(propertyName, out var prop) || prop.ValueKind == JsonValueKind.Null)

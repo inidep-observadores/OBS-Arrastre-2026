@@ -472,10 +472,27 @@
                                        Text="Gestión y monitoreo en tiempo real." />
                         </StackPanel>
 
-                        <Button Grid.Column="1"
-                                Style="{StaticResource PrimaryButtonStyle}"
-                                Command="{Binding PrimaryActionCommand}"
-                                Content="{Binding PrimaryActionLabel}" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button Command="{Binding ImportMareaCommand}"
+                                    Content="Importar Marea"
+                                    Margin="0,0,12,0"
+                                    Padding="16,0">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource ThemeButtonStyle}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Mareas}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                            
+                            <Button Style="{StaticResource PrimaryButtonStyle}"
+                                    Command="{Binding PrimaryActionCommand}"
+                                    Content="{Binding PrimaryActionLabel}" />
+                        </StackPanel>
                     </Grid>
 
                     <Grid Grid.Row="1">

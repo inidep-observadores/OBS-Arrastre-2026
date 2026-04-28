@@ -88,7 +88,8 @@ public partial class App : Application
                         var mareaService = sp.GetRequiredService<IMareaService>();
                         var buqueService = sp.GetRequiredService<IBuqueService>();
                         var mareaImportService = sp.GetRequiredService<IMareaImportService>();
-                        return new MareaEditViewModel(onClose, validator, mareaService, buqueService, mareaImportService, mareaId);
+                        var jsonImportService = sp.GetRequiredService<IJsonImportService>();
+                        return new MareaEditViewModel(onClose, validator, mareaService, buqueService, mareaImportService, jsonImportService, mareaId);
                     });
 
                 services.AddSingleton<Func<Action, string, string?, LanceEditViewModel>>(sp =>

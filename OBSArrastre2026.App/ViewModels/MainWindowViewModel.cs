@@ -32,6 +32,8 @@ public sealed class MainWindowViewModel : ObservableObject
     private readonly IMareaValidationService _validationService;
     private readonly IMareaReportService _reportService;
     private readonly IProduccionService _produccionService;
+    private readonly IJsonImportService _jsonImportService;
+    private readonly IMareaImportService _mareaImportService;
     private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
     private NavigationItemViewModel? _selectedNavigationItem;
     private string _pageTitle = string.Empty;
@@ -81,6 +83,8 @@ public sealed class MainWindowViewModel : ObservableObject
         Func<Action, string?, ProduccionEditViewModel> produccionEditFactory,
         IMareaValidationService validationService,
         IMareaReportService reportService,
+        IJsonImportService jsonImportService,
+        IMareaImportService mareaImportService,
         IDbContextFactory<AppDbContext> dbContextFactory)
     {
         _mockShellDataService = mockShellDataService;
@@ -100,6 +104,8 @@ public sealed class MainWindowViewModel : ObservableObject
         _submuestraService = submuestraService;
         _produccionService = produccionService;
         _produccionEditFactory = produccionEditFactory;
+        _jsonImportService = jsonImportService;
+        _mareaImportService = mareaImportService;
 
         SearchPlaceholder = "Buscar...";
         SetSystemThemeCommand = new RelayCommand(() => ApplyTheme(AppThemeMode.System));
@@ -108,6 +114,7 @@ public sealed class MainWindowViewModel : ObservableObject
         PrimaryActionCommand = new RelayCommand(OpenCreateMareaForm);
         ApplyMareaFiltersCommand = new AsyncCommand(LoadMareasAsync);
         EditMareaCommand = new RelayCommand<MareaListItemViewModel>(OpenEditMareaForm);
+        ImportMareaCommand = new AsyncRelayCommand(ImportMareaAsync);
         
         ApplyLanceFiltersCommand = new AsyncCommand(LoadLancesAsync);
         EditLanceCommand = new RelayCommand<LanceListItemViewModel>(OpenEditLanceForm);
@@ -202,6 +209,7 @@ public sealed class MainWindowViewModel : ObservableObject
     public ICommand OpenSelectedRecordEditCommand { get; }
     public ICommand ClearMareaFiltersCommand { get; }
     public ICommand ClearLanceFiltersCommand { get; }
+    public ICommand ImportMareaCommand { get; }
 
     private async Task LoadMuestrasAsync()
     {
@@ -1091,5 +1099,33 @@ public sealed class MainWindowViewModel : ObservableObject
         {
             target.Add(item);
         }
+    }
+
+    private async Task ImportMareaAsync()
+    {
+        var importVm = new ImportDbfViewModel(
+            null, // Nueva marea
+            0,
+            DateTime.Today.Year,
+            _mareaImportService,
+            _jsonImportService,
+            _mareaService,
+            "Sin Nombre",
+            [],
+            async files => 
+            {
+                ActiveDialog = null;
+                if (files != null)
+                {
+                    await LoadMareasAsync();
+                    await LoadFilterDataAsync();
+                    ShowMessage("Importación Exitosa", "La marea y sus datos han sido importados correctamente.", null, MessageDialogType.Success);
+                }
+            });
+
+        importVm.ShowMessage = (title, msg, details, type) => ShowMessage(title, msg, details, type);
+        importVm.ShowConfirmation = (title, msg) => ShowConfirmationAsync(title, msg);
+
+        ActiveDialog = importVm;
     }
 }
