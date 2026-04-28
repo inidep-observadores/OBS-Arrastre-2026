@@ -141,7 +141,7 @@ public class MareaImportService : IMareaImportService
             .Select(e => e.CodigoInidep)
             .Where(c => c != null)
             .ToListAsync();
-        var setEspeciesExistentes = new HashSet<string>(especiesExistentes!);
+        var setEspeciesExistentes = new HashSet<string>(especiesExistentes.Select(c => c!.Trim()));
 
         var especiesDB = await dbContext.Especies
             .Where(e => e.CodigoInidep != null && (e.NombreVulgar != null || e.NombreCientifico != null))
@@ -170,7 +170,7 @@ public class MareaImportService : IMareaImportService
 
             foreach (var spCode in c.Especies.Keys)
             {
-                if (!setEspeciesExistentes.Contains(spCode.ToString()))
+                if (!setEspeciesExistentes.Contains(spCode.ToString().Trim()))
                 {
                     report.AddIssue(ValidationLevel.Fatal, "Catálogo Especies", $"La especie legado con código '{spCode}' no existe en la base de datos local.", $"Captura Lance {c.Lance}");
                 }
@@ -226,7 +226,7 @@ public class MareaImportService : IMareaImportService
         
         var especieByCodigoMap = especiesCatalogo
             .Where(e => !string.IsNullOrEmpty(e.CodigoInidep))
-            .GroupBy(e => e.CodigoInidep!)
+            .GroupBy(e => e.CodigoInidep!.Trim())
             .ToDictionary(g => g.Key, g => g.First().ID);
 
         var especieByCientificoMap = especiesCatalogo
@@ -262,7 +262,7 @@ public class MareaImportService : IMareaImportService
             // Items de Captura (Especies por código)
             foreach (var kvp in c.Especies)
             {
-                if (kvp.Value > 0 && especieByCodigoMap.TryGetValue(kvp.Key.ToString(), out var especieId))
+                if (kvp.Value > 0 && especieByCodigoMap.TryGetValue(kvp.Key.ToString().Trim(), out var especieId))
                 {
                     lance.ItemsCaptura.Add(new ItemCaptura
                     {
@@ -285,7 +285,7 @@ public class MareaImportService : IMareaImportService
             {
                 // Resolución de especie: Priorizar código, luego nombre científico
                 string? especieId = null;
-                if (rm.CodEspec > 0) especieByCodigoMap.TryGetValue(rm.CodEspec.ToString(), out especieId);
+                if (rm.CodEspec > 0) especieByCodigoMap.TryGetValue(rm.CodEspec.ToString().Trim(), out especieId);
                 
                 if (especieId == null && !string.IsNullOrEmpty(rm.Especie))
                 {
@@ -301,7 +301,19 @@ public class MareaImportService : IMareaImportService
                         EspecieID = especieId,
                         PesoMuestra_PesoGramos = rm.PesoMues * 1000,
                         Intervalo = rm.Intervalo,
+                        // Inferir Flags
+                        UnidadMedidaTalla = 1, // CM por defecto en archivos M*
+                        ModoMedicionTalla = 1, // LT por defecto
+                        Origen = 1, // Muestreo de Captura
+                        DiscriminaSexo = rm.Tallies.Any(t => t.Males > 0 || t.Females > 0) ? 1 : 0,
+                        HayIndeterminados = rm.Tallies.Any(t => t.Indeterminate > 0) ? 1 : 0
                     };
+
+                    int totalEjemplares = rm.Tallies.Sum(t => t.Total);
+                    if (rm.PesoMues > 0)
+                    {
+                        muestra.EjemplaresPorKg = (int)Math.Round(totalEjemplares / rm.PesoMues);
+                    }
 
                     foreach (var tally in rm.Tallies)
                     {
@@ -370,7 +382,7 @@ public class MareaImportService : IMareaImportService
         // Map Producción (Creación dinámica de productos)
         if (report.Produccion.Any())
         {
-            var existingProducts = await dbContext.Productos.ToDictionaryAsync(p => p.Codigo, p => p.Id);
+            var existingProducts = await dbContext.Productos.ToDictionaryAsync(p => p.Codigo.Trim(), p => p.Id);
             var existenteEspecies = await dbContext.Especies
                 .Select(e => new { e.ID, e.NombreVulgar })
                 .Where(e => e.NombreVulgar != null)
@@ -384,7 +396,7 @@ public class MareaImportService : IMareaImportService
 
             foreach (var rp in report.Produccion)
             {
-                if (!existingProducts.TryGetValue(rp.Producto, out var productGuid))
+                if (!existingProducts.TryGetValue(rp.Producto?.Trim() ?? string.Empty, out var productGuid))
                 {
                     var newProduct = new Producto
                     {

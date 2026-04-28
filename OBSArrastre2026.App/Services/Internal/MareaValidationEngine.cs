@@ -164,7 +164,18 @@ public sealed class MareaValidationEngine
                 report.AddIssue(ValidationLevel.Fatal, "Consistencia", $"Barco en captura ({c.Barco}) no coincide con marea activa ({barcoActual})", $"Lance {c.Lance}");
             
             if ((int)c.Marea != mareaActual)
-                report.AddIssue(ValidationLevel.Error, "Consistencia", $"Nro Marea en captura ({c.Marea}) no coincide con marea activa ({mareaActual})", $"Lance {c.Lance}");
+            {
+                if ((int)c.Marea == 0)
+                {
+                    string oldMarea = c.Marea.ToString();
+                    c.Marea = mareaActual;
+                    report.AddIssue(ValidationLevel.AutoFixed, "Consistencia", $"Nro Marea en captura era 0. Se corrige a {mareaActual}.", $"Lance {c.Lance}", oldMarea, mareaActual.ToString());
+                }
+                else
+                {
+                    report.AddIssue(ValidationLevel.Error, "Consistencia", $"Nro Marea en captura ({c.Marea}) no coincide con marea activa ({mareaActual})", $"Lance {c.Lance}");
+                }
+            }
         }
 
         // 2. MUESTRAS
@@ -172,6 +183,20 @@ public sealed class MareaValidationEngine
         {
             if (m.Barco.Trim().ToUpper() != bActual)
                 report.AddIssue(ValidationLevel.Fatal, "Consistencia", $"Barco en muestra ({m.Barco}) no coincide con marea activa ({barcoActual})", $"Lance {m.Lance}");
+            
+            if ((int)m.Marea != mareaActual)
+            {
+                if ((int)m.Marea == 0)
+                {
+                    string oldMarea = m.Marea.ToString();
+                    m.Marea = mareaActual;
+                    report.AddIssue(ValidationLevel.AutoFixed, "Consistencia", $"Nro Marea en muestra era 0. Se corrige a {mareaActual}.", $"Lance {m.Lance} Especie {m.Especie}", oldMarea, mareaActual.ToString());
+                }
+                else
+                {
+                    report.AddIssue(ValidationLevel.Error, "Consistencia", $"Nro Marea en muestra ({m.Marea}) no coincide con marea activa ({mareaActual})", $"Lance {m.Lance} Especie {m.Especie}");
+                }
+            }
         }
 
         // 3. SUBMUES
@@ -179,6 +204,20 @@ public sealed class MareaValidationEngine
         {
             if (s.Barco.Trim().ToUpper() != bActual)
                 report.AddIssue(ValidationLevel.Fatal, "Consistencia", $"Barco en submuestra ({s.Barco}) no coincide con marea activa ({barcoActual})", $"Lance {s.Lance} Ej {s.NEjemplar}");
+
+            if ((int)s.Marea != mareaActual)
+            {
+                if ((int)s.Marea == 0)
+                {
+                    string oldMarea = s.Marea.ToString();
+                    s.Marea = mareaActual;
+                    report.AddIssue(ValidationLevel.AutoFixed, "Consistencia", $"Nro Marea en submuestra era 0. Se corrige a {mareaActual}.", $"Lance {s.Lance} Ej {s.NEjemplar}", oldMarea, mareaActual.ToString());
+                }
+                else
+                {
+                    report.AddIssue(ValidationLevel.Error, "Consistencia", $"Nro Marea en submuestra ({s.Marea}) no coincide con marea activa ({mareaActual})", $"Lance {s.Lance} Ej {s.NEjemplar}");
+                }
+            }
         }
 
         // 4. LG
@@ -186,6 +225,20 @@ public sealed class MareaValidationEngine
         {
             if (l.Barco.Trim().ToUpper() != bActual)
                 report.AddIssue(ValidationLevel.Fatal, "Consistencia", $"Barco en archivo LG ({l.Barco}) no coincide con marea activa ({barcoActual})", $"Lance {l.Lance}");
+
+            if ((int)l.Marea != mareaActual)
+            {
+                if ((int)l.Marea == 0)
+                {
+                    string oldMarea = l.Marea.ToString();
+                    l.Marea = mareaActual;
+                    report.AddIssue(ValidationLevel.AutoFixed, "Consistencia", $"Nro Marea en archivo LG era 0. Se corrige a {mareaActual}.", $"Lance {l.Lance}", oldMarea, mareaActual.ToString());
+                }
+                else
+                {
+                    report.AddIssue(ValidationLevel.Error, "Consistencia", $"Nro Marea en archivo LG ({l.Marea}) no coincide con marea activa ({mareaActual})", $"Lance {l.Lance}");
+                }
+            }
         }
 
         // 5. SEGUIMIENTO (T*) - Aquí el campo es "Buque"
@@ -200,6 +253,20 @@ public sealed class MareaValidationEngine
         {
             if (p.Barco.Trim().ToUpper() != bActual)
                 report.AddIssue(ValidationLevel.Fatal, "Consistencia", $"Barco en producción ({p.Barco}) no coincide con marea activa ({barcoActual})", $"Fecha {p.Fecha:yyyy-MM-dd}");
+
+            if ((int)p.Marea != mareaActual)
+            {
+                if ((int)p.Marea == 0)
+                {
+                    string oldMarea = p.Marea.ToString();
+                    p.Marea = mareaActual;
+                    report.AddIssue(ValidationLevel.AutoFixed, "Consistencia", $"Nro Marea en producción era 0. Se corrige a {mareaActual}.", $"Fecha {p.Fecha:yyyy-MM-dd}", oldMarea, mareaActual.ToString());
+                }
+                else
+                {
+                    report.AddIssue(ValidationLevel.Error, "Consistencia", $"Nro Marea en producción ({p.Marea}) no coincide con marea activa ({mareaActual})", $"Fecha {p.Fecha:yyyy-MM-dd}");
+                }
+            }
         }
     }
 
@@ -391,8 +458,9 @@ public sealed class MareaValidationEngine
                     // Función local para obtener parámetros con fallback y promedios
                     (double A, double B) GetSmartParams(int targetSex)
                     {
-                        // 1. Intentar búsqueda exacta
-                        if (largoPesoCatalogo.TryGetValue((espId, targetSex), out var p)) return p;
+                        // 1. Intentar búsqueda exacta (con trim por seguridad)
+                        var key = (espId, targetSex);
+                        if (largoPesoCatalogo.TryGetValue(key, out var p)) return p;
                         
                         // 2. Si es Indeterminado (0), intentar buscar el código legado (3) primero
                         if (targetSex == 0 && largoPesoCatalogo.TryGetValue((espId, 3), out p)) return p;
@@ -403,7 +471,11 @@ public sealed class MareaValidationEngine
                         // 4. Si el objetivo es 3 (indeterminado legado) pero no está, intentar el 0
                         if (targetSex == 3 && largoPesoCatalogo.TryGetValue((espId, 0), out p)) return p;
                         
-                        // 5. Si no hay general (o es el que buscamos), intentar promediar Macho (1) y Hembra (2)
+                        // 5. Intentar cualquier sexo disponible para esta especie si lo anterior falló
+                        var anyEntry = largoPesoCatalogo.FirstOrDefault(k => k.Key.EspecieId == espId).Value;
+                        if (anyEntry.A > 0) return anyEntry;
+
+                        // 6. Si no hay general (o es el que buscamos), intentar promediar Macho (1) y Hembra (2)
                         bool hasM = largoPesoCatalogo.TryGetValue((espId, 1), out var pM);
                         bool hasF = largoPesoCatalogo.TryGetValue((espId, 2), out var pF);
                         
@@ -411,7 +483,7 @@ public sealed class MareaValidationEngine
                         if (hasM) return pM;
                         if (hasF) return pF;
                         
-                        // 6. Fallback final a LG o 0
+                        // 7. Fallback final a LG o 0
                         return (fallbackA, fallbackB);
                     }
 
@@ -448,7 +520,12 @@ public sealed class MareaValidationEngine
                 }
                 else
                 {
-                    string debugInfo = $"[ID Resuelto: {espIdLookupStr}, Nombre: '{m.Especie}', CodEspec Original: {m.CodEspec}]";
+                    int catalogCount = largoPesoCatalogo?.Count ?? 0;
+                    string catalogPreview = catalogCount > 0 
+                        ? $" Catálogo ({catalogCount} regs): [{string.Join(", ", largoPesoCatalogo.Keys.Take(3).Select(k => $"{k.EspecieId}:{k.Sexo}"))}...]" 
+                        : " Catálogo vacío";
+                        
+                    string debugInfo = $"[ID Resuelto: {espIdLookupStr}, Nombre: '{m.Especie}', CodEspec Original: {m.CodEspec}]{catalogPreview}";
                     report.AddIssue(ValidationLevel.Error, "Biometría", $"Peso de muestra es 0 y no se encontraron parámetros Largo-Peso. Detalles técnicos: {debugInfo}", ctx);
                 }
             }
