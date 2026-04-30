@@ -180,7 +180,7 @@ public partial class MainWindow : Window
                         {
                             Stroke = lanceBrush,
                             StrokeThickness = lanceThickness,
-                            ToolTip = $"Lance Nro: {lance.NroLance}"
+                            ToolTip = CreateLanceRouteToolTip(lance)
                         }
                     };
                     MainMap.Markers.Add(lanceRoute);
@@ -351,6 +351,48 @@ public partial class MainWindow : Window
         return tip;
     }
 
+    private object CreateLanceRouteToolTip(Lance lance)
+    {
+        var bgBrush = (Brush)Application.Current.FindResource("SurfaceBackgroundBrush");
+        var textBrush = (Brush)Application.Current.FindResource("PrimaryTextBrush");
+
+        var tip = new ToolTip
+        {
+            Background = bgBrush,
+            Foreground = textBrush,
+            BorderBrush = Brushes.Cyan,
+            BorderThickness = new Thickness(2),
+            Padding = new Thickness(10),
+            FontSize = 13,
+            FontWeight = FontWeights.SemiBold
+        };
+
+        var stack = new StackPanel();
+        
+        stack.Children.Add(new TextBlock 
+        { 
+            Text = $"LANCE NRO: {lance.NroLance}", 
+            Foreground = Brushes.DarkCyan,
+            FontWeight = FontWeights.Bold,
+            Margin = new Thickness(0, 0, 0, 8)
+        });
+
+        // Formatear fecha si es posible
+        string fecha = lance.Fecha;
+        if (DateTime.TryParse(lance.Fecha, out DateTime dt))
+        {
+            fecha = dt.ToString("dd/MM/yyyy");
+        }
+
+        stack.Children.Add(new TextBlock { Text = $"FECHA: {fecha}", Foreground = textBrush, FontSize = 12 });
+        stack.Children.Add(new TextBlock { Text = $"INICIO: {lance.HoraInicio}", Foreground = textBrush, FontSize = 12 });
+        stack.Children.Add(new TextBlock { Text = $"FIN: {lance.HoraFinal}", Foreground = textBrush, FontSize = 12 });
+        stack.Children.Add(new TextBlock { Text = $"CAPTURA: {lance.CapturaTotalKg:N0} kg", Foreground = textBrush, FontSize = 12 });
+
+        tip.Content = stack;
+        return tip;
+    }
+
     private string FormatCoord(double? val, bool isLat)
     {
         if (!val.HasValue) return "-";
@@ -358,7 +400,7 @@ public partial class MainWindow : Window
         int deg = (int)abs;
         double min = (abs - deg) * 60;
         string q = isLat ? (val >= 0 ? "N" : "S") : (val >= 0 ? "E" : "O");
-        return $"{deg}º {min:00.1}' {q}".Replace('.', ',');
+        return $"{deg}º {min:00.0}' {q}".Replace('.', ',');
     }
 
     private UIElement CreateVesselShape()

@@ -45,7 +45,7 @@ public sealed class LanceListItemViewModel(Lance lance)
             ? (value.Value >= 0 ? "N" : "S") 
             : (value.Value >= 0 ? "E" : "O");
             
-        // Formato GGº MM,M C (C= cuadrante N,S,E,O)
-        return $"{degrees}º {minutes:00.1}' {quadrant}".Replace('.', ',');
+        // Formato GGº MM,M' C (C= cuadrante N,S,E,O)
+        return $"{degrees}º {minutes:00.0}' {quadrant}".Replace('.', ',');
     }
 }

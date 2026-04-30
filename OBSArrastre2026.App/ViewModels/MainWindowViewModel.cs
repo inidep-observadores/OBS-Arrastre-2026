@@ -568,6 +568,7 @@ public sealed class MainWindowViewModel : ObservableObject
             if (SetProperty(ref _currentTrackPointIndex, value))
             {
                 UpdateSelectedTrackPoint();
+                OnPropertyChanged(nameof(CurrentPlaybackPoint));
                 
                 // Sincronizar fecha del DatePicker sin disparar JumpToDate de nuevo
                 if (value >= 0 && value < CurrentTrack.Count)
@@ -583,6 +584,11 @@ public sealed class MainWindowViewModel : ObservableObject
             }
         }
     }
+
+    public MareaTracking? CurrentPlaybackPoint => 
+        (CurrentTrackPointIndex >= 0 && CurrentTrackPointIndex < CurrentTrack.Count) 
+        ? CurrentTrack[CurrentTrackPointIndex] 
+        : null;
 
     public bool IsPlaying
     {

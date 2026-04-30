@@ -925,11 +925,62 @@
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
 
-                                <gmap:GMapControl x:Name="MainMap" 
-                                                  MaxZoom="18"
-                                                  MinZoom="2"
-                                                  Zoom="10"
-                                                  Loaded="MainMap_Loaded" />
+                                <Grid>
+                                    <gmap:GMapControl x:Name="MainMap" 
+                                                      MaxZoom="18"
+                                                      MinZoom="2"
+                                                      Zoom="10"
+                                                      Loaded="MainMap_Loaded" />
+
+                                    <!-- HUD de Datos de Navegación -->
+                                    <Border HorizontalAlignment="Right" VerticalAlignment="Top" 
+                                            Margin="16" Padding="14" 
+                                            Background="{DynamicResource CardBackgroundBrush}" 
+                                            Opacity="0.9"
+                                            BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8"
+                                            Visibility="{Binding CurrentPlaybackPoint, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=invert}">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="15" ShadowDepth="0" Opacity="0.15" />
+                                        </Border.Effect>
+                                        <StackPanel Width="170">
+                                            <TextBlock Text="NAV DATA HUD" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,12" />
+                                            
+                                            <Grid Margin="0,0,0,6">
+                                                <TextBlock Text="FECHA" FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding CurrentPlaybackPoint.FechaHora, StringFormat=dd/MM/yyyy}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Right" />
+                                            </Grid>
+                                            <Grid Margin="0,0,0,6">
+                                                <TextBlock Text="HORA" FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding CurrentPlaybackPoint.FechaHora, StringFormat=HH:mm:ss}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Right" />
+                                            </Grid>
+                                            <Separator Background="{DynamicResource CardBorderBrush}" Margin="0,4,0,8" />
+                                            
+                                            <Grid Margin="0,0,0,6">
+                                                <TextBlock Text="LATITUD" FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding CurrentPlaybackPoint.Latitud, Converter={StaticResource CoordinateConverter}, ConverterParameter=lat}" 
+                                                           FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Right" />
+                                            </Grid>
+                                            <Grid Margin="0,0,0,6">
+                                                <TextBlock Text="LONGITUD" FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding CurrentPlaybackPoint.Longitud, Converter={StaticResource CoordinateConverter}, ConverterParameter=lon}" 
+                                                           FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Right" />
+                                            </Grid>
+                                            <Separator Background="{DynamicResource CardBorderBrush}" Margin="0,4,0,8" />
+
+                                            <Grid Margin="0,0,0,6">
+                                                <TextBlock Text="VELOCIDAD" FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding CurrentPlaybackPoint.Velocidad, StringFormat=\{0:0.0\} nudos}" 
+                                                           FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Right" />
+                                            </Grid>
+                                            <Grid>
+                                                <TextBlock Text="RUMBO" FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding CurrentPlaybackPoint.Rumbo, StringFormat=\{0:0\}º}" 
+                                                           FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Right" />
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
 
                                 <!-- Panel de Reproducción de Trayectoria -->
                                 <Border Grid.Row="1" 
