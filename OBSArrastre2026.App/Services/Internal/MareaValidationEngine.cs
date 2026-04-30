@@ -1,3 +1,4 @@
+using System.Globalization;
 using OBSArrastre2026.App.Models.Import;
 
 namespace OBSArrastre2026.App.Services.Internal;
@@ -105,8 +106,18 @@ public sealed class MareaValidationEngine
             .Select(p => p.Especie.Trim().ToUpper())
             .Distinct();
 
+        var culture = new CultureInfo("es-AR");
+
         foreach (var fecha in todasLasFechas)
         {
+            var lancesDelDia = capturas
+                .Where(c => c.Fecha.Date == fecha)
+                .Select(c => (int)c.Lance)
+                .OrderBy(n => n)
+                .ToList();
+            
+            string lancesStr = lancesDelDia.Any() ? $", {FormatLanceList(lancesDelDia)}" : "";
+
             foreach (var nombreEspecie in nombresEspeciesProduccion)
             {
                 if (!especiesDict.TryGetValue(nombreEspecie, out long codEspecie)) continue;
@@ -128,30 +139,44 @@ public sealed class MareaValidationEngine
                     });
 
                 // C. Comparar y reportar diferencias > 1%
-                // La regla es: Captura Neta Real >= Captura Reconstruida
                 double diferencia = capturaNetaReal - capturaReconstruida;
                 double diffAbs = Math.Abs(diferencia);
                 double margenTolerancia = capturaNetaReal * 0.01;
 
                 string ctx = $"Fecha: {fecha:yyyy-MM-dd} | Especie: {nombreEspecie}";
+                string capReconStr = capturaReconstruida.ToString("N1", culture);
+                string capRealStr = capturaNetaReal.ToString("N1", culture);
 
                 if (capturaReconstruida > capturaNetaReal + margenTolerancia)
                 {
                     // Error: Se produjo más de lo que se capturó físicamente
                     report.AddIssue(ValidationLevel.Error, "Balance de Masa Diario", 
-                        $"Inconsistencia: La captura reconstruida ({capturaReconstruida:F1} kg) excede la captura neta real disponible ({capturaNetaReal:F1} kg).", 
+                        $"Inconsistencia: La captura reconstruida ({capReconStr} kg) excede la captura neta real disponible ({capRealStr} kg){lancesStr}.", 
                         ctx);
                 }
                 else if (diffAbs > margenTolerancia)
                 {
-                    // Advertencia: Diferencia superior al 1% (aunque sea a favor de la captura real)
+                    // Advertencia: Diferencia superior al 1%
                     string tipoDiff = diferencia > 0 ? "sobrante" : "faltante";
+                    string diffStr = diffAbs.ToString("N1", culture);
                     report.AddIssue(ValidationLevel.Warning, "Balance de Masa Diario", 
-                        $"Diferencia de masa significativa ({tipoDiff}): Real {capturaNetaReal:F1} kg vs Reconstruida {capturaReconstruida:F1} kg (Dif: {diffAbs:F1} kg).", 
+                        $"Diferencia de masa significativa ({tipoDiff}): Real {capRealStr} kg vs Reconstruida {capReconStr} kg (Dif: {diffStr} kg){lancesStr}.", 
                         ctx);
                 }
             }
         }
+    }
+
+    private string FormatLanceList(List<int> lances)
+    {
+        if (lances == null || lances.Count == 0) return "";
+        if (lances.Count == 1) return $"lance {lances[0]}";
+        
+        var distinctSorted = lances.Distinct().OrderBy(n => n).ToList();
+        if (distinctSorted.Count == 1) return $"lance {distinctSorted[0]}";
+
+        var firstPart = string.Join(", ", distinctSorted.Take(distinctSorted.Count - 1));
+        return $"lances {firstPart} y {distinctSorted.Last()}";
     }
 
     private void ValidateTemporalConsistency(
