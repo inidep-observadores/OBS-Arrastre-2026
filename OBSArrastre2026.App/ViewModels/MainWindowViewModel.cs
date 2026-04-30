@@ -65,6 +65,10 @@ public sealed class MainWindowViewModel : ObservableObject
     private DateTime? _lancesFilterFechaHasta;
     private int? _lancesFilterNroLance;
     private string _lancesFilterEspecie = string.Empty;
+    private int _currentTrackPointIndex = -1;
+    private bool _isPlaying;
+    private System.Timers.Timer? _playbackTimer;
+    private string _selectedTrackPointInfo = string.Empty;
 
     public MainWindowViewModel(
         IMockShellDataService mockShellDataService, 
@@ -144,8 +148,15 @@ public sealed class MainWindowViewModel : ObservableObject
                 UpdateNavigationState();
                 _ = RefreshCurrentSectionAsync();
                 _ = UpdateMapDataAsync();
+                StopPlayback();
             }
         };
+
+        PlayCommand = new RelayCommand(StartPlayback, () => !IsPlaying && CurrentTrack.Any());
+        PauseCommand = new RelayCommand(PausePlayback, () => IsPlaying);
+        StopCommand = new RelayCommand(StopPlayback, () => CurrentTrack.Any());
+        NextPointCommand = new RelayCommand(() => CurrentTrackPointIndex++, () => CurrentTrack.Any() && CurrentTrackPointIndex < CurrentTrack.Count - 1);
+        PrevPointCommand = new RelayCommand(() => CurrentTrackPointIndex--, () => CurrentTrack.Any() && CurrentTrackPointIndex > 0);
 
         UpdateNavigationState();
     }
@@ -210,6 +221,12 @@ public sealed class MainWindowViewModel : ObservableObject
     public ICommand ClearMareaFiltersCommand { get; }
     public ICommand ClearLanceFiltersCommand { get; }
     public ICommand ImportMareaCommand { get; }
+    
+    public ICommand PlayCommand { get; }
+    public ICommand PauseCommand { get; }
+    public ICommand StopCommand { get; }
+    public ICommand NextPointCommand { get; }
+    public ICommand PrevPointCommand { get; }
 
     private async Task LoadMuestrasAsync()
     {
@@ -537,6 +554,41 @@ public sealed class MainWindowViewModel : ObservableObject
         get => _activeDialog;
         private set => SetProperty(ref _activeDialog, value);
     }
+
+    public int CurrentTrackPointIndex
+    {
+        get => _currentTrackPointIndex;
+        set
+        {
+            if (SetProperty(ref _currentTrackPointIndex, value))
+            {
+                UpdateSelectedTrackPoint();
+                ((RelayCommand)NextPointCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)PrevPointCommand).RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public bool IsPlaying
+    {
+        get => _isPlaying;
+        private set
+        {
+            if (SetProperty(ref _isPlaying, value))
+            {
+                ((RelayCommand)PlayCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)PauseCommand).RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public string SelectedTrackPointInfo
+    {
+        get => _selectedTrackPointInfo;
+        private set => SetProperty(ref _selectedTrackPointInfo, value);
+    }
+
+    public int TotalTrackPoints => CurrentTrack.Count;
 
     public void ShowMessage(string title, string message, string? details = null, MessageDialogType type = MessageDialogType.Info)
     {
@@ -986,11 +1038,72 @@ public sealed class MainWindowViewModel : ObservableObject
 
             // Notificar a la vista para que actualice GMap.NET
             MapUpdateRequested?.Invoke();
+            
+            OnPropertyChanged(nameof(TotalTrackPoints));
+            CurrentTrackPointIndex = -1;
+            ((RelayCommand)PlayCommand).RaiseCanExecuteChanged();
+            ((RelayCommand)StopCommand).RaiseCanExecuteChanged();
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error actualizando datos de mapa: {ex.Message}");
         }
+    }
+
+    private void UpdateSelectedTrackPoint()
+    {
+        if (CurrentTrackPointIndex >= 0 && CurrentTrackPointIndex < CurrentTrack.Count)
+        {
+            var point = CurrentTrack[CurrentTrackPointIndex];
+            SelectedTrackPointInfo = $"{point.FechaHora:dd/MM/yyyy HH:mm}";
+        }
+        else
+        {
+            SelectedTrackPointInfo = string.Empty;
+        }
+        
+        // Notificar a la vista que el marcador del buque debe moverse
+        MapUpdateRequested?.Invoke();
+    }
+
+    private void StartPlayback()
+    {
+        if (CurrentTrackPointIndex >= CurrentTrack.Count - 1)
+        {
+            CurrentTrackPointIndex = 0;
+        }
+
+        IsPlaying = true;
+        _playbackTimer?.Dispose();
+        _playbackTimer = new System.Timers.Timer(500); // 500ms por punto
+        _playbackTimer.Elapsed += (s, e) =>
+        {
+            App.Current.Dispatcher.Invoke(() =>
+            {
+                if (CurrentTrackPointIndex < CurrentTrack.Count - 1)
+                {
+                    CurrentTrackPointIndex++;
+                }
+                else
+                {
+                    StopPlayback();
+                }
+            });
+        };
+        _playbackTimer.Start();
+    }
+
+    private void PausePlayback()
+    {
+        IsPlaying = false;
+        _playbackTimer?.Stop();
+    }
+
+    private void StopPlayback()
+    {
+        IsPlaying = false;
+        _playbackTimer?.Stop();
+        CurrentTrackPointIndex = -1;
     }
 
     private async Task ClearLanceFiltersAsync()

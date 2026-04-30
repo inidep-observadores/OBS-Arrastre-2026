@@ -919,11 +919,124 @@
                                     </Style.Triggers>
                                 </Style>
                             </Border.Style>
-                            <gmap:GMapControl x:Name="MainMap" 
-                                              MaxZoom="18"
-                                              MinZoom="2"
-                                              Zoom="10"
-                                              Loaded="MainMap_Loaded" />
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <gmap:GMapControl x:Name="MainMap" 
+                                                  MaxZoom="18"
+                                                  MinZoom="2"
+                                                  Zoom="10"
+                                                  Loaded="MainMap_Loaded" />
+
+                                <!-- Panel de Reproducción de Trayectoria -->
+                                <Border Grid.Row="1" 
+                                        Background="{DynamicResource SidebarSecondaryBackgroundBrush}"
+                                        BorderBrush="{DynamicResource SidebarBorderBrush}"
+                                        BorderThickness="0,1,0,0"
+                                        Padding="16,12">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding TotalTrackPoints, Converter={StaticResource IntToVisibilityConverter}}" Value="Visible">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Controles -->
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Button Command="{Binding StopCommand}" 
+                                                    Style="{StaticResource ThemeButtonStyle}"
+                                                    ToolTip="Detener"
+                                                    Padding="8">
+                                                <TextBlock Text="⏹" FontSize="14" />
+                                            </Button>
+                                            <Button Command="{Binding PrevPointCommand}" 
+                                                    Style="{StaticResource ThemeButtonStyle}"
+                                                    ToolTip="Anterior"
+                                                    Padding="8">
+                                                <TextBlock Text="⏮" FontSize="14" />
+                                            </Button>
+                                            
+                                            <Grid Margin="4,0">
+                                                <Button Command="{Binding PlayCommand}" 
+                                                        Style="{StaticResource PrimaryButtonStyle}"
+                                                        ToolTip="Reproducir"
+                                                        Padding="12,6"
+                                                        Visibility="{Binding IsPlaying, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=invert}">
+                                                    <TextBlock Text="▶" FontSize="14" Foreground="White" />
+                                                </Button>
+                                                <Button Command="{Binding PauseCommand}" 
+                                                        Style="{StaticResource ThemeButtonStyle}"
+                                                        ToolTip="Pausa"
+                                                        Padding="12,6"
+                                                        Visibility="{Binding IsPlaying, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                    <TextBlock Text="⏸" FontSize="14" />
+                                                </Button>
+                                            </Grid>
+
+                                            <Button Command="{Binding NextPointCommand}" 
+                                                    Style="{StaticResource ThemeButtonStyle}"
+                                                    ToolTip="Siguiente"
+                                                    Padding="8">
+                                                <TextBlock Text="⏭" FontSize="14" />
+                                            </Button>
+                                        </StackPanel>
+
+                                        <!-- Deslizador -->
+                                        <Grid Grid.Column="1" Margin="24,0">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <Slider Minimum="0" 
+                                                    Maximum="{Binding TotalTrackPoints, Mode=OneWay, Converter={StaticResource MathConverter}, ConverterParameter=x-1}"
+                                                    Value="{Binding CurrentTrackPointIndex}"
+                                                    Style="{StaticResource PremiumSliderStyle}"
+                                                    VerticalAlignment="Center">
+                                                <Slider.ToolTip>
+                                                    <ToolTip Content="{Binding SelectedTrackPointInfo}" 
+                                                             Visibility="{Binding SelectedTrackPointInfo, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=invert}"/>
+                                                </Slider.ToolTip>
+                                            </Slider>
+                                            <TextBlock Grid.Row="1" 
+                                                       Text="{Binding SelectedTrackPointInfo}" 
+                                                       HorizontalAlignment="Center" 
+                                                       FontSize="11" 
+                                                       Foreground="{DynamicResource SecondaryTextBrush}"
+                                                       Margin="0,4,0,0" />
+                                        </Grid>
+
+                                        <!-- Info Adicional -->
+                                        <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                            <TextBlock Text="REPRODUCCIÓN DE TRAYECTORIA" 
+                                                       FontSize="10" 
+                                                       FontWeight="Bold" 
+                                                       Foreground="{DynamicResource AccentBrush}" 
+                                                       HorizontalAlignment="Right"/>
+                                            <TextBlock FontSize="12" 
+                                                       Foreground="{DynamicResource SecondaryTextBrush}" 
+                                                       HorizontalAlignment="Right"
+                                                       Margin="0,2,0,0">
+                                                <Run Text="{Binding CurrentTrackPointIndex, Mode=OneWay, Converter={StaticResource MathConverter}, ConverterParameter=x+1, TargetNullValue=0}" />
+                                                <Run Text=" / " />
+                                                <Run Text="{Binding TotalTrackPoints, Mode=OneWay}" />
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </Grid>
                         </Border>
                         </Grid>
                     </Grid>

@@ -23,6 +23,7 @@ public partial class MainWindow : Window
     private readonly IUserSettingsService _settingsService;
     private readonly GeoJsonService _geoJsonService;
     private readonly List<GMapMarker> _staticGeoJsonMarkers = new();
+    private GMapMarker? _vesselMarker;
 
     public MainWindow(MainWindowViewModel viewModel, IUserSettingsService settingsService, GeoJsonService geoJsonService)
     {
@@ -113,22 +114,33 @@ public partial class MainWindow : Window
                 }
             };
             MainMap.Markers.Add(route);
-
-            // Marcadores para cada punto del track (muy pequeños, apenas más gruesos que el track)
-            foreach (var p in vm.CurrentTrack)
+            // 2. Dibujar Puntos de Track
+            for (int i = 0; i < vm.CurrentTrack.Count; i++)
             {
-                var pointPos = new PointLatLng(p.Latitud, p.Longitud);
+                var track = vm.CurrentTrack[i];
+                var index = i; // Captura para el closure
+                var pointPos = new PointLatLng(track.Latitud, track.Longitud);
                 var pointMarker = new GMapMarker(pointPos)
                 {
                     Shape = new Ellipse
                     {
-                        Width = 4,
-                        Height = 4,
-                        Fill = Brushes.DarkViolet,
-                        ToolTip = CreateTrackingToolTip(p)
+                        Width = 6,
+                        Height = 6,
+                        Fill = Brushes.DeepSkyBlue,
+                        Stroke = Brushes.MidnightBlue,
+                        StrokeThickness = 1,
+                        ToolTip = CreateTrackingToolTip(track),
+                        Cursor = Cursors.Hand
                     },
-                    Offset = new Point(-2, -2)
+                    Offset = new Point(-3, -3)
                 };
+
+                pointMarker.Shape.MouseLeftButtonDown += (s, e) =>
+                {
+                    vm.CurrentTrackPointIndex = index;
+                    e.Handled = true;
+                };
+
                 MainMap.Markers.Add(pointMarker);
             }
         }
@@ -190,6 +202,37 @@ public partial class MainWindow : Window
                     MainMap.Markers.Add(endMarker);
                 }
             }
+        }
+
+        // 4. Dibujar Marcador de Buque (si hay un punto seleccionado en el track)
+        if (vm.CurrentTrackPointIndex >= 0 && vm.CurrentTrackPointIndex < vm.CurrentTrack.Count)
+        {
+            var point = vm.CurrentTrack[vm.CurrentTrackPointIndex];
+            var pos = new PointLatLng(point.Latitud, point.Longitud);
+            
+            if (_vesselMarker == null)
+            {
+                _vesselMarker = new GMapMarker(pos)
+                {
+                    Shape = CreateVesselShape(),
+                    Offset = new Point(-6, -15) // Centrado para 12x30
+                };
+            }
+            
+            _vesselMarker.Position = pos;
+            
+            // Aplicar rotación según el rumbo (0º es Norte, el barco ya apunta al Norte)
+            if (_vesselMarker.Shape is FrameworkElement shape)
+            {
+                shape.RenderTransform = new RotateTransform(point.Rumbo, 6, 15);
+                shape.ToolTip = CreateTrackingToolTip(point);
+            }
+            
+            MainMap.Markers.Add(_vesselMarker);
+        }
+        else
+        {
+            _vesselMarker = null; 
         }
 
         // 3. Ajustar vista si hay datos dinámicos y NO hay una selección activa
@@ -279,6 +322,45 @@ public partial class MainWindow : Window
         double min = (abs - deg) * 60;
         string q = isLat ? (val >= 0 ? "N" : "S") : (val >= 0 ? "E" : "O");
         return $"{deg}º {min:00.1}' {q}".Replace('.', ',');
+    }
+
+    private UIElement CreateVesselShape()
+    {
+        var canvas = new Canvas { Width = 12, Height = 30 };
+        
+        // Cuerpo del buque (Rectángulo) - Parte inferior
+        var body = new Rectangle
+        {
+            Width = 12,
+            Height = 20,
+            Fill = Brushes.DeepSkyBlue,
+            Stroke = Brushes.MidnightBlue,
+            StrokeThickness = 1
+        };
+        Canvas.SetLeft(body, 0);
+        Canvas.SetTop(body, 10);
+        
+        // Proa (Triángulo) - Parte superior, apunta al Norte (0º)
+        var proa = new Polygon
+        {
+            Points = new PointCollection { new Point(0, 10), new Point(6, 0), new Point(12, 10) },
+            Fill = Brushes.DeepSkyBlue,
+            Stroke = Brushes.MidnightBlue,
+            StrokeThickness = 1
+        };
+        
+        canvas.Children.Add(body);
+        canvas.Children.Add(proa);
+        
+        // Efecto premium
+        canvas.Effect = new System.Windows.Media.Effects.DropShadowEffect 
+        { 
+            BlurRadius = 5, 
+            ShadowDepth = 2, 
+            Opacity = 0.5 
+        };
+        
+        return canvas;
     }
 
     private void ViewModel_MapFocusRequested(List<PointLatLng> points)
