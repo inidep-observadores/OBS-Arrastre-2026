@@ -399,19 +399,40 @@ public class MareaImportService : IMareaImportService
         {
             var existingProducts = await dbContext.Productos.ToDictionaryAsync(p => p.Codigo.Trim(), p => p.Id);
             var existenteEspecies = await dbContext.Especies
-                .Select(e => new { e.ID, e.NombreVulgar })
-                .Where(e => e.NombreVulgar != null)
+                .Select(e => new { e.ID, e.NombreVulgar, e.NombreCientifico, e.CodigoInidep })
                 .ToListAsync();
 
-            var especieNameMap = existenteEspecies
-                .GroupBy(e => e.NombreVulgar!.Trim().ToUpper().Normalize(NormalizationForm.FormC))
-                .ToDictionary(
-                    g => g.Key, 
-                    g => g.First().ID);
+            var especieNameMap = new Dictionary<string, string>();
+
+            // Primero mapear por Nombre Vulgar
+            foreach (var e in existenteEspecies.Where(e => !string.IsNullOrEmpty(e.NombreVulgar)))
+            {
+                var key = e.NombreVulgar!.Trim().ToUpper().Normalize(NormalizationForm.FormC);
+                if (!especieNameMap.ContainsKey(key))
+                    especieNameMap[key] = e.ID;
+            }
+
+            // Luego por Nombre Científico (sin sobreescribir si ya existe por Vulgar)
+            foreach (var e in existenteEspecies.Where(e => !string.IsNullOrEmpty(e.NombreCientifico)))
+            {
+                var key = e.NombreCientifico!.Trim().ToUpper().Normalize(NormalizationForm.FormC);
+                if (!especieNameMap.ContainsKey(key))
+                    especieNameMap[key] = e.ID;
+            }
+
+            // Finalmente por Código INIDEP (si el archivo trae el número como string)
+            foreach (var e in existenteEspecies.Where(e => !string.IsNullOrEmpty(e.CodigoInidep)))
+            {
+                var key = e.CodigoInidep!.Trim();
+                if (!especieNameMap.ContainsKey(key))
+                    especieNameMap[key] = e.ID;
+            }
 
             foreach (var rp in report.Produccion)
             {
-                if (!existingProducts.TryGetValue(rp.Producto?.Trim() ?? string.Empty, out var productGuid))
+                if (string.IsNullOrEmpty(rp.Producto)) continue;
+                
+                if (!existingProducts.TryGetValue(rp.Producto.Trim(), out var productGuid))
                 {
                     var newProduct = new Producto
                     {
@@ -450,7 +471,7 @@ public class MareaImportService : IMareaImportService
                         Factor = rp.Factor,
                         Operarios = rp.Operarios,
                         Kg = rp.Kilos,
-                        Comentarios = $"Importado de legacy"
+                        Comentarios = $"Importado: {rp.Especie}"
                     });
                 }
             }

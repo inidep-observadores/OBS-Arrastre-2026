@@ -52,6 +52,37 @@ public sealed class MainWindowViewModel : ObservableObject
     public event Action<List<PointLatLng>>? MapFocusRequested;
 
     private object? _selectedRecord;
+    private ControlProduccionListItemViewModel? _selectedControlItem;
+
+    public ControlProduccionListItemViewModel? SelectedControlItem
+    {
+        get => _selectedControlItem;
+        set => SetProperty(ref _selectedControlItem, value);
+    }
+
+    public ObservableCollection<ControlLanceDetailViewModel> ControlLanceDetails { get; } = new();
+
+    private double _totalCapturaKg;
+    public double TotalCapturaKg
+    {
+        get => _totalCapturaKg;
+        private set => SetProperty(ref _totalCapturaKg, value);
+    }
+
+    private double _totalDescarteKg;
+    public double TotalDescarteKg
+    {
+        get => _totalDescarteKg;
+        private set => SetProperty(ref _totalDescarteKg, value);
+    }
+
+    private double _totalNetaKg;
+    public double TotalNetaKg
+    {
+        get => _totalNetaKg;
+        private set => SetProperty(ref _totalNetaKg, value);
+    }
+
 
     // Filtros de Mareas
     private int? _mareasFilterAnio;
@@ -707,6 +738,10 @@ public sealed class MainWindowViewModel : ObservableObject
         {
             await LoadSubmuestrasAsync();
         }
+        else if (SelectedNavigationItem.Section == NavigationSection.ControlProduccion)
+        {
+            await LoadControlProduccionAsync();
+        }
     }
 
     private void LoadSection(NavigationSection section)
@@ -824,6 +859,31 @@ public sealed class MainWindowViewModel : ObservableObject
                 "Producto",
                 "Factor",
                 "Kg");
+
+            ClearDashboardCollections();
+            IsDashboardVisible = false;
+            return;
+        }
+
+        if (section == NavigationSection.ControlProduccion)
+        {
+            _ = LoadControlProduccionAsync();
+            var controlSection = _mockShellDataService.GetListSection(section);
+            PageEyebrow = controlSection.Eyebrow;
+            PageTitle = controlSection.Title;
+            PageDescription = controlSection.Description;
+            PageEyebrow = controlSection.Eyebrow;
+            PrimaryActionLabel = controlSection.PrimaryActionLabel;
+            PrimaryActionCommand = new AsyncCommand(LoadControlProduccionAsync);
+
+            SetColumnHeaders(
+                controlSection.Column1Header,
+                controlSection.Column2Header,
+                controlSection.Column3Header,
+                controlSection.Column4Header,
+                controlSection.Column5Header,
+                controlSection.Column6Header,
+                controlSection.Column7Header);
 
             ClearDashboardCollections();
             IsDashboardVisible = false;
@@ -1245,6 +1305,12 @@ public sealed class MainWindowViewModel : ObservableObject
         // 1. Notificar a la vista que debe redibujar para aplicar el resaltado de color
         MapUpdateRequested?.Invoke();
 
+        if (record is ControlProduccionListItemViewModel controlItem)
+        {
+            SelectedControlItem = controlItem;
+            _ = LoadControlLanceDetailsAsync(controlItem);
+        }
+        
         // 2. Si es un lance, pedir el foco (encuadre de inicio y fin)
         if (record is LanceListItemViewModel lanceVm)
         {
@@ -1262,6 +1328,45 @@ public sealed class MainWindowViewModel : ObservableObject
                 MapFocusRequested?.Invoke(points);
             }
         }
+    }
+
+    private async Task LoadControlLanceDetailsAsync(ControlProduccionListItemViewModel controlItem)
+    {
+        ControlLanceDetails.Clear();
+        var activeMarea = _activeMareaManager.ActiveMarea;
+        if (activeMarea == null) return;
+
+        using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+        
+        // Obtener lances de la marea en la fecha seleccionada
+        var lances = await dbContext.Lances
+            .Include(l => l.MareaEtapa)
+            .Include(l => l.ItemsCaptura)
+            .Where(l => l.MareaEtapa.MareaID == activeMarea.ID)
+            .ToListAsync();
+
+        var filteredLances = lances
+            .Where(l => DateTime.TryParse(l.Fecha, out var ld) && ld.Date == controlItem.Fecha.Date)
+            .OrderBy(l => l.NroLance)
+            .ToList();
+
+        foreach (var lance in filteredLances)
+        {
+            var catchItem = lance.ItemsCaptura.FirstOrDefault(c => c.EspecieID == controlItem.EspecieId);
+            if (catchItem != null && (catchItem.CapturaTotalKgCalculado > 0 || catchItem.PesoDescarteCalculado > 0))
+            {
+                ControlLanceDetails.Add(new ControlLanceDetailViewModel
+                {
+                    NroLance = lance.NroLance,
+                    CapturaKg = catchItem.CapturaTotalKgCalculado,
+                    DescarteKg = catchItem.PesoDescarteCalculado
+                });
+            }
+        }
+
+        TotalCapturaKg = ControlLanceDetails.Sum(d => d.CapturaKg);
+        TotalDescarteKg = ControlLanceDetails.Sum(d => d.DescarteKg);
+        TotalNetaKg = ControlLanceDetails.Sum(d => d.NetaKg);
     }
 
     private static void ReplaceItems<T>(ObservableCollection<T> target, IEnumerable<T> source)
@@ -1300,5 +1405,91 @@ public sealed class MainWindowViewModel : ObservableObject
         importVm.ShowConfirmation = (title, msg) => ShowConfirmationAsync(title, msg);
 
         ActiveDialog = importVm;
+    }
+
+    private async Task LoadControlProduccionAsync()
+    {
+        var activeMarea = _activeMareaManager.ActiveMarea;
+        if (activeMarea == null)
+        {
+            Records.Clear();
+            return;
+        }
+
+        // Obtener lances (incluyendo ítems de captura) y producción
+        using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+        var lances = await dbContext.Lances
+            .Include(l => l.ItemsCaptura)
+            .Where(l => l.MareaEtapa!.MareaID == activeMarea.ID)
+            .AsNoTracking()
+            .ToListAsync();
+
+        var produccion = new List<RegistroProduccion>();
+        foreach (var etapa in activeMarea.Etapas)
+        {
+            var etapaProduccion = await _produccionService.GetRegistrosProduccionAsync(etapa.ID);
+            produccion.AddRange(etapaProduccion);
+        }
+
+        // Agrupar producción por fecha y especie
+        var produccionAgrupada = produccion
+            .Where(p => DateTime.TryParse(p.Fecha, out _))
+            .GroupBy(p => new 
+            { 
+                Fecha = DateTime.Parse(p.Fecha).Date, 
+                EspecieId = p.EspecieId,
+                NombreFallback = p.EspecieId == null ? (p.Comentarios ?? "Desconocida") : ""
+            })
+            .Select(g => new
+            {
+                g.Key.Fecha,
+                g.Key.EspecieId,
+                EspecieNombre = g.First().Especie?.NombreVulgar 
+                    ?? g.First().Especie?.NombreCientifico 
+                    ?? g.First().Comentarios?.Replace("Importado: ", "") 
+                    ?? "Desconocida",
+                PesoProcesadoTotal = g.Sum(p => p.Kg ?? 0),
+                CapturaReconstruida = g.Sum(p => (p.Kg ?? 0) * (p.Factor ?? 1.0))
+            });
+
+        var results = new List<ControlProduccionListItemViewModel>();
+
+        foreach (var pDay in produccionAgrupada)
+        {
+            double capturaNetaTotal = 0;
+            var lancesDelDia = lances
+                .Where(l => DateTime.TryParse(l.Fecha, out var ld) && ld.Date == pDay.Fecha)
+                .ToList();
+            
+            foreach (var lance in lancesDelDia)
+            {
+                var catchItem = lance.ItemsCaptura.FirstOrDefault(c => c.EspecieID == pDay.EspecieId);
+                if (catchItem != null)
+                {
+                    capturaNetaTotal += catchItem.CapturaTotalKgCalculado - catchItem.PesoDescarteCalculado;
+                }
+            }
+
+            results.Add(new ControlProduccionListItemViewModel
+            {
+                Fecha = pDay.Fecha,
+                Especie = pDay.EspecieNombre,
+                EspecieId = pDay.EspecieId,
+                ProduccionTotal = pDay.PesoProcesadoTotal,
+                CapturaReconstruida = pDay.CapturaReconstruida,
+                CapturaTotal = capturaNetaTotal
+            });
+        }
+
+        var viewModels = results
+            .OrderBy(r => r.Fecha)
+            .ThenBy(r => r.Especie)
+            .ToList();
+
+        Records.Clear();
+        foreach (var vm in viewModels)
+        {
+            Records.Add(vm);
+        }
     }
 }

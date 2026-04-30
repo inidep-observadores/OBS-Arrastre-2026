@@ -9,20 +9,64 @@ namespace OBSArrastre2026.App.Services;
 
 public sealed class DbfExtractorService : IDbfExtractorService
 {
-    private readonly DbfDataReaderOptions _dbfOptions;
-
     public DbfExtractorService()
     {
-        // El catálogo original de Clipper no tiene marca de CodePage en el header.
-        // Forzamos Windows-1252 (ANSI) ya que es el que resuelve los acentos correctamente según FoxPro.
+        // Registro global de proveedores de codificación
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-        _dbfOptions = new DbfDataReaderOptions { Encoding = Encoding.GetEncoding(1252) };
     }
+
+    private DbfDataReaderOptions GetOptions(string dbfPath)
+    {
+        var encoding = DetectEncoding(dbfPath);
+        return new DbfDataReaderOptions { Encoding = encoding };
+    }
+
+    private Encoding DetectEncoding(string dbfPath)
+    {
+        try
+        {
+            if (!File.Exists(dbfPath)) return Encoding.GetEncoding(1252);
+
+            using (var stream = File.OpenRead(dbfPath))
+            {
+                if (stream.Length < 30) return Encoding.GetEncoding(1252);
+
+                stream.Position = 29;
+                int cpByte = stream.ReadByte();
+
+                // Mapeo de CodePage de DBF
+                // Ref: https://www.dbf2002.com/dbf-file-format.html
+                return cpByte switch
+                {
+                    0x01 => Encoding.GetEncoding(437), // DOS USA
+                    0x02 => Encoding.GetEncoding(850), // DOS Multilingual
+                    0x03 => Encoding.GetEncoding(1252), // Windows ANSI
+                    0x64 => Encoding.GetEncoding(852), // DOS Eastern Europe
+                    0x65 => Encoding.GetEncoding(866), // DOS Russian
+                    0x66 => Encoding.GetEncoding(865), // DOS Nordic
+                    0x67 => Encoding.GetEncoding(861), // DOS Icelandic
+                    0x6A => Encoding.GetEncoding(737), // DOS Greek
+                    0x6B => Encoding.GetEncoding(857), // DOS Turkish
+                    0xC8 => Encoding.GetEncoding(1250), // Windows Eastern Europe
+                    0xC9 => Encoding.GetEncoding(1251), // Windows Russian
+                    0xCA => Encoding.GetEncoding(1254), // Windows Turkish
+                    0xCB => Encoding.GetEncoding(1253), // Windows Greek
+                    _ => Encoding.GetEncoding(1252) // Default conservador (el que el usuario dice que funciona para especies)
+                };
+            }
+        }
+        catch
+        {
+            return Encoding.GetEncoding(1252);
+        }
+    }
+
     public async Task ExtractBuquesAsync(string dbfPath, string jsonOutputPath)
     {
         var records = new List<Dictionary<string, object?>>();
+        var options = GetOptions(dbfPath);
 
-        using (var dbfReader = new DbfDataReader.DbfDataReader(dbfPath, _dbfOptions))
+        using (var dbfReader = new DbfDataReader.DbfDataReader(dbfPath, options))
         {
             var columns = dbfReader.DbfTable.Columns;
 
@@ -50,8 +94,9 @@ public sealed class DbfExtractorService : IDbfExtractorService
     public async Task ExtractEspeciesAsync(string dbfPath, string jsonOutputPath)
     {
         var records = new List<Dictionary<string, object?>>();
+        var options = GetOptions(dbfPath);
 
-        using (var dbfReader = new DbfDataReader.DbfDataReader(dbfPath, _dbfOptions))
+        using (var dbfReader = new DbfDataReader.DbfDataReader(dbfPath, options))
         {
             var columns = dbfReader.DbfTable.Columns;
 
@@ -90,7 +135,8 @@ public sealed class DbfExtractorService : IDbfExtractorService
         var list = new List<LegacyCaptura>();
         if (!File.Exists(dbfPath)) return list;
 
-        using var reader = new DbfDataReader.DbfDataReader(dbfPath, _dbfOptions);
+        var options = GetOptions(dbfPath);
+        using var reader = new DbfDataReader.DbfDataReader(dbfPath, options);
         var colMap = GetColumnMap(reader);
 
         while (reader.Read())
@@ -132,7 +178,8 @@ public sealed class DbfExtractorService : IDbfExtractorService
         var list = new List<LegacyMuestra>();
         if (!File.Exists(dbfPath)) return list;
 
-        using var reader = new DbfDataReader.DbfDataReader(dbfPath, _dbfOptions);
+        var options = GetOptions(dbfPath);
+        using var reader = new DbfDataReader.DbfDataReader(dbfPath, options);
         var colMap = GetColumnMap(reader);
 
         while (reader.Read())
@@ -160,8 +207,6 @@ public sealed class DbfExtractorService : IDbfExtractorService
                 {
                     var decoded = LegacyDecoder.DecodeTally(val);
                     
-                    // Si el decodificador no encontró la talla (por ser un valor simple no empaquetado)
-                    // la calculamos a partir del índice i y los parámetros de la muestra.
                     if (decoded.Size == 0 && decoded.Total > 0)
                     {
                         int calculatedSize = (int)m.PrimTalla + ((i - 1) * (int)m.Intervalo);
@@ -184,7 +229,8 @@ public sealed class DbfExtractorService : IDbfExtractorService
         var list = new List<LegacySubmuestra>();
         if (!File.Exists(dbfPath)) return list;
 
-        using var reader = new DbfDataReader.DbfDataReader(dbfPath, _dbfOptions);
+        var options = GetOptions(dbfPath);
+        using var reader = new DbfDataReader.DbfDataReader(dbfPath, options);
         var colMap = GetColumnMap(reader);
 
         while (reader.Read())
@@ -212,7 +258,8 @@ public sealed class DbfExtractorService : IDbfExtractorService
         var list = new List<LegacyLg>();
         if (!File.Exists(dbfPath)) return list;
 
-        using var reader = new DbfDataReader.DbfDataReader(dbfPath, _dbfOptions);
+        var options = GetOptions(dbfPath);
+        using var reader = new DbfDataReader.DbfDataReader(dbfPath, options);
         var colMap = GetColumnMap(reader);
 
         while (reader.Read())
@@ -244,7 +291,8 @@ public sealed class DbfExtractorService : IDbfExtractorService
         var list = new List<LegacyTracking>();
         if (!File.Exists(dbfPath)) return list;
 
-        using var reader = new DbfDataReader.DbfDataReader(dbfPath, _dbfOptions);
+        var options = GetOptions(dbfPath);
+        using var reader = new DbfDataReader.DbfDataReader(dbfPath, options);
         var colMap = GetColumnMap(reader);
 
         while (reader.Read())
@@ -268,7 +316,8 @@ public sealed class DbfExtractorService : IDbfExtractorService
         var list = new List<LegacyProduccion>();
         if (!File.Exists(dbfPath)) return list;
 
-        using var reader = new DbfDataReader.DbfDataReader(dbfPath, _dbfOptions);
+        var options = GetOptions(dbfPath);
+        using var reader = new DbfDataReader.DbfDataReader(dbfPath, options);
         var colMap = GetColumnMap(reader);
 
         while (reader.Read())

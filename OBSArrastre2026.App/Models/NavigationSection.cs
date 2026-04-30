@@ -7,5 +7,6 @@ public enum NavigationSection
     Lances,
     Muestras,
     Submuestras,
-    Produccion
+    Produccion,
+    ControlProduccion
 }

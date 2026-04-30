@@ -21,7 +21,8 @@ public sealed class MockShellDataService : IMockShellDataService
         new(NavigationSection.Lances, "Lances", "Registro y control de capturas", "△", true),
         new(NavigationSection.Muestras, "Muestras", "Muestreo biologico y control", "▣", true),
         new(NavigationSection.Submuestras, "Submuestras", "Detalle por individuo", "▤", true),
-        new(NavigationSection.Produccion, "Produccion", "Registros diarios de proceso", "◫", true)
+        new(NavigationSection.Produccion, "Produccion", "Registros diarios de proceso", "◫", true),
+        new(NavigationSection.ControlProduccion, "Control Capt./Prod.", "Balance de masa diario por especie", "⚖", true)
     ];
 
     public DashboardContent GetDashboard() =>
@@ -61,6 +62,8 @@ public sealed class MockShellDataService : IMockShellDataService
             "Inicio",
             "Fin",
             "Comentario",
+            "",
+            "",
             ["Activas", "Con buque asignado", "Ultimos 30 dias"],
             [
                 new("MAR-2026-014", "Mar Azul", "05 Abr 2026", "18 Abr 2026", "Control de langostino", "En curso"),
@@ -78,6 +81,8 @@ public sealed class MockShellDataService : IMockShellDataService
             "Latitud",
             "Longitud",
             "Captura Total",
+            "Hora Inicio",
+            "Hora Fin",
             ["Marea activa", "Con coordenadas", "Ultimas 72 hs"],
             [
                 new("084", "09 Abr 2026 06:20", "44.12 / -62.91", "95-110 m", "Mar 3 / Viento 40°", "Validado"),
@@ -95,6 +100,8 @@ public sealed class MockShellDataService : IMockShellDataService
             "Especie",
             "Clase",
             "Observador",
+            "",
+            "",
             ["Con especie", "Revision pendiente", "Ultima campana"],
             [
                 new("M-2401", "Lance 084", "Merluza hubbsi", "Biologica", "A. Peralta", "Lista"),
@@ -112,6 +119,8 @@ public sealed class MockShellDataService : IMockShellDataService
             "Hora Virada",
             "Especie",
             "Peso",
+            "",
+            "",
             [],
             [
                 new("21", "24/04/2026", "14:30", "Merluza común", "45.2 kg", "SM-001"),
@@ -127,6 +136,8 @@ public sealed class MockShellDataService : IMockShellDataService
             "Producto",
             "Categoria",
             "Kg",
+            "",
+            "",
             ["Hoy", "Con comentarios", "Orden por producto"],
             [
                 new("09 Abr 2026", "MAR-2026-014", "Cola de langostino", "A", "8,250", "Cerrado"),
@@ -134,6 +145,20 @@ public sealed class MockShellDataService : IMockShellDataService
                 new("08 Abr 2026", "MAR-2026-013", "Filet merluza", "Premium", "6,420", "Revision"),
                 new("08 Abr 2026", "MAR-2026-013", "Harina", "Subproducto", "15,180", "Borrador")
             ]),
+        NavigationSection.ControlProduccion => new(
+            "Auditoría de Masa",
+            "Control Capt./Prod.",
+            "Comparativa entre la producción declarada (reconstruida a captura) y los lances del día.",
+            "Actualizar",
+            "Fecha",
+            "Especie",
+            "Prod. Total",
+            "Capt. Recon.",
+            "Capt. Total",
+            "Dif. Kg",
+            "Dif. %",
+            ["Solo diferencias", "Ultima semana"],
+            []),
         _ => throw new ArgumentOutOfRangeException(nameof(section), section, null)
     };
 }
