@@ -69,6 +69,7 @@ public class LegacySubmuestra
     public double Lance { get; set; }
     public DateTime Fecha { get; set; }
     public string Especie { get; set; } = string.Empty;
+    public double Area { get; set; }
     public int NEjemplar { get; set; }
     public int LargoTot { get; set; }
     public int LargoSta { get; set; }

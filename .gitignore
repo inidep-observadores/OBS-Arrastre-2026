@@ -12,3 +12,4 @@ obj/
 # Ignorar staging temporal
 # OBSArrastre2026.App/Data/Import/Staging/
 *.lscache
+*_wpftmp.csproj

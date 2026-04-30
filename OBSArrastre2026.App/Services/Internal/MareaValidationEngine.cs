@@ -95,27 +95,60 @@ public sealed class MareaValidationEngine
             }
         }
 
-        // 4. Balance de Masa
-        var prodGroups = produccion
-            .Where(p => !string.IsNullOrEmpty(p.Especie) && especiesDict.ContainsKey(p.Especie.Trim().ToUpper()))
-            .GroupBy(p => especiesDict[p.Especie.Trim().ToUpper()]);
+        // 4. Balance de Masa Diario por Especie (REQ: Producción vs Captura Neta)
+        var fechasProduccion = produccion.Select(p => p.Fecha.Date);
+        var fechasCaptura = capturas.Select(c => c.Fecha.Date);
+        var todasLasFechas = fechasProduccion.Union(fechasCaptura).Distinct().OrderBy(d => d);
 
-        foreach (var prodGroup in prodGroups)
+        var nombresEspeciesProduccion = produccion
+            .Where(p => !string.IsNullOrEmpty(p.Especie))
+            .Select(p => p.Especie.Trim().ToUpper())
+            .Distinct();
+
+        foreach (var fecha in todasLasFechas)
         {
-            long codEspecie = prodGroup.Key;
-            double pesoVivoProduccion = prodGroup.Sum(p => p.Factor > 0 ? (p.Kilos / p.Factor) : p.Kilos);
-            double capturaTotalEspecie = capturas.Sum(c => c.Especies.ContainsKey(codEspecie) ? c.Especies[codEspecie] : 0);
-
-            if (capturaTotalEspecie > 0)
+            foreach (var nombreEspecie in nombresEspeciesProduccion)
             {
-                double diferencia = (pesoVivoProduccion - capturaTotalEspecie) / capturaTotalEspecie;
-                if (diferencia > 0.10)
+                if (!especiesDict.TryGetValue(nombreEspecie, out long codEspecie)) continue;
+
+                // A. Reconstruir captura desde producción: Suma(Kilos * Factor)
+                double capturaReconstruida = produccion
+                    .Where(p => p.Fecha.Date == fecha && p.Especie.Trim().ToUpper() == nombreEspecie)
+                    .Sum(p => p.Kilos * p.Factor);
+
+                if (capturaReconstruida <= 0) continue;
+
+                // B. Obtener captura neta real de los lances: Suma(Captura - Descarte)
+                double capturaNetaReal = capturas
+                    .Where(c => c.Fecha.Date == fecha)
+                    .Sum(c => {
+                        double cap = c.Especies.ContainsKey(codEspecie) ? c.Especies[codEspecie] : 0;
+                        double des = c.DescartesPorEspecie.ContainsKey(codEspecie) ? c.DescartesPorEspecie[codEspecie] : 0;
+                        return cap - des;
+                    });
+
+                // C. Comparar y reportar diferencias > 1%
+                // La regla es: Captura Neta Real >= Captura Reconstruida
+                double diferencia = capturaNetaReal - capturaReconstruida;
+                double diffAbs = Math.Abs(diferencia);
+                double margenTolerancia = capturaNetaReal * 0.01;
+
+                string ctx = $"Fecha: {fecha:yyyy-MM-dd} | Especie: {nombreEspecie}";
+
+                if (capturaReconstruida > capturaNetaReal + margenTolerancia)
                 {
-                    report.AddIssue(ValidationLevel.Error, "Producción", $"Balance de masa: Producción ({pesoVivoProduccion:F0} kg) excede la captura ({capturaTotalEspecie:F0} kg) en más del 10%.", $"Cod Especie {codEspecie}");
+                    // Error: Se produjo más de lo que se capturó físicamente
+                    report.AddIssue(ValidationLevel.Error, "Balance de Masa Diario", 
+                        $"Inconsistencia: La captura reconstruida ({capturaReconstruida:F1} kg) excede la captura neta real disponible ({capturaNetaReal:F1} kg).", 
+                        ctx);
                 }
-                else if (diferencia > 0.02)
+                else if (diffAbs > margenTolerancia)
                 {
-                    report.AddIssue(ValidationLevel.Warning, "Producción", $"Balance de masa: Producción ({pesoVivoProduccion:F0} kg) excede la captura ({capturaTotalEspecie:F0} kg) en más del 2%.", $"Cod Especie {codEspecie}");
+                    // Advertencia: Diferencia superior al 1% (aunque sea a favor de la captura real)
+                    string tipoDiff = diferencia > 0 ? "sobrante" : "faltante";
+                    report.AddIssue(ValidationLevel.Warning, "Balance de Masa Diario", 
+                        $"Diferencia de masa significativa ({tipoDiff}): Real {capturaNetaReal:F1} kg vs Reconstruida {capturaReconstruida:F1} kg (Dif: {diffAbs:F1} kg).", 
+                        ctx);
                 }
             }
         }
@@ -408,10 +441,56 @@ public sealed class MareaValidationEngine
 
             // REQ-4.3.1: Verificar Rangos de Talla
             if (m.UltTalla <= m.PrimTalla)
-report.AddIssue(ValidationLevel.Error, "Biometría", $"Última talla ({m.UltTalla}) no es mayor que primera talla ({m.PrimTalla})", ctx);
+                report.AddIssue(ValidationLevel.Error, "Biometría", $"Última talla ({m.UltTalla}) no es mayor que primera talla ({m.PrimTalla})", ctx);
 
             if (m.Intervalo <= 0)
                 report.AddIssue(ValidationLevel.Error, "Biometría", "Intervalo de tallas inválido (<= 0)", ctx);
+
+            // --- NUEVAS VALIDACIONES DE INTEGRIDAD (Punto 2) ---
+
+            var lanceCorrespondiente = capturas.FirstOrDefault(c => (int)c.Lance == (int)m.Lance);
+            if (lanceCorrespondiente != null)
+            {
+                // REQ-3.2.4: Consistencia de Fecha (Muestra vs Lance)
+                if (m.Fecha.Date != lanceCorrespondiente.Fecha.Date)
+                {
+                    string oldFecha = m.Fecha.ToString("yyyy-MM-dd");
+                    string newFecha = lanceCorrespondiente.Fecha.ToString("yyyy-MM-dd");
+                    m.Fecha = lanceCorrespondiente.Fecha; // Auto-corrección como en pcorrecc.PRG
+                    report.AddIssue(ValidationLevel.AutoFixed, "Integridad", $"Fecha de muestra ({oldFecha}) no coincide con fecha de lance ({newFecha}). Corregido.", ctx, oldFecha, newFecha);
+                }
+
+                // REQ-3.3.3: Consistencia de Área (Muestra vs Lance)
+                double latDec = LegacyDecoder.DecodeCoordinate(lanceCorrespondiente.LatInic);
+                double lonDec = LegacyDecoder.DecodeCoordinate(lanceCorrespondiente.LongInic);
+                double expectedArea = CalculateArea(latDec, lonDec);
+                
+                if (Math.Abs(m.Area - expectedArea) > 0.01)
+                {
+                    string oldArea = m.Area.ToString("F1");
+                    m.Area = expectedArea;
+                    report.AddIssue(ValidationLevel.AutoFixed, "Integridad", $"Área de muestra ({oldArea}) inconsistente con coordenadas del lance. Recalculada a {expectedArea:F1}.", ctx, oldArea, expectedArea.ToString("F1"));
+                }
+
+                // REQ-3.4.4: Consistencia de Especie (Muestra vs Captura)
+                // Verificar si la especie muestreada existe en el registro de captura con kg > 0
+                long codEspecieMuestra = m.CodEspec;
+                if (codEspecieMuestra == 0 && !string.IsNullOrEmpty(m.Especie))
+                {
+                    especiesDict.TryGetValue(m.Especie.Trim().ToUpper(), out codEspecieMuestra);
+                }
+
+                if (codEspecieMuestra > 0)
+                {
+                    bool capturada = lanceCorrespondiente.Especies.ContainsKey(codEspecieMuestra) && lanceCorrespondiente.Especies[codEspecieMuestra] > 0;
+                    if (!capturada)
+                    {
+                        report.AddIssue(ValidationLevel.Warning, "Integridad", $"Se registró una muestra de '{m.Especie}' (Cod: {codEspecieMuestra}) pero esta especie no figura con kilos capturados en el lance {m.Lance}.", ctx);
+                    }
+                }
+            }
+
+            // --- FIN NUEVAS VALIDACIONES ---
 
             // Peso Alométrico
             if (m.PesoMues <= 0)
@@ -555,15 +634,45 @@ report.AddIssue(ValidationLevel.Error, "Biometría", $"Última talla ({m.UltTall
 
     private void ValidateSubSamples(MareaValidationReport report, List<LegacySubmuestra> submuestras, List<LegacyMuestra> muestras)
     {
+        // REQ-4.1.3: Verificar Números de Ejemplar Duplicados
+        var subDuplicates = submuestras
+            .GroupBy(s => new { s.Lance, s.Especie, s.NEjemplar })
+            .Where(g => g.Count() > 1);
+        
+        foreach (var group in subDuplicates)
+        {
+            report.AddIssue(ValidationLevel.Error, "Estructura", 
+                $"El ejemplar {group.Key.NEjemplar} de '{group.Key.Especie}' aparece duplicado {group.Count()} veces en el lance {group.Key.Lance}.");
+        }
+
         foreach (var s in submuestras)
         {
             string ctx = $"Lance {s.Lance} - Ejemplar {s.NEjemplar}";
 
             // Integridad: Verificar existencia de muestra padre
-            bool hasParent = muestras.Any(m => m.Lance == s.Lance && m.Especie?.Trim().ToUpper() == s.Especie?.Trim().ToUpper());
-            if (!hasParent)
+            var parent = muestras.FirstOrDefault(m => m.Lance == s.Lance && m.Especie?.Trim().ToUpper() == s.Especie?.Trim().ToUpper());
+            if (parent == null)
             {
                 report.AddIssue(ValidationLevel.Error, "Integridad", $"Submuestra huerfana: No existe muestra padre para la especie {s.Especie} en el lance {s.Lance}.", ctx);
+            }
+            else
+            {
+                // REQ-3.2.4: Consistencia de Fecha (Submuestra vs Muestra)
+                if (s.Fecha.Date != parent.Fecha.Date)
+                {
+                    string oldFecha = s.Fecha.ToString("yyyy-MM-dd");
+                    string newFecha = parent.Fecha.ToString("yyyy-MM-dd");
+                    s.Fecha = parent.Fecha;
+                    report.AddIssue(ValidationLevel.AutoFixed, "Integridad", $"Fecha de submuestra ({oldFecha}) no coincide con muestra padre. Corregido.", ctx, oldFecha, newFecha);
+                }
+
+                // REQ-3.3.3: Consistencia de Área (Submuestra vs Muestra)
+                if (Math.Abs(s.Area - parent.Area) > 0.01)
+                {
+                    string oldArea = s.Area.ToString("F1");
+                    s.Area = parent.Area;
+                    report.AddIssue(ValidationLevel.AutoFixed, "Integridad", $"Área de submuestra ({oldArea}) inconsistente con muestra padre. Corregido a {parent.Area:F1}.", ctx, oldArea, parent.Area.ToString("F1"));
+                }
             }
 
             // REQ-4.2.1: Verificar Largo Total Atípico
