@@ -956,40 +956,55 @@
 
                                         <!-- Controles -->
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <Button Command="{Binding StopCommand}" 
+                                            <controls:DatePickerPremium SelectedDate="{Binding SelectedPlaybackDate}" 
+                                                                        Width="110" 
+                                                                        Height="32" 
+                                                                        Margin="0,0,12,0" 
+                                                                        EsCompacto="True" />
+                                            
+                                            <Button Command="{Binding GoToStartCommand}" 
                                                     Style="{StaticResource ThemeButtonStyle}"
-                                                    ToolTip="Detener"
-                                                    Padding="8">
-                                                <TextBlock Text="⏹" FontSize="14" />
+                                                    ToolTip="Ir al Inicio"
+                                                    Padding="6">
+                                                <TextBlock Text="⏮" FontSize="14" />
                                             </Button>
                                             <Button Command="{Binding PrevPointCommand}" 
                                                     Style="{StaticResource ThemeButtonStyle}"
-                                                    ToolTip="Anterior"
-                                                    Padding="8">
-                                                <TextBlock Text="⏮" FontSize="14" />
+                                                    ToolTip="Punto Anterior"
+                                                    Padding="6">
+                                                <TextBlock Text="⏪" FontSize="14" />
                                             </Button>
                                             
                                             <Grid Margin="4,0">
+                                                <!-- Botón Play (cuando no está reproduciendo) -->
                                                 <Button Command="{Binding PlayCommand}" 
                                                         Style="{StaticResource PrimaryButtonStyle}"
                                                         ToolTip="Reproducir"
-                                                        Padding="12,6"
-                                                        Visibility="{Binding IsPlaying, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=invert}">
+                                                        Padding="8,4"
+                                                        Visibility="{Binding IsPlaying, Converter={StaticResource EnhancedBooleanToVisibilityConverter}, ConverterParameter=invert}">
                                                     <TextBlock Text="▶" FontSize="14" Foreground="White" />
                                                 </Button>
+                                                <!-- Botón Stop (cuando está reproduciendo) -->
                                                 <Button Command="{Binding PauseCommand}" 
-                                                        Style="{StaticResource ThemeButtonStyle}"
-                                                        ToolTip="Pausa"
-                                                        Padding="12,6"
-                                                        Visibility="{Binding IsPlaying, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                    <TextBlock Text="⏸" FontSize="14" />
+                                                        Style="{StaticResource PrimaryButtonStyle}"
+                                                        ToolTip="Detener"
+                                                        Padding="8,4"
+                                                        Background="{DynamicResource DangerForegroundBrush}"
+                                                        Visibility="{Binding IsPlaying, Converter={StaticResource EnhancedBooleanToVisibilityConverter}}">
+                                                    <TextBlock Text="⏹" FontSize="14" Foreground="White" />
                                                 </Button>
                                             </Grid>
 
                                             <Button Command="{Binding NextPointCommand}" 
                                                     Style="{StaticResource ThemeButtonStyle}"
-                                                    ToolTip="Siguiente"
-                                                    Padding="8">
+                                                    ToolTip="Siguiente Punto"
+                                                    Padding="6">
+                                                <TextBlock Text="⏩" FontSize="14" />
+                                            </Button>
+                                            <Button Command="{Binding GoToEndCommand}" 
+                                                    Style="{StaticResource ThemeButtonStyle}"
+                                                    ToolTip="Ir al Final"
+                                                    Padding="6">
                                                 <TextBlock Text="⏭" FontSize="14" />
                                             </Button>
                                         </StackPanel>

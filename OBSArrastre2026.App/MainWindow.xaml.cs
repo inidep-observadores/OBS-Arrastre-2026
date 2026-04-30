@@ -124,15 +124,13 @@ public partial class MainWindow : Window
                 {
                     Shape = new Ellipse
                     {
-                        Width = 6,
-                        Height = 6,
-                        Fill = Brushes.DeepSkyBlue,
-                        Stroke = Brushes.MidnightBlue,
-                        StrokeThickness = 1,
+                        Width = 4,
+                        Height = 4,
+                        Fill = Brushes.DarkViolet,
                         ToolTip = CreateTrackingToolTip(track),
                         Cursor = Cursors.Hand
                     },
-                    Offset = new Point(-3, -3)
+                    Offset = new Point(-2, -2)
                 };
 
                 pointMarker.Shape.MouseLeftButtonDown += (s, e) =>
@@ -235,9 +233,9 @@ public partial class MainWindow : Window
             _vesselMarker = null; 
         }
 
-        // 3. Ajustar vista si hay datos dinámicos y NO hay una selección activa
+        // 3. Ajustar vista si hay datos dinámicos y NO hay una selección activa NI navegación en curso
         var dynamicMarkers = MainMap.Markers.Where(m => !_staticGeoJsonMarkers.Contains(m)).ToList();
-        if (dynamicMarkers.Any() && vm.SelectedRecord == null)
+        if (dynamicMarkers.Any() && vm.SelectedRecord == null && vm.CurrentTrackPointIndex == -1)
         {
             Dispatcher.BeginInvoke(new Action(() => 
             {
@@ -261,39 +259,64 @@ public partial class MainWindow : Window
 
     private object CreateLanceToolTip(Lance lance, string type, MainWindowViewModel vm)
     {
+        var accentBrush = type == "INICIO" ? Brushes.Green : Brushes.Red;
+        var textBrush = (Brush)Application.Current.FindResource("PrimaryTextBrush");
+        var bgBrush = (Brush)Application.Current.FindResource("SurfaceBackgroundBrush");
+
         var tip = new ToolTip
         {
-            Background = Brushes.GhostWhite,
-            Foreground = Brushes.DodgerBlue,
-            BorderBrush = Brushes.DodgerBlue,
+            Background = bgBrush,
+            Foreground = textBrush,
+            BorderBrush = accentBrush,
             BorderThickness = new Thickness(2),
             Padding = new Thickness(10),
-            FontSize = 14,
+            FontSize = 13,
             FontWeight = FontWeights.SemiBold
         };
 
+        // Formatear fecha de yyyy-MM-dd a dd/MM/yyyy si es posible
         string fecha = lance.Fecha;
+        if (DateTime.TryParse(lance.Fecha, out DateTime dt))
+        {
+            fecha = dt.ToString("dd/MM/yyyy");
+        }
+
         string hora = type == "INICIO" ? lance.HoraInicio : lance.HoraFinal;
         
-        // Usamos el método de formateo del ViewModel para mantener consistencia
-        // (Nota: Asumimos que FormatCoordinate es público ahora o accesible)
         string lat = type == "INICIO" ? FormatCoord(lance.LatitudInicioDecimal, true) : FormatCoord(lance.LatitudFinalDecimal, true);
         string lon = type == "INICIO" ? FormatCoord(lance.LongitudInicioDecimal, false) : FormatCoord(lance.LongitudFinalDecimal, false);
 
-        tip.Content = $"LANCE NRO: {lance.NroLance} ({type})\n\n" +
-                      $"FECHA: {fecha}\n" +
-                      $"HORA: {hora}\n" +
-                      $"POS: {lat}, {lon}";
+        tip.Content = new StackPanel();
+        var header = new TextBlock 
+        { 
+            Text = $"LANCE NRO: {lance.NroLance} ({type})", 
+            Foreground = accentBrush,
+            Margin = new Thickness(0, 0, 0, 8),
+            FontWeight = FontWeights.Bold
+        };
+        var body = new TextBlock 
+        { 
+            Text = $"FECHA: {fecha}\n" +
+                   $"HORA: {hora}\n" +
+                   $"POS: {lat}, {lon}",
+            Foreground = textBrush
+        };
+
+        ((StackPanel)tip.Content).Children.Add(header);
+        ((StackPanel)tip.Content).Children.Add(body);
 
         return tip;
     }
 
     private object CreateTrackingToolTip(MareaTracking point)
     {
+        var textBrush = (Brush)Application.Current.FindResource("PrimaryTextBrush");
+        var bgBrush = (Brush)Application.Current.FindResource("SurfaceBackgroundBrush");
+
         var tip = new ToolTip
         {
-            Background = Brushes.GhostWhite,
-            Foreground = Brushes.DarkViolet,
+            Background = bgBrush,
+            Foreground = textBrush,
             BorderBrush = Brushes.DarkViolet,
             BorderThickness = new Thickness(2),
             Padding = new Thickness(10),
@@ -304,12 +327,26 @@ public partial class MainWindow : Window
         string lat = FormatCoord(point.Latitud, true);
         string lon = FormatCoord(point.Longitud, false);
 
-        tip.Content = "PUNTO DE TRACK\n\n" +
-                      $"FECHA: {point.FechaHora:dd/MM/yyyy}\n" +
-                      $"HORA: {point.FechaHora:HH:mm}\n" +
-                      $"POS: {lat}, {lon}\n" +
-                      $"RUMBO: {point.Rumbo:0}º\n" +
-                      $"VELOCIDAD: {point.Velocidad:0.0} nudos";
+        tip.Content = new StackPanel();
+        var header = new TextBlock 
+        { 
+            Text = "PUNTO DE TRACK", 
+            Foreground = Brushes.DarkViolet,
+            Margin = new Thickness(0, 0, 0, 8),
+            FontWeight = FontWeights.Bold
+        };
+        var body = new TextBlock 
+        { 
+            Text = $"FECHA: {point.FechaHora:dd/MM/yyyy}\n" +
+                   $"HORA: {point.FechaHora:HH:mm}\n" +
+                   $"POS: {lat}, {lon}\n" +
+                   $"RUMBO: {point.Rumbo:0}º\n" +
+                   $"VELOCIDAD: {point.Velocidad:0.0} nudos",
+            Foreground = textBrush
+        };
+
+        ((StackPanel)tip.Content).Children.Add(header);
+        ((StackPanel)tip.Content).Children.Add(body);
 
         return tip;
     }

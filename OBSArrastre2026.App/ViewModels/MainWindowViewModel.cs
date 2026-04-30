@@ -67,8 +67,9 @@ public sealed class MainWindowViewModel : ObservableObject
     private string _lancesFilterEspecie = string.Empty;
     private int _currentTrackPointIndex = -1;
     private bool _isPlaying;
-    private System.Timers.Timer? _playbackTimer;
+    private System.Windows.Threading.DispatcherTimer? _playbackTimer;
     private string _selectedTrackPointInfo = string.Empty;
+    private DateTime? _selectedPlaybackDate;
 
     public MainWindowViewModel(
         IMockShellDataService mockShellDataService, 
@@ -157,6 +158,8 @@ public sealed class MainWindowViewModel : ObservableObject
         StopCommand = new RelayCommand(StopPlayback, () => CurrentTrack.Any());
         NextPointCommand = new RelayCommand(() => CurrentTrackPointIndex++, () => CurrentTrack.Any() && CurrentTrackPointIndex < CurrentTrack.Count - 1);
         PrevPointCommand = new RelayCommand(() => CurrentTrackPointIndex--, () => CurrentTrack.Any() && CurrentTrackPointIndex > 0);
+        GoToStartCommand = new RelayCommand(() => CurrentTrackPointIndex = 0, () => CurrentTrack.Any());
+        GoToEndCommand = new RelayCommand(() => CurrentTrackPointIndex = CurrentTrack.Count - 1, () => CurrentTrack.Any());
 
         UpdateNavigationState();
     }
@@ -227,6 +230,8 @@ public sealed class MainWindowViewModel : ObservableObject
     public ICommand StopCommand { get; }
     public ICommand NextPointCommand { get; }
     public ICommand PrevPointCommand { get; }
+    public ICommand GoToStartCommand { get; }
+    public ICommand GoToEndCommand { get; }
 
     private async Task LoadMuestrasAsync()
     {
@@ -563,8 +568,18 @@ public sealed class MainWindowViewModel : ObservableObject
             if (SetProperty(ref _currentTrackPointIndex, value))
             {
                 UpdateSelectedTrackPoint();
+                
+                // Sincronizar fecha del DatePicker sin disparar JumpToDate de nuevo
+                if (value >= 0 && value < CurrentTrack.Count)
+                {
+                    _selectedPlaybackDate = CurrentTrack[value].FechaHora.Date;
+                    OnPropertyChanged(nameof(SelectedPlaybackDate));
+                }
+
                 ((RelayCommand)NextPointCommand).RaiseCanExecuteChanged();
                 ((RelayCommand)PrevPointCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)GoToStartCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)GoToEndCommand).RaiseCanExecuteChanged();
             }
         }
     }
@@ -586,6 +601,18 @@ public sealed class MainWindowViewModel : ObservableObject
     {
         get => _selectedTrackPointInfo;
         private set => SetProperty(ref _selectedTrackPointInfo, value);
+    }
+
+    public DateTime? SelectedPlaybackDate
+    {
+        get => _selectedPlaybackDate;
+        set
+        {
+            if (SetProperty(ref _selectedPlaybackDate, value) && value.HasValue)
+            {
+                JumpToDate(value.Value.Date);
+            }
+        }
     }
 
     public int TotalTrackPoints => CurrentTrack.Count;
@@ -1043,6 +1070,8 @@ public sealed class MainWindowViewModel : ObservableObject
             CurrentTrackPointIndex = -1;
             ((RelayCommand)PlayCommand).RaiseCanExecuteChanged();
             ((RelayCommand)StopCommand).RaiseCanExecuteChanged();
+            ((RelayCommand)GoToStartCommand).RaiseCanExecuteChanged();
+            ((RelayCommand)GoToEndCommand).RaiseCanExecuteChanged();
         }
         catch (Exception ex)
         {
@@ -1072,13 +1101,18 @@ public sealed class MainWindowViewModel : ObservableObject
         {
             CurrentTrackPointIndex = 0;
         }
+        else if (CurrentTrackPointIndex < 0)
+        {
+            CurrentTrackPointIndex = 0;
+        }
 
         IsPlaying = true;
-        _playbackTimer?.Dispose();
-        _playbackTimer = new System.Timers.Timer(500); // 500ms por punto
-        _playbackTimer.Elapsed += (s, e) =>
+        
+        if (_playbackTimer == null)
         {
-            App.Current.Dispatcher.Invoke(() =>
+            _playbackTimer = new System.Windows.Threading.DispatcherTimer();
+            _playbackTimer.Interval = TimeSpan.FromMilliseconds(500);
+            _playbackTimer.Tick += (s, e) =>
             {
                 if (CurrentTrackPointIndex < CurrentTrack.Count - 1)
                 {
@@ -1088,8 +1122,9 @@ public sealed class MainWindowViewModel : ObservableObject
                 {
                     StopPlayback();
                 }
-            });
-        };
+            };
+        }
+        
         _playbackTimer.Start();
     }
 
@@ -1104,6 +1139,21 @@ public sealed class MainWindowViewModel : ObservableObject
         IsPlaying = false;
         _playbackTimer?.Stop();
         CurrentTrackPointIndex = -1;
+    }
+
+    private void JumpToDate(DateTime targetDate)
+    {
+        if (!CurrentTrack.Any()) return;
+
+        var closest = CurrentTrack
+            .Select((point, index) => new { point, index })
+            .OrderBy(item => Math.Abs((item.point.FechaHora - targetDate).Ticks))
+            .FirstOrDefault();
+
+        if (closest != null)
+        {
+            CurrentTrackPointIndex = closest.index;
+        }
     }
 
     private async Task ClearLanceFiltersAsync()

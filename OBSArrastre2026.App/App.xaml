@@ -23,6 +23,7 @@
         <conv:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
         <conv:IntToVisibilityConverter x:Key="IntToVisibilityConverter" />
         <conv:MathConverter x:Key="MathConverter" />
+        <conv:EnhancedBooleanToVisibilityConverter x:Key="EnhancedBooleanToVisibilityConverter" />
 
         <Style x:Key="SurfaceBorderStyle" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
