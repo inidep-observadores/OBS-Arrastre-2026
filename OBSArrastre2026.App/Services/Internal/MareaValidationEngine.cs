@@ -150,7 +150,7 @@ public sealed class MareaValidationEngine
                 if (capturaReconstruida > capturaNetaReal + margenTolerancia)
                 {
                     // Error: Se produjo más de lo que se capturó físicamente
-                    report.AddIssue(ValidationLevel.Error, "Balance de Masa Diario", 
+                    report.AddIssue(ValidationLevel.Error, "Balance de Captura Diaria", 
                         $"Inconsistencia: La captura reconstruida ({capReconStr} kg) excede la captura neta real disponible ({capRealStr} kg){lancesStr}.", 
                         ctx);
                 }
@@ -159,7 +159,7 @@ public sealed class MareaValidationEngine
                     // Advertencia: Diferencia superior al 1%
                     string tipoDiff = diferencia > 0 ? "sobrante" : "faltante";
                     string diffStr = diffAbs.ToString("N1", culture);
-                    report.AddIssue(ValidationLevel.Warning, "Balance de Masa Diario", 
+                    report.AddIssue(ValidationLevel.Warning, "Balance de Captura Diaria", 
                         $"Diferencia de masa significativa ({tipoDiff}): Real {capRealStr} kg vs Reconstruida {capReconStr} kg (Dif: {diffStr} kg){lancesStr}.", 
                         ctx);
                 }
