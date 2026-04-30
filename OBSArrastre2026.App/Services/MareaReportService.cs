@@ -112,9 +112,18 @@ public class MareaReportService : IMareaReportService
                         .ThenBy(i => i.Category)
                         .ThenBy(i => 
                         {
+                            if (string.IsNullOrEmpty(i.Context)) return "";
+                            // Intentar extraer fecha yyyy-MM-dd
+                            var matchFecha = System.Text.RegularExpressions.Regex.Match(i.Context, @"(\d{4}-\d{2}-\d{2})");
+                            if (matchFecha.Success) return matchFecha.Groups[1].Value;
+                            return "9999-99-99"; // Para que lances vayan después si hay mezcla
+                        })
+                        .ThenBy(i => 
+                        {
                             if (string.IsNullOrEmpty(i.Context)) return 0;
-                            var match = System.Text.RegularExpressions.Regex.Match(i.Context, @"Lance\s+(\d+)");
-                            return match.Success ? int.Parse(match.Groups[1].Value) : 0;
+                            // Intentar extraer número de lance
+                            var matchLance = System.Text.RegularExpressions.Regex.Match(i.Context, @"Lance\s+(\d+)");
+                            return matchLance.Success ? int.Parse(matchLance.Groups[1].Value) : 0;
                         })
                         .ThenBy(i => i.Message);
 
