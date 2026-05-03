@@ -11,7 +11,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
 {
     public DbfExtractorService()
     {
-        // Registro global de proveedores de codificación
+        // Asegurar soporte para codificaciones legacy en cualquier contexto (incluyendo tests)
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
     }
 
@@ -41,6 +41,14 @@ public sealed class DbfExtractorService : IDbfExtractorService
                     0x01 => Encoding.GetEncoding(437), // DOS USA
                     0x02 => Encoding.GetEncoding(850), // DOS Multilingual
                     0x03 => Encoding.GetEncoding(1252), // Windows ANSI
+                    0x08 => Encoding.GetEncoding(865), // DOS Nordic
+                    0x0A => Encoding.GetEncoding(850), // DOS Multilingual
+                    0x0D => Encoding.GetEncoding(437), // DOS USA
+                    0x14 => Encoding.GetEncoding(850), // DOS Multilingual (Clipper/dBase IV)
+                    0x21 => Encoding.GetEncoding(1252), // Windows ANSI
+                    0x57 => Encoding.GetEncoding(1252), // Windows ANSI (FoxPro)
+                    0x58 => Encoding.GetEncoding(1252), // Windows ANSI (FoxPro)
+                    0x59 => Encoding.GetEncoding(1252), // Windows ANSI (FoxPro)
                     0x64 => Encoding.GetEncoding(852), // DOS Eastern Europe
                     0x65 => Encoding.GetEncoding(866), // DOS Russian
                     0x66 => Encoding.GetEncoding(865), // DOS Nordic
@@ -51,7 +59,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
                     0xC9 => Encoding.GetEncoding(1251), // Windows Russian
                     0xCA => Encoding.GetEncoding(1254), // Windows Turkish
                     0xCB => Encoding.GetEncoding(1253), // Windows Greek
-                    _ => Encoding.GetEncoding(1252) // Default conservador (el que el usuario dice que funciona para especies)
+                    _ => Encoding.GetEncoding(1252) // Default conservador
                 };
             }
         }
@@ -59,6 +67,71 @@ public sealed class DbfExtractorService : IDbfExtractorService
         {
             return Encoding.GetEncoding(1252);
         }
+    }
+
+    private async Task<Encoding> FindCorrectSpeciesEncoding(string dbfPath)
+    {
+        // Candidatos en orden de prioridad
+        var candidateCPs = new List<int> { 1252, 850, 437 };
+        
+        // Intentar primero la detectada por el header si no está en la lista
+        var headerEncoding = DetectEncoding(dbfPath);
+        if (!candidateCPs.Contains(headerEncoding.CodePage))
+        {
+            candidateCPs.Insert(0, headerEncoding.CodePage);
+        }
+
+        foreach (var cp in candidateCPs)
+        {
+            try
+            {
+                var encoding = Encoding.GetEncoding(cp);
+                var options = new DbfDataReaderOptions { Encoding = encoding };
+                using var reader = new DbfDataReader.DbfDataReader(dbfPath, options);
+                var colMap = GetColumnMap(reader);
+
+                int count = 0;
+                while (reader.Read() && count++ < 5000) // Ampliamos búsqueda a 5000 registros
+                {
+                    var val = reader.GetValue(colMap.TryGetValue("CODINIDEP", out int i1) ? i1 : 
+                             colMap.TryGetValue("COD_INIDEP", out int i2) ? i2 :
+                             colMap.TryGetValue("COD", out int i3) ? i3 : -1);
+
+                    if (val == null) continue;
+                    
+                    // Comparación robusta (soporta decimal, double, string)
+                    bool isMatch = false;
+                    try 
+                    {
+                        if (val is double d) isMatch = Math.Abs(d - 7210040101.0) < 0.1;
+                        else if (val is decimal dec) isMatch = dec == 7210040101m;
+                        else isMatch = val.ToString()?.Trim() == "7210040101";
+                    } catch { }
+
+                    if (isMatch)
+                    {
+                        var name = GetString(reader, colMap, "NOMVULCAS");
+                        if (string.IsNullOrEmpty(name)) name = GetString(reader, colMap, "NOM_VULGAR");
+
+                        // Condición crítica: "común" con acento correctamente decodificado (\u00FA = ú)
+                        if (name != null && name.Contains("com\u00FAn", StringComparison.OrdinalIgnoreCase))
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Heurística DBF: Codificación {cp} seleccionada (Merluza com\u00FAn detectada)");
+                            return encoding;
+                        }
+                        
+                        // Si encontramos el código pero el nombre está mal, probamos con el siguiente CP
+                        break; 
+                    }
+                }
+            }
+            catch 
+            {
+                // Ignorar errores de lectura y probar siguiente candidato
+            }
+        }
+
+        return headerEncoding; // Fallback a la detección original si falla la heurística
     }
 
     public async Task ExtractBuquesAsync(string dbfPath, string jsonOutputPath)
@@ -94,7 +167,8 @@ public sealed class DbfExtractorService : IDbfExtractorService
     public async Task ExtractEspeciesAsync(string dbfPath, string jsonOutputPath)
     {
         var records = new List<Dictionary<string, object?>>();
-        var options = GetOptions(dbfPath);
+        var encoding = await FindCorrectSpeciesEncoding(dbfPath);
+        var options = new DbfDataReaderOptions { Encoding = encoding };
 
         using (var dbfReader = new DbfDataReader.DbfDataReader(dbfPath, options))
         {
