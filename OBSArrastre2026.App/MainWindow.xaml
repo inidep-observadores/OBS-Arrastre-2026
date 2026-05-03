@@ -1286,15 +1286,12 @@
                                               Background="Transparent"
                                               BorderThickness="0"
                                               SelectionMode="Single">
-                                         <ListView.InputBindings>
-                                             <MouseBinding MouseAction="LeftDoubleClick" 
-                                                           Command="{Binding EditLanceFromDetailCommand}"
-                                                           CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource Self}}" />
-                                         </ListView.InputBindings>
                                         <ListView.ItemContainerStyle>
                                             <Style TargetType="ListViewItem">
-                                                <Setter Property="Background" Value="Transparent" />
-                                                <Setter Property="BorderThickness" Value="0" />
+                                                 <Setter Property="Background" Value="Transparent" />
+                                                 <Setter Property="BorderThickness" Value="0" />
+                                                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                                 <EventSetter Event="MouseDoubleClick" Handler="ControlLance_MouseDoubleClick" />
                                                 <Setter Property="Template">
                                                     <Setter.Value>
                                                         <ControlTemplate TargetType="ListViewItem">
@@ -1325,7 +1322,7 @@
                                                 <GridView.ColumnHeaderContainerStyle>
                                                     <Style TargetType="GridViewColumnHeader">
                                                         <Setter Property="Padding" Value="10,8" />
-                                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                                        <Setter Property="HorizontalContentAlignment" Value="Right" />
                                                         <Setter Property="Background" Value="Transparent" />
                                                         <Setter Property="BorderThickness" Value="0,0,0,1" />
                                                         <Setter Property="BorderBrush" Value="{DynamicResource TableRowBorderBrush}" />
@@ -1356,7 +1353,7 @@
                                                  </GridViewColumn>
                                                 <GridViewColumn Width="85">
                                                     <GridViewColumn.Header>
-                                                        <TextBlock Text="CAPTURA" HorizontalAlignment="Right" />
+                                                        <TextBlock Text="CAPTURA" />
                                                     </GridViewColumn.Header>
                                                     <GridViewColumn.CellTemplate>
                                                         <DataTemplate>
@@ -1366,7 +1363,7 @@
                                                 </GridViewColumn>
                                                 <GridViewColumn Width="85">
                                                     <GridViewColumn.Header>
-                                                        <TextBlock Text="DESCARTE" HorizontalAlignment="Right" />
+                                                        <TextBlock Text="DESCARTE" />
                                                     </GridViewColumn.Header>
                                                     <GridViewColumn.CellTemplate>
                                                         <DataTemplate>
@@ -1376,7 +1373,7 @@
                                                 </GridViewColumn>
                                                 <GridViewColumn Width="85">
                                                     <GridViewColumn.Header>
-                                                        <TextBlock Text="NETA" HorizontalAlignment="Right" />
+                                                        <TextBlock Text="NETA" />
                                                     </GridViewColumn.Header>
                                                     <GridViewColumn.CellTemplate>
                                                         <DataTemplate>
@@ -1401,9 +1398,9 @@
                                                 <ColumnDefinition Width="85" />
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Text="TOTAL" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding TotalCapturaKg, StringFormat={}{0:N1}}" FontWeight="Bold" Foreground="{DynamicResource PrimaryTextBrush}" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                                            <TextBlock Grid.Column="2" Text="{Binding TotalDescarteKg, StringFormat={}{0:N1}}" FontWeight="Bold" Foreground="{DynamicResource DangerForegroundBrush}" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                                            <TextBlock Grid.Column="3" Text="{Binding TotalNetaKg, StringFormat={}{0:N1}}" FontWeight="Bold" Foreground="{DynamicResource SuccessForegroundBrush}" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding TotalCapturaKg, StringFormat={}{0:N1}}" FontWeight="Bold" Foreground="{DynamicResource PrimaryTextBrush}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding TotalDescarteKg, StringFormat={}{0:N1}}" FontWeight="Bold" Foreground="{DynamicResource DangerForegroundBrush}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
+                                            <TextBlock Grid.Column="3" Text="{Binding TotalNetaKg, StringFormat={}{0:N1}}" FontWeight="Bold" Foreground="{DynamicResource SuccessForegroundBrush}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
                                         </Grid>
                                     </Border>
                                 </Grid>

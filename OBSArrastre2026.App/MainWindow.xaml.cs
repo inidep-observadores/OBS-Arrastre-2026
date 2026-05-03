@@ -493,4 +493,15 @@ public partial class MainWindow : Window
             }
         }
     }
+
+    private void ControlLance_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is ListViewItem item && item.DataContext is ControlLanceDetailViewModel detailVm)
+        {
+            if (DataContext is MainWindowViewModel vm)
+            {
+                vm.EditLanceFromDetailCommand.Execute(detailVm);
+            }
+        }
+    }
 }
