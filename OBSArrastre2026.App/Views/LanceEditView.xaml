@@ -51,69 +51,7 @@
             <Setter Property="Margin" Value="0,0,0,2" />
         </Style>
 
-        <Style x:Key="CenterGridText" TargetType="TextBlock" BasedOn="{StaticResource BodySecondaryStyle}">
-            <Setter Property="HorizontalAlignment" Value="Center" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-        </Style>
 
-        <Style x:Key="LeftCenterGridText" TargetType="TextBlock" BasedOn="{StaticResource BodySecondaryStyle}">
-            <Setter Property="HorizontalAlignment" Value="Left" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Margin" Value="12,0,0,0" />
-        </Style>
-
-        <Style x:Key="DataGridHeaderStyle" TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
-            <Setter Property="FontWeight" Value="Bold" />
-            <Setter Property="FontSize" Value="10" />
-            <Setter Property="Padding" Value="12,10" />
-            <Setter Property="BorderThickness" Value="0,0,0,1" />
-            <Setter Property="BorderBrush" Value="{DynamicResource SidebarBorderBrush}" />
-            <Setter Property="HorizontalContentAlignment" Value="Left" />
-        </Style>
-
-        <Style x:Key="DataGridRightHeaderStyle" TargetType="DataGridColumnHeader" BasedOn="{StaticResource DataGridHeaderStyle}">
-            <Setter Property="HorizontalContentAlignment" Value="Right" />
-        </Style>
-
-        <Style x:Key="RightGridText" TargetType="TextBlock" BasedOn="{StaticResource BodySecondaryStyle}">
-            <Setter Property="HorizontalAlignment" Value="Right" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Margin" Value="0,0,12,0" />
-        </Style>
-
-        <Style x:Key="LanceDataGridStyle" TargetType="DataGrid">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="GridLinesVisibility" Value="Horizontal" />
-            <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource SidebarBorderBrush}" />
-            <Setter Property="AutoGenerateColumns" Value="False" />
-            <Setter Property="IsReadOnly" Value="True" />
-            <Setter Property="SelectionMode" Value="Single" />
-            <Setter Property="HeadersVisibility" Value="Column" />
-            <Setter Property="ColumnHeaderStyle" Value="{StaticResource DataGridHeaderStyle}" />
-            <Setter Property="RowHeight" Value="42" />
-            <Setter Property="FontSize" Value="11" />
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
-            <Setter Property="RowBackground" Value="Transparent" />
-            <Setter Property="AlternatingRowBackground" Value="{DynamicResource SurfaceBackgroundBrush}" />
-            <Setter Property="CellStyle">
-                <Setter.Value>
-                    <Style TargetType="DataGridCell">
-                        <Setter Property="Background" Value="Transparent" />
-                        <Setter Property="BorderThickness" Value="0" />
-                        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-                        <Style.Triggers>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter Property="Background" Value="{DynamicResource SelectionBackgroundBrush}" />
-                                <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                </Setter.Value>
-            </Setter>
-        </Style>
     </UserControl.Resources>
 
     <UserControl.InputBindings>
@@ -468,13 +406,14 @@
                                 <DataGrid Grid.Row="1" 
                                           ItemsSource="{Binding ItemsCaptura}" 
                                           SelectedItem="{Binding SelectedCatchItem}"
-                                          Style="{StaticResource LanceDataGridStyle}">
+                                          Style="{StaticResource PremiumDataGridStyle}"
+                                          IsReadOnly="True">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="ORD" Binding="{Binding NumeroOrden}" Width="40" ElementStyle="{StaticResource CenterGridText}" />
-                                        <DataGridTextColumn Header="ESPECIE" Binding="{Binding EspecieNombreVulgar}" Width="*" FontWeight="SemiBold" FontSize="13" ElementStyle="{StaticResource LeftCenterGridText}" />
-                                        <DataGridTextColumn Header="CAPTURA" Binding="{Binding DatoCapturaDisplay}" Width="110" ElementStyle="{StaticResource RightGridText}" HeaderStyle="{StaticResource DataGridRightHeaderStyle}" />
-                                        <DataGridTextColumn Header="DESC. (%)" Binding="{Binding DatoDescartePorcentajeDisplay}" Width="100" ElementStyle="{StaticResource RightGridText}" HeaderStyle="{StaticResource DataGridRightHeaderStyle}" Foreground="{DynamicResource SecondaryTextBrush}" />
-                                        <DataGridTextColumn Header="DESC. (KG)" Binding="{Binding DatoDescarteKilosDisplay}" Width="110" ElementStyle="{StaticResource RightGridText}" HeaderStyle="{StaticResource DataGridRightHeaderStyle}" FontWeight="SemiBold" />
+                                        <DataGridTextColumn Header="ORD" Binding="{Binding NumeroOrden}" Width="40" ElementStyle="{StaticResource DataGridTextCenter}" />
+                                        <DataGridTextColumn Header="ESPECIE" Binding="{Binding EspecieNombreVulgar}" Width="*" FontWeight="SemiBold" FontSize="13" ElementStyle="{StaticResource DataGridTextLeft}" />
+                                        <DataGridTextColumn Header="CAPTURA" Binding="{Binding DatoCapturaDisplay}" Width="110" ElementStyle="{StaticResource DataGridTextRight}" HeaderStyle="{StaticResource PremiumDataGridColumnHeaderRightStyle}" />
+                                        <DataGridTextColumn Header="DESC. (%)" Binding="{Binding DatoDescartePorcentajeDisplay}" Width="100" ElementStyle="{StaticResource DataGridTextRight}" HeaderStyle="{StaticResource PremiumDataGridColumnHeaderRightStyle}" Foreground="{DynamicResource SecondaryTextBrush}" />
+                                        <DataGridTextColumn Header="DESC. (KG)" Binding="{Binding DatoDescarteKilosDisplay}" Width="110" ElementStyle="{StaticResource DataGridTextRight}" HeaderStyle="{StaticResource PremiumDataGridColumnHeaderRightStyle}" FontWeight="SemiBold" />
                                         <DataGridTemplateColumn Width="60">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>

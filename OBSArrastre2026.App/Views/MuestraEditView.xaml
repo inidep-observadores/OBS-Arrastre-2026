@@ -38,8 +38,13 @@
                                Margin="0,4,0,0" />
                 </StackPanel>
 
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
+                <Grid Grid.Row="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -73,72 +78,64 @@
                                 <TextBox Text="{Binding PesoMuestraGramos}" Style="{StaticResource PremiumTextBoxStyle}" />
                             </StackPanel>
                         </Grid>
-
-                        <!-- SECCIÓN FRECUENCIAS -->
-                        <Border Margin="0,32,0,0" Style="{StaticResource SurfaceBorderStyle}" Padding="0" ClipToBounds="True">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="*" />
-                                </Grid.RowDefinitions>
-
-                                <Border Background="#FCFDFF" Padding="16,10" BorderBrush="{DynamicResource SidebarBorderBrush}" BorderThickness="0,0,0,1">
-                                    <Grid>
-                                        <TextBlock Text="FRECUENCIAS DE TALLA" Style="{StaticResource SectionHeaderStyle}" VerticalAlignment="Center" FontSize="11" />
-                                        <Button HorizontalAlignment="Right" 
-                                                Command="{Binding AddFrecuenciaCommand}"
-                                                Style="{StaticResource ThemeButtonStyle}"
-                                                Foreground="{DynamicResource AccentBrush}"
-                                                Padding="12,6">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="+ " FontWeight="Bold" />
-                                                <TextBlock Text="AÑADIR TALLA" FontSize="10" />
-                                            </StackPanel>
-                                        </Button>
-                                    </Grid>
-                                </Border>
-
-                                <DataGrid x:Name="FrecuenciasGrid"
-                                          Grid.Row="1" 
-                                          ItemsSource="{Binding FrecuenciasTallas}" 
-                                          AutoGenerateColumns="False"
-                                          CanUserAddRows="False"
-                                          CanUserDeleteRows="False"
-                                          Background="Transparent"
-                                          BorderThickness="0"
-                                          GridLinesVisibility="Horizontal"
-                                          HorizontalGridLinesBrush="{DynamicResource SidebarBorderBrush}"
-                                          HeadersVisibility="Column"
-                                          MinHeight="200"
-                                          MaxHeight="300">
-                                    <DataGrid.InputBindings>
-                                        <KeyBinding Key="Delete" 
-                                                    Command="{Binding RemoveFrecuenciaCommand}" 
-                                                    CommandParameter="{Binding SelectedItem, ElementName=FrecuenciasGrid}" />
-                                    </DataGrid.InputBindings>
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="TALLA" Binding="{Binding Talla}" Width="*" />
-                                        <DataGridTextColumn Header="MACHOS" Binding="{Binding NroMachos}" Width="80" />
-                                        <DataGridTextColumn Header="HEMBRAS" Binding="{Binding NroHembras}" Width="80" />
-                                        <DataGridTextColumn Header="INDET." Binding="{Binding NroIndeterminados}" Width="80" />
-                                        <DataGridTextColumn Header="TOTAL" Binding="{Binding Total, Mode=OneWay}" Width="80" IsReadOnly="True" FontWeight="Bold" />
-                                        <DataGridTemplateColumn Width="50">
-                                            <DataGridTemplateColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <Button Command="{Binding DataContext.RemoveFrecuenciaCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                            CommandParameter="{Binding}"
-                                                            Content="✕"
-                                                            Style="{StaticResource ThemeButtonStyle}"
-                                                            Foreground="#FF5252" />
-                                                </DataTemplate>
-                                            </DataGridTemplateColumn.CellTemplate>
-                                        </DataGridTemplateColumn>
-                                    </DataGrid.Columns>
-                                </DataGrid>
-                            </Grid>
-                        </Border>
                     </StackPanel>
-                </ScrollViewer>
+
+                    <!-- SECCIÓN FRECUENCIAS -->
+                    <Border Grid.Row="1" Margin="0,32,0,0" Style="{StaticResource SurfaceBorderStyle}" Padding="0" ClipToBounds="True">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <Border Background="{DynamicResource SurfaceBackgroundBrush}" Padding="16,10" BorderBrush="{DynamicResource SidebarBorderBrush}" BorderThickness="0,0,0,1">
+                                <Grid>
+                                    <TextBlock Text="FRECUENCIAS DE TALLA" Style="{StaticResource SectionHeaderStyle}" VerticalAlignment="Center" FontSize="11" />
+                                    <Button HorizontalAlignment="Right" 
+                                            Command="{Binding AddFrecuenciaCommand}"
+                                            Style="{StaticResource ThemeButtonStyle}"
+                                            Foreground="{DynamicResource AccentBrush}"
+                                            Padding="12,6">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="+ " FontWeight="Bold" />
+                                            <TextBlock Text="AÑADIR TALLA" FontSize="10" />
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+                            </Border>
+
+                            <DataGrid x:Name="FrecuenciasGrid"
+                                      Grid.Row="1" 
+                                      ItemsSource="{Binding FrecuenciasTallas}" 
+                                      Style="{StaticResource PremiumDataGridStyle}">
+                                <DataGrid.InputBindings>
+                                    <KeyBinding Key="Delete" 
+                                                Command="{Binding RemoveFrecuenciaCommand}" 
+                                                CommandParameter="{Binding SelectedItem, ElementName=FrecuenciasGrid}" />
+                                </DataGrid.InputBindings>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="TALLA" Binding="{Binding Talla}" Width="*" ElementStyle="{StaticResource DataGridTextLeft}" />
+                                    <DataGridTextColumn Header="MACHOS" Binding="{Binding NroMachos}" Width="80" ElementStyle="{StaticResource DataGridTextCenter}" />
+                                    <DataGridTextColumn Header="HEMBRAS" Binding="{Binding NroHembras}" Width="80" ElementStyle="{StaticResource DataGridTextCenter}" />
+                                    <DataGridTextColumn Header="INDET." Binding="{Binding NroIndeterminados}" Width="80" ElementStyle="{StaticResource DataGridTextCenter}" />
+                                    <DataGridTextColumn Header="TOTAL" Binding="{Binding Total, Mode=OneWay}" Width="80" IsReadOnly="True" FontWeight="Bold" ElementStyle="{StaticResource DataGridTextCenter}" />
+                                    <DataGridTemplateColumn Width="50">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Command="{Binding DataContext.RemoveFrecuenciaCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Content="✕"
+                                                        Style="{StaticResource ThemeButtonStyle}"
+                                                        Foreground="{DynamicResource DangerForegroundBrush}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </Border>
+                </Grid>
+
 
                 <Grid Grid.Row="2" Margin="0,30,0,0">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">

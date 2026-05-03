@@ -38,8 +38,13 @@
                                Margin="0,4,0,0" />
                 </StackPanel>
 
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
+                <Grid Grid.Row="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    
+                    <StackPanel Grid.Row="0">
                         <!-- CABECERA DE CONTEXTO (Muestra) -->
                         <Grid Margin="0,0,0,24">
                             <Grid.ColumnDefinitions>
@@ -53,7 +58,7 @@
                                 <TextBox Text="{Binding EspecieNombre, Mode=OneWay}" 
                                          Style="{StaticResource PremiumTextBoxStyle}" 
                                          IsReadOnly="True" 
-                                         Background="#F8F9FB"/>
+                                         Background="{DynamicResource SurfaceBackgroundBrush}"/>
                             </StackPanel>
 
                             <StackPanel Grid.Column="2">
@@ -61,76 +66,67 @@
                                 <TextBox Text="{Binding PesoMuestraDisplay, Mode=OneWay}" 
                                          Style="{StaticResource PremiumTextBoxStyle}" 
                                          IsReadOnly="True"
-                                         Background="#F8F9FB"/>
+                                         Background="{DynamicResource SurfaceBackgroundBrush}"/>
                             </StackPanel>
                         </Grid>
-
-                        <!-- SECCIÓN SUBMUESTRAS -->
-                        <Border Style="{StaticResource SurfaceBorderStyle}" Padding="0" ClipToBounds="True">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="*" />
-                                </Grid.RowDefinitions>
-
-                                <Border Background="#FCFDFF" Padding="16,10" BorderBrush="{DynamicResource SidebarBorderBrush}" BorderThickness="0,0,0,1">
-                                    <Grid>
-                                        <TextBlock Text="EJEMPLARES INDIVIDUALES" Style="{StaticResource SectionHeaderStyle}" VerticalAlignment="Center" FontSize="11" />
-                                        <Button HorizontalAlignment="Right" 
-                                                Command="{Binding AddItemCommand}"
-                                                Style="{StaticResource ThemeButtonStyle}"
-                                                Foreground="{DynamicResource AccentBrush}"
-                                                Padding="12,6">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="+ " FontWeight="Bold" />
-                                                <TextBlock Text="AÑADIR EJEMPLAR" FontSize="10" />
-                                            </StackPanel>
-                                        </Button>
-                                    </Grid>
-                                </Border>
-
-                                <DataGrid x:Name="SubmuestrasGrid"
-                                          Grid.Row="1" 
-                                          ItemsSource="{Binding Submuestras}" 
-                                          AutoGenerateColumns="False"
-                                          CanUserAddRows="False"
-                                          CanUserDeleteRows="False"
-                                          Background="Transparent"
-                                          BorderThickness="0"
-                                          GridLinesVisibility="Horizontal"
-                                          HorizontalGridLinesBrush="{DynamicResource SidebarBorderBrush}"
-                                          HeadersVisibility="Column"
-                                          MinHeight="300"
-                                          MaxHeight="450">
-                                    <DataGrid.InputBindings>
-                                        <KeyBinding Key="Delete" 
-                                                    Command="{Binding RemoveItemCommand}" 
-                                                    CommandParameter="{Binding SelectedItem, ElementName=SubmuestrasGrid}" />
-                                    </DataGrid.InputBindings>
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="EJEMPLAR" Binding="{Binding NroEjemplar}" Width="80" />
-                                        <DataGridTextColumn Header="SEXO" Binding="{Binding Sexo, UpdateSourceTrigger=PropertyChanged}" Width="60" />
-                                        <DataGridTextColumn Header="ESTADIO" Binding="{Binding Estadio}" Width="80" />
-                                        <DataGridTextColumn Header="LARGO (mm)" Binding="{Binding LargoMm}" Width="*" />
-                                        <DataGridTextColumn Header="PESO (g)" Binding="{Binding PesoGramos}" Width="*" />
-                                        
-                                        <DataGridTemplateColumn Width="50">
-                                            <DataGridTemplateColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <Button Command="{Binding DataContext.RemoveItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                            CommandParameter="{Binding}"
-                                                            Content="✕"
-                                                            Style="{StaticResource ThemeButtonStyle}"
-                                                            Foreground="#FF5252" />
-                                                </DataTemplate>
-                                            </DataGridTemplateColumn.CellTemplate>
-                                        </DataGridTemplateColumn>
-                                    </DataGrid.Columns>
-                                </DataGrid>
-                            </Grid>
-                        </Border>
                     </StackPanel>
-                </ScrollViewer>
+                    
+                    <!-- SECCIÓN SUBMUESTRAS -->
+                    <Border Grid.Row="1" Style="{StaticResource SurfaceBorderStyle}" Padding="0" ClipToBounds="True">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <Border Background="{DynamicResource SurfaceBackgroundBrush}" Padding="16,10" BorderBrush="{DynamicResource SidebarBorderBrush}" BorderThickness="0,0,0,1">
+                                <Grid>
+                                    <TextBlock Text="EJEMPLARES INDIVIDUALES" Style="{StaticResource SectionHeaderStyle}" VerticalAlignment="Center" FontSize="11" />
+                                    <Button HorizontalAlignment="Right" 
+                                            Command="{Binding AddItemCommand}"
+                                            Style="{StaticResource ThemeButtonStyle}"
+                                            Foreground="{DynamicResource AccentBrush}"
+                                            Padding="12,6">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="+ " FontWeight="Bold" />
+                                            <TextBlock Text="AÑADIR EJEMPLAR" FontSize="10" />
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+                            </Border>
+
+                            <DataGrid x:Name="SubmuestrasGrid"
+                                      Grid.Row="1" 
+                                      ItemsSource="{Binding Submuestras}" 
+                                      Style="{StaticResource PremiumDataGridStyle}">
+                                <DataGrid.InputBindings>
+                                    <KeyBinding Key="Delete" 
+                                                Command="{Binding RemoveItemCommand}" 
+                                                CommandParameter="{Binding SelectedItem, ElementName=SubmuestrasGrid}" />
+                                </DataGrid.InputBindings>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="EJEMPLAR" Binding="{Binding NroEjemplar}" Width="80" ElementStyle="{StaticResource DataGridTextCenter}" />
+                                    <DataGridTextColumn Header="SEXO" Binding="{Binding Sexo, UpdateSourceTrigger=PropertyChanged}" Width="60" ElementStyle="{StaticResource DataGridTextCenter}" />
+                                    <DataGridTextColumn Header="ESTADIO" Binding="{Binding Estadio}" Width="80" ElementStyle="{StaticResource DataGridTextCenter}" />
+                                    <DataGridTextColumn Header="LARGO (mm)" Binding="{Binding LargoMm}" Width="*" ElementStyle="{StaticResource DataGridTextCenter}" />
+                                    <DataGridTextColumn Header="PESO (g)" Binding="{Binding PesoGramos}" Width="*" ElementStyle="{StaticResource DataGridTextCenter}" />
+                                    
+                                    <DataGridTemplateColumn Width="50">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Command="{Binding DataContext.RemoveItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Content="✕"
+                                                        Style="{StaticResource ThemeButtonStyle}"
+                                                        Foreground="{DynamicResource DangerForegroundBrush}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </Border>
+                </Grid>
 
                 <Grid Grid.Row="2" Margin="0,30,0,0">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
