@@ -23,17 +23,13 @@
                           SelectedValuePath="ID">
                     <ComboBox.ItemTemplate>
                         <DataTemplate DataType="{x:Type entities:Especie}">
-                            <StackPanel Orientation="Horizontal" Margin="2,0">
-                                <TextBlock Text="{Binding NombreVulgar}" 
-                                           VerticalAlignment="Center"
-                                           FontWeight="Medium" />
-                                <TextBlock Text="{Binding NombreCientifico, StringFormat=' ({0})'}" 
-                                           VerticalAlignment="Center"
-                                           FontStyle="Italic"
-                                           Opacity="0.7"
-                                           Margin="6,0,0,0"
-                                           FontSize="11" />
-                            </StackPanel>
+                            <TextBlock VerticalAlignment="Center">
+                                <Run Text="{Binding NombreVulgar, Mode=OneWay}" FontWeight="Medium" />
+                                <Run Text="{Binding NombreCientifico, StringFormat=' ({0})', Mode=OneWay}" 
+                                     FontStyle="Italic" 
+                                     FontSize="11"
+                                     Foreground="{DynamicResource SecondaryTextBrush}" />
+                            </TextBlock>
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                     

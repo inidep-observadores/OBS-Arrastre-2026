@@ -9,6 +9,8 @@ namespace OBSArrastre2026.App.Controls;
 
 public partial class SpeciesSelectorPremium : UserControl
 {
+    private bool _isInternalChange;
+
     public static readonly DependencyProperty ItemsSourceProperty =
         DependencyProperty.Register(nameof(ItemsSource), typeof(IEnumerable), typeof(SpeciesSelectorPremium), new PropertyMetadata(null, OnItemsSourceChanged));
 
@@ -69,7 +71,13 @@ public partial class SpeciesSelectorPremium : UserControl
             {
                 // Crear una vista de colección privada para este control para evitar interferencias
                 var cvs = new CollectionViewSource { Source = e.NewValue };
-                control.SpeciesCombo.ItemsSource = cvs.View;
+                var view = cvs.View;
+
+                // Ordenamiento por defecto: Frecuentes primero, luego Nombre Vulgar
+                view.SortDescriptions.Add(new SortDescription("Frecuente", ListSortDirection.Descending));
+                view.SortDescriptions.Add(new SortDescription("NombreVulgar", ListSortDirection.Ascending));
+
+                control.SpeciesCombo.ItemsSource = view;
             }
             else
             {
@@ -84,22 +92,30 @@ public partial class SpeciesSelectorPremium : UserControl
         {
             if (control.SpeciesCombo.SelectedItem != e.NewValue)
             {
-                // Limpiar el filtro antes de cambiar la selección para asegurar que el item sea visible
-                if (control.SpeciesCombo.ItemsSource is ICollectionView view)
+                control._isInternalChange = true;
+                try
                 {
-                    view.Filter = null;
-                }
+                    // Limpiar el filtro antes de cambiar la selección para asegurar que el item sea visible
+                    if (control.SpeciesCombo.ItemsSource is ICollectionView view)
+                    {
+                        view.Filter = null;
+                    }
 
-                control.SpeciesCombo.SelectedItem = e.NewValue;
+                    control.SpeciesCombo.SelectedItem = e.NewValue;
 
-                // Forzar actualización del texto si es necesario (cuando el combo es editable)
-                if (e.NewValue is Especie especie)
-                {
-                    control.SpeciesCombo.Text = especie.FullDisplayName;
+                    // Forzar actualización del texto si es necesario (cuando el combo es editable)
+                    if (e.NewValue is Especie especie)
+                    {
+                        control.SpeciesCombo.Text = especie.FullDisplayName;
+                    }
+                    else if (e.NewValue == null)
+                    {
+                        control.SpeciesCombo.Text = string.Empty;
+                    }
                 }
-                else if (e.NewValue == null)
+                finally
                 {
-                    control.SpeciesCombo.Text = string.Empty;
+                    control._isInternalChange = false;
                 }
             }
         }
@@ -125,11 +141,14 @@ public partial class SpeciesSelectorPremium : UserControl
 
     private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
     {
+        if (_isInternalChange) return;
+
         var tb = (TextBox)sender;
         string filter = tb.Text;
 
         // Si el texto coincide exactamente con el elemento seleccionado, no filtramos (evita bucles)
-        if (SpeciesCombo.SelectedItem is Especie sel && sel.FullDisplayName == filter)
+        if (SpeciesCombo.SelectedItem is Especie sel && 
+            string.Equals(sel.FullDisplayName, filter, System.StringComparison.OrdinalIgnoreCase))
             return;
 
         if (SpeciesCombo.ItemsSource is not ICollectionView view) return;
