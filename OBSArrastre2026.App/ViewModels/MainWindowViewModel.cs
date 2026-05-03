@@ -1752,6 +1752,12 @@ public class MainWindowViewModel : ObservableObject
             var viewModels = results.OrderBy(r => r.Fecha).ToList();
             Records.Clear();
             foreach (var vm in viewModels) Records.Add(vm);
+
+            // Auto-seleccionar el primer registro para que el panel lateral no aparezca vacío
+            if (Records.Count > 0)
+            {
+                SelectedRecord = Records[0];
+            }
         }
     }
 }
