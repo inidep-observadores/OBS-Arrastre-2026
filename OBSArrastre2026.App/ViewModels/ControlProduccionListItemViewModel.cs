@@ -11,6 +11,7 @@ public sealed class ControlProduccionListItemViewModel : ObservableObject
     public double CapturaReconstruida { get; set; }
     public string? EspecieId { get; set; }
     public double CapturaTotal { get; set; }
+    public bool IsSummaryView { get; set; }
 
     public string FechaDisplay => Fecha.ToString("dd/MM/yyyy");
     

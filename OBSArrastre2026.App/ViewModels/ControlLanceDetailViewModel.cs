@@ -4,9 +4,12 @@ namespace OBSArrastre2026.App.ViewModels;
 
 public sealed class ControlLanceDetailViewModel : ObservableObject
 {
+    public string LanceId { get; set; } = string.Empty;
+    public string MareaEtapaId { get; set; } = string.Empty;
     public int NroLance { get; set; }
     public double CapturaKg { get; set; }
     public double DescarteKg { get; set; }
+    public string? EspecieDetalle { get; set; }
     public double NetaKg => CapturaKg - DescarteKg;
 
     public string NroLanceDisplay => $"Lance {NroLance}";

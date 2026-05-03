@@ -45,6 +45,10 @@ public sealed class MainWindowViewModel : ObservableObject
     private object? _currentEditViewModel;
     private object? _activeDialog;
     
+    private const string RayasPrefix = "71090";
+    private const string RayasGenericId = "71090000000";
+    private HashSet<string> _commonRayaIds = new();
+    
     // Datos para GMap.NET
     public List<MareaTracking> CurrentTrack { get; private set; } = new();
     public List<Lance> CurrentLances { get; private set; } = new();
@@ -59,6 +63,28 @@ public sealed class MainWindowViewModel : ObservableObject
         get => _selectedControlItem;
         set => SetProperty(ref _selectedControlItem, value);
     }
+
+    private string? _controlProduccionSelectedEspecieId;
+    public string? ControlProduccionSelectedEspecieId
+    {
+        get => _controlProduccionSelectedEspecieId;
+        private set
+        {
+            if (SetProperty(ref _controlProduccionSelectedEspecieId, value))
+            {
+                OnPropertyChanged(nameof(IsControlProduccionDetailVisible));
+            }
+        }
+    }
+
+    private Especie? _controlProduccionSelectedEspecie;
+    public Especie? ControlProduccionSelectedEspecie
+    {
+        get => _controlProduccionSelectedEspecie;
+        private set => SetProperty(ref _controlProduccionSelectedEspecie, value);
+    }
+
+    public bool IsControlProduccionDetailVisible => SelectedNavigationItem?.Section == NavigationSection.ControlProduccion && !string.IsNullOrEmpty(ControlProduccionSelectedEspecieId);
 
     public ObservableCollection<ControlLanceDetailViewModel> ControlLanceDetails { get; } = new();
 
@@ -160,6 +186,10 @@ public sealed class MainWindowViewModel : ObservableObject
         ClearMareaFiltersCommand = new AsyncCommand(ClearMareaFiltersAsync);
         ClearLanceFiltersCommand = new AsyncCommand(ClearLanceFiltersAsync);
 
+        NavigateToControlProduccionDetailCommand = new AsyncRelayCommand<ControlProduccionListItemViewModel>(NavigateToControlProduccionDetailAsync);
+        BackControlProduccionCommand = new RelayCommand(BackToControlProduccionSummary);
+        EditLanceFromDetailCommand = new RelayCommand<ControlLanceDetailViewModel>(OpenEditLanceFromDetail);
+
         _mareasFilterAnio = DateTime.Today.Year;
 
         foreach (var navigationItem in _mockShellDataService.GetNavigationItems())
@@ -255,6 +285,9 @@ public sealed class MainWindowViewModel : ObservableObject
     public ICommand ClearMareaFiltersCommand { get; }
     public ICommand ClearLanceFiltersCommand { get; }
     public ICommand ImportMareaCommand { get; }
+    public ICommand NavigateToControlProduccionDetailCommand { get; }
+    public ICommand BackControlProduccionCommand { get; }
+    public ICommand EditLanceFromDetailCommand { get; }
     
     public ICommand PlayCommand { get; }
     public ICommand PauseCommand { get; }
@@ -876,14 +909,8 @@ public sealed class MainWindowViewModel : ObservableObject
             PrimaryActionLabel = controlSection.PrimaryActionLabel;
             PrimaryActionCommand = new AsyncCommand(LoadControlProduccionAsync);
 
-            SetColumnHeaders(
-                controlSection.Column1Header,
-                controlSection.Column2Header,
-                controlSection.Column3Header,
-                controlSection.Column4Header,
-                controlSection.Column5Header,
-                controlSection.Column6Header,
-                controlSection.Column7Header);
+            // Los encabezados se manejan dinámicamente en LoadControlProduccionAsync
+            // según si es vista resumen o detalle.
 
             ClearDashboardCollections();
             IsDashboardVisible = false;
@@ -1247,6 +1274,22 @@ public sealed class MainWindowViewModel : ObservableObject
         CurrentEditViewModel = vm;
     }
 
+    private void OpenEditLanceFromDetail(ControlLanceDetailViewModel? vm)
+    {
+        if (vm == null) return;
+        
+        var editVm = _lanceEditFactory(() => 
+        {
+            CurrentEditViewModel = null;
+            if (SelectedControlItem != null) _ = LoadControlLanceDetailsAsync(SelectedControlItem);
+        }, vm.MareaEtapaId, vm.LanceId);
+        
+        editVm.ShowCustomDialog = diag => ActiveDialog = diag;
+        editVm.ShowMessage = (t, m, d, type) => ShowMessage(t, m, d, type);
+        editVm.ShowConfirmation = (t, m) => ShowConfirmationAsync(t, m);
+        CurrentEditViewModel = editVm;
+    }
+
     private void OpenCreateLanceForm()
     {
         ShowMessage("Nuevo Lance", "Para crear un nuevo lance, debe hacerlo desde la sección de Mareas > Etapas para mantener la consistencia de datos.", null, MessageDialogType.Info);
@@ -1350,16 +1393,46 @@ public sealed class MainWindowViewModel : ObservableObject
             .OrderBy(l => l.NroLance)
             .ToList();
 
+        bool isRayaGenericGroup = controlItem.EspecieId == RayasGenericId;
+
         foreach (var lance in filteredLances)
         {
-            var catchItem = lance.ItemsCaptura.FirstOrDefault(c => c.EspecieID == controlItem.EspecieId);
-            if (catchItem != null && (catchItem.CapturaTotalKgCalculado > 0 || catchItem.PesoDescarteCalculado > 0))
+            var catchItems = lance.ItemsCaptura.Where(c => 
             {
+                if (c.EspecieID == controlItem.EspecieId) return true;
+                if (controlItem.EspecieId == RayasGenericId && c.EspecieID != null && c.EspecieID.StartsWith(RayasPrefix))
+                {
+                    return !_commonRayaIds.Contains(c.EspecieID);
+                }
+                return false;
+            });
+
+            var catchItemsList = catchItems.ToList();
+            double catchKg = 0;
+            double discardKg = 0;
+
+            foreach (var catchItem in catchItemsList)
+            {
+                catchKg += catchItem.CapturaTotalKgCalculado;
+                discardKg += catchItem.PesoDescarteCalculado;
+            }
+
+            if (catchKg > 0 || discardKg > 0)
+            {
+                var especiesNombres = catchItemsList
+                    .Select(c => c.Especie?.NombreVulgar ?? c.Especie?.NombreCientifico ?? c.EspecieID)
+                    .Where(n => n != null)
+                    .Distinct()
+                    .ToList();
+
                 ControlLanceDetails.Add(new ControlLanceDetailViewModel
                 {
+                    LanceId = lance.Id,
+                    MareaEtapaId = lance.MareaEtapaId,
                     NroLance = lance.NroLance,
-                    CapturaKg = catchItem.CapturaTotalKgCalculado,
-                    DescarteKg = catchItem.PesoDescarteCalculado
+                    CapturaKg = catchKg,
+                    DescarteKg = discardKg,
+                    EspecieDetalle = string.Join(", ", especiesNombres)
                 });
             }
         }
@@ -1407,6 +1480,37 @@ public sealed class MainWindowViewModel : ObservableObject
         ActiveDialog = importVm;
     }
 
+    private async Task NavigateToControlProduccionDetailAsync(ControlProduccionListItemViewModel? vm)
+    {
+        if (vm == null || IsControlProduccionDetailVisible) return;
+
+        ControlProduccionSelectedEspecieId = vm.EspecieId;
+        
+        if (vm.EspecieId == RayasGenericId)
+        {
+            ControlProduccionSelectedEspecie = new Especie 
+            { 
+                ID = RayasGenericId, 
+                NombreVulgar = "Rayas", 
+                NombreCientifico = "Rajidae" 
+            };
+        }
+        else
+        {
+            using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+            ControlProduccionSelectedEspecie = await dbContext.Especies.FirstOrDefaultAsync(e => e.ID == vm.EspecieId);
+        }
+
+        await LoadControlProduccionAsync();
+    }
+
+    private void BackToControlProduccionSummary()
+    {
+        ControlProduccionSelectedEspecieId = null;
+        ControlProduccionSelectedEspecie = null;
+        _ = LoadControlProduccionAsync();
+    }
+
     private async Task LoadControlProduccionAsync()
     {
         var activeMarea = _activeMareaManager.ActiveMarea;
@@ -1431,65 +1535,172 @@ public sealed class MainWindowViewModel : ObservableObject
             produccion.AddRange(etapaProduccion);
         }
 
-        // Agrupar producción por fecha y especie
-        var produccionAgrupada = produccion
-            .Where(p => DateTime.TryParse(p.Fecha, out _))
-            .GroupBy(p => new 
-            { 
-                Fecha = DateTime.Parse(p.Fecha).Date, 
-                EspecieId = p.EspecieId,
-                NombreFallback = p.EspecieId == null ? (p.Comentarios ?? "Desconocida") : ""
-            })
-            .Select(g => new
-            {
-                g.Key.Fecha,
-                g.Key.EspecieId,
-                EspecieNombre = g.First().Especie?.NombreVulgar 
-                    ?? g.First().Especie?.NombreCientifico 
-                    ?? g.First().Comentarios?.Replace("Importado: ", "") 
-                    ?? "Desconocida",
-                PesoProcesadoTotal = g.Sum(p => p.Kg ?? 0),
-                CapturaReconstruida = g.Sum(p => (p.Kg ?? 0) * (p.Factor ?? 1.0))
-            });
+        var rayaIdsInProd = produccion
+            .Where(p => p.EspecieId != null && p.EspecieId.StartsWith(RayasPrefix))
+            .Select(p => p.EspecieId!)
+            .Distinct()
+            .ToHashSet();
 
-        var results = new List<ControlProduccionListItemViewModel>();
+        var rayaIdsInCatch = lances
+            .SelectMany(l => l.ItemsCaptura)
+            .Where(c => c.EspecieID != null && c.EspecieID.StartsWith(RayasPrefix))
+            .Select(c => c.EspecieID!)
+            .Distinct()
+            .ToHashSet();
 
-        foreach (var pDay in produccionAgrupada)
+        _commonRayaIds = rayaIdsInProd.Intersect(rayaIdsInCatch).ToHashSet();
+
+        if (string.IsNullOrEmpty(ControlProduccionSelectedEspecieId))
         {
-            double capturaNetaTotal = 0;
-            var lancesDelDia = lances
-                .Where(l => DateTime.TryParse(l.Fecha, out var ld) && ld.Date == pDay.Fecha)
-                .ToList();
+            // VISTA AGRUPADA POR ESPECIE
+            PageTitle = "Control Capt./Prod.";
+            PageDescription = "Balance de masa total por especie para la marea activa.";
             
-            foreach (var lance in lancesDelDia)
-            {
-                var catchItem = lance.ItemsCaptura.FirstOrDefault(c => c.EspecieID == pDay.EspecieId);
-                if (catchItem != null)
+            SetColumnHeaders(
+                "Especie",
+                "Prod. Total",
+                "Capt. Recon.",
+                "Capt. Total",
+                "Dif. Kg",
+                "Dif. %",
+                "");
+
+            var summary = produccion
+                .GroupBy(p => (p.EspecieId != null && p.EspecieId.StartsWith(RayasPrefix) && !_commonRayaIds.Contains(p.EspecieId)) ? RayasGenericId : p.EspecieId)
+                .Select(g => new
                 {
-                    capturaNetaTotal += catchItem.CapturaTotalKgCalculado - catchItem.PesoDescarteCalculado;
+                    EspecieId = g.Key,
+                    EspecieNombre = g.Key == RayasGenericId ? "Rayas (Rajidae - Otras/Genérico)" : (g.First().Especie?.NombreVulgar 
+                        ?? g.First().Especie?.NombreCientifico 
+                        ?? g.First().Comentarios?.Replace("Importado: ", "") 
+                        ?? "Desconocida"),
+                    PesoProcesadoTotal = g.Sum(p => p.Kg ?? 0),
+                    CapturaReconstruida = g.Sum(p => (p.Kg ?? 0) * (p.Factor ?? 1.0))
+                })
+                .ToList();
+
+            var results = new List<ControlProduccionListItemViewModel>();
+            foreach (var item in summary)
+            {
+                double capturaNetaTotal = 0;
+                bool isRayaGenericGroup = item.EspecieId == RayasGenericId;
+
+                foreach (var lance in lances)
+                {
+                    var catchItems = lance.ItemsCaptura.Where(c => 
+                    {
+                        if (c.EspecieID == item.EspecieId) return true;
+                        if (item.EspecieId == RayasGenericId && c.EspecieID != null && c.EspecieID.StartsWith(RayasPrefix))
+                        {
+                            return !_commonRayaIds.Contains(c.EspecieID);
+                        }
+                        return false;
+                    });
+
+                    foreach (var catchItem in catchItems)
+                    {
+                        capturaNetaTotal += catchItem.CapturaTotalKgCalculado - catchItem.PesoDescarteCalculado;
+                    }
                 }
+
+                results.Add(new ControlProduccionListItemViewModel
+                {
+                    Especie = item.EspecieNombre,
+                    EspecieId = item.EspecieId,
+                    ProduccionTotal = item.PesoProcesadoTotal,
+                    CapturaReconstruida = item.CapturaReconstruida,
+                    CapturaTotal = capturaNetaTotal,
+                    IsSummaryView = true
+                });
             }
 
-            results.Add(new ControlProduccionListItemViewModel
-            {
-                Fecha = pDay.Fecha,
-                Especie = pDay.EspecieNombre,
-                EspecieId = pDay.EspecieId,
-                ProduccionTotal = pDay.PesoProcesadoTotal,
-                CapturaReconstruida = pDay.CapturaReconstruida,
-                CapturaTotal = capturaNetaTotal
-            });
+            var viewModels = results.OrderBy(r => r.Especie).ToList();
+            Records.Clear();
+            foreach (var vm in viewModels) Records.Add(vm);
         }
-
-        var viewModels = results
-            .OrderBy(r => r.Fecha)
-            .ThenBy(r => r.Especie)
-            .ToList();
-
-        Records.Clear();
-        foreach (var vm in viewModels)
+        else
         {
-            Records.Add(vm);
+            // VISTA DETALLE POR FECHA (filtrada por especie)
+            if (ControlProduccionSelectedEspecie != null)
+            {
+                PageTitle = $"{ControlProduccionSelectedEspecie.NombreVulgar} ({ControlProduccionSelectedEspecie.NombreCientifico})";
+            }
+            else
+            {
+                PageTitle = "Detalle por Especie";
+            }
+            PageDescription = "Evolución diaria del balance de masa para la especie seleccionada.";
+
+            SetColumnHeaders(
+                "Fecha",
+                "Prod. Total",
+                "Capt. Recon.",
+                "Capt. Total",
+                "Dif. Kg",
+                "Dif. %",
+                "");
+
+            bool isRayaGenericGroup = ControlProduccionSelectedEspecieId == RayasGenericId;
+
+            var produccionFiltrada = produccion
+                .Where(p => isRayaGenericGroup 
+                    ? (p.EspecieId != null && p.EspecieId.StartsWith(RayasPrefix) && !_commonRayaIds.Contains(p.EspecieId)) 
+                    : p.EspecieId == ControlProduccionSelectedEspecieId)
+                .Where(p => DateTime.TryParse(p.Fecha, out _))
+                .GroupBy(p => DateTime.Parse(p.Fecha).Date)
+                .Select(g => new
+                {
+                    Fecha = g.Key,
+                    EspecieId = ControlProduccionSelectedEspecieId,
+                    EspecieNombre = isRayaGenericGroup ? "Rayas (Rajidae - Otras/Genérico)" : (g.First().Especie?.NombreVulgar 
+                        ?? g.First().Especie?.NombreCientifico 
+                        ?? g.First().Comentarios?.Replace("Importado: ", "") 
+                        ?? "Desconocida"),
+                    PesoProcesadoTotal = g.Sum(p => p.Kg ?? 0),
+                    CapturaReconstruida = g.Sum(p => (p.Kg ?? 0) * (p.Factor ?? 1.0))
+                });
+
+            var results = new List<ControlProduccionListItemViewModel>();
+            foreach (var pDay in produccionFiltrada)
+            {
+                double capturaNetaTotal = 0;
+                var lancesDelDia = lances
+                    .Where(l => DateTime.TryParse(l.Fecha, out var ld) && ld.Date == pDay.Fecha)
+                    .ToList();
+                
+                foreach (var lance in lancesDelDia)
+                {
+                    var catchItems = lance.ItemsCaptura.Where(c => 
+                    {
+                        if (c.EspecieID == pDay.EspecieId) return true;
+                        if (pDay.EspecieId == RayasGenericId && c.EspecieID != null && c.EspecieID.StartsWith(RayasPrefix))
+                        {
+                            return !_commonRayaIds.Contains(c.EspecieID);
+                        }
+                        return false;
+                    });
+
+                    foreach (var catchItem in catchItems)
+                    {
+                        capturaNetaTotal += catchItem.CapturaTotalKgCalculado - catchItem.PesoDescarteCalculado;
+                    }
+                }
+
+                results.Add(new ControlProduccionListItemViewModel
+                {
+                    Fecha = pDay.Fecha,
+                    Especie = pDay.EspecieNombre,
+                    EspecieId = pDay.EspecieId!,
+                    ProduccionTotal = pDay.PesoProcesadoTotal,
+                    CapturaReconstruida = pDay.CapturaReconstruida,
+                    CapturaTotal = capturaNetaTotal,
+                    IsSummaryView = false
+                });
+            }
+
+            var viewModels = results.OrderBy(r => r.Fecha).ToList();
+            Records.Clear();
+            foreach (var vm in viewModels) Records.Add(vm);
         }
     }
 }
