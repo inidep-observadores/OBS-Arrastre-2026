@@ -19,7 +19,7 @@ public class MareaValidationEngineTests
         };
 
         // Act
-        var report = _engine.ValidateMarea("BUQUE CORRECTO", 2026, 100, new(), capturas, new(), new(), new(), new(), new(), new(), new());
+        var report = _engine.ValidateMarea("BUQUE CORRECTO", 2026, 100, new(), capturas, new(), new(), new(), new(), new(), new(), new(), new(), new());
 
         // Assert
         report.Issues.Should().Contain(i => i.Level == ValidationLevel.Fatal && i.Category == "Consistencia");
@@ -42,7 +42,7 @@ public class MareaValidationEngineTests
         var capturas = new List<LegacyCaptura> { c };
 
         // Act
-        var report = _engine.ValidateMarea("B", 2026, 100, new(), capturas, new(), new(), new(), new(), new(), new(), new());
+        var report = _engine.ValidateMarea("B", 2026, 100, new(), capturas, new(), new(), new(), new(), new(), new(), new(), new(), new());
 
         // Assert
         report.Issues.Should().Contain(i => i.Level == ValidationLevel.AutoFixed && i.Category == "Captura");
@@ -69,7 +69,7 @@ public class MareaValidationEngineTests
         };
 
         // Act
-        var report = _engine.ValidateMarea("B", 2026, 100, new(), new() { c }, new(), submuestras, new(), new(), new(), new(), new());
+        var report = _engine.ValidateMarea("B", 2026, 100, new(), new() { c }, new(), submuestras, new(), new(), new(), new(), new(), new(), new());
 
         // Assert
         report.Issues.Should().Contain(i => i.Level == ValidationLevel.Warning && i.Category == "Biometría");
@@ -87,7 +87,7 @@ public class MareaValidationEngineTests
         var capturas = new List<LegacyCaptura> { c1, c2 };
 
         // Act
-        var report = _engine.ValidateMarea("B", 2026, 100, new(), capturas, new(), new(), new(), new(), new(), new(), new());
+        var report = _engine.ValidateMarea("B", 2026, 100, new(), capturas, new(), new(), new(), new(), new(), new(), new(), new(), new());
 
         // Assert
         report.Issues.Should().Contain(i => i.Category == "Estructura" && i.Message.Contains("Salto"));
@@ -101,7 +101,7 @@ public class MareaValidationEngineTests
         c.Especies[1] = 10;
 
         // Act
-        var report = _engine.ValidateMarea("B", 2026, 100, new(), new() { c }, new(), new(), new(), new(), new(), new(), new());
+        var report = _engine.ValidateMarea("B", 2026, 100, new(), new() { c }, new(), new(), new(), new(), new(), new(), new(), new(), new());
 
         // Assert
         report.Issues.Should().Contain(i => i.Category == "Geografía" && i.Message.Contains("inicial (-5m)"));
@@ -118,7 +118,7 @@ public class MareaValidationEngineTests
         };
 
         // Act
-        var report = _engine.ValidateMarea("B", 2026, 100, new(), capturas, new(), new(), new(), new(), new(), new(), new());
+        var report = _engine.ValidateMarea("B", 2026, 100, new(), capturas, new(), new(), new(), new(), new(), new(), new(), new(), new());
 
         // Assert
         report.Issues.Should().Contain(i => i.Category == "Captura" && i.Message.Contains("sin registro de especies"));
@@ -147,7 +147,7 @@ public class MareaValidationEngineTests
         };
 
         // Act
-        var report = _engine.ValidateMarea("B", 2026, 100, new(), capturas, muestras, new(), new(), new(), new(), especiesDict, largoPeso);
+        var report = _engine.ValidateMarea("B", 2026, 100, new(), capturas, muestras, new(), new(), new(), new(), especiesDict, new(), new(), largoPeso);
 
         // Assert
         report.Issues.Should().Contain(i => i.Level == ValidationLevel.AutoFixed && i.Message.Contains("Recalculado mediante relación Largo-Peso"));

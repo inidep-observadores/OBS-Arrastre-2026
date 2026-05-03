@@ -29,6 +29,24 @@ CREATE TABLE especies (
 );
 
 CREATE UNIQUE INDEX ix_especies_codigo_inidep ON especies (CodigoInidep);
+ 
+ 
+ -- especies_viejas definition
+ 
+ CREATE TABLE especies_viejas (
+     ID TEXT NOT NULL CONSTRAINT pk_especies_viejas PRIMARY KEY,
+     CodigoInidep TEXT NULL,
+     DocumentoInformativo TEXT NULL,
+     Especifico TEXT NULL,
+     Familia TEXT NULL,
+     Frecuente INTEGER NOT NULL,
+     Genero TEXT NULL,
+     NombreCientifico TEXT NULL,
+     NombreVulgar TEXT NULL,
+     Orden TEXT NULL
+ );
+ 
+ CREATE UNIQUE INDEX ix_especies_viejas_codigo_inidep ON especies_viejas (CodigoInidep);
 
 
 -- productos definition

@@ -95,6 +95,12 @@ public sealed class JsonImportService : IJsonImportService
         return !await context.Especies.AnyAsync();
     }
 
+    public async Task<bool> IsEspeciesViejasEmptyAsync()
+    {
+        using var context = await _dbContextFactory.CreateDbContextAsync();
+        return !await context.EspeciesViejas.AnyAsync();
+    }
+
     public async Task ImportEspeciesAsync(string jsonPath)
     {
         if (!File.Exists(jsonPath)) return;
@@ -135,7 +141,58 @@ public sealed class JsonImportService : IJsonImportService
         await context.SaveChangesAsync();
     }
 
+    public async Task ImportEspeciesViejasAsync(string jsonPath)
+    {
+        if (!File.Exists(jsonPath)) return;
+
+        var json = await File.ReadAllTextAsync(jsonPath);
+        var sourceItems = JsonSerializer.Deserialize<List<JsonElement>>(json);
+        if (sourceItems == null) return;
+
+        using var context = await _dbContextFactory.CreateDbContextAsync();
+
+        foreach (var item in sourceItems)
+        {
+            var codigo = GetStringValue(item, "CodigoInidep");
+            if (string.IsNullOrEmpty(codigo)) continue;
+
+            var existing = await context.EspeciesViejas.FirstOrDefaultAsync(e => e.CodigoInidep == codigo);
+            
+            if (existing == null)
+            {
+                existing = context.EspeciesViejas.Local.FirstOrDefault(e => e.CodigoInidep == codigo);
+            }
+
+            if (existing != null)
+            {
+                UpdateEspecieVieja(existing, item);
+            }
+            else
+            {
+                var nuevo = new EspecieVieja { CodigoInidep = codigo };
+                UpdateEspecieVieja(nuevo, item);
+                context.EspeciesViejas.Add(nuevo);
+            }
+        }
+
+        await context.SaveChangesAsync();
+    }
+
     private void UpdateEspecie(Especie target, JsonElement source)
+    {
+        target.NombreVulgar = GetStringValue(source, "NombreVulgar");
+        target.NombreCientifico = GetStringValue(source, "NombreCientifico");
+        target.Familia = GetStringValue(source, "Familia");
+        target.Genero = GetStringValue(source, "Genero");
+        target.Especifico = GetStringValue(source, "Especifico");
+        target.Orden = GetStringValue(source, "Orden");
+        target.DocumentoInformativo = GetStringValue(source, "DocumentoInformativo");
+        
+        if (source.TryGetProperty("Frecuente", out var fr) && fr.ValueKind != JsonValueKind.Null) 
+            target.Frecuente = fr.GetBoolean();
+    }
+
+    private void UpdateEspecieVieja(EspecieVieja target, JsonElement source)
     {
         target.NombreVulgar = GetStringValue(source, "NombreVulgar");
         target.NombreCientifico = GetStringValue(source, "NombreCientifico");

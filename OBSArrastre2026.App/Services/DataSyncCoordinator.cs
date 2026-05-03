@@ -27,6 +27,7 @@ public sealed class DataSyncCoordinator : IDataSyncCoordinator
 
     public async Task SyncAllAsync()
     {
+        Console.WriteLine("Iniciando sincronización de datos maestros...");
         // Optimizamos: Pasamos el chequeo de tabla vacía para decidir si importar
         await SyncItemAsync(
             "buques.DBF", 
@@ -41,6 +42,13 @@ public sealed class DataSyncCoordinator : IDataSyncCoordinator
             _jsonImporter.IsEspeciesEmptyAsync,
             _dbfExtractor.ExtractEspeciesAsync, 
             _jsonImporter.ImportEspeciesAsync);
+
+        await SyncItemAsync(
+            "ESPECIEvie.DBF", 
+            "especies_viejas.json", 
+            _jsonImporter.IsEspeciesViejasEmptyAsync,
+            _dbfExtractor.ExtractEspeciesAsync, 
+            _jsonImporter.ImportEspeciesViejasAsync);
     }
 
     private async Task SyncItemAsync(
@@ -61,6 +69,7 @@ public sealed class DataSyncCoordinator : IDataSyncCoordinator
             {
                 Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "source_data", dbfFilename),
                 Path.Combine(FindProjectRoot(AppDomain.CurrentDomain.BaseDirectory) ?? "", "source_data", dbfFilename),
+                Path.Combine(FindProjectRoot(AppDomain.CurrentDomain.BaseDirectory) ?? "", "OBSArrastre2026.App", "Data", "Import", "Raw", dbfFilename),
                 Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory)?.FullName ?? "", "source_data", dbfFilename),
                 Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory)?.Parent?.FullName ?? "", "source_data", dbfFilename)
             };
@@ -78,25 +87,41 @@ public sealed class DataSyncCoordinator : IDataSyncCoordinator
 
         if (!File.Exists(dbfFile))
         {
+            Console.WriteLine($"Sincronización ERROR: No se encontró el archivo origen para {dbfFilename}.");
             System.Diagnostics.Debug.WriteLine($"Sincronización error: No se encontró el archivo origen para {dbfFilename}. Buscado en {dbfFile}");
             return;
         }
 
+        Console.WriteLine($"Sincronizando {dbfFilename} desde {dbfFile}...");
+
         // 1. Decidir si regenerar el JSON intermedio (solo si el DBF es más nuevo)
         bool dbfChanged = !File.Exists(jsonFile) || File.GetLastWriteTime(dbfFile) > File.GetLastWriteTime(jsonFile);
 
-        if (dbfChanged)
+        try 
         {
-            await extractor(dbfFile, jsonFile);
-        }
+            if (dbfChanged)
+            {
+                await extractor(dbfFile, jsonFile);
+            }
 
-        // 2. Decidir si realizar la importación a la base de datos
-        // Importamos solo si:
-        // - El DBF cambió (tenemos nuevos datos en el JSON recién extraído)
-        // - O la tabla en la base de datos está vacía (carga inicial)
-        if (dbfChanged || await isTableEmpty())
+            // 2. Decidir si realizar la importación a la base de datos
+            // Importamos solo si:
+            // - El DBF cambió (tenemos nuevos datos en el JSON recién extraído)
+            // - O la tabla en la base de datos está vacía (carga inicial)
+            if (dbfChanged || await isTableEmpty())
+            {
+                Console.WriteLine($"Importando {jsonFile} a la base de datos...");
+                await importer(jsonFile);
+            }
+            else
+            {
+                Console.WriteLine($"{dbfFilename} ya está actualizado.");
+            }
+        }
+        catch (Exception ex)
         {
-            await importer(jsonFile);
+            Console.WriteLine($"Sincronización ERROR en {dbfFilename}: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Sincronización error: {ex}");
         }
     }
 

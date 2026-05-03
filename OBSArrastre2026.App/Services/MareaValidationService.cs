@@ -79,6 +79,24 @@ public class MareaValidationService : IMareaValidationService
             }
         }
 
+        var especiesViejasDB = await dbContext.EspeciesViejas
+            .Where(e => e.CodigoInidep != null)
+            .ToListAsync();
+
+        var especiesViejasDict = new Dictionary<string, long>();
+        foreach (var esp in especiesViejasDB)
+        {
+            if (long.TryParse(esp.CodigoInidep, out long code))
+            {
+                if (!string.IsNullOrEmpty(esp.NombreVulgar))
+                    especiesViejasDict[esp.NombreVulgar.Trim().ToUpper()] = code;
+                if (!string.IsNullOrEmpty(esp.NombreCientifico))
+                    especiesViejasDict[esp.NombreCientifico.Trim().ToUpper()] = code;
+            }
+        }
+
+        var especiesCodigosValidos = new HashSet<long>(especiesDict.Values);
+
         // Extraer rangos de fechas de las etapas
         var etapasFechas = marea.Etapas
             .Select(e => (Inicio: e.FechaZarpada, Fin: e.FechaArribo ?? e.FechaZarpada))
@@ -222,6 +240,8 @@ public class MareaValidationService : IMareaValidationService
             trackingList,
             produccionList,
             especiesDict,
+            especiesViejasDict,
+            especiesCodigosValidos,
             largoPesoCatalogo
         );
 

@@ -162,14 +162,36 @@ public class MareaImportService : IMareaImportService
         var especiesDict = new Dictionary<string, long>();
         foreach (var esp in especiesDB)
         {
-            if (long.TryParse(esp.CodigoInidep, out long code))
+            var codeStr = NormalizeInidepCode(esp.CodigoInidep);
+            if (long.TryParse(codeStr, out long code))
             {
                 if (!string.IsNullOrEmpty(esp.NombreVulgar))
-                    especiesDict[esp.NombreVulgar.Trim().ToUpper()] = code;
+                    especiesDict[esp.NombreVulgar.Trim().ToUpper().Normalize(NormalizationForm.FormC)] = code;
                 if (!string.IsNullOrEmpty(esp.NombreCientifico))
-                    especiesDict[esp.NombreCientifico.Trim().ToUpper()] = code;
+                    especiesDict[esp.NombreCientifico.Trim().ToUpper().Normalize(NormalizationForm.FormC)] = code;
             }
         }
+
+        var especiesViejasDB = await dbContext.EspeciesViejas
+            .Where(e => e.CodigoInidep != null)
+            .ToListAsync();
+
+        var especiesViejasDict = new Dictionary<string, long>();
+        var setEspeciesViejasExistentes = new HashSet<string>();
+        foreach (var esp in especiesViejasDB)
+        {
+            var codeStr = NormalizeInidepCode(esp.CodigoInidep);
+            setEspeciesViejasExistentes.Add(codeStr);
+            if (long.TryParse(codeStr, out long code))
+            {
+                if (!string.IsNullOrEmpty(esp.NombreVulgar))
+                    especiesViejasDict[esp.NombreVulgar.Trim().ToUpper().Normalize(NormalizationForm.FormC)] = code;
+                if (!string.IsNullOrEmpty(esp.NombreCientifico))
+                    especiesViejasDict[esp.NombreCientifico.Trim().ToUpper().Normalize(NormalizationForm.FormC)] = code;
+            }
+        }
+
+        var especiesCodigosValidos = new HashSet<long>(especiesDict.Values);
 
         foreach (var c in capturas)
         {
@@ -182,18 +204,20 @@ public class MareaImportService : IMareaImportService
 
             foreach (var spCode in c.Especies.Keys)
             {
-                if (!setEspeciesExistentes.Contains(spCode.ToString().Trim()))
+                string sCode = spCode.ToString().Trim();
+                if (!setEspeciesExistentes.Contains(sCode) && !setEspeciesViejasExistentes.Contains(sCode))
                 {
-                    report.AddIssue(ValidationLevel.Fatal, "Catálogo Especies", $"La especie legado con código '{spCode}' no existe en la base de datos local.", $"Captura Lance {c.Lance}");
+                    report.AddIssue(ValidationLevel.Fatal, "Catálogo Especies", $"La especie legado con código '{spCode}' no existe ni en el catálogo actual ni en el histórico.", $"Captura Lance {c.Lance}");
                 }
             }
         }
 
         foreach (var m in muestras)
         {
-            if (!setEspeciesExistentes.Contains(m.CodEspec.ToString()))
+            string sCode = m.CodEspec.ToString().Trim();
+            if (!setEspeciesExistentes.Contains(sCode) && !setEspeciesViejasExistentes.Contains(sCode))
             {
-                report.AddIssue(ValidationLevel.Fatal, "Catálogo Especies", $"La especie legado con código '{m.CodEspec}' no existe en la base de datos local.", $"Muestra Lance {m.Lance}");
+                report.AddIssue(ValidationLevel.Fatal, "Catálogo Especies", $"La especie legado con código '{m.CodEspec}' no existe ni en el catálogo actual ni en el histórico.", $"Muestra Lance {m.Lance}");
             }
         }
 
@@ -211,7 +235,7 @@ public class MareaImportService : IMareaImportService
                 lp => (A: lp.ParamA, B: lp.ParamB)
             );
 
-        report = _validator.ValidateMarea(barco, anio, marea, etapasFechas, capturas, muestras, submuestras, lgs, tracking, produccion, especiesDict, largoPesoCatalogo);
+        report = _validator.ValidateMarea(barco, anio, marea, etapasFechas, capturas, muestras, submuestras, lgs, tracking, produccion, especiesDict, especiesViejasDict, especiesCodigosValidos, largoPesoCatalogo);
         report.ArchivosProcesados = archivosEncontrados;
 
         // 6. Generar Reporte PDF
@@ -238,13 +262,36 @@ public class MareaImportService : IMareaImportService
         
         var especieByCodigoMap = especiesCatalogo
             .Where(e => !string.IsNullOrEmpty(e.CodigoInidep))
-            .GroupBy(e => e.CodigoInidep!.Trim())
+            .GroupBy(e => NormalizeInidepCode(e.CodigoInidep))
             .ToDictionary(g => g.Key, g => g.First().ID);
 
-        var especieByCientificoMap = especiesCatalogo
-            .Where(e => !string.IsNullOrEmpty(e.NombreCientifico))
-            .GroupBy(e => e.NombreCientifico!.Trim().ToUpper().Normalize(NormalizationForm.FormC))
-            .ToDictionary(g => g.Key, g => g.First().ID);
+        var especieByNombreMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var e in especiesCatalogo)
+        {
+            if (!string.IsNullOrEmpty(e.NombreVulgar))
+                especieByNombreMap[e.NombreVulgar.Trim().ToUpper().Normalize(NormalizationForm.FormC)] = e.ID;
+            if (!string.IsNullOrEmpty(e.NombreCientifico))
+                especieByNombreMap[e.NombreCientifico.Trim().ToUpper().Normalize(NormalizationForm.FormC)] = e.ID;
+        }
+
+        // LÓGICA DE PUENTE CON ESPECIES VIEJAS:
+        // Usamos la tabla especies_viejas como puente para encontrar el código que mapea a la tabla especies actual.
+        var especiesViejasCatalogo = await dbContext.EspeciesViejas.ToListAsync();
+        foreach (var ev in especiesViejasCatalogo)
+        {
+            var code = NormalizeInidepCode(ev.CodigoInidep);
+            if (string.IsNullOrEmpty(code)) continue;
+
+            // Si el código de la vieja existe en la nueva, mapeamos los nombres viejos al ID de la nueva
+            if (especieByCodigoMap.TryGetValue(code, out var newId))
+            {
+                if (!string.IsNullOrEmpty(ev.NombreVulgar))
+                    especieByNombreMap.TryAdd(ev.NombreVulgar.Trim().ToUpper().Normalize(NormalizationForm.FormC), newId);
+                if (!string.IsNullOrEmpty(ev.NombreCientifico))
+                    especieByNombreMap.TryAdd(ev.NombreCientifico.Trim().ToUpper().Normalize(NormalizationForm.FormC), newId);
+            }
+        }
+
 
         // Map Capturas -> Lances
         var lanceMap = new Dictionary<double, Lance>();
@@ -272,10 +319,11 @@ public class MareaImportService : IMareaImportService
                 DescarteTotalKg = c.Descarte != 0 ? c.Descarte : (c.DescartesPorEspecie.Values.Sum() > 0 ? c.DescartesPorEspecie.Values.Sum() : 0),
             };
 
-            // Items de Captura (Especies por código)
+            // Items de Captura (Especies por código o puente)
             foreach (var kvp in c.Especies)
             {
-                if (kvp.Value > 0 && especieByCodigoMap.TryGetValue(kvp.Key.ToString().Trim(), out var especieId))
+                string sCode = kvp.Key.ToString().Trim();
+                if (kvp.Value > 0 && especieByCodigoMap.TryGetValue(sCode, out var especieId))
                 {
                     lance.ItemsCaptura.Add(new ItemCaptura
                     {
@@ -297,14 +345,14 @@ public class MareaImportService : IMareaImportService
         {
             if (lanceMap.TryGetValue(rm.Lance, out var lance))
             {
-                // Resolución de especie: Priorizar código, luego nombre científico
+                // Resolución de especie: Priorizar código, luego nombre (con puente incluido en especieByNombreMap)
                 string? especieId = null;
                 if (rm.CodEspec > 0) especieByCodigoMap.TryGetValue(rm.CodEspec.ToString().Trim(), out especieId);
                 
                 if (especieId == null && !string.IsNullOrEmpty(rm.Especie))
                 {
                     var normName = rm.Especie.Trim().ToUpper().Normalize(NormalizationForm.FormC);
-                    especieByCientificoMap.TryGetValue(normName, out especieId);
+                    especieByNombreMap.TryGetValue(normName, out especieId);
                 }
 
                 if (especieId != null)
@@ -398,36 +446,7 @@ public class MareaImportService : IMareaImportService
         if (report.Produccion.Any())
         {
             var existingProducts = await dbContext.Productos.ToDictionaryAsync(p => p.Codigo.Trim(), p => p.Id);
-            var existenteEspecies = await dbContext.Especies
-                .Select(e => new { e.ID, e.NombreVulgar, e.NombreCientifico, e.CodigoInidep })
-                .ToListAsync();
-
-            var especieNameMap = new Dictionary<string, string>();
-
-            // Primero mapear por Nombre Vulgar
-            foreach (var e in existenteEspecies.Where(e => !string.IsNullOrEmpty(e.NombreVulgar)))
-            {
-                var key = e.NombreVulgar!.Trim().ToUpper().Normalize(NormalizationForm.FormC);
-                if (!especieNameMap.ContainsKey(key))
-                    especieNameMap[key] = e.ID;
-            }
-
-            // Luego por Nombre Científico (sin sobreescribir si ya existe por Vulgar)
-            foreach (var e in existenteEspecies.Where(e => !string.IsNullOrEmpty(e.NombreCientifico)))
-            {
-                var key = e.NombreCientifico!.Trim().ToUpper().Normalize(NormalizationForm.FormC);
-                if (!especieNameMap.ContainsKey(key))
-                    especieNameMap[key] = e.ID;
-            }
-
-            // Finalmente por Código INIDEP (si el archivo trae el número como string)
-            foreach (var e in existenteEspecies.Where(e => !string.IsNullOrEmpty(e.CodigoInidep)))
-            {
-                var key = e.CodigoInidep!.Trim();
-                if (!especieNameMap.ContainsKey(key))
-                    especieNameMap[key] = e.ID;
-            }
-
+            
             foreach (var rp in report.Produccion)
             {
                 if (string.IsNullOrEmpty(rp.Producto)) continue;
@@ -458,7 +477,12 @@ public class MareaImportService : IMareaImportService
                     if (!string.IsNullOrEmpty(rp.Especie))
                     {
                         var searchName = rp.Especie.Trim().ToUpper().Normalize(NormalizationForm.FormC);
-                        especieNameMap.TryGetValue(searchName, out speciesId);
+                        if (!especieByNombreMap.TryGetValue(searchName, out speciesId))
+                        {
+                            // Fallback: Probar si el campo Especie trae el código INIDEP directamente (normalizado)
+                            var searchCode = NormalizeInidepCode(rp.Especie);
+                            especieByCodigoMap.TryGetValue(searchCode, out speciesId);
+                        }
                     }
 
                     dbContext.RegistrosProduccion.Add(new RegistroProduccion
@@ -546,5 +570,12 @@ public class MareaImportService : IMareaImportService
     {
         var ts = ParseLegacyTime(time);
         return ts.ToString(@"hh\:mm");
+    }
+    private string NormalizeInidepCode(string? code)
+    {
+        if (string.IsNullOrWhiteSpace(code)) return string.Empty;
+        // Si el código viene como "721004.0" (común en DBFs numéricos), lo convertimos a "721004"
+        if (double.TryParse(code, out double d)) return ((long)d).ToString();
+        return code.Trim();
     }
 }

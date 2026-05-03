@@ -8,6 +8,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 {
     public DbSet<Buque> Buques => Set<Buque>();
     public DbSet<Especie> Especies => Set<Especie>();
+    public DbSet<EspecieVieja> EspeciesViejas => Set<EspecieVieja>();
     public DbSet<Producto> Productos => Set<Producto>();
     public DbSet<Marea> Mareas => Set<Marea>();
     public DbSet<MareaEtapa> MareaEtapas => Set<MareaEtapa>();
