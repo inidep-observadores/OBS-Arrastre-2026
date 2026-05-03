@@ -63,24 +63,11 @@
                             </StackPanel>
                         </Grid>
 
-                        <StackPanel Margin="0,0,0,24">
-                            <Label Content="Especie" Style="{StaticResource FormLabelStyle}" />
-                            <ComboBox ItemsSource="{Binding FilteredEspecies}"
-                                      SelectedItem="{Binding SelectedEspecie}"
-                                      IsEditable="True"
-                                      IsTextSearchEnabled="False"
-                                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                      IsDropDownOpen="{Binding IsExpanded}"
-                                      Style="{StaticResource PremiumComboBoxStyle}">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding NombreVulgar}" FontWeight="Bold">
-                                            <Run Text="{Binding NombreCientifico, StringFormat=' ({0})'}" FontWeight="Normal" FontStyle="Italic" Foreground="{DynamicResource SecondaryTextBrush}" />
-                                        </TextBlock>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                        </StackPanel>
+                        <controls:SpeciesSelectorPremium 
+                            Label="Especie"
+                            ItemsSource="{Binding AllEspecies}"
+                            SelectedItem="{Binding SelectedEspecie}"
+                            Margin="0,0,0,24" />
 
                         <StackPanel Margin="0,0,0,24">
                             <Label Content="Producto" Style="{StaticResource FormLabelStyle}" />

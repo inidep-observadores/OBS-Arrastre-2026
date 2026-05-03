@@ -13,6 +13,10 @@ public sealed class Especie
     public string? NombreVulgar { get; set; }
     public string? Orden { get; set; }
 
+    public string FullDisplayName => string.IsNullOrEmpty(NombreCientifico) 
+        ? NombreVulgar ?? "" 
+        : $"{NombreVulgar} ({NombreCientifico})";
+
     // Navigation properties
     public ICollection<MareaEtapa> MareaEtapas { get; set; } = new List<MareaEtapa>();
     public ICollection<Muestra> Muestras { get; set; } = new List<Muestra>();

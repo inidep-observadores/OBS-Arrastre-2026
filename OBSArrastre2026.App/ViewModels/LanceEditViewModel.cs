@@ -151,6 +151,8 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
     public ICommand CancelCommand { get; }
     public ICommand AddCatchItemCommand { get; }
 
+    public IEnumerable<Especie> AllEspecies => _allEspecies;
+
     public Action<object?>? ShowCustomDialog { get; set; }
     public Func<string, string, Task<bool>>? ShowConfirmation { get; set; }
     public Action<string, string, string?, MessageDialogType>? ShowMessage { get; set; }

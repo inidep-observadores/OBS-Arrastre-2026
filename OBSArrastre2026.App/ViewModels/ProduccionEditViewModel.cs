@@ -57,6 +57,7 @@ public sealed partial class ProduccionEditViewModel : ValidatableViewModelBase<P
 
     public ObservableCollection<Producto> Productos { get; } = [];
     public ObservableCollection<MareaEtapa> Etapas { get; } = [];
+    public IEnumerable<Especie> AllEspecies => _allEspecies;
 
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }

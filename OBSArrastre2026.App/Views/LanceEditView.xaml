@@ -56,6 +56,12 @@
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
 
+        <Style x:Key="LeftCenterGridText" TargetType="TextBlock" BasedOn="{StaticResource BodySecondaryStyle}">
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="12,0,0,0" />
+        </Style>
+
         <Style x:Key="DataGridHeaderStyle" TargetType="DataGridColumnHeader">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
@@ -80,7 +86,8 @@
         <Style x:Key="LanceDataGridStyle" TargetType="DataGrid">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="GridLinesVisibility" Value="None" />
+            <Setter Property="GridLinesVisibility" Value="Horizontal" />
+            <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource SidebarBorderBrush}" />
             <Setter Property="AutoGenerateColumns" Value="False" />
             <Setter Property="IsReadOnly" Value="True" />
             <Setter Property="SelectionMode" Value="Single" />
@@ -88,10 +95,24 @@
             <Setter Property="ColumnHeaderStyle" Value="{StaticResource DataGridHeaderStyle}" />
             <Setter Property="RowHeight" Value="42" />
             <Setter Property="FontSize" Value="11" />
-            <Style.Resources>
-                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#082F6BFF" />
-                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="{Binding Color, Source={StaticResource PrimaryTextBrush}}" />
-            </Style.Resources>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+            <Setter Property="RowBackground" Value="Transparent" />
+            <Setter Property="AlternatingRowBackground" Value="{DynamicResource SurfaceBackgroundBrush}" />
+            <Setter Property="CellStyle">
+                <Setter.Value>
+                    <Style TargetType="DataGridCell">
+                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="BorderThickness" Value="0" />
+                        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                        <Style.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource SelectionBackgroundBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Setter.Value>
+            </Setter>
         </Style>
     </UserControl.Resources>
 
@@ -428,7 +449,7 @@
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
 
-                                <Border Background="#FCFDFF" Padding="16,10" BorderBrush="{DynamicResource SidebarBorderBrush}" BorderThickness="0,0,0,1">
+                                <Border Background="{DynamicResource SurfaceBackgroundBrush}" Padding="16,10" BorderBrush="{DynamicResource SidebarBorderBrush}" BorderThickness="0,0,0,1">
                                     <Grid>
                                         <TextBlock Text="ESPECIES CAPTURADAS" Style="{StaticResource SectionHeaderStyle}" VerticalAlignment="Center" FontSize="11" />
                                         <Button HorizontalAlignment="Right" 
@@ -450,7 +471,7 @@
                                           Style="{StaticResource LanceDataGridStyle}">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="ORD" Binding="{Binding NumeroOrden}" Width="40" ElementStyle="{StaticResource CenterGridText}" />
-                                        <DataGridTextColumn Header="ESPECIE" Binding="{Binding EspecieNombreVulgar}" Width="*" FontWeight="SemiBold" FontSize="13" />
+                                        <DataGridTextColumn Header="ESPECIE" Binding="{Binding EspecieNombreVulgar}" Width="*" FontWeight="SemiBold" FontSize="13" ElementStyle="{StaticResource LeftCenterGridText}" />
                                         <DataGridTextColumn Header="CAPTURA" Binding="{Binding DatoCapturaDisplay}" Width="110" ElementStyle="{StaticResource RightGridText}" HeaderStyle="{StaticResource DataGridRightHeaderStyle}" />
                                         <DataGridTextColumn Header="DESC. (%)" Binding="{Binding DatoDescartePorcentajeDisplay}" Width="100" ElementStyle="{StaticResource RightGridText}" HeaderStyle="{StaticResource DataGridRightHeaderStyle}" Foreground="{DynamicResource SecondaryTextBrush}" />
                                         <DataGridTextColumn Header="DESC. (KG)" Binding="{Binding DatoDescarteKilosDisplay}" Width="110" ElementStyle="{StaticResource RightGridText}" HeaderStyle="{StaticResource DataGridRightHeaderStyle}" FontWeight="SemiBold" />
@@ -460,7 +481,7 @@
                                                     <Button Command="{Binding RemoveCommand}"
                                                             Content="✕"
                                                             Style="{StaticResource ThemeButtonStyle}"
-                                                            Foreground="#FF5252"
+                                                            Foreground="{DynamicResource DangerForegroundBrush}"
                                                             HorizontalAlignment="Center"
                                                             Padding="8,2"
                                                             FontSize="11" />
@@ -502,26 +523,11 @@
 
                             <ScrollViewer Grid.Row="1" Style="{StaticResource SlimScrollViewerStyle}" Padding="24">
                                 <StackPanel>
-                                    <Label Content="Buscador de Especie" Style="{StaticResource FormLabelStyle}" />
-                                    <ComboBox x:Name="EspecieComboBox"
-                                              ItemsSource="{Binding SelectedCatchItem.FilteredEspecies}"
-                                              SelectedItem="{Binding SelectedCatchItem.SelectedEspecie}"
-                                              IsEditable="True"
-                                              IsTextSearchEnabled="False"
-                                              TextSearch.TextPath="NombreVulgar"
-                                              Text="{Binding SelectedCatchItem.SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                              Style="{StaticResource PremiumComboBoxStyle}"
-                                              IsDropDownOpen="{Binding SelectedCatchItem.IsExpanded}"
-                                              DropDownOpened="EspecieComboBox_DropDownOpened"
-                                              Margin="0,0,0,24">
-                                        <ComboBox.ItemTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding NombreVulgar, StringFormat='{}{0} '}" FontWeight="Bold">
-                                                    <Run Text="{Binding NombreCientifico, StringFormat='({0})'}" FontWeight="Normal" FontStyle="Italic" Foreground="{DynamicResource SecondaryTextBrush}" />
-                                                </TextBlock>
-                                            </DataTemplate>
-                                        </ComboBox.ItemTemplate>
-                                    </ComboBox>
+                                    <controls:SpeciesSelectorPremium 
+                                        Label="Buscador de Especie"
+                                        ItemsSource="{Binding AllEspecies}"
+                                        SelectedItem="{Binding SelectedCatchItem.SelectedEspecie}"
+                                        Margin="0,0,0,24" />
 
                                     <TextBlock Text="CAPTURA" FontWeight="Bold" FontSize="10" Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,12"/>
                                     <Grid Margin="0,0,0,24">
