@@ -65,7 +65,16 @@ public partial class SpeciesSelectorPremium : UserControl
     {
         if (d is SpeciesSelectorPremium control)
         {
-            control.SpeciesCombo.ItemsSource = control.ItemsSource;
+            if (e.NewValue != null)
+            {
+                // Crear una vista de colección privada para este control para evitar interferencias
+                var cvs = new CollectionViewSource { Source = e.NewValue };
+                control.SpeciesCombo.ItemsSource = cvs.View;
+            }
+            else
+            {
+                control.SpeciesCombo.ItemsSource = null;
+            }
         }
     }
 
@@ -75,7 +84,23 @@ public partial class SpeciesSelectorPremium : UserControl
         {
             if (control.SpeciesCombo.SelectedItem != e.NewValue)
             {
+                // Limpiar el filtro antes de cambiar la selección para asegurar que el item sea visible
+                if (control.SpeciesCombo.ItemsSource is ICollectionView view)
+                {
+                    view.Filter = null;
+                }
+
                 control.SpeciesCombo.SelectedItem = e.NewValue;
+
+                // Forzar actualización del texto si es necesario (cuando el combo es editable)
+                if (e.NewValue is Especie especie)
+                {
+                    control.SpeciesCombo.Text = especie.FullDisplayName;
+                }
+                else if (e.NewValue == null)
+                {
+                    control.SpeciesCombo.Text = string.Empty;
+                }
             }
         }
     }
@@ -91,7 +116,6 @@ public partial class SpeciesSelectorPremium : UserControl
     private static void OnWatermarkChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         // El estilo PremiumComboBoxStyle debería manejar el Watermark si se bindea correctamente.
-        // Por simplicidad en este control, asumimos que el estilo ya lo hace o lo implementaremos en el XAML del ComboBox si es necesario.
     }
 
     private void SpeciesCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -108,8 +132,7 @@ public partial class SpeciesSelectorPremium : UserControl
         if (SpeciesCombo.SelectedItem is Especie sel && sel.FullDisplayName == filter)
             return;
 
-        ICollectionView view = CollectionViewSource.GetDefaultView(SpeciesCombo.ItemsSource);
-        if (view == null) return;
+        if (SpeciesCombo.ItemsSource is not ICollectionView view) return;
 
         if (string.IsNullOrWhiteSpace(filter))
         {
