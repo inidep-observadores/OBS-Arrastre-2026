@@ -14,7 +14,7 @@ using GMap.NET;
 
 namespace OBSArrastre2026.App.ViewModels;
 
-public sealed class MainWindowViewModel : ObservableObject
+public class MainWindowViewModel : ObservableObject
 {
     private readonly IMockShellDataService _mockShellDataService;
     private readonly IThemeService _themeService;
@@ -45,9 +45,20 @@ public sealed class MainWindowViewModel : ObservableObject
     private object? _currentEditViewModel;
     private object? _activeDialog;
     
-    private const string RayasPrefix = "71090";
-    private const string RayasGenericId = "71090000000";
+    private const string RayaGenericVirtualId = "RAYA_GENERICA_GRUPO";
     private HashSet<string> _commonRayaIds = new();
+    
+    private bool IsRaya(Especie? e)
+    {
+        var codigo = e?.CodigoInidep?.Trim();
+        return codigo != null && codigo.Length >= 5 && codigo.StartsWith("71090");
+    }
+
+    private bool IsGenericRaya(Especie? e)
+    {
+        var codigo = e?.CodigoInidep?.Trim();
+        return codigo == "7109000000" || codigo == "71090000000";
+    }
     
     // Datos para GMap.NET
     public List<MareaTracking> CurrentTrack { get; private set; } = new();
@@ -1381,28 +1392,41 @@ public sealed class MainWindowViewModel : ObservableObject
 
         using var dbContext = await _dbContextFactory.CreateDbContextAsync();
         
-        // Obtener lances de la marea en la fecha seleccionada
+        // Obtener lances de la marea
         var lances = await dbContext.Lances
             .Include(l => l.MareaEtapa)
             .Include(l => l.ItemsCaptura)
+                .ThenInclude(i => i.Especie)
             .Where(l => l.MareaEtapa.MareaID == activeMarea.ID)
             .ToListAsync();
 
+        foreach (var lance in lances)
+        {
+            foreach (var item in lance.ItemsCaptura)
+            {
+                item.Lance = lance;
+            }
+        }
+
         var filteredLances = lances
-            .Where(l => DateTime.TryParse(l.Fecha, out var ld) && ld.Date == controlItem.Fecha.Date)
+            .Where(l => controlItem.IsSummaryView || (DateTime.TryParse(l.Fecha, out var ld) && ld.Date == controlItem.Fecha.Date))
             .OrderBy(l => l.NroLance)
             .ToList();
 
-        bool isRayaGenericGroup = controlItem.EspecieId == RayasGenericId;
+        bool isRayaGenericGroup = controlItem.EspecieId == RayaGenericVirtualId;
 
         foreach (var lance in filteredLances)
         {
             var catchItems = lance.ItemsCaptura.Where(c => 
             {
                 if (c.EspecieID == controlItem.EspecieId) return true;
-                if (controlItem.EspecieId == RayasGenericId && c.EspecieID != null && c.EspecieID.StartsWith(RayasPrefix))
+
+                if (isRayaGenericGroup)
                 {
-                    return !_commonRayaIds.Contains(c.EspecieID);
+                    if (IsRaya(c.Especie) && (IsGenericRaya(c.Especie) || !_commonRayaIds.Contains(c.EspecieID!)))
+                    {
+                        return true;
+                    }
                 }
                 return false;
             });
@@ -1486,11 +1510,11 @@ public sealed class MainWindowViewModel : ObservableObject
 
         ControlProduccionSelectedEspecieId = vm.EspecieId;
         
-        if (vm.EspecieId == RayasGenericId)
+        if (vm.EspecieId == RayaGenericVirtualId)
         {
             ControlProduccionSelectedEspecie = new Especie 
             { 
-                ID = RayasGenericId, 
+                ID = RayaGenericVirtualId, 
                 NombreVulgar = "Rayas", 
                 NombreCientifico = "Rajidae" 
             };
@@ -1524,9 +1548,19 @@ public sealed class MainWindowViewModel : ObservableObject
         using var dbContext = await _dbContextFactory.CreateDbContextAsync();
         var lances = await dbContext.Lances
             .Include(l => l.ItemsCaptura)
+                .ThenInclude(i => i.Especie)
             .Where(l => l.MareaEtapa!.MareaID == activeMarea.ID)
             .AsNoTracking()
             .ToListAsync();
+
+        // Asegurar que cada ítem de captura tenga la referencia al lance para los cálculos de propiedades [NotMapped]
+        foreach (var lance in lances)
+        {
+            foreach (var item in lance.ItemsCaptura)
+            {
+                item.Lance = lance;
+            }
+        }
 
         var produccion = new List<RegistroProduccion>();
         foreach (var etapa in activeMarea.Etapas)
@@ -1536,14 +1570,14 @@ public sealed class MainWindowViewModel : ObservableObject
         }
 
         var rayaIdsInProd = produccion
-            .Where(p => p.EspecieId != null && p.EspecieId.StartsWith(RayasPrefix))
+            .Where(p => IsRaya(p.Especie))
             .Select(p => p.EspecieId!)
             .Distinct()
             .ToHashSet();
 
         var rayaIdsInCatch = lances
             .SelectMany(l => l.ItemsCaptura)
-            .Where(c => c.EspecieID != null && c.EspecieID.StartsWith(RayasPrefix))
+            .Where(c => IsRaya(c.Especie))
             .Select(c => c.EspecieID!)
             .Distinct()
             .ToHashSet();
@@ -1566,11 +1600,18 @@ public sealed class MainWindowViewModel : ObservableObject
                 "");
 
             var summary = produccion
-                .GroupBy(p => (p.EspecieId != null && p.EspecieId.StartsWith(RayasPrefix) && !_commonRayaIds.Contains(p.EspecieId)) ? RayasGenericId : p.EspecieId)
+                .GroupBy(p => 
+                {
+                    if (IsRaya(p.Especie) && (IsGenericRaya(p.Especie) || !_commonRayaIds.Contains(p.EspecieId!)))
+                    {
+                        return RayaGenericVirtualId;
+                    }
+                    return p.EspecieId;
+                })
                 .Select(g => new
                 {
                     EspecieId = g.Key,
-                    EspecieNombre = g.Key == RayasGenericId ? "Rayas (Rajidae - Otras/Genérico)" : (g.First().Especie?.NombreVulgar 
+                    EspecieNombre = g.Key == RayaGenericVirtualId ? "Rayas (Rajidae - Otras/Genérico)" : (g.First().Especie?.NombreVulgar 
                         ?? g.First().Especie?.NombreCientifico 
                         ?? g.First().Comentarios?.Replace("Importado: ", "") 
                         ?? "Desconocida"),
@@ -1583,16 +1624,22 @@ public sealed class MainWindowViewModel : ObservableObject
             foreach (var item in summary)
             {
                 double capturaNetaTotal = 0;
-                bool isRayaGenericGroup = item.EspecieId == RayasGenericId;
+                bool isRayaGenericGroup = item.EspecieId == RayaGenericVirtualId;
 
                 foreach (var lance in lances)
                 {
                     var catchItems = lance.ItemsCaptura.Where(c => 
                     {
                         if (c.EspecieID == item.EspecieId) return true;
-                        if (item.EspecieId == RayasGenericId && c.EspecieID != null && c.EspecieID.StartsWith(RayasPrefix))
+                        
+                        // Si la fila de producción es el grupo genérico de rayas
+                        if (item.EspecieId == RayaGenericVirtualId)
                         {
-                            return !_commonRayaIds.Contains(c.EspecieID);
+                            // Acepta cualquier raya de captura que sea genérica o huérfana
+                            if (IsRaya(c.Especie) && (IsGenericRaya(c.Especie) || !_commonRayaIds.Contains(c.EspecieID!)))
+                            {
+                                return true;
+                            }
                         }
                         return false;
                     });
@@ -1640,11 +1687,11 @@ public sealed class MainWindowViewModel : ObservableObject
                 "Dif. %",
                 "");
 
-            bool isRayaGenericGroup = ControlProduccionSelectedEspecieId == RayasGenericId;
+            bool isRayaGenericGroup = ControlProduccionSelectedEspecieId == RayaGenericVirtualId;
 
             var produccionFiltrada = produccion
                 .Where(p => isRayaGenericGroup 
-                    ? (p.EspecieId != null && p.EspecieId.StartsWith(RayasPrefix) && !_commonRayaIds.Contains(p.EspecieId)) 
+                    ? (IsRaya(p.Especie) && (IsGenericRaya(p.Especie) || !_commonRayaIds.Contains(p.EspecieId!))) 
                     : p.EspecieId == ControlProduccionSelectedEspecieId)
                 .Where(p => DateTime.TryParse(p.Fecha, out _))
                 .GroupBy(p => DateTime.Parse(p.Fecha).Date)
@@ -1673,9 +1720,13 @@ public sealed class MainWindowViewModel : ObservableObject
                     var catchItems = lance.ItemsCaptura.Where(c => 
                     {
                         if (c.EspecieID == pDay.EspecieId) return true;
-                        if (pDay.EspecieId == RayasGenericId && c.EspecieID != null && c.EspecieID.StartsWith(RayasPrefix))
+
+                        if (pDay.EspecieId == RayaGenericVirtualId)
                         {
-                            return !_commonRayaIds.Contains(c.EspecieID);
+                            if (IsRaya(c.Especie) && (IsGenericRaya(c.Especie) || !_commonRayaIds.Contains(c.EspecieID!)))
+                            {
+                                return true;
+                            }
                         }
                         return false;
                     });

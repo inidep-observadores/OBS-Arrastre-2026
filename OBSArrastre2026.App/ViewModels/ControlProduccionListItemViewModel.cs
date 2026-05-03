@@ -20,7 +20,9 @@ public sealed class ControlProduccionListItemViewModel : ObservableObject
     public string CapturaTotalDisplay => CapturaTotal.ToString("N1");
 
     public double DiferenciaKg => CapturaTotal - CapturaReconstruida;
-    public double DiferenciaPorcentaje => CapturaTotal > 0 ? (DiferenciaKg * 100.0 / CapturaTotal) : 0;
+    public double DiferenciaPorcentaje => CapturaTotal > 0 
+        ? (DiferenciaKg * 100.0 / CapturaTotal) 
+        : (CapturaReconstruida > 0 ? -100.0 : 0);
 
     public string DiferenciaKgDisplay => DiferenciaKg.ToString("N1");
     public string DiferenciaPorcentajeDisplay => DiferenciaPorcentaje.ToString("N1") + "%";
