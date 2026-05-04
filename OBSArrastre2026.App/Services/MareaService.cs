@@ -171,6 +171,18 @@ public sealed class MareaService(IDbContextFactory<AppDbContext> dbContextFactor
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task DeleteMareaAsync(string id, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        
+        var marea = await dbContext.Mareas.FirstOrDefaultAsync(x => x.ID == id, cancellationToken);
+        if (marea != null)
+        {
+            dbContext.Mareas.Remove(marea);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+    }
+
     public async Task<Marea?> FindMareaAsync(int numero, int anio, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);

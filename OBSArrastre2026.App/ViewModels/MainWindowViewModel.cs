@@ -284,6 +284,7 @@ public class MainWindowViewModel : ObservableObject
         OpenSelectedRecordEditCommand = new RelayCommand(OpenSelectedRecordEdit);
         ClearMareaFiltersCommand = new AsyncCommand(ClearMareaFiltersAsync);
         ClearLanceFiltersCommand = new AsyncCommand(ClearLanceFiltersAsync);
+        DeleteRecordCommand = new AsyncRelayCommand<object>(DeleteRecordAsync);
 
         NavigateToControlProduccionDetailCommand = new AsyncRelayCommand<ControlProduccionListItemViewModel>(NavigateToControlProduccionDetailAsync);
         BackControlProduccionCommand = new RelayCommand(BackToControlProduccionSummary);
@@ -348,6 +349,8 @@ public class MainWindowViewModel : ObservableObject
     public IActiveMareaManager ActiveMareaManager => _activeMareaManager;
 
     public string Title => "OBS Arrastre 2026";
+
+    public ICommand DeleteRecordCommand { get; }
 
     public string SearchPlaceholder { get; }
 
@@ -467,8 +470,9 @@ public class MainWindowViewModel : ObservableObject
         }
     }
 
-    private void OpenEditSubmuestraForm(MuestraListItemViewModel vm)
+    private void OpenEditSubmuestraForm(MuestraListItemViewModel? vm)
     {
+        if (vm == null) return;
         CurrentEditViewModel = _submuestraEditFactory(() => { CurrentEditViewModel = null; _ = LoadSubmuestrasAsync(); }, vm.Muestra.ID);
     }
 
@@ -1528,6 +1532,72 @@ public class MainWindowViewModel : ObservableObject
         foreach (var item in source)
         {
             target.Add(item);
+        }
+    }
+
+    private async Task DeleteRecordAsync(object? record)
+    {
+        if (record == null) return;
+
+        string entityName = "el registro";
+        string identifier = "";
+
+        if (record is MareaListItemViewModel marea)
+        {
+            entityName = "la MAREA";
+            identifier = marea.CodigoDisplay;
+        }
+        else if (record is LanceListItemViewModel lance)
+        {
+            entityName = "el LANCE";
+            identifier = lance.NroLance.ToString();
+        }
+        else if (record is MuestraListItemViewModel muestra)
+        {
+            entityName = "la MUESTRA";
+            identifier = muestra.EspecieDisplay;
+        }
+        else if (record is ProduccionListItemViewModel prod)
+        {
+            entityName = "el registro de PRODUCCIÓN";
+            identifier = $"{prod.EspecieDisplay} ({prod.FechaDisplay})";
+        }
+
+        var result = await ShowConfirmationAsync(
+            "Confirmar Borrado",
+            $"¿Está seguro de que desea eliminar {entityName} '{identifier}'?\n\nEsta acción es permanente y eliminará todos los datos asociados en cascada.");
+
+        if (!result) return;
+
+        try
+        {
+            if (record is MareaListItemViewModel mareaVm)
+            {
+                await _mareaService.DeleteMareaAsync(mareaVm.ID);
+                if (_activeMareaManager.ActiveMareaId == mareaVm.ID)
+                {
+                    await _activeMareaManager.SetActiveMareaAsync(null);
+                }
+            }
+            else if (record is LanceListItemViewModel lanceVm)
+            {
+                await _lanceService.DeleteLanceAsync(lanceVm.ID);
+            }
+            else if (record is MuestraListItemViewModel muestraVm)
+            {
+                await _muestraService.DeleteMuestraAsync(muestraVm.Muestra.ID);
+            }
+            else if (record is ProduccionListItemViewModel prodVm)
+            {
+                await _produccionService.DeleteRegistroProduccionAsync(prodVm.Registro.Id);
+            }
+
+            await RefreshCurrentSectionAsync();
+            ShowMessage("Borrado Exitoso", "El registro ha sido eliminado correctamente.", null, MessageDialogType.Success);
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("Error al Borrar", $"No se pudo eliminar el registro: {ex.Message}", null, MessageDialogType.Error);
         }
     }
 

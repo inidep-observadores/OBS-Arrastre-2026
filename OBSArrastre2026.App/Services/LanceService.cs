@@ -123,6 +123,18 @@ public sealed class LanceService(IDbContextFactory<AppDbContext> dbContextFactor
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task DeleteLanceAsync(string id, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        
+        var lance = await dbContext.Lances.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (lance != null)
+        {
+            dbContext.Lances.Remove(lance);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+    }
+
     public async Task<IReadOnlyList<Especie>> GetEspeciesAsync(CancellationToken cancellationToken = default)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);

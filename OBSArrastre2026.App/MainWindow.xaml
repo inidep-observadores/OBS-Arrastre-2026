@@ -57,6 +57,7 @@
                         <ColumnDefinition Width="0.9*" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Text="{Binding CodigoDisplay}" />
                     <TextBlock Grid.Column="1" Style="{StaticResource BodySecondaryStyle}" Text="{Binding BuqueNombre}" />
@@ -136,6 +137,15 @@
                             <TextBlock Text="{Binding StatusText}" FontSize="10" FontStyle="Italic" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}"/>
                         </StackPanel>
                     </Grid>
+
+                    <Button Grid.Column="8"
+                            Command="{Binding DataContext.DeleteRecordCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            CommandParameter="{Binding}"
+                            ToolTip="Eliminar marea y todos sus datos"
+                            Style="{StaticResource ThemeButtonStyle}"
+                            Margin="8,0,0,0">
+                        <TextBlock Text="🗑" FontSize="16" Foreground="{DynamicResource DangerForegroundBrush}" VerticalAlignment="Center" />
+                    </Button>
                 </Grid>
             </Border>
         </DataTemplate>
@@ -156,6 +166,7 @@
                         <ColumnDefinition Width="1.2*" />
                         <ColumnDefinition Width="0.5*" />
                         <ColumnDefinition Width="0.5*" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Text="{Binding NroLance}" />
                     <TextBlock Grid.Column="1" Style="{StaticResource BodySecondaryStyle}" Text="{Binding FechaDisplay}" />
@@ -164,6 +175,15 @@
                     <TextBlock Grid.Column="4" Style="{StaticResource BodySecondaryStyle}" Text="{Binding CapturaTotal, StringFormat={}{0} kg}" />
                     <TextBlock Grid.Column="5" Style="{StaticResource BodySecondaryStyle}" Text="{Binding HoraInicio}" HorizontalAlignment="Center" />
                     <TextBlock Grid.Column="6" Style="{StaticResource BodySecondaryStyle}" Text="{Binding HoraFin}" HorizontalAlignment="Center" />
+                    
+                    <Button Grid.Column="7"
+                            Command="{Binding DataContext.DeleteRecordCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            CommandParameter="{Binding}"
+                            ToolTip="Eliminar lance y sus muestras"
+                            Style="{StaticResource ThemeButtonStyle}"
+                            Margin="8,0,0,0">
+                        <TextBlock Text="🗑" FontSize="16" Foreground="{DynamicResource DangerForegroundBrush}" VerticalAlignment="Center" />
+                    </Button>
                 </Grid>
             </Border>
         </DataTemplate>
@@ -182,12 +202,22 @@
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Text="{Binding LanceNro}" />
                     <TextBlock Grid.Column="1" Style="{StaticResource BodySecondaryStyle}" Text="{Binding LanceFecha}" />
                     <TextBlock Grid.Column="2" Style="{StaticResource BodySecondaryStyle}" Text="{Binding LanceHora}" />
                     <TextBlock Grid.Column="3" Style="{StaticResource BodySecondaryStyle}" Text="{Binding EspecieDisplay}" />
                     <TextBlock Grid.Column="4" Style="{StaticResource BodySecondaryStyle}" Text="{Binding PesoDisplay}" />
+
+                    <Button Grid.Column="5"
+                            Command="{Binding DataContext.DeleteRecordCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            CommandParameter="{Binding}"
+                            ToolTip="Eliminar muestra y submuestras"
+                            Style="{StaticResource ThemeButtonStyle}"
+                            Margin="8,0,0,0">
+                        <TextBlock Text="🗑" FontSize="16" Foreground="{DynamicResource DangerForegroundBrush}" VerticalAlignment="Center" />
+                    </Button>
                 </Grid>
             </Border>
         </DataTemplate>
@@ -211,6 +241,15 @@
                     <TextBlock Grid.Column="2" Style="{StaticResource BodySecondaryStyle}" Text="{Binding ProductoCodigo}" />
                     <TextBlock Grid.Column="3" Style="{StaticResource BodySecondaryStyle}" Text="{Binding Factor, StringFormat=\{0:F2\}}" />
                     <TextBlock Grid.Column="4" Style="{StaticResource BodySecondaryStyle}" Text="{Binding Kg, StringFormat=\{0:F2\}}" />
+
+                    <Button Grid.Column="5"
+                            Command="{Binding DataContext.DeleteRecordCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            CommandParameter="{Binding}"
+                            ToolTip="Eliminar registro de producción"
+                            Style="{StaticResource ThemeButtonStyle}"
+                            Margin="8,0,0,0">
+                        <TextBlock Text="🗑" FontSize="16" Foreground="{DynamicResource DangerForegroundBrush}" VerticalAlignment="Center" />
+                    </Button>
                 </Grid>
             </Border>
         </DataTemplate>

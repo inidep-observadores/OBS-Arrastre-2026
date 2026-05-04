@@ -19,5 +19,6 @@ public interface ILanceService
 
     Task<Lance?> GetLanceAsync(string id, CancellationToken cancellationToken = default);
     Task SaveLanceAsync(Lance lance, CancellationToken cancellationToken = default);
+    Task DeleteLanceAsync(string id, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Especie>> GetEspeciesAsync(CancellationToken cancellationToken = default);
 }

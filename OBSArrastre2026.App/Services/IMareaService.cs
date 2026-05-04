@@ -22,5 +22,6 @@ public interface IMareaService
 
     Task<bool> HasExistingDataAsync(string mareaId, CancellationToken cancellationToken = default);
     Task ClearMareaDataAsync(string mareaId, CancellationToken cancellationToken = default);
+    Task DeleteMareaAsync(string id, CancellationToken cancellationToken = default);
     Task<Marea?> FindMareaAsync(int numero, int anio, CancellationToken cancellationToken = default);
 }
