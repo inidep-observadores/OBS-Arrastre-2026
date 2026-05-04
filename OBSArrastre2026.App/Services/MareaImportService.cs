@@ -317,6 +317,22 @@ public class MareaImportService : IMareaImportService
                 ProfundidadFinalM = (int)c.ProfFinal,
                 CapturaTotalKg = c.CaptTotal != 0 ? c.CaptTotal : (c.Especies.Values.Sum() > 0 ? c.Especies.Values.Sum() : 0),
                 DescarteTotalKg = c.Descarte != 0 ? c.Descarte : (c.DescartesPorEspecie.Values.Sum() > 0 ? c.DescartesPorEspecie.Values.Sum() : 0),
+                
+                // Mapeo de campos adicionales
+                EstadoTiempoCodigo = (int?)c.Tiempo,
+                EstadoMarCodigo = (int?)c.Mar,
+                VientoDireccionGrados = (int?)c.DirViento,
+                VientoFuerzaBeaufort = (int?)c.VelViento,
+                TemperaturaAireC = c.TmpASeco,
+                TemperaturaRedC = c.TmpMarF,
+                PresionHpa = (int?)c.PresionB,
+                VelocidadArrastreNudos = c.VelArras,
+                RumboGrados = (int?)c.Rumbo,
+                MallaCopoMm = (int?)c.MallCopo,
+                MallaAlasMm = (int?)c.MallAlas,
+                CableFiladoM = (int?)c.CabFilad,
+                AberturaVerticalM = c.AberVert,
+                DistanciaAlasM = c.DistAlas
             };
 
             // Items de Captura (Especies por código o puente)

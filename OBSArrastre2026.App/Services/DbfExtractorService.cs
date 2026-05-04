@@ -230,7 +230,23 @@ public sealed class DbfExtractorService : IDbfExtractorService
                 ProfInic = GetDouble(reader, colMap, "PROF_INIC"),
                 ProfFinal = GetDouble(reader, colMap, "PROF_FINAL"),
                 CaptTotal = GetDouble(reader, colMap, "CAPT_TOTAL"),
-                Descarte = GetDouble(reader, colMap, "DESCARTE")
+                Descarte = GetDouble(reader, colMap, "DESCARTE"),
+                
+                // Mapeo de campos adicionales
+                Tiempo = GetDoubleNullable(reader, colMap, "TIEMPO"),
+                Mar = GetDoubleNullable(reader, colMap, "MAR"),
+                DirViento = GetDoubleNullable(reader, colMap, "DIR_VIENTO"),
+                VelViento = GetDoubleNullable(reader, colMap, "VEL_VIENTO"),
+                TmpASeco = GetDoubleNullable(reader, colMap, "TMP_A_SECO"),
+                TmpMarF = GetDoubleNullable(reader, colMap, "TMP_MAR_F"),
+                PresionB = GetDoubleNullable(reader, colMap, "PRESION_B"),
+                VelArras = GetDoubleNullable(reader, colMap, "VEL_ARRAS"),
+                Rumbo = GetDoubleNullable(reader, colMap, "RUMBO"),
+                MallCopo = GetDoubleNullable(reader, colMap, "MALL_COPO"),
+                MallAlas = GetDoubleNullable(reader, colMap, "MALL_ALAS"),
+                CabFilad = GetDoubleNullable(reader, colMap, "CAB_FILAD"),
+                AberVert = GetDoubleNullable(reader, colMap, "ABER_VERT"),
+                DistAlas = GetDoubleNullable(reader, colMap, "DIST_ALAS")
             };
 
             for (int i = 1; i <= 25; i++)
@@ -450,6 +466,25 @@ public sealed class DbfExtractorService : IDbfExtractorService
             }
         }
         return 0;
+    }
+    
+    private double? GetDoubleNullable(DbfDataReader.DbfDataReader reader, Dictionary<string, int> map, string name)
+    {
+        if (map.TryGetValue(name, out int index))
+        {
+            var value = reader.GetValue(index);
+            if (value == null || value is DBNull) return null;
+            
+            try 
+            {
+                return Convert.ToDouble(value);
+            }
+            catch 
+            {
+                return null;
+            }
+        }
+        return null;
     }
 
     private DateTime? GetDateTime(DbfDataReader.DbfDataReader reader, Dictionary<string, int> map, string name)

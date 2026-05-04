@@ -31,6 +31,22 @@ public class LegacyCaptura
     public double CaptTotal { get; set; }
     public double Descarte { get; set; }
     
+    // Campos adicionales solicitados
+    public double? Tiempo { get; set; }
+    public double? Mar { get; set; }
+    public double? DirViento { get; set; }
+    public double? VelViento { get; set; }
+    public double? TmpASeco { get; set; }
+    public double? TmpMarF { get; set; }
+    public double? PresionB { get; set; }
+    public double? VelArras { get; set; }
+    public double? Rumbo { get; set; }
+    public double? MallCopo { get; set; }
+    public double? MallAlas { get; set; }
+    public double? CabFilad { get; set; }
+    public double? AberVert { get; set; }
+    public double? DistAlas { get; set; }
+    
     // Especies (se manejan dinámicamente o por convención de nombres)
     public Dictionary<long, double> Especies { get; } = new(); // CodEspecie -> KG
     public Dictionary<long, double> DescartesPorEspecie { get; } = new(); // CodEspecie -> KG
