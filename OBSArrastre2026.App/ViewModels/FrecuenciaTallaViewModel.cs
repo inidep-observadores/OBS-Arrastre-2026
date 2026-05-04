@@ -9,6 +9,9 @@ public sealed class FrecuenciaTallaViewModel : ObservableObject
     private int _nroMachos;
     private int _nroHembras;
     private int _nroIndeterminados;
+    private int _nroLangostinosMachoMaduros;
+    private int _nroLangostinosHembraMaduras;
+    private int _nroLangostinosHembraImpregnadas;
 
     public FrecuenciaTallaViewModel() { }
 
@@ -19,6 +22,9 @@ public sealed class FrecuenciaTallaViewModel : ObservableObject
         NroMachos = entity.NroMachos;
         NroHembras = entity.NroHembras;
         NroIndeterminados = entity.NroIndeterminados;
+        NroLangostinosMachoMaduros = entity.NroLangostinosMachoMaduros;
+        NroLangostinosHembraMaduras = entity.NroLangostinosHembraMaduras;
+        NroLangostinosHembraImpregnadas = entity.NroLangostinosHembraImpregnadas;
     }
 
     public string Id { get; set; } = Guid.NewGuid().ToString();
@@ -52,6 +58,10 @@ public sealed class FrecuenciaTallaViewModel : ObservableObject
         } 
     }
 
+    public int NroLangostinosMachoMaduros { get => _nroLangostinosMachoMaduros; set => SetProperty(ref _nroLangostinosMachoMaduros, value); }
+    public int NroLangostinosHembraMaduras { get => _nroLangostinosHembraMaduras; set => SetProperty(ref _nroLangostinosHembraMaduras, value); }
+    public int NroLangostinosHembraImpregnadas { get => _nroLangostinosHembraImpregnadas; set => SetProperty(ref _nroLangostinosHembraImpregnadas, value); }
+
     public int Total => NroMachos + NroHembras + NroIndeterminados;
 
     public FrecuenciaTalla ToEntity()
@@ -62,7 +72,10 @@ public sealed class FrecuenciaTallaViewModel : ObservableObject
             Talla = Talla,
             NroMachos = NroMachos,
             NroHembras = NroHembras,
-            NroIndeterminados = NroIndeterminados
+            NroIndeterminados = NroIndeterminados,
+            NroLangostinosMachoMaduros = NroLangostinosMachoMaduros,
+            NroLangostinosHembraMaduras = NroLangostinosHembraMaduras,
+            NroLangostinosHembraImpregnadas = NroLangostinosHembraImpregnadas
         };
     }
 }

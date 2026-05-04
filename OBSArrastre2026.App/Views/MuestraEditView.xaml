@@ -108,6 +108,9 @@
                                       Grid.Row="1" 
                                       ItemsSource="{Binding FrecuenciasTallas}" 
                                       Style="{StaticResource PremiumDataGridStyle}">
+                                <DataGrid.Resources>
+                                    <FrameworkElement x:Key="Proxy" DataContext="{Binding}" />
+                                </DataGrid.Resources>
                                 <DataGrid.InputBindings>
                                     <KeyBinding Key="Delete" 
                                                 Command="{Binding RemoveFrecuenciaCommand}" 
@@ -115,8 +118,29 @@
                                 </DataGrid.InputBindings>
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="TALLA" Binding="{Binding Talla}" Width="*" ElementStyle="{StaticResource DataGridTextLeft}" />
+                                    
+                                    <DataGridTextColumn Header="M. MADUROS" 
+                                                        Binding="{Binding NroLangostinosMachoMaduros}" 
+                                                        Width="85" 
+                                                        ElementStyle="{StaticResource DataGridTextCenter}"
+                                                        Visibility="{Binding DataContext.EsLangostino, Source={StaticResource Proxy}, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                    
                                     <DataGridTextColumn Header="MACHOS" Binding="{Binding NroMachos}" Width="80" ElementStyle="{StaticResource DataGridTextCenter}" />
+                                    
                                     <DataGridTextColumn Header="HEMBRAS" Binding="{Binding NroHembras}" Width="80" ElementStyle="{StaticResource DataGridTextCenter}" />
+                                    
+                                    <DataGridTextColumn Header="H. MADURAS" 
+                                                        Binding="{Binding NroLangostinosHembraMaduras}" 
+                                                        Width="85" 
+                                                        ElementStyle="{StaticResource DataGridTextCenter}"
+                                                        Visibility="{Binding DataContext.EsLangostino, Source={StaticResource Proxy}, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                    
+                                    <DataGridTextColumn Header="H. IMPREG." 
+                                                        Binding="{Binding NroLangostinosHembraImpregnadas}" 
+                                                        Width="85" 
+                                                        ElementStyle="{StaticResource DataGridTextCenter}"
+                                                        Visibility="{Binding DataContext.EsLangostino, Source={StaticResource Proxy}, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
                                     <DataGridTextColumn Header="INDET." Binding="{Binding NroIndeterminados}" Width="80" ElementStyle="{StaticResource DataGridTextCenter}" />
                                     <DataGridTextColumn Header="TOTAL" Binding="{Binding Total, Mode=OneWay}" Width="80" IsReadOnly="True" FontWeight="Bold" ElementStyle="{StaticResource DataGridTextCenter}" />
                                     <DataGridTemplateColumn Width="50">

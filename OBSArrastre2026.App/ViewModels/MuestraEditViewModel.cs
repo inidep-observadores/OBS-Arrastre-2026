@@ -113,6 +113,7 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
             {
                 _especieId = value?.ID;
                 OnPropertyChanged(nameof(EspecieId));
+                OnPropertyChanged(nameof(EsLangostino));
                 
                 if (value != null)
                 {
@@ -123,6 +124,8 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
             }
         }
     }
+
+    public bool EsLangostino => SelectedEspecie?.CodigoInidep == "5139030101";
 
     public IEnumerable<Especie> FilteredEspecies
     {
