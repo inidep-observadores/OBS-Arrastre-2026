@@ -148,7 +148,7 @@ CREATE TABLE lances (
     cable_filado_m INTEGER,
     abertura_vertical_m REAL,
     distancia_alas_m REAL,
-    profundidad_arte_m INTEGER,
+    distancia_portones_m REAL,
     selectividad_si_no INTEGER CHECK (selectividad_si_no IN (0,1)),
     UNIQUE(marea_etapa_id, nro_lance),
     FOREIGN KEY (marea_etapa_id) REFERENCES marea_etapas(id) ON DELETE CASCADE

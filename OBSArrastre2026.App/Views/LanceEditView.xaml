@@ -307,7 +307,7 @@
                                         <ColumnDefinition Width="20" />
                                         <ColumnDefinition Width="Auto" /> <!-- DistA -->
                                         <ColumnDefinition Width="20" />
-                                        <ColumnDefinition Width="*" />    <!-- ProfA -->
+                                        <ColumnDefinition Width="*" />    <!-- DistP -->
                                         <ColumnDefinition Width="20" />
                                         <ColumnDefinition Width="Auto" /> <!-- Select -->
                                     </Grid.ColumnDefinitions>
@@ -363,11 +363,11 @@
                                         <TextBox Text="{Binding DistanciaAlasM}" Style="{StaticResource PaperTextBoxStyle}" Width="90" />
                                     </StackPanel>
 
-                                    <!-- PROF. ARTE (m) -->
+                                    <!-- DIST. PORTONES (m) -->
                                     <StackPanel Grid.Column="10">
-                                        <TextBlock Text="PROF. ARTE (m)" Style="{StaticResource PaperHeaderStyle}" />
+                                        <TextBlock Text="DIST. PORTONES (m)" Style="{StaticResource PaperHeaderStyle}" />
                                         <Border Height="13" />
-                                        <TextBox Text="{Binding ProfundidadArteM}" Style="{StaticResource PaperTextBoxStyle}" />
+                                        <TextBox Text="{Binding DistanciaPortonesM}" Style="{StaticResource PaperTextBoxStyle}" />
                                     </StackPanel>
 
                                     <!-- SELECTIVIDAD -->

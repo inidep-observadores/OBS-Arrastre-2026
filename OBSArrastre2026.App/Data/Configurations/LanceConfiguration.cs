@@ -46,7 +46,7 @@ public sealed class LanceConfiguration : IEntityTypeConfiguration<Lance>
         builder.Property(x => x.CableFiladoM).HasColumnName("cable_filado_m");
         builder.Property(x => x.AberturaVerticalM).HasColumnName("abertura_vertical_m");
         builder.Property(x => x.DistanciaAlasM).HasColumnName("distancia_alas_m");
-        builder.Property(x => x.ProfundidadArteM).HasColumnName("profundidad_arte_m");
+        builder.Property(x => x.DistanciaPortonesM).HasColumnName("distancia_portones_m");
 
         builder.Property(x => x.SelectividadSiNo).HasColumnName("selectividad_si_no");
 

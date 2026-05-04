@@ -246,7 +246,8 @@ public sealed class DbfExtractorService : IDbfExtractorService
                 MallAlas = GetDoubleNullable(reader, colMap, "MALL_ALAS"),
                 CabFilad = GetDoubleNullable(reader, colMap, "CAB_FILAD"),
                 AberVert = GetDoubleNullable(reader, colMap, "ABER_VERT"),
-                DistAlas = GetDoubleNullable(reader, colMap, "DIST_ALAS")
+                DistAlas = GetDoubleNullable(reader, colMap, "DIST_ALAS"),
+                DistEPor = GetDoubleNullable(reader, colMap, "DIST_E_POR")
             };
 
             for (int i = 1; i <= 25; i++)

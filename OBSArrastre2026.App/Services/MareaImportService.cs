@@ -332,7 +332,8 @@ public class MareaImportService : IMareaImportService
                 MallaAlasMm = (int?)c.MallAlas,
                 CableFiladoM = (int?)c.CabFilad,
                 AberturaVerticalM = c.AberVert,
-                DistanciaAlasM = c.DistAlas
+                DistanciaAlasM = c.DistAlas,
+                DistanciaPortonesM = c.DistEPor
             };
 
             // Items de Captura (Especies por código o puente)

@@ -46,6 +46,7 @@ public class LegacyCaptura
     public double? CabFilad { get; set; }
     public double? AberVert { get; set; }
     public double? DistAlas { get; set; }
+    public double? DistEPor { get; set; }
     
     // Especies (se manejan dinámicamente o por convención de nombres)
     public Dictionary<long, double> Especies { get; } = new(); // CodEspecie -> KG

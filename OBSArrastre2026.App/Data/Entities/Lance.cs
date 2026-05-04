@@ -43,7 +43,7 @@ public sealed class Lance
     public int? CableFiladoM { get; set; }
     public double? AberturaVerticalM { get; set; }
     public double? DistanciaAlasM { get; set; }
-    public int? ProfundidadArteM { get; set; }
+    public double? DistanciaPortonesM { get; set; }
 
     public int SelectividadSiNo { get; set; } // 0 o 1
 

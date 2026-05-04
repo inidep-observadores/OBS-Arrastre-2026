@@ -43,7 +43,7 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
     private int? _cableFilado;
     private double? _aberturaVertical;
     private double? _distanciaAlas;
-    private int? _profundidadArte;
+    private double? _distanciaPortones;
     private int? _estadoTiempo;
     private int? _estadoMar;
     private bool _selectividad;
@@ -126,7 +126,7 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
     public int? CableFiladoM { get => _cableFilado; set => SetProperty(ref _cableFilado, value); }
     public double? AberturaVerticalM { get => _aberturaVertical; set => SetProperty(ref _aberturaVertical, value); }
     public double? DistanciaAlasM { get => _distanciaAlas; set => SetProperty(ref _distanciaAlas, value); }
-    public int? ProfundidadArteM { get => _profundidadArte; set => SetProperty(ref _profundidadArte, value); }
+    public double? DistanciaPortonesM { get => _distanciaPortones; set => SetProperty(ref _distanciaPortones, value); }
     public int? EstadoTiempoCodigo { get => _estadoTiempo; set => SetProperty(ref _estadoTiempo, value); }
     public int? EstadoMarCodigo { get => _estadoMar; set => SetProperty(ref _estadoMar, value); }
 
@@ -194,7 +194,7 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
                     CableFiladoM = lance.CableFiladoM;
                     AberturaVerticalM = lance.AberturaVerticalM;
                     DistanciaAlasM = lance.DistanciaAlasM;
-                    ProfundidadArteM = lance.ProfundidadArteM;
+                    DistanciaPortonesM = lance.DistanciaPortonesM;
                     Selectividad = lance.SelectividadSiNo == 1;
 
                     ItemsCaptura.Clear();
@@ -294,7 +294,7 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
                     CableFiladoM = CableFiladoM,
                     AberturaVerticalM = AberturaVerticalM,
                     DistanciaAlasM = DistanciaAlasM,
-                    ProfundidadArteM = ProfundidadArteM,
+                    DistanciaPortonesM = DistanciaPortonesM,
                     SelectividadSiNo = Selectividad ? 1 : 0
                 };
 
