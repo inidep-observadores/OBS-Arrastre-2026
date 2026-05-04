@@ -380,10 +380,6 @@ public sealed class MareaValidationEngine
 
             ValidateLanceDetails(report, c);
 
-            // REQ-3.3.1: Cálculo y validación de Área
-            double calculatedArea = CalculateArea(latDec, lonDec);
-            if (calculatedArea < 3500)
-                report.AddIssue(ValidationLevel.Warning, "Geografía", $"Área calculada ({calculatedArea}) es inusualmente baja", ctx);
 
             // REQ-3.5.1: Recalcular CAPT_TOTAL
             double sumEspecies = c.Especies.Values.Sum();
@@ -520,17 +516,6 @@ public sealed class MareaValidationEngine
                     report.AddIssue(ValidationLevel.AutoFixed, "Integridad", $"Fecha de muestra ({oldFecha}) no coincide con fecha de lance ({newFecha}). Corregido.", ctx, oldFecha, newFecha);
                 }
 
-                // REQ-3.3.3: Consistencia de Área (Muestra vs Lance)
-                double latDec = LegacyDecoder.DecodeCoordinate(lanceCorrespondiente.LatInic);
-                double lonDec = LegacyDecoder.DecodeCoordinate(lanceCorrespondiente.LongInic);
-                double expectedArea = CalculateArea(latDec, lonDec);
-                
-                if (Math.Abs(m.Area - expectedArea) > 0.01)
-                {
-                    string oldArea = m.Area.ToString("F1");
-                    m.Area = expectedArea;
-                    report.AddIssue(ValidationLevel.AutoFixed, "Integridad", $"Área de muestra ({oldArea}) inconsistente con coordenadas del lance. Recalculada a {expectedArea:F1}.", ctx, oldArea, expectedArea.ToString("F1"));
-                }
 
                 // REQ-3.4.4: Consistencia de Especie (Muestra vs Captura)
                 // Verificar si la especie muestreada existe en el registro de captura con kg > 0
@@ -767,13 +752,6 @@ public sealed class MareaValidationEngine
                     report.AddIssue(ValidationLevel.AutoFixed, "Integridad", $"Fecha de submuestra ({oldFecha}) no coincide con muestra padre. Corregido.", ctx, oldFecha, newFecha);
                 }
 
-                // REQ-3.3.3: Consistencia de Área (Submuestra vs Muestra)
-                if (Math.Abs(s.Area - parent.Area) > 0.01)
-                {
-                    string oldArea = s.Area.ToString("F1");
-                    s.Area = parent.Area;
-                    report.AddIssue(ValidationLevel.AutoFixed, "Integridad", $"Área de submuestra ({oldArea}) inconsistente con muestra padre. Corregido a {parent.Area:F1}.", ctx, oldArea, parent.Area.ToString("F1"));
-                }
             }
 
             // REQ-4.2.1: Verificar Largo Total Atípico
