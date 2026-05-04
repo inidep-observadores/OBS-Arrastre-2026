@@ -17,12 +17,18 @@ public record ValidationIssue(
     string? OriginalValue = null,
     string? CorrectedValue = null);
 
+public record EtapaValidationInfo(int Numero, DateTime? FechaInicio, DateTime? FechaFin);
+
 public class MareaValidationReport
 {
     public string Barco { get; set; } = string.Empty;
     public string Marea { get; set; } = string.Empty;
     public int Año { get; set; }
     public TipoDatoDescarte UnidadDescarte { get; set; } = TipoDatoDescarte.Kilogramos;
+    
+    public DateTime? FechaInicioMarea { get; set; }
+    public DateTime? FechaFinMarea { get; set; }
+    public List<EtapaValidationInfo> Etapas { get; set; } = new();
     
     public List<ValidationIssue> Issues { get; } = new();
     

@@ -30,7 +30,10 @@ public sealed class MareaValidationEngine
             Barco = barcoMareaActual,
             Marea = nroMareaActual.ToString(),
             Año = anioMareaActual,
-            TotalLances = capturas.Count
+            TotalLances = capturas.Count,
+            FechaInicioMarea = etapasFechas.Any() ? etapasFechas.Min(e => e.Inicio) : null,
+            FechaFinMarea = etapasFechas.Any() ? etapasFechas.Max(e => e.Fin) : null,
+            Etapas = etapasFechas.Select((e, i) => new EtapaValidationInfo(i + 1, e.Inicio, e.Fin)).ToList()
         };
 
         ValidateBaseConsistency(report, barcoMareaActual, nroMareaActual, capturas, muestras, submuestras, lgs, tracking, produccion);

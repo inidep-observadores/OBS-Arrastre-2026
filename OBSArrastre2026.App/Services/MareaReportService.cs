@@ -37,19 +37,51 @@ public class MareaReportService : IMareaReportService
 
     private void ComposeHeader(IContainer container, MareaValidationReport report)
     {
-        container.Row(row =>
+        container.Column(col =>
         {
-            row.RelativeItem().Column(col =>
+            col.Item().Row(row =>
             {
-                col.Item().Text("REPORTE DE AUDITORÍA DE MAREA").FontSize(14).SemiBold().FontColor(Colors.Blue.Medium);
-                col.Item().Text($"{report.Barco} - Marea {report.Marea} ({report.Año})").FontSize(10);
+                row.RelativeItem().Column(c =>
+                {
+                    c.Item().Text("REPORTE DE AUDITORÍA DE MAREA").FontSize(14).SemiBold().FontColor(Colors.Blue.Medium);
+                    
+                    var mareaInfo = $"{report.Barco} - Marea {report.Marea} ({report.Año})";
+                    if (report.FechaInicioMarea.HasValue && report.FechaFinMarea.HasValue)
+                    {
+                        mareaInfo += $" | {report.FechaInicioMarea:dd/MM/yyyy} — {report.FechaFinMarea:dd/MM/yyyy}";
+                    }
+                    c.Item().Text(mareaInfo).FontSize(9);
+                });
+
+                row.ConstantItem(100).Column(c =>
+                {
+                    c.Item().Text("Checklist").AlignRight().FontSize(9).FontColor(Colors.Grey.Medium);
+                    c.Item().Text(DateTime.Now.ToString("dd/MM/yyyy")).AlignRight().FontSize(9);
+                });
             });
 
-            row.ConstantItem(100).Column(col =>
+            if (report.Etapas.Any())
             {
-                col.Item().Text("Checklist").AlignRight().FontSize(10).FontColor(Colors.Grey.Medium);
-                col.Item().Text(DateTime.Now.ToString("dd/MM/yyyy")).AlignRight();
-            });
+                col.Item().PaddingTop(2).Row(row =>
+                {
+                    row.ConstantItem(40).Text("Etapas:").FontSize(7).SemiBold().FontColor(Colors.Grey.Medium);
+                    
+                    row.RelativeItem().Text(text =>
+                    {
+                        for (int i = 0; i < report.Etapas.Count; i++)
+                        {
+                            var e = report.Etapas[i];
+                            text.Span($"E{e.Numero}: ").FontSize(7).SemiBold();
+                            text.Span($"{e.FechaInicio:dd/MM} - {e.FechaFin:dd/MM}").FontSize(7);
+                            
+                            if (i < report.Etapas.Count - 1)
+                            {
+                                text.Span("  |  ").FontSize(7).FontColor(Colors.Grey.Lighten1);
+                            }
+                        }
+                    });
+                });
+            }
         });
     }
 
