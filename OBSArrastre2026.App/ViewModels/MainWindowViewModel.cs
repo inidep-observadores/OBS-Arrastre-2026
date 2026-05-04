@@ -138,6 +138,7 @@ public class MainWindowViewModel : ObservableObject
             if (SetProperty(ref _showTrackLine, value))
             {
                 MapUpdateRequested?.Invoke();
+                OnPropertyChanged(nameof(IsTrackVisibilitySliderEnabled));
             }
         }
     }
@@ -151,8 +152,70 @@ public class MainWindowViewModel : ObservableObject
             if (SetProperty(ref _showTrackPoints, value))
             {
                 MapUpdateRequested?.Invoke();
+                OnPropertyChanged(nameof(IsTrackVisibilitySliderEnabled));
             }
         }
+    }
+
+    private double _trackVisibilityWindowDays = 0;
+    public double TrackVisibilityWindowDays
+    {
+        get => _trackVisibilityWindowDays;
+        set
+        {
+            if (SetProperty(ref _trackVisibilityWindowDays, value))
+            {
+                MapUpdateRequested?.Invoke();
+                OnPropertyChanged(nameof(TrackVisibilityWindowDaysLabel));
+            }
+        }
+    }
+
+    private int _trackVisibilitySliderValue = 0;
+    public int TrackVisibilitySliderValue
+    {
+        get => _trackVisibilitySliderValue;
+        set
+        {
+            if (SetProperty(ref _trackVisibilitySliderValue, value))
+            {
+                // Mapeo: 0->0, 1->0.25, 2->0.5, 3->1, 4->2, 5->3, 6->5
+                TrackVisibilityWindowDays = value switch
+                {
+                    1 => 0.25,
+                    2 => 0.5,
+                    3 => 1.0,
+                    4 => 2.0,
+                    5 => 3.0,
+                    6 => 5.0,
+                    _ => 0.0
+                };
+            }
+        }
+    }
+
+    public string TrackVisibilityWindowDaysLabel
+    {
+        get
+        {
+            if (TrackVisibilityWindowDays == 0) return "(Todo)";
+            if (TrackVisibilityWindowDays < 1)
+            {
+                double horas = TrackVisibilityWindowDays * 24;
+                return $"{horas:G29} hs";
+            }
+            string unit = TrackVisibilityWindowDays == 1 ? "día" : "días";
+            return $"{TrackVisibilityWindowDays:G29} {unit}";
+        }
+    }
+
+    public bool IsTrackVisibilitySliderEnabled => ShowTrackLine || ShowTrackPoints;
+
+    private bool _shouldZoomOnNextUpdate;
+    public bool ShouldZoomOnNextUpdate
+    {
+        get => _shouldZoomOnNextUpdate;
+        set => SetProperty(ref _shouldZoomOnNextUpdate, value);
     }
 
     private DateTime? _lancesFilterFechaDesde;
@@ -1194,23 +1257,8 @@ public class MainWindowViewModel : ObservableObject
                 .ToListAsync();
 
             // Notificar a la vista para que actualice GMap.NET
+            ShouldZoomOnNextUpdate = true;
             MapUpdateRequested?.Invoke();
-
-            // Auto-focus al cargar marea por primera vez o cambio de marea
-            var focusPoints = new List<PointLatLng>();
-            foreach (var l in CurrentLances)
-            {
-                if (l.LatitudInicioDecimal.HasValue && l.LongitudInicioDecimal.HasValue)
-                    focusPoints.Add(new PointLatLng(l.LatitudInicioDecimal.Value, l.LongitudInicioDecimal.Value));
-                if (l.LatitudFinalDecimal.HasValue && l.LongitudFinalDecimal.HasValue)
-                    focusPoints.Add(new PointLatLng(l.LatitudFinalDecimal.Value, l.LongitudFinalDecimal.Value));
-            }
-            focusPoints.AddRange(CurrentTrack.Select(p => new PointLatLng(p.Latitud, p.Longitud)));
-
-            if (focusPoints.Count > 0)
-            {
-                MapFocusRequested?.Invoke(focusPoints);
-            }
             
             OnPropertyChanged(nameof(TotalTrackPoints));
             CurrentTrackPointIndex = -1;

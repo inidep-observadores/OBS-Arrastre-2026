@@ -97,13 +97,23 @@ public partial class MainWindow : Window
         }
 
         var vm = (MainWindowViewModel)DataContext;
-
         if (vm == null) return;
+ 
+        // Filtrar track según ventana temporal si aplica
+        var trackToDraw = vm.CurrentTrack;
+        if (vm.TrackVisibilityWindowDays > 0 && vm.CurrentPlaybackPoint != null)
+        {
+            var centerDate = vm.CurrentPlaybackPoint.FechaHora;
+            var window = TimeSpan.FromDays(vm.TrackVisibilityWindowDays);
+            trackToDraw = vm.CurrentTrack.Where(p => 
+                p.FechaHora >= centerDate.Subtract(window) && 
+                p.FechaHora <= centerDate.Add(window)).ToList();
+        }
 
         // 1. Dibujar Track de la marea (Violeta)
-        if (vm.ShowTrackLine && vm.CurrentTrack.Any())
+        if (vm.ShowTrackLine && trackToDraw.Any())
         {
-            var points = vm.CurrentTrack.Select(p => new PointLatLng(p.Latitud, p.Longitud)).ToList();
+            var points = trackToDraw.Select(p => new PointLatLng(p.Latitud, p.Longitud)).ToList();
             var route = new GMapRoute(points)
             {
                 Shape = new Path
@@ -117,12 +127,12 @@ public partial class MainWindow : Window
         }
 
         // 2. Dibujar Puntos de Track
-        if (vm.ShowTrackPoints && vm.CurrentTrack.Any())
+        if (vm.ShowTrackPoints && trackToDraw.Any())
         {
-            for (int i = 0; i < vm.CurrentTrack.Count; i++)
+            for (int i = 0; i < trackToDraw.Count; i++)
             {
-                var track = vm.CurrentTrack[i];
-                var index = i; // Captura para el closure
+                var track = trackToDraw[i];
+                var originalIndex = vm.CurrentTrack.IndexOf(track);
                 var pointPos = new PointLatLng(track.Latitud, track.Longitud);
                 var pointMarker = new GMapMarker(pointPos)
                 {
@@ -139,7 +149,7 @@ public partial class MainWindow : Window
 
                 pointMarker.Shape.MouseLeftButtonDown += (s, e) =>
                 {
-                    vm.CurrentTrackPointIndex = index;
+                    vm.CurrentTrackPointIndex = originalIndex;
                     e.Handled = true;
                 };
 
@@ -235,6 +245,33 @@ public partial class MainWindow : Window
         else
         {
             _vesselMarker = null; 
+        }
+ 
+        // 3. Ajustar vista si se solicitó un zoom automático (ej: al cargar marea)
+        if (vm.ShouldZoomOnNextUpdate)
+        {
+            vm.ShouldZoomOnNextUpdate = false;
+            var dynamicMarkers = MainMap.Markers.Where(m => !_staticGeoJsonMarkers.Contains(m)).ToList();
+            if (dynamicMarkers.Any())
+            {
+                Dispatcher.BeginInvoke(new Action(() => 
+                {
+                    var points = dynamicMarkers.Select(m => m.Position).ToList();
+                    double minLat = points.Min(p => p.Lat);
+                    double maxLat = points.Max(p => p.Lat);
+                    double minLng = points.Min(p => p.Lng);
+                    double maxLng = points.Max(p => p.Lng);
+ 
+                    // Asegurar que el rectángulo tenga un tamaño mínimo
+                    double width = Math.Max(maxLng - minLng, 0.05);
+                    double height = Math.Max(maxLat - minLat, 0.05);
+ 
+                    var rect = new RectLatLng(maxLat, minLng, width, height);
+                    MainMap.SetZoomToFitRect(rect);
+                    
+                    if (MainMap.Zoom > 2) MainMap.Zoom--;
+                }), System.Windows.Threading.DispatcherPriority.Loaded);
+            }
         }
     }
 
@@ -443,9 +480,11 @@ public partial class MainWindow : Window
             double minLng = points.Min(p => p.Lng);
             double maxLng = points.Max(p => p.Lng);
 
-            // GMap.NET RectLatLng(top, left, width, height)
-            // top = maxLat, left = minLng
-            var rect = new RectLatLng(maxLat, minLng, maxLng - minLng, maxLat - minLat);
+            // Asegurar que el rectángulo tenga un tamaño mínimo para evitar fallos de SetZoomToFitRect
+            double width = Math.Max(maxLng - minLng, 0.05);
+            double height = Math.Max(maxLat - minLat, 0.05);
+
+            var rect = new RectLatLng(maxLat, minLng, width, height);
             
             // Ajustar el zoom y la posición
             MainMap.SetZoomToFitRect(rect);
