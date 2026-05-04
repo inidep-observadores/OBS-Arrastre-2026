@@ -94,14 +94,14 @@ public sealed class MareaValidationEngine
         foreach (var group in duplicates)
         {
             report.AddIssue(ValidationLevel.Warning, "Producción", 
-                $"Existen {group.Count()} registros para el producto '{group.Key.Producto}' ({group.Key.Categoria}) el {group.Key.Fecha:yyyy-MM-dd}. Se importarán todos pero se recomienda verificar posibles duplicados.", 
-                $"Fecha {group.Key.Fecha:yyyy-MM-dd}");
+                $"Existen {group.Count()} registros para el producto '{group.Key.Producto}' ({group.Key.Categoria}) el {group.Key.Fecha:dd/MM/yyyy}. Se importarán todos pero se recomienda verificar posibles duplicados.", 
+                $"Fecha {group.Key.Fecha:dd/MM/yyyy}");
         }
 
         // 3. Reglas avanzadas de producción (P*)
         foreach (var p in produccion)
         {
-            string ctx = $"Fecha {p.Fecha:yyyy-MM-dd} Especie {p.Especie}";
+            string ctx = $"Fecha {p.Fecha:dd/MM/yyyy} Especie {p.Especie}";
             // Factor vs Producto
             if (p.Producto?.IndexOf("ENTERO", StringComparison.OrdinalIgnoreCase) >= 0 && p.Factor != 1)
             {
@@ -176,7 +176,7 @@ public sealed class MareaValidationEngine
                 double diffAbs = Math.Abs(diferencia);
                 double margenTolerancia = capturaNetaReal * 0.01;
 
-                string ctx = $"Fecha: {fecha:yyyy-MM-dd} | Especie: {nombreEspecie}";
+                string ctx = $"Fecha: {fecha:dd/MM/yyyy} | Especie: {nombreEspecie}";
                 string capReconStr = capturaReconstruida.ToString("N1", culture);
                 string capRealStr = capturaNetaReal.ToString("N1", culture);
 
@@ -225,15 +225,15 @@ public sealed class MareaValidationEngine
 
         foreach (var c in capturas.Where(c => c.Fecha.Date < minDate || c.Fecha.Date > maxDate))
         {
-            report.AddIssue(ValidationLevel.Fatal, "Consistencia Temporal", $"Lance {c.Lance} con fecha {c.Fecha:yyyy-MM-dd} fuera del rango de etapas de marea ({minDate:yyyy-MM-dd} al {maxDate:yyyy-MM-dd}).");
+            report.AddIssue(ValidationLevel.Fatal, "Consistencia Temporal", $"Lance {c.Lance} con fecha {c.Fecha:dd/MM/yyyy} fuera del rango de etapas de marea ({minDate:dd/MM/yyyy} al {maxDate:dd/MM/yyyy}).");
         }
         foreach (var m in muestras.Where(m => m.Fecha.Date < minDate || m.Fecha.Date > maxDate))
         {
-            report.AddIssue(ValidationLevel.Fatal, "Consistencia Temporal", $"Muestra (Lance {m.Lance}) con fecha {m.Fecha:yyyy-MM-dd} fuera del rango de etapas de marea.");
+            report.AddIssue(ValidationLevel.Fatal, "Consistencia Temporal", $"Muestra (Lance {m.Lance}) con fecha {m.Fecha:dd/MM/yyyy} fuera del rango de etapas de marea.");
         }
         foreach (var p in produccion.Where(p => p.Fecha.Date < minDate || p.Fecha.Date > maxDate))
         {
-            report.AddIssue(ValidationLevel.Error, "Consistencia Temporal", $"Producción con fecha {p.Fecha:yyyy-MM-dd} fuera del rango de etapas de marea.");
+            report.AddIssue(ValidationLevel.Error, "Consistencia Temporal", $"Producción con fecha {p.Fecha:dd/MM/yyyy} fuera del rango de etapas de marea.");
         }
     }
 
@@ -345,7 +345,7 @@ public sealed class MareaValidationEngine
         foreach (var p in produccion)
         {
             if (p.Barco.Trim().ToUpper() != bActual)
-                report.AddIssue(ValidationLevel.Fatal, "Consistencia", $"Barco en producción ({p.Barco}) no coincide con marea activa ({barcoActual})", $"Fecha {p.Fecha:yyyy-MM-dd}");
+                report.AddIssue(ValidationLevel.Fatal, "Consistencia", $"Barco en producción ({p.Barco}) no coincide con marea activa ({barcoActual})", $"Fecha {p.Fecha:dd/MM/yyyy}");
 
             if ((int)p.Marea != mareaActual)
             {
@@ -353,11 +353,11 @@ public sealed class MareaValidationEngine
                 {
                     string oldMarea = p.Marea.ToString();
                     p.Marea = mareaActual;
-                    report.AddIssue(ValidationLevel.AutoFixed, "Consistencia", $"Nro Marea en producción era 0. Se corrige a {mareaActual}.", $"Fecha {p.Fecha:yyyy-MM-dd}", oldMarea, mareaActual.ToString());
+                    report.AddIssue(ValidationLevel.AutoFixed, "Consistencia", $"Nro Marea en producción era 0. Se corrige a {mareaActual}.", $"Fecha {p.Fecha:dd/MM/yyyy}", oldMarea, mareaActual.ToString());
                 }
                 else
                 {
-                    report.AddIssue(ValidationLevel.Error, "Consistencia", $"Nro Marea en producción ({p.Marea}) no coincide con marea activa ({mareaActual})", $"Fecha {p.Fecha:yyyy-MM-dd}");
+                    report.AddIssue(ValidationLevel.Error, "Consistencia", $"Nro Marea en producción ({p.Marea}) no coincide con marea activa ({mareaActual})", $"Fecha {p.Fecha:dd/MM/yyyy}");
                 }
             }
         }
@@ -510,8 +510,8 @@ public sealed class MareaValidationEngine
                 // REQ-3.2.4: Consistencia de Fecha (Muestra vs Lance)
                 if (m.Fecha.Date != lanceCorrespondiente.Fecha.Date)
                 {
-                    string oldFecha = m.Fecha.ToString("yyyy-MM-dd");
-                    string newFecha = lanceCorrespondiente.Fecha.ToString("yyyy-MM-dd");
+                    string oldFecha = m.Fecha.ToString("dd/MM/yyyy");
+                    string newFecha = lanceCorrespondiente.Fecha.ToString("dd/MM/yyyy");
                     m.Fecha = lanceCorrespondiente.Fecha; // Auto-corrección como en pcorrecc.PRG
                     report.AddIssue(ValidationLevel.AutoFixed, "Integridad", $"Fecha de muestra ({oldFecha}) no coincide con fecha de lance ({newFecha}). Corregido.", ctx, oldFecha, newFecha);
                 }
@@ -746,8 +746,8 @@ public sealed class MareaValidationEngine
                 // REQ-3.2.4: Consistencia de Fecha (Submuestra vs Muestra)
                 if (s.Fecha.Date != parent.Fecha.Date)
                 {
-                    string oldFecha = s.Fecha.ToString("yyyy-MM-dd");
-                    string newFecha = parent.Fecha.ToString("yyyy-MM-dd");
+                    string oldFecha = s.Fecha.ToString("dd/MM/yyyy");
+                    string newFecha = parent.Fecha.ToString("dd/MM/yyyy");
                     s.Fecha = parent.Fecha;
                     report.AddIssue(ValidationLevel.AutoFixed, "Integridad", $"Fecha de submuestra ({oldFecha}) no coincide con muestra padre. Corregido.", ctx, oldFecha, newFecha);
                 }

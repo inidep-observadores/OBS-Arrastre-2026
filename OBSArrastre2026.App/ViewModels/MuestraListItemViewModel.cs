@@ -9,7 +9,17 @@ public sealed class MuestraListItemViewModel(Muestra muestra)
 
     public string LanceNro => Muestra.Lance?.NroLance.ToString() ?? "-";
     
-    public string LanceFecha => Muestra.Lance?.Fecha ?? "-";
+    public string LanceFecha 
+    {
+        get
+        {
+            if (Muestra.Lance != null && DateTime.TryParse(Muestra.Lance.Fecha, out var date))
+            {
+                return date.ToString("dd/MM/yyyy");
+            }
+            return Muestra.Lance?.Fecha ?? "-";
+        }
+    }
 
     public string LanceHora => Muestra.Lance?.HoraFinal ?? "-";
 

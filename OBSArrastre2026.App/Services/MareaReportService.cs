@@ -113,9 +113,13 @@ public class MareaReportService : IMareaReportService
                         .ThenBy(i => 
                         {
                             if (string.IsNullOrEmpty(i.Context)) return "";
-                            // Intentar extraer fecha yyyy-MM-dd
-                            var matchFecha = System.Text.RegularExpressions.Regex.Match(i.Context, @"(\d{4}-\d{2}-\d{2})");
-                            if (matchFecha.Success) return matchFecha.Groups[1].Value;
+                            // Intentar extraer fecha dd/MM/yyyy
+                            var matchFecha = System.Text.RegularExpressions.Regex.Match(i.Context, @"(\d{2}/\d{2}/\d{4})");
+                            if (matchFecha.Success) 
+                            {
+                                var parts = matchFecha.Groups[1].Value.Split('/');
+                                return $"{parts[2]}-{parts[1]}-{parts[0]}"; // yyyy-MM-dd para sort
+                            }
                             return "9999-99-99"; // Para que lances vayan después si hay mezcla
                         })
                         .ThenBy(i => 

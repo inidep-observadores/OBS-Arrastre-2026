@@ -160,7 +160,7 @@ public sealed partial class ImportDbfViewModel : ObservableObject
                     Name = fileName,
                     FullPath = filePath,
                     SizeDisplay = FormatSize(info.Length),
-                    DateDisplay = info.LastWriteTime.ToString("g")
+                    DateDisplay = info.LastWriteTime.ToString("dd/MM/yyyy HH:mm")
                 });
             }
             (AcceptCommand as IRelayCommand)?.NotifyCanExecuteChanged();
@@ -219,14 +219,23 @@ public sealed partial class ImportDbfViewModel : ObservableObject
             // Recargar etapas actualizadas (por si el JSON las cambió) para la validación de DBFs
             var mareaUpdated = await _mareaService.GetMareaAsync(_mareaId);
             var currentEtapas = mareaUpdated?.Etapas ?? _etapas;
-            var currentBarco = mareaUpdated?.Buque?.Nombre ?? _barco;
+
+            // Sincronizamos los datos locales con lo que hay en DB (especialmente si el JSON los cambió)
+            if (mareaUpdated != null)
+            {
+                _barco = mareaUpdated.Buque?.Nombre ?? _barco;
+                _mareaNum = mareaUpdated.NumeroInidep;
+                _anio = mareaUpdated.AnioInidep;
+                OnPropertyChanged(nameof(MareaNum));
+                OnPropertyChanged(nameof(Anio));
+            }
 
             // La carpeta base es la del primer archivo seleccionado
             string basePath = Path.GetDirectoryName(SelectedFiles[0].FullPath) ?? string.Empty;
 
             // 1. Validar (Incluyendo validación de etapas)
             BusyMessage = "Validando integridad de archivos DBF...";
-            var report = await _importService.ProcessMareaImportAsync(basePath, currentBarco, _mareaNum, _anio, currentEtapas);
+            var report = await _importService.ProcessMareaImportAsync(basePath, _barco, _mareaNum, _anio, currentEtapas);
 
             if (report.HasFatalErrors)
             {
