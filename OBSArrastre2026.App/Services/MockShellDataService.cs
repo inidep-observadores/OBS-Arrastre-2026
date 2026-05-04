@@ -7,8 +7,6 @@ public interface IMockShellDataService
 {
     IReadOnlyList<NavigationItemViewModel> GetNavigationItems();
 
-    DashboardContent GetDashboard();
-
     ListSectionContent GetListSection(NavigationSection section);
 }
 
@@ -16,7 +14,6 @@ public sealed class MockShellDataService : IMockShellDataService
 {
     public IReadOnlyList<NavigationItemViewModel> GetNavigationItems() =>
     [
-        new(NavigationSection.Inicio, "Inicio", "Panel de control general", "◌"),
         new(NavigationSection.Mareas, "Mareas", "Cabeceras y estado operativo", "◇"),
         new(NavigationSection.Lances, "Lances", "Registro y control de capturas", "△", true),
         new(NavigationSection.Muestras, "Muestras", "Muestreo biologico y control", "▣", true),
@@ -24,31 +21,6 @@ public sealed class MockShellDataService : IMockShellDataService
         new(NavigationSection.Produccion, "Produccion", "Registros diarios de proceso", "◫", true),
         new(NavigationSection.ControlProduccion, "Control Capt./Prod.", "Balance de masa diario por especie", "⚖", true)
     ];
-
-    public DashboardContent GetDashboard() =>
-        new(
-            "Vista general",
-            "Inicio",
-            "Maqueta premium para visualizar la operacion de arrastre con foco en navegacion, jerarquia visual y lectura rapida.",
-            "Crear acceso rapido",
-            [
-                new("Mareas activas", "18", "+3 esta semana", "Cabeceras abiertas en seguimiento"),
-                new("Lances cargados", "246", "+12 hoy", "Actividad consolidada por etapa"),
-                new("Muestras listas", "89", "74% revisadas", "Pendientes de integracion biologica"),
-                new("Produccion diaria", "42.8 t", "+6.4%", "Simulacion de cierre operativo")
-            ],
-            [
-                new("Operacion", "Turno de carga sugerido", "La maqueta prioriza acciones frecuentes y lectura lateral continua para operadores.", "Sidebar persistente + area principal adaptable"),
-                new("Muestras", "Revision biologica", "La seccion de muestras y submuestras comparte un lenguaje visual de detalle para evitar saltos cognitivos.", "Tablas mock con badges y filtros"),
-                new("Tema", "Claro, oscuro y sistema", "El layout usa recursos dinamicos para preparar el soporte de tema real sin rehacer las vistas.", "Theme service desacoplado")
-            ],
-            [
-                new("Lun", 42, "Carga inicial"),
-                new("Mar", 58, "Mayor actividad"),
-                new("Mie", 76, "Pico de registros"),
-                new("Jue", 63, "Revision y control"),
-                new("Vie", 88, "Cierre operativo")
-            ]);
 
     public ListSectionContent GetListSection(NavigationSection section) => section switch
     {

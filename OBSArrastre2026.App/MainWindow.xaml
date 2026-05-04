@@ -327,7 +327,7 @@
                     <TextBlock Margin="0,6,0,0"
                                FontSize="13"
                                Foreground="{DynamicResource SecondaryTextBrush}"
-                               Text="Dashboard y modulos maestros en modo mockup" />
+                               Text="Módulos maestros en modo mockup" />
                 </StackPanel>
 
                 <ListBox Grid.Row="1"
@@ -579,126 +579,8 @@
                     </Grid>
 
                     <Grid Grid.Row="1">
-                        <Grid Visibility="{Binding IsDashboardVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
 
-                            <ItemsControl ItemsSource="{Binding DashboardCards}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <UniformGrid Columns="4" />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Style="{StaticResource MetricCardStyle}">
-                                            <StackPanel>
-                                                <TextBlock FontSize="12"
-                                                           Foreground="{DynamicResource SecondaryTextBrush}"
-                                                           Text="{Binding Label}" />
-                                                <TextBlock Margin="0,10,0,0"
-                                                           FontFamily="{DynamicResource DisplayFontFamily}"
-                                                           FontSize="30"
-                                                           FontWeight="SemiBold"
-                                                           Foreground="{DynamicResource PrimaryTextBrush}"
-                                                           Text="{Binding Value}" />
-                                                <TextBlock Margin="0,8,0,0"
-                                                           FontSize="12"
-                                                           Foreground="{DynamicResource AccentBrush}"
-                                                           Text="{Binding Delta}" />
-                                                <TextBlock Margin="0,10,0,0"
-                                                           FontSize="12"
-                                                           TextWrapping="Wrap"
-                                                           Foreground="{DynamicResource SecondaryTextBrush}"
-                                                           Text="{Binding Footnote}" />
-                                            </StackPanel>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-
-                            <Grid Grid.Row="1">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="1.35*" />
-                                    <ColumnDefinition Width="18" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-
-                                <Border Style="{StaticResource SurfaceBorderStyle}"
-                                        Padding="20">
-                                    <StackPanel>
-                                        <TextBlock FontSize="18"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource PrimaryTextBrush}"
-                                                   Text="Ritmo operativo semanal" />
-                                        <ItemsControl Margin="0,20,0,0"
-                                                      ItemsSource="{Binding TrendPoints}">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Grid Margin="0,0,0,14">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="56" />
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="88" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock VerticalAlignment="Center"
-                                                                   FontWeight="SemiBold"
-                                                                   Foreground="{DynamicResource PrimaryTextBrush}"
-                                                                   Text="{Binding Label}" />
-                                                        <ProgressBar Grid.Column="1"
-                                                                     Style="{StaticResource SlimProgressBarStyle}"
-                                                                     Margin="14,0"
-                                                                     Maximum="100"
-                                                                     Value="{Binding Value}" />
-                                                        <TextBlock Grid.Column="2"
-                                                                   VerticalAlignment="Center"
-                                                                   HorizontalAlignment="Right"
-                                                                   Foreground="{DynamicResource SecondaryTextBrush}"
-                                                                   Text="{Binding Caption}" />
-                                                    </Grid>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                    </StackPanel>
-                                </Border>
-
-                                <ItemsControl Grid.Column="2"
-                                              ItemsSource="{Binding InsightCards}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border Style="{StaticResource SurfaceBorderStyle}"
-                                                    Margin="0,0,0,14"
-                                                    Padding="16">
-                                                <StackPanel>
-                                                    <TextBlock FontSize="11"
-                                                               FontWeight="SemiBold"
-                                                               Foreground="{DynamicResource AccentBrush}"
-                                                               Text="{Binding Label}" />
-                                                    <TextBlock Margin="0,8,0,0"
-                                                               FontSize="16"
-                                                               FontWeight="SemiBold"
-                                                               Foreground="{DynamicResource PrimaryTextBrush}"
-                                                               Text="{Binding Title}" />
-                                                    <TextBlock Margin="0,8,0,0"
-                                                               FontSize="13"
-                                                               TextWrapping="Wrap"
-                                                               Foreground="{DynamicResource SecondaryTextBrush}"
-                                                               Text="{Binding Description}" />
-                                                    <TextBlock Margin="0,12,0,0"
-                                                               FontSize="12"
-                                                               Foreground="{DynamicResource PrimaryTextBrush}"
-                                                               Text="{Binding Meta}" />
-                                                </StackPanel>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </Grid>
-                        </Grid>
-
-                        <Grid Visibility="{Binding IsTableVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />

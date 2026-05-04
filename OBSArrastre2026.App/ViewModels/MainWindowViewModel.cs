@@ -40,7 +40,6 @@ public class MainWindowViewModel : ObservableObject
     private string _pageDescription = string.Empty;
     private string _pageEyebrow = string.Empty;
     private string _primaryActionLabel = string.Empty;
-    private bool _isDashboardVisible;
     private AppThemeMode _currentThemeMode;
     private object? _currentEditViewModel;
     private object? _activeDialog;
@@ -353,12 +352,6 @@ public class MainWindowViewModel : ObservableObject
     public string SearchPlaceholder { get; }
 
     public ObservableCollection<NavigationItemViewModel> NavigationItems { get; } = [];
-
-    public ObservableCollection<KpiCardViewModel> DashboardCards { get; } = [];
-
-    public ObservableCollection<InsightCardViewModel> InsightCards { get; } = [];
-
-    public ObservableCollection<TrendPointViewModel> TrendPoints { get; } = [];
 
     public ObservableCollection<string> ActiveFilters { get; } = [];
 
@@ -804,21 +797,7 @@ public class MainWindowViewModel : ObservableObject
         return tcs.Task;
     }
 
-    public bool IsDashboardVisible
-    {
-        get => _isDashboardVisible;
-        private set
-        {
-            if (!SetProperty(ref _isDashboardVisible, value))
-            {
-                return;
-            }
-
-            OnPropertyChanged(nameof(IsTableVisible));
-        }
-    }
-
-    public bool IsTableVisible => !IsDashboardVisible;
+    public bool IsTableVisible => true;
 
     public AppThemeMode CurrentThemeMode
     {
@@ -880,12 +859,6 @@ public class MainWindowViewModel : ObservableObject
 
     private void LoadSection(NavigationSection section)
     {
-        if (section == NavigationSection.Inicio)
-        {
-            LoadDashboard();
-            return;
-        }
-
         if (section == NavigationSection.Mareas)
         {
             _ = LoadMareasAsync();
@@ -904,8 +877,6 @@ public class MainWindowViewModel : ObservableObject
                 mareaSection.Column4Header,
                 mareaSection.Column5Header);
 
-            ClearDashboardCollections();
-            IsDashboardVisible = false;
             return;
         }
 
@@ -928,8 +899,6 @@ public class MainWindowViewModel : ObservableObject
                 "Inicio",
                 "Fin");
 
-            ClearDashboardCollections();
-            IsDashboardVisible = false;
             return;
         }
 
@@ -950,8 +919,6 @@ public class MainWindowViewModel : ObservableObject
                 "Especie",
                 "Peso");
 
-            ClearDashboardCollections();
-            IsDashboardVisible = false;
             return;
         }
 
@@ -972,8 +939,6 @@ public class MainWindowViewModel : ObservableObject
                 "Especie",
                 "Peso");
 
-            ClearDashboardCollections();
-            IsDashboardVisible = false;
             return;
         }
 
@@ -994,8 +959,6 @@ public class MainWindowViewModel : ObservableObject
                 "Factor",
                 "Kg");
 
-            ClearDashboardCollections();
-            IsDashboardVisible = false;
             return;
         }
 
@@ -1013,8 +976,6 @@ public class MainWindowViewModel : ObservableObject
             // Los encabezados se manejan dinámicamente en LoadControlProduccionAsync
             // según si es vista resumen o detalle.
 
-            ClearDashboardCollections();
-            IsDashboardVisible = false;
             return;
         }
 
@@ -1033,27 +994,8 @@ public class MainWindowViewModel : ObservableObject
 
         ReplaceItems(ActiveFilters, listSection.Filters);
         ReplaceItems(Records, listSection.Rows);
-        ClearDashboardCollections();
-        IsDashboardVisible = false;
     }
 
-    private void LoadDashboard()
-    {
-        var dashboard = _mockShellDataService.GetDashboard();
-
-        PageEyebrow = dashboard.Eyebrow;
-        PageTitle = dashboard.Title;
-        PageDescription = dashboard.Description;
-        PrimaryActionLabel = dashboard.PrimaryActionLabel;
-
-        ReplaceItems(DashboardCards, dashboard.Cards);
-        ReplaceItems(InsightCards, dashboard.Insights);
-        ReplaceItems(TrendPoints, dashboard.Trends);
-        ActiveFilters.Clear();
-        Records.Clear();
-        SetColumnHeaders(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
-        IsDashboardVisible = true;
-    }
 
     private async Task LoadFilterDataAsync()
     {
@@ -1431,12 +1373,6 @@ public class MainWindowViewModel : ObservableObject
         CurrentThemeMode = mode;
     }
 
-    private void ClearDashboardCollections()
-    {
-        DashboardCards.Clear();
-        InsightCards.Clear();
-        TrendPoints.Clear();
-    }
 
     private void SetColumnHeaders(string column1, string column2, string column3, string column4, string column5, string column6 = "", string column7 = "")
     {
