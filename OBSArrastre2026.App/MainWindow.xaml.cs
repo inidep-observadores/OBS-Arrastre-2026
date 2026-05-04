@@ -101,7 +101,7 @@ public partial class MainWindow : Window
         if (vm == null) return;
 
         // 1. Dibujar Track de la marea (Violeta)
-        if (vm.CurrentTrack.Any())
+        if (vm.ShowTrackLine && vm.CurrentTrack.Any())
         {
             var points = vm.CurrentTrack.Select(p => new PointLatLng(p.Latitud, p.Longitud)).ToList();
             var route = new GMapRoute(points)
@@ -114,7 +114,11 @@ public partial class MainWindow : Window
                 }
             };
             MainMap.Markers.Add(route);
-            // 2. Dibujar Puntos de Track
+        }
+
+        // 2. Dibujar Puntos de Track
+        if (vm.ShowTrackPoints && vm.CurrentTrack.Any())
+        {
             for (int i = 0; i < vm.CurrentTrack.Count; i++)
             {
                 var track = vm.CurrentTrack[i];
@@ -231,29 +235,6 @@ public partial class MainWindow : Window
         else
         {
             _vesselMarker = null; 
-        }
-
-        // 3. Ajustar vista si hay datos dinámicos y NO hay una selección activa NI navegación en curso
-        var dynamicMarkers = MainMap.Markers.Where(m => !_staticGeoJsonMarkers.Contains(m)).ToList();
-        if (dynamicMarkers.Any() && vm.SelectedRecord == null && vm.CurrentTrackPointIndex == -1)
-        {
-            Dispatcher.BeginInvoke(new Action(() => 
-            {
-                var points = dynamicMarkers.Select(m => m.Position).ToList();
-                double minLat = points.Min(p => p.Lat);
-                double maxLat = points.Max(p => p.Lat);
-                double minLng = points.Min(p => p.Lng);
-                double maxLng = points.Max(p => p.Lng);
-
-                // Asegurar que el rectángulo tenga un tamaño mínimo para evitar fallos de SetZoomToFitRect
-                double width = Math.Max(maxLng - minLng, 0.01);
-                double height = Math.Max(maxLat - minLat, 0.01);
-
-                var rect = new RectLatLng(maxLat, minLng, width, height);
-                MainMap.SetZoomToFitRect(rect);
-                
-                if (MainMap.Zoom > 2) MainMap.Zoom--;
-            }), System.Windows.Threading.DispatcherPriority.Loaded); // Usamos Loaded para que ocurra tras el renderizado
         }
     }
 

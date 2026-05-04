@@ -129,6 +129,32 @@ public class MainWindowViewModel : ObservableObject
     private string _mareasSearchText = string.Empty;
     
     // Filtros de Lances
+    private bool _showTrackLine;
+    public bool ShowTrackLine
+    {
+        get => _showTrackLine;
+        set
+        {
+            if (SetProperty(ref _showTrackLine, value))
+            {
+                MapUpdateRequested?.Invoke();
+            }
+        }
+    }
+
+    private bool _showTrackPoints;
+    public bool ShowTrackPoints
+    {
+        get => _showTrackPoints;
+        set
+        {
+            if (SetProperty(ref _showTrackPoints, value))
+            {
+                MapUpdateRequested?.Invoke();
+            }
+        }
+    }
+
     private DateTime? _lancesFilterFechaDesde;
     private DateTime? _lancesFilterFechaHasta;
     private int? _lancesFilterNroLance;
@@ -1169,6 +1195,22 @@ public class MainWindowViewModel : ObservableObject
 
             // Notificar a la vista para que actualice GMap.NET
             MapUpdateRequested?.Invoke();
+
+            // Auto-focus al cargar marea por primera vez o cambio de marea
+            var focusPoints = new List<PointLatLng>();
+            foreach (var l in CurrentLances)
+            {
+                if (l.LatitudInicioDecimal.HasValue && l.LongitudInicioDecimal.HasValue)
+                    focusPoints.Add(new PointLatLng(l.LatitudInicioDecimal.Value, l.LongitudInicioDecimal.Value));
+                if (l.LatitudFinalDecimal.HasValue && l.LongitudFinalDecimal.HasValue)
+                    focusPoints.Add(new PointLatLng(l.LatitudFinalDecimal.Value, l.LongitudFinalDecimal.Value));
+            }
+            focusPoints.AddRange(CurrentTrack.Select(p => new PointLatLng(p.Latitud, p.Longitud)));
+
+            if (focusPoints.Count > 0)
+            {
+                MapFocusRequested?.Invoke(focusPoints);
+            }
             
             OnPropertyChanged(nameof(TotalTrackPoints));
             CurrentTrackPointIndex = -1;
