@@ -2,7 +2,9 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:OBSArrastre2026.App.ViewModels"
-             xmlns:conv="clr-namespace:OBSArrastre2026.App.Converters">
+             xmlns:conv="clr-namespace:OBSArrastre2026.App.Converters"
+             xmlns:models="clr-namespace:OBSArrastre2026.App.Models"
+             xmlns:system="clr-namespace:System;assembly=mscorlib">
     <Application.Resources>
         <!-- Plantilla Global para Buques: Asegura que siempre se vea el Nombre -->
         <DataTemplate DataType="{x:Type vm:BuqueListItemViewModel}">
@@ -35,6 +37,12 @@
         <conv:MathConverter x:Key="MathConverter" />
         <conv:EnhancedBooleanToVisibilityConverter x:Key="EnhancedBooleanToVisibilityConverter" />
         <conv:CoordinateConverter x:Key="CoordinateConverter" />
+
+        <ObjectDataProvider x:Key="TipoDatoDescarteEnum" MethodName="GetValues" ObjectType="{x:Type system:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="models:TipoDatoDescarte"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
 
         <Style x:Key="SurfaceBorderStyle" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
@@ -828,6 +836,78 @@
             </Border>
         </DataTemplate>
 
+        <!-- Diálogo de Configuración de Unidad de Descarte -->
+        <DataTemplate DataType="{x:Type vm:ConfigurarUnidadDescarteViewModel}">
+            <Border Width="450" 
+                    Background="{DynamicResource CardBackgroundBrush}"
+                    BorderBrush="{DynamicResource CardBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="16"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="40" ShadowDepth="10" Opacity="0.15" Color="Black"/>
+                </Border.Effect>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="24,20" CornerRadius="16,16,0,0">
+                        <StackPanel>
+                            <TextBlock Text="CONFIGURAR UNIDAD DE DESCARTE" 
+                                       FontSize="11" FontWeight="Bold" 
+                                       Foreground="{DynamicResource AccentBrush}" />
+                            <TextBlock Text="Cambio global para la marea activa" 
+                                       FontSize="18" FontWeight="SemiBold" 
+                                       Foreground="{DynamicResource PrimaryTextBrush}"
+                                       Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="1" Padding="24,30">
+                        <StackPanel>
+                        <TextBlock Text="Esta acción establecerá la unidad de medida seleccionada para TODOS los registros de captura de la marea actual. Los valores numéricos existentes no se verán alterados, pero su interpretación cambiará (ej: de 10kg a 10%)." 
+                                   Foreground="{DynamicResource SecondaryTextBrush}" 
+                                   TextWrapping="Wrap"
+                                   FontSize="13"
+                                   LineHeight="20"
+                                   Margin="0,0,0,24"/>
+                        
+                        <Label Content="Unidad de Descarte" Style="{StaticResource FormLabelStyle}" />
+                        <ComboBox ItemsSource="{Binding Source={StaticResource TipoDatoDescarteEnum}}"
+                                  SelectedItem="{Binding TipoSeleccionado}"
+                                  Style="{StaticResource PremiumComboBoxStyle}"
+                                  Height="40" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="2" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="24,20" CornerRadius="0,0,16,16">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button Content="CANCELAR" 
+                                    Command="{Binding CancelCommand}"
+                                    Style="{StaticResource ThemeButtonStyle}"
+                                    Height="44"
+                                    Margin="0,0,8,0"/>
+                            <Button Grid.Column="1"
+                                    Content="APLICAR CAMBIO" 
+                                    Command="{Binding AcceptCommand}"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Height="44"
+                                    Margin="8,0,0,0"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
         <!-- Diálogo de Importación DBF -->
         <DataTemplate DataType="{x:Type vm:ImportDbfViewModel}">
             <Border Width="650" 
@@ -877,7 +957,18 @@
                             <TextBlock Text="{Binding PatternNote}" 
                                        FontSize="12" 
                                        Foreground="{DynamicResource SecondaryTextBrush}" 
-                                       Margin="0,8,0,0"/>
+                                       Margin="0,8,0,16"/>
+
+                            <StackPanel>
+                                <Label Content="Unidad de Descarte Predeterminada" Style="{StaticResource FormLabelStyle}" />
+                                <ComboBox ItemsSource="{Binding Source={StaticResource TipoDatoDescarteEnum}}"
+                                          SelectedItem="{Binding SelectedTipoDatoDescarte}"
+                                          Style="{StaticResource PremiumComboBoxStyle}"
+                                          Width="200"
+                                          HorizontalAlignment="Left" />
+                                <TextBlock Text="Los descartes importados se interpretarán con esta unidad." 
+                                           FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" Margin="2,4,0,0" />
+                            </StackPanel>
                         </StackPanel>
                     </Border>
 

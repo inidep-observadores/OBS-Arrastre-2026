@@ -346,7 +346,8 @@ public class MareaImportService : IMareaImportService
                     {
                         EspecieID = especieId,
                         DatoCaptura = kvp.Value,
-                        DatoDescarte = c.DescartesPorEspecie.TryGetValue(kvp.Key, out var d) ? d : 0
+                        DatoDescarte = c.DescartesPorEspecie.TryGetValue(kvp.Key, out var d) ? d : 0,
+                        TipoDatoDescarte = report.UnidadDescarte
                     });
                 }
             }
@@ -358,6 +359,7 @@ public class MareaImportService : IMareaImportService
 
         // Map Muestras
         var muestraMap = new Dictionary<string, Muestra>();
+        var muestraByIdMap = new Dictionary<string, Muestra>();
         foreach (var rm in report.Muestras)
         {
             if (lanceMap.TryGetValue(rm.Lance, out var lance))
@@ -413,6 +415,9 @@ public class MareaImportService : IMareaImportService
                     string speciesKey = rm.Especie.Trim().ToUpper().Normalize(NormalizationForm.FormC);
                     string key = $"{rm.Lance}_{speciesKey}";
                     muestraMap[key] = muestra;
+                    
+                    // Mapa adicional para búsqueda por ID de especie (usado por archivos L*)
+                    muestraByIdMap[$"{rm.Lance}_{especieId}"] = muestra;
                 }
             }
         }
@@ -436,6 +441,35 @@ public class MareaImportService : IMareaImportService
         }
 
         await dbContext.SaveChangesAsync();
+
+        // Map Lg (Langostinos - Madurez e Impregnación de archivos L*)
+        if (report.Lgs.Any())
+        {
+            // El archivo "L" siempre se refiere a Langostino (Pleoticus muelleri)
+            especieByCodigoMap.TryGetValue("5139030101", out var langostinoId);
+
+            foreach (var rl in report.Lgs)
+            {
+                if (langostinoId != null && muestraByIdMap.TryGetValue($"{rl.Lance}_{langostinoId}", out var muestra))
+                {
+                    foreach (var kvp in rl.Frecuencias)
+                    {
+                        double talla = kvp.Key; // El índice final en TALLA_N indica la talla
+                        var decoded = LegacyDecoder.DecodeMatureTally(kvp.Value);
+
+                        // Buscar frecuencia existente
+                        var frec = muestra.FrecuenciasTallas.FirstOrDefault(f => Math.Abs(f.Talla - talla) < 0.1);
+                        if (frec != null)
+                        {
+                            frec.NroLangostinosMachoMaduros = decoded.MatureMales;
+                            frec.NroLangostinosHembraMaduras = decoded.MatureFemales;
+                            frec.NroLangostinosHembraImpregnadas = decoded.ImpregnatedFemales;
+                        }
+                    }
+                }
+            }
+            await dbContext.SaveChangesAsync();
+        }
 
         // Map Tracking (Conversión UTC -> UTC-3 realizada en la extracción)
         if (report.Tracking.Any())

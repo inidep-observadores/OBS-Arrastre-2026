@@ -129,4 +129,34 @@ public static class LegacyDecoder
             baseMuestra.UltTalla = baseMuestra.Tallies.Max(t => t.Size);
         }
     }
+
+    /// <summary>
+    /// Decodifica el formato de 9 dígitos (MMMHHHIII) usado en los archivos L* para langostinos.
+    /// MMM: Machos Maduros, HHH: Hembras Maduras, III: Hembras Impregnadas.
+    /// </summary>
+    public static (int MatureMales, int MatureFemales, int ImpregnatedFemales) DecodeMatureTally(double value)
+    {
+        if (value <= 0) return (0, 0, 0);
+        
+        // El valor es un número de hasta 9 dígitos: MMMHHHIII
+        // Ejemplo: 25012003 -> 025 012 003
+        string s = ((long)value).ToString().PadLeft(9, '0');
+        
+        // Si el número tiene más de 9 dígitos, tomamos los últimos 9 por seguridad 
+        // (aunque el formato estándar debería ser 9).
+        if (s.Length > 9) s = s.Substring(s.Length - 9);
+
+        try
+        {
+            int mm = int.Parse(s.Substring(0, 3));
+            int hm = int.Parse(s.Substring(3, 3));
+            int hi = int.Parse(s.Substring(6, 3));
+            
+            return (mm, hm, hi);
+        }
+        catch
+        {
+            return (0, 0, 0);
+        }
+    }
 }

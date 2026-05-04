@@ -22,6 +22,7 @@ public class MareaValidationReport
     public string Barco { get; set; } = string.Empty;
     public string Marea { get; set; } = string.Empty;
     public int Año { get; set; }
+    public TipoDatoDescarte UnidadDescarte { get; set; } = TipoDatoDescarte.Kilogramos;
     
     public List<ValidationIssue> Issues { get; } = new();
     

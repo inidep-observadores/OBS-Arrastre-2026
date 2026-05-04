@@ -434,30 +434,52 @@ public sealed class MareaValidationEngine
                 report.AddIssue(ValidationLevel.Warning, "Estructura", $"Salto en la secuencia de lances detectado entre {sortedLances[i]} y {sortedLances[i+1]}");
         }
 
-        // Resolución de porcentaje de descarte
-        if (countPorcentaje > 0 && countKilos > 0)
+        // Resolución de porcentaje de descarte (Heurística de consenso)
+        if (countPorcentaje > 0 || countKilos > 0)
         {
-            report.AddIssue(ValidationLevel.Fatal, "Descarte", $"Datos mixtos de descarte: {countPorcentaje} lances en porcentaje, {countKilos} en kilos. Bloqueando importación.", "Toda la marea");
-        }
-        else if (countPorcentaje > 0)
-        {
-            report.AddIssue(ValidationLevel.AutoFixed, "Descarte", "Se detectó que TODOS los descartes están en porcentaje. Convertidos a kilos automáticamente.", "Toda la marea");
-            foreach (var c in capturas)
+            double totalConDatos = countPorcentaje + countKilos;
+            bool asPercentage = (countKilos == 0) || (countPorcentaje / totalConDatos > 0.8);
+            bool asKilos = (countPorcentaje == 0) || (countKilos / totalConDatos > 0.8);
+
+            if (asPercentage && !asKilos)
             {
-                if (c.Descarte > 0)
+                report.AddIssue(ValidationLevel.AutoFixed, "Descarte", "Se detectó que los descartes están en porcentaje (consenso > 80%). Convertidos a kilos automáticamente.", "Toda la marea");
+                foreach (var c in capturas)
                 {
-                    double pctDescarteTotal = c.Descarte;
-                    c.Descarte = (c.Descarte * c.CaptTotal) / 100.0;
-                    foreach (var key in c.DescartesPorEspecie.Keys.ToList())
+                    if (c.Descarte > 0)
                     {
-                        if (c.DescartesPorEspecie[key] > 0)
+                        double pctDescarteTotal = c.Descarte;
+                        c.Descarte = (c.Descarte * c.CaptTotal) / 100.0;
+                        foreach (var key in c.DescartesPorEspecie.Keys.ToList())
                         {
-                            // DESCAR_i = (DESCAR_i * KG_i) / 100
-                            double especieCaptura = c.Especies.ContainsKey(key) ? c.Especies[key] : 0;
-                            c.DescartesPorEspecie[key] = (c.DescartesPorEspecie[key] * especieCaptura) / 100.0;
+                            if (c.DescartesPorEspecie[key] > 0)
+                            {
+                                // DESCAR_i = (DESCAR_i * KG_i) / 100
+                                double especieCaptura = c.Especies.ContainsKey(key) ? c.Especies[key] : 0;
+                                c.DescartesPorEspecie[key] = (c.DescartesPorEspecie[key] * especieCaptura) / 100.0;
+                            }
                         }
                     }
                 }
+            }
+            else if (asKilos && !asPercentage)
+            {
+                // Caso de la consulta del usuario: 142 kilos vs 3 lances con ratio > 1 (probables errores de carga)
+                if (countPorcentaje > 0)
+                {
+                    foreach (var c in capturas)
+                    {
+                        if (c.CaptTotal > 0 && c.Descarte > c.CaptTotal)
+                        {
+                            report.AddIssue(ValidationLevel.Error, "Captura", $"El descarte ({c.Descarte} kg) es superior a la captura total ({c.CaptTotal} kg). Se asume que son kilos erróneos (no porcentaje) por consenso de marea.", $"Lance {c.Lance}");
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // Ambigüedad real (ej. 50/50 o sin mayoría clara)
+                report.AddIssue(ValidationLevel.Fatal, "Descarte", $"Datos mixtos de descarte: {countPorcentaje} lances parecen porcentaje (ratio > 1), {countKilos} parecen kilos. No se puede determinar la unidad automáticamente por falta de consenso (> 80%).", "Toda la marea");
             }
         }
     }
@@ -713,6 +735,43 @@ public sealed class MareaValidationEngine
                         
                     string debugInfo = $"[ID Resuelto: {espIdLookupStr}, Nombre: '{m.Especie}', CodEspec Original: {m.CodEspec}]{catalogPreview}{logText}";
                     report.AddIssue(ValidationLevel.Error, "Biometría", $"Peso de muestra es 0 y no se pudieron encontrar parámetros de biometría para la especie '{m.Especie}'.", ctx);
+                }
+            }
+        }
+
+        // --- VALIDACIÓN DE INTEGRIDAD L* vs M* ---
+        foreach (var lg in lgs)
+        {
+            string ctx = $"Archivo L* - Lance {lg.Lance}";
+            
+            // Buscar muestra correspondiente a Langostino (Código fijo 5139030101)
+            var muestraM = muestras.FirstOrDefault(m => 
+                (int)m.Lance == (int)lg.Lance && 
+                m.CodEspec == 5139030101);
+
+            if (muestraM == null)
+            {
+                if (lg.Frecuencias.Any(f => f.Value > 0))
+                {
+                    report.AddIssue(ValidationLevel.Fatal, "Integridad L/M", 
+                        $"El archivo L* contiene datos de madurez para el lance {lg.Lance} pero no existe una muestra biológica (M*) de Langostino correspondiente.", ctx);
+                }
+                continue;
+            }
+
+            // Verificar que cada talla en L* exista en M*
+            foreach (var kvp in lg.Frecuencias)
+            {
+                int tallaL = kvp.Key;
+                if (kvp.Value > 0)
+                {
+                    bool existeEnM = muestraM.Tallies.Any(t => t.Size == tallaL);
+                    if (!existeEnM)
+                    {
+                        report.AddIssue(ValidationLevel.Fatal, "Integridad L/M", 
+                            $"El archivo L* registra datos de madurez para la talla {tallaL} mm, pero esa talla no figura como medida en el archivo de muestra (M*).", 
+                            $"Lance {lg.Lance} - Especie {lg.CodEspecIE} - Talla {tallaL}");
+                    }
                 }
             }
         }

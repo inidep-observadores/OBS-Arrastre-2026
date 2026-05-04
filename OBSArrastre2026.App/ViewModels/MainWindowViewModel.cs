@@ -587,6 +587,12 @@ public class MainWindowViewModel : ObservableObject
                 return;
             }
 
+            if (value?.Section == NavigationSection.ConfigurarUnidadDescarte)
+            {
+                _ = OpenConfigurarUnidadDescarteAsync();
+                return;
+            }
+
             if (!SetProperty(ref _selectedNavigationItem, value) || value is null)
             {
                 return;
@@ -853,6 +859,36 @@ public class MainWindowViewModel : ObservableObject
             OnPropertyChanged(nameof(IsSystemThemeActive));
             OnPropertyChanged(nameof(IsLightThemeActive));
             OnPropertyChanged(nameof(IsDarkThemeActive));
+        }
+    }
+
+    private async Task OpenConfigurarUnidadDescarteAsync()
+    {
+        var activeMarea = _activeMareaManager.ActiveMarea;
+        if (activeMarea == null)
+        {
+            ShowMessage("Sin marea activa", "Debe seleccionar una marea activa para realizar esta acción.", null, MessageDialogType.Warning);
+            return;
+        }
+
+        var viewModel = new ConfigurarUnidadDescarteViewModel();
+        ActiveDialog = viewModel;
+
+        bool result = await viewModel.DialogResult.Task;
+        ActiveDialog = null;
+
+        if (result)
+        {
+            try 
+            {
+                await _mareaService.SetTipoDatoDescarteMasivoAsync(activeMarea.ID, viewModel.TipoSeleccionado);
+                await RefreshCurrentSectionAsync();
+                ShowMessage("Éxito", "Se ha actualizado la unidad de descarte en todos los registros de la marea.");
+            }
+            catch (Exception ex)
+            {
+                ShowMessage("Error", "No se pudo actualizar la unidad de descarte.", ex.Message, MessageDialogType.Error);
+            }
         }
     }
 
@@ -1676,10 +1712,13 @@ public class MainWindowViewModel : ObservableObject
             async files => 
             {
                 ActiveDialog = null;
+                
+                // Refrescamos siempre la lista (pedido por el usuario)
+                await LoadMareasAsync();
+                await LoadFilterDataAsync();
+
                 if (files != null)
                 {
-                    await LoadMareasAsync();
-                    await LoadFilterDataAsync();
                     ShowMessage("Importación Exitosa", "La marea y sus datos han sido importados correctamente.", null, MessageDialogType.Success);
                 }
             });

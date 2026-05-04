@@ -8,5 +8,6 @@ public enum NavigationSection
     Submuestras,
     Produccion,
     ControlProduccion,
-    ReemplazoEspecie
+    ReemplazoEspecie,
+    ConfigurarUnidadDescarte
 }

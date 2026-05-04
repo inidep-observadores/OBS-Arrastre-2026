@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using OBSArrastre2026.App.Services;
 using OBSArrastre2026.App.Data.Entities;
+using OBSArrastre2026.App.Models;
 
 namespace OBSArrastre2026.App.ViewModels;
 
@@ -112,6 +113,13 @@ public sealed partial class ImportDbfViewModel : ObservableObject
     {
         get => _isMareaInputVisible;
         set => SetProperty(ref _isMareaInputVisible, value);
+    }
+
+    private TipoDatoDescarte _selectedTipoDatoDescarte = TipoDatoDescarte.Kilogramos;
+    public TipoDatoDescarte SelectedTipoDatoDescarte
+    {
+        get => _selectedTipoDatoDescarte;
+        set => SetProperty(ref _selectedTipoDatoDescarte, value);
     }
 
     private void UpdatePattern()
@@ -236,6 +244,7 @@ public sealed partial class ImportDbfViewModel : ObservableObject
             // 1. Validar (Incluyendo validación de etapas)
             BusyMessage = "Validando integridad de archivos DBF...";
             var report = await _importService.ProcessMareaImportAsync(basePath, _barco, _mareaNum, _anio, currentEtapas);
+            report.UnidadDescarte = SelectedTipoDatoDescarte;
 
             if (report.HasFatalErrors)
             {
@@ -251,6 +260,7 @@ public sealed partial class ImportDbfViewModel : ObservableObject
                 {
                     ShowMessage?.Invoke("Errores de Validación", "Se detectaron errores graves, pero no se pudo localizar el archivo de reporte.", null, MessageDialogType.Error);
                 }
+                _onFinished(null);
                 return;
             }
 
@@ -281,6 +291,7 @@ public sealed partial class ImportDbfViewModel : ObservableObject
         {
             IsBusy = false;
             ShowMessage?.Invoke("Error de Importación", $"Ocurrió un error inesperado: {ex.Message}", ex.ToString(), MessageDialogType.Error);
+            _onFinished(null);
         }
         finally
         {
