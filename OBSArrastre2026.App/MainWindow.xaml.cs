@@ -540,4 +540,24 @@ public partial class MainWindow : Window
             }
         }
     }
+
+    private void MainMap_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+        {
+            var point = e.GetPosition(MainMap);
+            var latLng = MainMap.FromLocalToLatLng((int)point.X, (int)point.Y);
+            vm.MouseLatitude = latLng.Lat;
+            vm.MouseLongitude = latLng.Lng;
+        }
+    }
+
+    private void MainMap_MouseLeave(object sender, MouseEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+        {
+            vm.MouseLatitude = null;
+            vm.MouseLongitude = null;
+        }
+    }
 }

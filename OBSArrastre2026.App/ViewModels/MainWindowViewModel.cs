@@ -226,6 +226,36 @@ public class MainWindowViewModel : ObservableObject
     private System.Windows.Threading.DispatcherTimer? _playbackTimer;
     private string _selectedTrackPointInfo = string.Empty;
     private DateTime? _selectedPlaybackDate;
+    
+    private double? _mouseLatitude;
+    public double? MouseLatitude
+    {
+        get => _mouseLatitude;
+        set
+        {
+            if (SetProperty(ref _mouseLatitude, value))
+            {
+                OnPropertyChanged(nameof(MouseLatitudeDisplay));
+            }
+        }
+    }
+
+    private double? _mouseLongitude;
+    public double? MouseLongitude
+    {
+        get => _mouseLongitude;
+        set
+        {
+            if (SetProperty(ref _mouseLongitude, value))
+            {
+                OnPropertyChanged(nameof(MouseLongitudeDisplay));
+            }
+        }
+    }
+
+    public string MouseLatitudeDisplay => FormatCoordinate(MouseLatitude, true);
+    public string MouseLongitudeDisplay => FormatCoordinate(MouseLongitude, false);
+
 
     public MainWindowViewModel(
         IMockShellDataService mockShellDataService, 
@@ -1409,8 +1439,8 @@ public class MainWindowViewModel : ObservableObject
             ? (value.Value >= 0 ? "N" : "S") 
             : (value.Value >= 0 ? "E" : "O");
             
-        // Formato GGº MM,M' C (C= cuadrante N,S,E,O)
-        return $"{degrees}º {minutes:00.1}' {quadrant}".Replace('.', ',');
+        // Formato GGº MM,MM' C (C= cuadrante N,S,E,O) - Usamos 2 decimales para precisión en HUD
+        return $"{degrees}º {minutes:00.00}' {quadrant}".Replace('.', ',');
     }
 
     private void OnRecordSelected(object? record)
