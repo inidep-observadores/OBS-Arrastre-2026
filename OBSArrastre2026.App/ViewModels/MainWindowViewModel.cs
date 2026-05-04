@@ -620,6 +620,13 @@ public class MainWindowViewModel : ObservableObject
         private set => SetProperty(ref _primaryActionLabel, value);
     }
 
+    private ReemplazoEspecieViewModel? _reemplazoEspecieVM;
+    public ReemplazoEspecieViewModel? ReemplazoEspecieVM
+    {
+        get => _reemplazoEspecieVM;
+        private set => SetProperty(ref _reemplazoEspecieVM, value);
+    }
+
     public int? MareasFilterAnio
     {
         get => _mareasFilterAnio;
@@ -889,6 +896,13 @@ public class MainWindowViewModel : ObservableObject
         {
             await LoadControlProduccionAsync();
         }
+        else if (SelectedNavigationItem.Section == NavigationSection.ReemplazoEspecie)
+        {
+            if (ReemplazoEspecieVM != null)
+            {
+                await ReemplazoEspecieVM.LoadDataAsync();
+            }
+        }
     }
 
     private void LoadSection(NavigationSection section)
@@ -1009,6 +1023,23 @@ public class MainWindowViewModel : ObservableObject
 
             // Los encabezados se manejan dinámicamente en LoadControlProduccionAsync
             // según si es vista resumen o detalle.
+
+            return;
+        }
+
+        if (section == NavigationSection.ReemplazoEspecie)
+        {
+            ReemplazoEspecieVM ??= new ReemplazoEspecieViewModel(_dbContextFactory, _activeMareaManager)
+            {
+                ShowMessage = (t, m, d, type) => ShowMessage(t, m, d, type),
+                ShowConfirmation = (t, m) => ShowConfirmationAsync(t, m)
+            };
+            _ = ReemplazoEspecieVM.LoadDataAsync();
+
+            PageEyebrow = "Corrección de datos";
+            PageTitle = "Reemplazar especie";
+            PageDescription = "Herramienta para corregir identificaciones erróneas en la marea actual.";
+            PrimaryActionLabel = "";
 
             return;
         }

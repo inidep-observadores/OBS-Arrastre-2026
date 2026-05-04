@@ -19,6 +19,7 @@
                           Style="{DynamicResource PremiumComboBoxStyle}"
                           IsEditable="True"
                           IsTextSearchEnabled="False"
+                          StaysOpenOnEdit="True"
                           TextSearch.TextPath="FullDisplayName"
                           SelectedValuePath="ID">
                     <ComboBox.ItemTemplate>
@@ -54,13 +55,47 @@
                                 <DataTrigger Binding="{Binding Text, ElementName=SpeciesCombo}" Value="">
                                     <Setter Property="Visibility" Value="Visible" />
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding SelectedItem, ElementName=SpeciesCombo}" Value="{x:Null}">
-                                    <!-- Si no hay nada seleccionado, mostramos el watermark -->
-                                </DataTrigger>
                             </Style.Triggers>
                         </Style>
                     </TextBlock.Style>
                 </TextBlock>
+
+                <!-- Botón de Limpieza -->
+                <Button x:Name="BtnClear"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Margin="0,0,32,0"
+                        Width="20" Height="20"
+                        Content="✕"
+                        FontSize="10"
+                        Cursor="Hand"
+                        Click="BtnClear_Click"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Foreground="{DynamicResource SecondaryTextBrush}">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Visibility" Value="Visible" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedItem, ElementName=SpeciesCombo}" Value="{x:Null}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
             </Grid>
         </StackPanel>
     </Grid>

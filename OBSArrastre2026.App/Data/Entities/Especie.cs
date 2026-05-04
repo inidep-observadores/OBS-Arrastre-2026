@@ -18,6 +18,8 @@ public sealed class Especie
         : string.IsNullOrEmpty(NombreCientifico)
             ? NombreVulgar
             : $"{NombreVulgar} ({NombreCientifico})";
+    
+    public override string ToString() => FullDisplayName;
 
     // Navigation properties
     public ICollection<MareaEtapa> MareaEtapas { get; set; } = new List<MareaEtapa>();

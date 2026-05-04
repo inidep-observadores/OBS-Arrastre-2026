@@ -55,8 +55,7 @@ public partial class SpeciesSelectorPremium : UserControl
         // Habilitar búsqueda incremental avanzada
         SpeciesCombo.Loaded += (s, e) =>
         {
-            var textBox = SpeciesCombo.Template.FindName("PART_EditableTextBox", SpeciesCombo) as TextBox;
-            if (textBox != null)
+            if (SpeciesCombo.Template.FindName("PART_EditableTextBox", SpeciesCombo) is TextBox textBox)
             {
                 textBox.TextChanged += TextBox_TextChanged;
             }
@@ -77,7 +76,11 @@ public partial class SpeciesSelectorPremium : UserControl
                 view.SortDescriptions.Add(new SortDescription("Frecuente", ListSortDirection.Descending));
                 view.SortDescriptions.Add(new SortDescription("NombreVulgar", ListSortDirection.Ascending));
 
+                control._isInternalChange = true;
                 control.SpeciesCombo.ItemsSource = view;
+                control.SpeciesCombo.SelectedIndex = -1;
+                control.SpeciesCombo.Text = string.Empty;
+                control._isInternalChange = false;
             }
             else
             {
@@ -136,7 +139,18 @@ public partial class SpeciesSelectorPremium : UserControl
 
     private void SpeciesCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (_isInternalChange) return;
         SelectedItem = SpeciesCombo.SelectedItem;
+    }
+
+    private void BtnClear_Click(object sender, RoutedEventArgs e)
+    {
+        SelectedItem = null;
+        SpeciesCombo.Text = string.Empty;
+        if (SpeciesCombo.ItemsSource is ICollectionView view)
+        {
+            view.Filter = null;
+        }
     }
 
     private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -146,6 +160,19 @@ public partial class SpeciesSelectorPremium : UserControl
         var tb = (TextBox)sender;
         string filter = tb.Text;
 
+        // Si el texto está vacío, limpiamos la selección
+        if (string.IsNullOrEmpty(filter))
+        {
+            _isInternalChange = true;
+            SelectedItem = null;
+            SpeciesCombo.SelectedItem = null;
+            _isInternalChange = false;
+            
+            if (SpeciesCombo.ItemsSource is ICollectionView viewNull)
+                viewNull.Filter = null;
+            return;
+        }
+
         // Si el texto coincide exactamente con el elemento seleccionado, no filtramos (evita bucles)
         if (SpeciesCombo.SelectedItem is Especie sel && 
             string.Equals(sel.FullDisplayName, filter, System.StringComparison.OrdinalIgnoreCase))
@@ -153,23 +180,25 @@ public partial class SpeciesSelectorPremium : UserControl
 
         if (SpeciesCombo.ItemsSource is not ICollectionView view) return;
 
-        if (string.IsNullOrWhiteSpace(filter))
+        view.Filter = item =>
         {
-            view.Filter = null;
+            if (item is Especie especie)
+            {
+                // Búsqueda por nombre vulgar o científico
+                bool matches = (especie.NombreVulgar?.Contains(filter, System.StringComparison.OrdinalIgnoreCase) ?? false) ||
+                               (especie.NombreCientifico?.Contains(filter, System.StringComparison.OrdinalIgnoreCase) ?? false);
+                return matches;
+            }
+            return false;
+        };
+        
+        if (view.IsEmpty)
+        {
+            SpeciesCombo.IsDropDownOpen = false;
         }
         else
         {
-            view.Filter = item =>
-            {
-                if (item is Especie especie)
-                {
-                    return (especie.NombreVulgar?.Contains(filter, System.StringComparison.OrdinalIgnoreCase) ?? false) ||
-                           (especie.NombreCientifico?.Contains(filter, System.StringComparison.OrdinalIgnoreCase) ?? false);
-                }
-                return false;
-            };
+            SpeciesCombo.IsDropDownOpen = true;
         }
-        
-        SpeciesCombo.IsDropDownOpen = true;
     }
 }

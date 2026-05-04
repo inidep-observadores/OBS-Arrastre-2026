@@ -7,5 +7,6 @@ public enum NavigationSection
     Muestras,
     Submuestras,
     Produccion,
-    ControlProduccion
+    ControlProduccion,
+    ReemplazoEspecie
 }

@@ -39,6 +39,10 @@
             <views:ProduccionEditView />
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type vm:ReemplazoEspecieViewModel}">
+            <views:ReemplazoEspecieView />
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:MareaListItemViewModel}">
             <!-- ... -->
             <Border Style="{StaticResource TableRowStyle}" Cursor="Hand">
@@ -647,6 +651,20 @@
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="*" />
                                 </Grid.RowDefinitions>
+
+                                <!-- Vista de Reemplazo de Especie (Se superpone a la lista) -->
+                                <ContentControl Content="{Binding ReemplazoEspecieVM}" Grid.RowSpan="4" Panel.ZIndex="10">
+                                    <ContentControl.Style>
+                                        <Style TargetType="ContentControl">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ReemplazoEspecie}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ContentControl.Style>
+                                </ContentControl>
 
                             <ItemsControl ItemsSource="{Binding ActiveFilters}">
                                 <ItemsControl.ItemsPanel>
