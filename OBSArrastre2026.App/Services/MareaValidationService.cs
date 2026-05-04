@@ -111,7 +111,7 @@ public class MareaValidationService : IMareaValidationService
         {
             Buque = marea.Buque?.Nombre ?? "",
             Matricula = t.Matricula ?? "",
-            FechaStr = t.FechaHora.AddHours(3).ToString("yyyy-MM-dd HH:mm:ss"), // Volver a UTC para que el motor reste 3
+            FechaStr = t.FechaHora.ToString("yyyy-MM-dd HH:mm:ss"), // Ya está en hora local en la base de datos
             Latitud = t.Latitud,
             Longitud = t.Longitud,
             Velocidad = t.Velocidad,

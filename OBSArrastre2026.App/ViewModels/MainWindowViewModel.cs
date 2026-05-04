@@ -291,6 +291,7 @@ public class MainWindowViewModel : ObservableObject
         EditLanceFromDetailCommand = new RelayCommand<ControlLanceDetailViewModel>(OpenEditLanceFromDetail);
 
         _mareasFilterAnio = DateTime.Today.Year;
+        TrackVisibilitySliderValue = 1; // 0.25 días por defecto
 
         foreach (var navigationItem in _mockShellDataService.GetNavigationItems())
         {
@@ -1261,7 +1262,7 @@ public class MainWindowViewModel : ObservableObject
             MapUpdateRequested?.Invoke();
             
             OnPropertyChanged(nameof(TotalTrackPoints));
-            CurrentTrackPointIndex = -1;
+            CurrentTrackPointIndex = CurrentTrack.Any() ? 0 : -1;
             ((RelayCommand)PlayCommand).RaiseCanExecuteChanged();
             ((RelayCommand)StopCommand).RaiseCanExecuteChanged();
             ((RelayCommand)GoToStartCommand).RaiseCanExecuteChanged();
@@ -1333,6 +1334,34 @@ public class MainWindowViewModel : ObservableObject
         IsPlaying = false;
         _playbackTimer?.Stop();
         CurrentTrackPointIndex = -1;
+    }
+
+    public void SeekTrackToTime(DateTime? targetTime)
+    {
+        if (targetTime == null || CurrentTrack == null || !CurrentTrack.Any()) return;
+
+        // Buscar el punto de track más cercano en tiempo
+        var nearest = CurrentTrack
+            .Select((p, index) => new { Point = p, Index = index, Diff = Math.Abs((p.FechaHora - targetTime.Value).Ticks) })
+            .OrderBy(x => x.Diff)
+            .FirstOrDefault();
+
+        if (nearest != null)
+        {
+            CurrentTrackPointIndex = nearest.Index;
+        }
+    }
+
+    public DateTime? GetLanceDateTime(Lance lance, bool isStart)
+    {
+        string? hora = isStart ? lance.HoraInicio : lance.HoraFinal;
+        if (string.IsNullOrEmpty(lance.Fecha) || string.IsNullOrEmpty(hora)) return null;
+
+        if (DateTime.TryParse($"{lance.Fecha} {hora}", out var dt))
+        {
+            return dt;
+        }
+        return null;
     }
 
     private void JumpToDate(DateTime targetDate)

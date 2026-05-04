@@ -169,12 +169,20 @@ public partial class MainWindow : Window
                 {
                     Shape = new Ellipse
                     {
-                        Width = 10,
-                        Height = 10,
+                        Width = 12,
+                        Height = 12,
                         Fill = Brushes.Green,
-                        ToolTip = CreateLanceToolTip(lance, "INICIO", vm)
+                        Stroke = Brushes.White,
+                        StrokeThickness = 1.5,
+                        ToolTip = CreateLanceToolTip(lance, "INICIO", vm),
+                        Cursor = Cursors.Hand
                     },
-                    Offset = new Point(-5, -5)
+                    Offset = new Point(-6, -6)
+                };
+                startMarker.Shape.MouseLeftButtonDown += (s, e) =>
+                {
+                    vm.SeekTrackToTime(vm.GetLanceDateTime(lance, true));
+                    e.Handled = true;
                 };
                 MainMap.Markers.Add(startMarker);
 
@@ -204,12 +212,20 @@ public partial class MainWindow : Window
                     {
                         Shape = new Ellipse
                         {
-                            Width = 10,
-                            Height = 10,
+                            Width = 12,
+                            Height = 12,
                             Fill = Brushes.Red,
-                            ToolTip = CreateLanceToolTip(lance, "FIN", vm)
+                            Stroke = Brushes.White,
+                            StrokeThickness = 1.5,
+                            ToolTip = CreateLanceToolTip(lance, "FIN", vm),
+                            Cursor = Cursors.Hand
                         },
-                        Offset = new Point(-5, -5)
+                        Offset = new Point(-6, -6)
+                    };
+                    endMarker.Shape.MouseLeftButtonDown += (s, e) =>
+                    {
+                        vm.SeekTrackToTime(vm.GetLanceDateTime(lance, false));
+                        e.Handled = true;
                     };
                     MainMap.Markers.Add(endMarker);
                 }

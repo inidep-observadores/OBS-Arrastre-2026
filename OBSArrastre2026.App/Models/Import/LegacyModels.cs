@@ -107,11 +107,12 @@ public class LegacyTracking
     public double Rumbo { get; set; }
 
     private DateTime? _cachedDateTime;
-    public DateTime GetUtcDateTime()
+    public DateTime GetDateTime()
     {
         if (_cachedDateTime.HasValue) return _cachedDateTime.Value;
         if (DateTime.TryParse(FechaStr, out var dt))
         {
+            // Nota: La conversión UTC -> Local (UTC-3) ya se realiza en DbfExtractorService o al cargar desde DB.
             _cachedDateTime = dt;
             return dt;
         }

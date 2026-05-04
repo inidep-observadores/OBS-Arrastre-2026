@@ -925,13 +925,13 @@ public sealed class MareaValidationEngine
         // considerando lo que el barco pudo haber navegado en ese tiempo.
         foreach (var t in tracking)
         {
-            var trackTimeUtc3 = t.GetUtcDateTime().AddHours(-3);
+            var trackTimeLocal = t.GetDateTime();
             
             // Solo evaluamos puntos dentro de la ventana de búsqueda (evita que radios enormes anulen la validación)
-            if (trackTimeUtc3 >= windowStart && trackTimeUtc3 <= windowEnd)
+            if (trackTimeLocal >= windowStart && trackTimeLocal <= windowEnd)
             {
                 double actualDist = CalculateDistanceNauticalMiles(lanceLat, lanceLon, t.Latitud, t.Longitud);
-                double timeDiffHours = Math.Abs((lanceTime - trackTimeUtc3).TotalHours);
+                double timeDiffHours = Math.Abs((lanceTime - trackTimeLocal).TotalHours);
                 
                 // Distancia que el buque PODRÍA haber recorrido a velocidad crucero
                 double maxReachDist = MaxCruisingSpeedKnots * timeDiffHours;

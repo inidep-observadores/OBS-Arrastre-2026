@@ -420,18 +420,18 @@ public class MareaImportService : IMareaImportService
 
         await dbContext.SaveChangesAsync();
 
-        // Map Tracking (Conversión UTC -> UTC-3)
+        // Map Tracking (Conversión UTC -> UTC-3 realizada en la extracción)
         if (report.Tracking.Any())
         {
             foreach (var rt in report.Tracking)
             {
-                var utcDate = rt.GetUtcDateTime();
-                if (utcDate == DateTime.MinValue) continue;
+                var localDate = rt.GetDateTime();
+                if (localDate == DateTime.MinValue) continue;
 
                 dbContext.TrackingPoints.Add(new MareaTracking
                 {
                     MareaID = mareaId,
-                    FechaHora = utcDate.AddHours(-3), // Conversión solicitada
+                    FechaHora = localDate, 
                     Latitud = rt.Latitud,
                     Longitud = rt.Longitud,
                     Velocidad = rt.Velocidad,
