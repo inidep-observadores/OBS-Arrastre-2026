@@ -1882,28 +1882,50 @@ public class MainWindowViewModel : ObservableObject
                     var spLances = etapaLances.Where(l => l.ItemsCaptura.Any(ic => (ic.Especie?.NombreVulgar ?? "Desconocida") == sp)).ToList();
                     var groupedByArea = spLances
                         .GroupBy(l => $"{(int)Math.Abs(l.LatitudInicioDecimal ?? 0)}{(int)Math.Abs(l.LongitudInicioDecimal ?? 0)}")
-                        .Select(g => new ControlProduccionAreaSummary
+                        .Select(g => 
                         {
-                            Especie = sp,
-                            Area = g.Key,
-                            CapturaKg = g.Sum(l => l.ItemsCaptura.Where(ic => (ic.Especie?.NombreVulgar ?? "Desconocida") == sp).Sum(ic => ic.CapturaTotalKgCalculado)),
-                            DescarteKg = g.Sum(l => l.ItemsCaptura.Where(ic => (ic.Especie?.NombreVulgar ?? "Desconocida") == sp).Sum(ic => ic.PesoDescarteCalculado)),
-                            CantidadLances = g.Count(),
-                            DiasPesca = g.Select(l => l.Fecha).Distinct().Count()
+                            double totalHoras = 0;
+                            foreach(var l in g)
+                            {
+                                if (TimeSpan.TryParse(l.HoraInicio, out var tsI) && TimeSpan.TryParse(l.HoraFinal, out var tsF))
+                                {
+                                    if (tsF < tsI) tsF = tsF.Add(TimeSpan.FromDays(1));
+                                    totalHoras += (tsF - tsI).TotalHours;
+                                }
+                            }
+
+                            return new ControlProduccionAreaSummary
+                            {
+                                Especie = sp,
+                                Area = g.Key,
+                                CapturaKg = g.Sum(l => l.ItemsCaptura.Where(ic => (ic.Especie?.NombreVulgar ?? "Desconocida") == sp).Sum(ic => ic.CapturaTotalKgCalculado)),
+                                DescarteKg = g.Sum(l => l.ItemsCaptura.Where(ic => (ic.Especie?.NombreVulgar ?? "Desconocida") == sp).Sum(ic => ic.PesoDescarteCalculado)),
+                                TotalHoras = totalHoras,
+                                CantidadLances = g.Count(),
+                                DiasPesca = g.Select(l => l.Fecha).Distinct().Count()
+                            };
                         })
                         .OrderBy(a => a.Area)
                         .ToList();
                     etapaReport.AreaSummaries.AddRange(groupedByArea);
                 }
 
-                // 5. Detalle producción de la etapa
-                etapaReport.ProduccionDetalle = etapaProduccion.Select(p => new ControlProduccionDetalleItem
-                {
-                    Especie = p.Especie?.NombreVulgar ?? p.Comentarios?.Replace("Importado: ", "") ?? "Desconocida",
-                    Producto = p.Producto?.Codigo ?? "S/D",
-                    Categoria = p.Categoria ?? "",
-                    Kilos = p.Kg ?? 0
-                }).OrderBy(p => p.Especie).ThenBy(p => p.Producto).ToList();
+                // 5. Detalle producción de la etapa (AGRUPADO)
+                etapaReport.ProduccionDetalle = etapaProduccion
+                    .GroupBy(p => new { 
+                        Especie = p.Especie?.NombreVulgar ?? p.Comentarios?.Replace("Importado: ", "") ?? "Desconocida",
+                        Producto = p.Producto?.Codigo ?? "S/D",
+                        Categoria = p.Categoria ?? ""
+                    })
+                    .Select(g => new ControlProduccionDetalleItem
+                    {
+                        Especie = g.Key.Especie,
+                        Producto = g.Key.Producto,
+                        Categoria = g.Key.Categoria,
+                        Kilos = g.Sum(p => p.Kg ?? 0)
+                    })
+                    .OrderBy(p => p.Especie).ThenBy(p => p.Producto).ThenBy(p => p.Categoria)
+                    .ToList();
 
                 report.Etapas.Add(etapaReport);
             }

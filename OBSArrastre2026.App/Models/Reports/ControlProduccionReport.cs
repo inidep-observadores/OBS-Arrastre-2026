@@ -22,7 +22,8 @@ public class ControlProduccionAreaSummary
     public string Area { get; set; } = string.Empty;
     public double CapturaKg { get; set; }
     public double DescarteKg { get; set; }
-    public double DiasPesca { get; set; }
+    public double TotalHoras { get; set; }
+    public int DiasPesca { get; set; }
     public int CantidadLances { get; set; }
 }
 

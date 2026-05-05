@@ -262,7 +262,7 @@ public class MareaReportService : IMareaReportService
     {
         if (!report.AreaSummaries.Any()) return;
 
-        col.Item().PaddingTop(10).Text("RESUMEN POR ÁREA (Especies Predominantes >= 20%)").FontSize(11).SemiBold();
+        col.Item().PaddingTop(10).Text("RESUMEN POR ÁREA (Especies Predominantes)").FontSize(11).SemiBold();
 
         var groupedBySpecies = report.AreaSummaries.GroupBy(s => s.Especie);
 
@@ -279,6 +279,7 @@ public class MareaReportService : IMareaReportService
                     columns.RelativeColumn(); // Descarte
                     columns.RelativeColumn(); // Días
                     columns.RelativeColumn(); // Lances
+                    columns.RelativeColumn(); // Horas
                 });
 
                 table.Header(header =>
@@ -288,6 +289,7 @@ public class MareaReportService : IMareaReportService
                     header.Cell().Element(HeaderStyle).AlignRight().Text("Descarte");
                     header.Cell().Element(HeaderStyle).AlignRight().Text("Días");
                     header.Cell().Element(HeaderStyle).AlignRight().Text("Lances");
+                    header.Cell().Element(HeaderStyle).AlignRight().Text("Horas");
                 });
 
                 foreach (var item in speciesGroup)
@@ -297,6 +299,7 @@ public class MareaReportService : IMareaReportService
                     table.Cell().Element(ContentStyle).AlignRight().Text(item.DescarteKg.ToString("N1"));
                     table.Cell().Element(ContentStyle).AlignRight().Text(item.DiasPesca.ToString("N0"));
                     table.Cell().Element(ContentStyle).AlignRight().Text(item.CantidadLances.ToString("N0"));
+                    table.Cell().Element(ContentStyle).AlignRight().Text(item.TotalHoras.ToString("N2"));
                 }
 
                 // Total de la especie
@@ -305,6 +308,7 @@ public class MareaReportService : IMareaReportService
                 table.Cell().Element(FooterStyle).AlignRight().Text(speciesGroup.Sum(s => s.DescarteKg).ToString("N1"));
                 table.Cell().Element(FooterStyle).Text("");
                 table.Cell().Element(FooterStyle).Text("");
+                table.Cell().Element(FooterStyle).AlignRight().Text(speciesGroup.Sum(s => s.TotalHoras).ToString("N2"));
 
                 IContainer ContentStyle(IContainer container) => container.PaddingVertical(2).BorderBottom(1).BorderColor(Colors.Grey.Lighten4);
                 IContainer FooterStyle(IContainer container) => container.PaddingVertical(5).BorderTop(1).BorderColor(Colors.Black).DefaultTextStyle(x => x.SemiBold());
