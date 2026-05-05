@@ -29,6 +29,7 @@ public class MainWindowViewModel : ObservableObject
     private readonly Func<Action, string?, ProduccionEditViewModel> _produccionEditFactory;
     private readonly ISubmuestraService _submuestraService;
     private readonly IActiveMareaManager _activeMareaManager;
+    private readonly IUserSettingsService _userSettingsService;
     private readonly IMareaValidationService _validationService;
     private readonly IMareaReportService _reportService;
     private readonly IProduccionService _produccionService;
@@ -276,6 +277,7 @@ public class MainWindowViewModel : ObservableObject
         IMareaReportService reportService,
         IJsonImportService jsonImportService,
         IMareaImportService mareaImportService,
+        IUserSettingsService userSettingsService,
         IDbContextFactory<AppDbContext> dbContextFactory)
     {
         _mockShellDataService = mockShellDataService;
@@ -297,6 +299,7 @@ public class MainWindowViewModel : ObservableObject
         _produccionEditFactory = produccionEditFactory;
         _jsonImportService = jsonImportService;
         _mareaImportService = mareaImportService;
+        _userSettingsService = userSettingsService;
 
         SearchPlaceholder = "Buscar...";
         SetSystemThemeCommand = new RelayCommand(() => ApplyTheme(AppThemeMode.System));
@@ -320,7 +323,8 @@ public class MainWindowViewModel : ObservableObject
         BackControlProduccionCommand = new RelayCommand(BackToControlProduccionSummary);
         EditLanceFromDetailCommand = new RelayCommand<ControlLanceDetailViewModel>(OpenEditLanceFromDetail);
 
-        _mareasFilterAnio = DateTime.Today.Year;
+        var settings = _userSettingsService.GetSettings();
+        _mareasFilterAnio = settings.LastSelectedMareaAnio ?? DateTime.Today.Year;
         TrackVisibilitySliderValue = 1; // 0.25 días por defecto
 
         foreach (var navigationItem in _mockShellDataService.GetNavigationItems())
@@ -640,6 +644,7 @@ public class MainWindowViewModel : ObservableObject
         {
             if (SetProperty(ref _mareasFilterAnio, value))
             {
+                _userSettingsService.UpdateSettings(s => s.LastSelectedMareaAnio = value);
                 _ = LoadMareasAsync();
             }
         }
