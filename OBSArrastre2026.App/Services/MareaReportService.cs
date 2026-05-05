@@ -55,7 +55,11 @@ public class MareaReportService : IMareaReportService
                 {
                     foreach(var etapa in report.Etapas)
                     {
-                        ComposeEtapaSubHeader(col, etapa);
+                        if (report.Etapas.Count > 1)
+                        {
+                            ComposeEtapaSubHeader(col, etapa);
+                        }
+                        
                         ComposeControlProduccionContent(col.Item(), etapa);
                         col.Item().PaddingBottom(20);
                     }
@@ -78,7 +82,11 @@ public class MareaReportService : IMareaReportService
                 {
                     foreach(var etapa in report.Etapas)
                     {
-                        ComposeEtapaSubHeader(col, etapa);
+                        if (report.Etapas.Count > 1)
+                        {
+                            ComposeEtapaSubHeader(col, etapa);
+                        }
+                        
                         ComposeAreaSummaryContent(col, etapa);
                         col.Item().PaddingVertical(10).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
                         ComposeProductionDetailContent(col, etapa);
