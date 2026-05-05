@@ -388,11 +388,20 @@ public sealed class DbfExtractorService : IDbfExtractorService
 
         while (reader.Read())
         {
+            var rawFecha = GetString(reader, colMap, "FECHA");
+            string processedFecha = rawFecha;
+            
+            if (DateTime.TryParse(rawFecha, out var dt))
+            {
+                // La fecha en el DBF de tracking está en UTC, la convertimos a UTC-3.
+                processedFecha = dt.AddHours(-3).ToString("yyyy-MM-dd HH:mm:ss");
+            }
+
             list.Add(new LegacyTracking
             {
                 Buque = GetString(reader, colMap, "BUQUE"),
                 Matricula = GetString(reader, colMap, "MATRICULA"),
-                FechaStr = GetString(reader, colMap, "FECHA"),
+                FechaStr = processedFecha,
                 Latitud = GetDouble(reader, colMap, "LATITUD"),
                 Longitud = GetDouble(reader, colMap, "LONGITUD"),
                 Velocidad = GetDouble(reader, colMap, "VELOCIDAD"),
