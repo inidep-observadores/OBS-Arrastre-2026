@@ -191,6 +191,7 @@ CREATE TABLE frecuencias_de_tallas (
     NroMachos INTEGER NOT NULL,
     NroHembras INTEGER NOT NULL,
     NroIndeterminados INTEGER NOT NULL,
+    NroTotal INTEGER NOT NULL,
     NroLangostinosMachoMaduros INTEGER NOT NULL,
     NroLangostinosHembraMaduras INTEGER NOT NULL,
     NroLangostinosHembraImpregnadas INTEGER NOT NULL,
