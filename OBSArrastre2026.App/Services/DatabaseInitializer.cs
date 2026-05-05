@@ -48,6 +48,10 @@ public sealed class DatabaseInitializer(IDbContextFactory<AppDbContext> dbContex
             new { Code = "7210040201", Sexo = 1, A = 0.00791, B = 2.8150, Medida = "LT", Obs = "Campañas de invierno" },
             new { Code = "7210040201", Sexo = 2, A = 0.00745, B = 2.8280, Medida = "LT", Obs = "Campañas de invierno" },
 
+            // Merluza Austral (M. australis) - 7210040102
+            new { Code = "7210040102", Sexo = 1, A = 0.00560, B = 3.0740, Medida = "LT", Obs = "Faro Recalada / Sur" },
+            new { Code = "7210040102", Sexo = 2, A = 0.00510, B = 3.1050, Medida = "LT", Obs = "Faro Recalada / Sur" },
+
             // Polaca (M. australis) - 7210030201
             new { Code = "7210030201", Sexo = 1, A = 0.00455, B = 3.1250, Medida = "LT", Obs = "Área Sur" },
             new { Code = "7210030201", Sexo = 2, A = 0.00472, B = 3.1180, Medida = "LT", Obs = "Área Sur" },
@@ -69,6 +73,18 @@ public sealed class DatabaseInitializer(IDbContextFactory<AppDbContext> dbContex
 
             // Granadero (M. holotrachys) - 7210090401
             new { Code = "7210090401", Sexo = 0, A = 0.00040, B = 3.5200, Medida = "LPA", Obs = "Largo Preanal" },
+
+            // Bacalao Austral (S. australis) - 7210020101
+            new { Code = "7210020101", Sexo = 1, A = 0.00405, B = 3.2650, Medida = "LT", Obs = "Bacalao criollo" },
+            new { Code = "7210020101", Sexo = 2, A = 0.00418, B = 3.2580, Medida = "LT", Obs = "Bacalao criollo" },
+
+            // Tiburón sardinero (L. nasus) - 7105050101
+            new { Code = "7105050101", Sexo = 1, A = 0.01420, B = 2.9850, Medida = "LT", Obs = "Tiburón sardinero" },
+            new { Code = "7105050101", Sexo = 2, A = 0.01350, B = 3.0250, Medida = "LT", Obs = "Tiburón sardinero" },
+
+            // Tiburón espinoso (S. acanthias) - 7102010201
+            new { Code = "7102010201", Sexo = 1, A = 0.00150, B = 3.1500, Medida = "LT", Obs = "Tiburón espinoso" },
+            new { Code = "7102010201", Sexo = 2, A = 0.00110, B = 3.2500, Medida = "LT", Obs = "Tiburón espinoso" },
 
             // Calamar (I. argentinus) - 5702150101
             new { Code = "5702150101", Sexo = 0, A = 0.01100, B = 3.1500, Medida = "LM", Obs = "Largo de Manto" }
