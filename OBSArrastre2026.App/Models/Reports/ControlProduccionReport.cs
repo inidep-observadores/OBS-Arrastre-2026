@@ -34,6 +34,16 @@ public class ControlProduccionDetalleItem
     public double Kilos { get; set; }
 }
 
+public class ControlProduccionEtapaReport
+{
+    public int NumeroEtapa { get; set; }
+    public DateTime FechaInicio { get; set; }
+    public DateTime FechaFin { get; set; }
+    public List<ControlProduccionReportItem> Items { get; set; } = new();
+    public List<ControlProduccionAreaSummary> AreaSummaries { get; set; } = new();
+    public List<ControlProduccionDetalleItem> ProduccionDetalle { get; set; } = new();
+}
+
 public class ControlProduccionReport
 {
     public string Barco { get; set; } = string.Empty;
@@ -41,8 +51,6 @@ public class ControlProduccionReport
     public int Anio { get; set; }
     public DateTime? FechaInicioMarea { get; set; }
     public DateTime? FechaFinMarea { get; set; }
-    public List<ControlProduccionReportItem> Items { get; set; } = new();
-    public List<ControlProduccionAreaSummary> AreaSummaries { get; set; } = new();
-    public List<ControlProduccionDetalleItem> ProduccionDetalle { get; set; } = new();
+    public List<ControlProduccionEtapaReport> Etapas { get; set; } = new();
     public DateTime FechaGeneracion { get; set; } = DateTime.Now;
 }

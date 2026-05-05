@@ -1780,112 +1780,133 @@ public class MainWindowViewModel : ObservableObject
     {
         if (_activeMareaManager.ActiveMarea == null) return;
         
-        var items = Records.OfType<ControlProduccionListItemViewModel>().ToList();
-        if (!items.Any())
-        {
-            System.Windows.MessageBox.Show("No hay datos para exportar en la vista actual.", "Aviso", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
-            return;
-        }
-
         try
         {
             await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
             
-            // 1. Obtener todos los lances de la marea para el agrupamiento por área
-            var allLances = await dbContext.Lances
-                .Include(l => l.MareaEtapa)
-                .Include(l => l.ItemsCaptura)
-                    .ThenInclude(ic => ic.Especie)
-                .Where(l => l.MareaEtapa!.MareaID == _activeMareaManager.ActiveMareaId)
-                .ToListAsync();
-
-            // Asegurar que cada ítem de captura tenga la referencia al lance
-            foreach (var lance in allLances)
-            {
-                foreach (var item in lance.ItemsCaptura) item.Lance = lance;
-            }
-
-            // 2. Obtener toda la producción detallada de la marea
-            var allProduccion = new List<RegistroProduccion>();
-            foreach (var etapa in _activeMareaManager.ActiveMarea.Etapas)
-            {
-                var etapaProduccion = await dbContext.RegistrosProduccion
-                    .Include(rp => rp.Especie)
-                    .Include(rp => rp.Producto)
-                    .Where(rp => rp.MareaEtapaId == etapa.ID)
-                    .ToListAsync();
-                allProduccion.AddRange(etapaProduccion);
-            }
-
-            double totalProduccionMarea = allProduccion.Sum(p => p.Kg ?? 0);
-
-            // 3. Determinar especies predominantes (>= 20% de la producción total)
-            var speciesProduction = allProduccion
-                .GroupBy(p => p.Especie?.NombreVulgar ?? p.Comentarios?.Replace("Importado: ", "") ?? "Desconocida")
-                .Select(g => new { Especie = g.Key, TotalKg = g.Sum(p => p.Kg ?? 0) })
-                .Where(x => totalProduccionMarea > 0 && (x.TotalKg / totalProduccionMarea) >= 0.20)
-                .Select(x => x.Especie)
-                .ToList();
-
-            var areaSummaries = new List<ControlProduccionAreaSummary>();
-            foreach (var predominantSpecies in speciesProduction)
-            {
-                var speciesLances = allLances
-                    .Where(l => l.ItemsCaptura.Any(ic => (ic.Especie?.NombreVulgar ?? "Desconocida") == predominantSpecies))
-                    .ToList();
-
-                var groupedByArea = speciesLances
-                    .GroupBy(l => $"{(int)Math.Abs(l.LatitudInicioDecimal ?? 0)}{(int)Math.Abs(l.LongitudInicioDecimal ?? 0)}")
-                    .Select(g => new ControlProduccionAreaSummary
-                    {
-                        Especie = predominantSpecies,
-                        Area = g.Key,
-                        CapturaKg = g.Sum(l => l.ItemsCaptura
-                            .Where(ic => (ic.Especie?.NombreVulgar ?? "Desconocida") == predominantSpecies)
-                            .Sum(ic => ic.CapturaTotalKgCalculado)),
-                        DescarteKg = g.Sum(l => l.ItemsCaptura
-                            .Where(ic => (ic.Especie?.NombreVulgar ?? "Desconocida") == predominantSpecies)
-                            .Sum(ic => ic.PesoDescarteCalculado)),
-                        CantidadLances = g.Count(),
-                        DiasPesca = g.Select(l => l.Fecha).Distinct().Count()
-                    })
-                    .OrderBy(a => a.Area)
-                    .ToList();
-
-                areaSummaries.AddRange(groupedByArea);
-            }
-
             var report = new ControlProduccionReport
             {
                 Barco = _activeMareaManager.ActiveMarea.Buque?.Nombre ?? "S/D",
                 Marea = _activeMareaManager.ActiveMarea.NumeroInidep.ToString(),
                 Anio = _activeMareaManager.ActiveMarea.AnioInidep,
                 FechaInicioMarea = _activeMareaManager.ActiveMarea.FechaInicio,
-                FechaFinMarea = _activeMareaManager.ActiveMarea.FechaFin,
-                Items = items.Select(i => new ControlProduccionReportItem
+                FechaFinMarea = _activeMareaManager.ActiveMarea.FechaFin
+            };
+
+            var etapasOrdenadas = _activeMareaManager.ActiveMarea.Etapas.OrderBy(e => e.FechaZarpada).ToList();
+            for (int i = 0; i < etapasOrdenadas.Count; i++)
+            {
+                var etapa = etapasOrdenadas[i];
+                // 1. Obtener lances de la etapa
+                var etapaLances = await dbContext.Lances
+                    .Include(l => l.ItemsCaptura)
+                        .ThenInclude(ic => ic.Especie)
+                    .Where(l => l.MareaEtapaId == etapa.ID)
+                    .ToListAsync();
+
+                foreach (var lance in etapaLances)
                 {
-                    Especie = i.Especie,
-                    ProduccionTotal = i.ProduccionTotal,
-                    CapturaReconstruida = i.CapturaReconstruida,
-                    CapturaBruta = i.CapturaBruta,
-                    DescarteKg = i.DescarteKg,
-                    CapturaRetenida = i.CapturaRetenida,
-                    DiferenciaKg = i.DiferenciaKg,
-                    DiferenciaPorcentaje = i.DiferenciaPorcentajeDisplay,
-                    HasDiferenciaSignificativa = i.HasDiferenciaSignificativa
-                }).ToList(),
-                AreaSummaries = areaSummaries,
-                ProduccionDetalle = allProduccion.Select(p => new ControlProduccionDetalleItem
+                    foreach (var item in lance.ItemsCaptura) item.Lance = lance;
+                }
+
+                // 2. Obtener producción de la etapa
+                var etapaProduccion = await dbContext.RegistrosProduccion
+                    .Include(rp => rp.Especie)
+                    .Include(rp => rp.Producto)
+                    .Where(rp => rp.MareaEtapaId == etapa.ID)
+                    .ToListAsync();
+
+                var etapaReport = new ControlProduccionEtapaReport
+                {
+                    NumeroEtapa = i + 1,
+                    FechaInicio = etapa.FechaZarpada,
+                    FechaFin = etapa.FechaArribo ?? DateTime.Now
+                };
+
+                // 3. Balance de masa (Items) para la etapa
+                var prodSummary = etapaProduccion
+                    .GroupBy(p => p.Especie?.NombreVulgar ?? p.Comentarios?.Replace("Importado: ", "") ?? "Desconocida")
+                    .ToDictionary(g => g.Key, g => new {
+                        ProduccionTotal = g.Sum(p => p.Kg ?? 0),
+                        CapturaReconstruida = g.Sum(p => (p.Kg ?? 0) * (p.Factor ?? 1.0))
+                    });
+
+                var catchSummary = etapaLances.SelectMany(l => l.ItemsCaptura)
+                    .GroupBy(c => c.Especie?.NombreVulgar ?? "Desconocida")
+                    .ToDictionary(g => g.Key, g => new {
+                        CapturaBruta = g.Sum(c => c.CapturaTotalKgCalculado),
+                        DescarteKg = g.Sum(c => c.PesoDescarteCalculado),
+                        CapturaRetenida = g.Sum(c => c.CapturaTotalKgCalculado - c.PesoDescarteCalculado)
+                    });
+
+                var allSpecies = prodSummary.Keys.Union(catchSummary.Keys).ToList();
+                foreach (var sp in allSpecies)
+                {
+                    prodSummary.TryGetValue(sp, out var pData);
+                    catchSummary.TryGetValue(sp, out var cData);
+
+                    var itemVm = new ControlProduccionListItemViewModel
+                    {
+                        Especie = sp,
+                        ProduccionTotal = pData?.ProduccionTotal ?? 0,
+                        CapturaReconstruida = pData?.CapturaReconstruida ?? 0,
+                        CapturaBruta = cData?.CapturaBruta ?? 0,
+                        DescarteKg = cData?.DescarteKg ?? 0,
+                        CapturaRetenida = cData?.CapturaRetenida ?? 0
+                    };
+
+                    etapaReport.Items.Add(new ControlProduccionReportItem
+                    {
+                        Especie = itemVm.Especie,
+                        ProduccionTotal = itemVm.ProduccionTotal,
+                        CapturaReconstruida = itemVm.CapturaReconstruida,
+                        CapturaBruta = itemVm.CapturaBruta,
+                        DescarteKg = itemVm.DescarteKg,
+                        CapturaRetenida = itemVm.CapturaRetenida,
+                        DiferenciaKg = itemVm.DiferenciaKg,
+                        DiferenciaPorcentaje = itemVm.DiferenciaPorcentajeDisplay,
+                        HasDiferenciaSignificativa = itemVm.HasDiferenciaSignificativa
+                    });
+                }
+                etapaReport.Items = etapaReport.Items.OrderByDescending(i => i.CapturaBruta).ToList();
+
+                // 4. Especies predominantes en la ETAPA (>= 20% de la producción de la etapa)
+                double totalEtapaProduccion = etapaProduccion.Sum(p => p.Kg ?? 0);
+                var predominantInEtapa = prodSummary
+                    .Where(x => totalEtapaProduccion > 0 && (x.Value.ProduccionTotal / totalEtapaProduccion) >= 0.20)
+                    .Select(x => x.Key)
+                    .ToList();
+
+                foreach (var sp in predominantInEtapa)
+                {
+                    var spLances = etapaLances.Where(l => l.ItemsCaptura.Any(ic => (ic.Especie?.NombreVulgar ?? "Desconocida") == sp)).ToList();
+                    var groupedByArea = spLances
+                        .GroupBy(l => $"{(int)Math.Abs(l.LatitudInicioDecimal ?? 0)}{(int)Math.Abs(l.LongitudInicioDecimal ?? 0)}")
+                        .Select(g => new ControlProduccionAreaSummary
+                        {
+                            Especie = sp,
+                            Area = g.Key,
+                            CapturaKg = g.Sum(l => l.ItemsCaptura.Where(ic => (ic.Especie?.NombreVulgar ?? "Desconocida") == sp).Sum(ic => ic.CapturaTotalKgCalculado)),
+                            DescarteKg = g.Sum(l => l.ItemsCaptura.Where(ic => (ic.Especie?.NombreVulgar ?? "Desconocida") == sp).Sum(ic => ic.PesoDescarteCalculado)),
+                            CantidadLances = g.Count(),
+                            DiasPesca = g.Select(l => l.Fecha).Distinct().Count()
+                        })
+                        .OrderBy(a => a.Area)
+                        .ToList();
+                    etapaReport.AreaSummaries.AddRange(groupedByArea);
+                }
+
+                // 5. Detalle producción de la etapa
+                etapaReport.ProduccionDetalle = etapaProduccion.Select(p => new ControlProduccionDetalleItem
                 {
                     Especie = p.Especie?.NombreVulgar ?? p.Comentarios?.Replace("Importado: ", "") ?? "Desconocida",
                     Producto = p.Producto?.Codigo ?? "S/D",
                     Categoria = p.Categoria ?? "",
                     Kilos = p.Kg ?? 0
-                })
-                .OrderBy(p => p.Especie)
-                .ThenBy(p => p.Producto)
-                .ToList()
-            };
+                }).OrderBy(p => p.Especie).ThenBy(p => p.Producto).ToList();
+
+                report.Etapas.Add(etapaReport);
+            }
 
             var pdfBytes = _reportService.GenerateControlProduccionPdf(report);
             string tempPath = Path.Combine(Path.GetTempPath(), $"Control_Produccion_{report.Barco}_{report.Marea}_{report.Anio}.pdf");

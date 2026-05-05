@@ -41,7 +41,7 @@ public class MareaReportService : IMareaReportService
     {
         return Document.Create(container =>
         {
-            // Primera página: Landscape para el cuadro comparativo
+            // Primera parte: Balance de masa por Etapa (Landscape)
             container.Page(page =>
             {
                 page.Size(PageSizes.A4.Landscape());
@@ -49,34 +49,55 @@ public class MareaReportService : IMareaReportService
                 page.PageColor(Colors.White);
                 page.DefaultTextStyle(x => x.FontSize(8).FontFamily(Fonts.Verdana));
 
-                ComposeHeader(page.Header(), report.Barco, report.Marea, report.Anio, report.FechaInicioMarea, report.FechaFinMarea, "CONTROL DE CAPTURA Y PRODUCCIÓN");
-                ComposeControlProduccionContent(page.Content(), report);
+                ComposeHeader(page.Header(), report.Barco, report.Marea, report.Anio, report.FechaInicioMarea, report.FechaFinMarea, "CONTROL DE CAPTURA Y PRODUCCIÓN POR ETAPA");
+                
+                page.Content().PaddingVertical(10).Column(col => 
+                {
+                    foreach(var etapa in report.Etapas)
+                    {
+                        ComposeEtapaSubHeader(col, etapa);
+                        ComposeControlProduccionContent(col.Item(), etapa);
+                        col.Item().PaddingBottom(20);
+                    }
+                });
+
                 ComposeFooter(page.Footer());
             });
 
-            // Segunda página: Portrait para Resumen por Área y Detalle de Producción
-            if (report.AreaSummaries.Any() || report.ProduccionDetalle.Any())
+            // Segunda parte: Resumen por Área y Detalle por Etapa (Portrait)
+            container.Page(page =>
             {
-                container.Page(page =>
+                page.Size(PageSizes.A4);
+                page.Margin(1, Unit.Centimetre);
+                page.PageColor(Colors.White);
+                page.DefaultTextStyle(x => x.FontSize(8).FontFamily(Fonts.Verdana));
+
+                ComposeHeader(page.Header(), report.Barco, report.Marea, report.Anio, report.FechaInicioMarea, report.FechaFinMarea, "RESUMEN POR ÁREA Y DETALLE POR ETAPA");
+                
+                page.Content().PaddingVertical(10).Column(col => 
                 {
-                    page.Size(PageSizes.A4);
-                    page.Margin(1, Unit.Centimetre);
-                    page.PageColor(Colors.White);
-                    page.DefaultTextStyle(x => x.FontSize(8).FontFamily(Fonts.Verdana));
-
-                    ComposeHeader(page.Header(), report.Barco, report.Marea, report.Anio, report.FechaInicioMarea, report.FechaFinMarea, "RESUMEN POR ÁREA Y DETALLE DE PRODUCCIÓN");
-                    
-                    page.Content().PaddingVertical(10).Column(col => 
+                    foreach(var etapa in report.Etapas)
                     {
-                        ComposeAreaSummaryContent(col, report);
-                        col.Item().PaddingVertical(20).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
-                        ComposeProductionDetailContent(col, report);
-                    });
-
-                    ComposeFooter(page.Footer());
+                        ComposeEtapaSubHeader(col, etapa);
+                        ComposeAreaSummaryContent(col, etapa);
+                        col.Item().PaddingVertical(10).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+                        ComposeProductionDetailContent(col, etapa);
+                        col.Item().PaddingBottom(30);
+                    }
                 });
-            }
+
+                ComposeFooter(page.Footer());
+            });
         }).GeneratePdf();
+    }
+
+    private void ComposeEtapaSubHeader(ColumnDescriptor col, ControlProduccionEtapaReport etapa)
+    {
+        col.Item().PaddingTop(10).Background(Colors.Grey.Lighten4).Padding(5).Row(row => 
+        {
+            row.RelativeItem().Text($"ETAPA {etapa.NumeroEtapa}").FontSize(10).SemiBold();
+            row.RelativeItem().AlignRight().Text($"{etapa.FechaInicio:dd/MM/yyyy} - {etapa.FechaFin:dd/MM/yyyy}").FontSize(9);
+        });
     }
 
     private void ComposeHeader(IContainer container, string barco, string marea, int anio, DateTime? fechaInicio, DateTime? fechaFin, string titulo)
@@ -237,7 +258,7 @@ public class MareaReportService : IMareaReportService
         });
     }
 
-    private void ComposeAreaSummaryContent(ColumnDescriptor col, ControlProduccionReport report)
+    private void ComposeAreaSummaryContent(ColumnDescriptor col, ControlProduccionEtapaReport report)
     {
         if (!report.AreaSummaries.Any()) return;
 
@@ -291,7 +312,7 @@ public class MareaReportService : IMareaReportService
         }
     }
 
-    private void ComposeProductionDetailContent(ColumnDescriptor col, ControlProduccionReport report)
+    private void ComposeProductionDetailContent(ColumnDescriptor col, ControlProduccionEtapaReport report)
     {
         col.Item().PaddingTop(10).PaddingBottom(5).Text("DETALLE DE PRODUCCIÓN").FontSize(11).SemiBold();
         
@@ -331,9 +352,9 @@ public class MareaReportService : IMareaReportService
         });
     }
 
-    private void ComposeControlProduccionContent(IContainer container, ControlProduccionReport report)
+    private void ComposeControlProduccionContent(IContainer container, ControlProduccionEtapaReport report)
     {
-        container.PaddingVertical(10).Column(col =>
+        container.PaddingVertical(5).Column(col =>
         {
             col.Item().Table(table =>
             {
