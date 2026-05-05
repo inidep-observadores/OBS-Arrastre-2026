@@ -27,6 +27,7 @@ public class ControlProduccionRayaTests
     private readonly IMuestraService _muestraService;
     private readonly ISubmuestraService _submuestraService;
     private readonly IUserSettingsService _userSettingsService;
+    private readonly IMapRenderingService _mapRenderingService;
 
     public ControlProduccionRayaTests()
     {
@@ -54,6 +55,7 @@ public class ControlProduccionRayaTests
         _submuestraService = Substitute.For<ISubmuestraService>();
         _userSettingsService = Substitute.For<IUserSettingsService>();
         _userSettingsService.GetSettings().Returns(new UserSettings());
+        _mapRenderingService = Substitute.For<IMapRenderingService>();
     }
 
     [Fact]
@@ -206,6 +208,7 @@ public class ControlProduccionRayaTests
             _reportService,
             _jsonImportService,
             _mareaImportService,
+            _mapRenderingService,
             _userSettingsService,
             _dbContextFactory);
     }
@@ -232,9 +235,10 @@ public class TestMainWindowViewModel : MainWindowViewModel
         IMareaReportService mareaReportService,
         IJsonImportService jsonImportService,
         IMareaImportService mareaImportService,
+        IMapRenderingService mapRenderingService,
         IUserSettingsService userSettingsService,
         IDbContextFactory<AppDbContext> dbContextFactory) 
-        : base(mockShellDataService, themeService, mareaService, buqueService, lanceService, muestraService, activeMareaManager, mareaEditFactory, lanceEditFactory, muestraEditFactory, submuestraEditFactory, submuestraService, produccionService, produccionEditFactory, validationService, mareaReportService, jsonImportService, mareaImportService, userSettingsService, dbContextFactory)
+        : base(mockShellDataService, themeService, mareaService, buqueService, lanceService, muestraService, activeMareaManager, mareaEditFactory, lanceEditFactory, muestraEditFactory, submuestraEditFactory, submuestraService, produccionService, produccionEditFactory, validationService, mareaReportService, jsonImportService, mareaImportService, mapRenderingService, userSettingsService, dbContextFactory)
     {
     }
 

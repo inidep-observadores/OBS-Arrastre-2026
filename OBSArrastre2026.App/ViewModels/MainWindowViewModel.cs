@@ -40,6 +40,7 @@ public class MainWindowViewModel : ObservableObject
     private readonly IProduccionService _produccionService;
     private readonly IJsonImportService _jsonImportService;
     private readonly IMareaImportService _mareaImportService;
+    private readonly IMapRenderingService _mapRenderingService;
     private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
     private NavigationItemViewModel? _selectedNavigationItem;
     private string _pageTitle = string.Empty;
@@ -282,6 +283,7 @@ public class MainWindowViewModel : ObservableObject
         IMareaReportService reportService,
         IJsonImportService jsonImportService,
         IMareaImportService mareaImportService,
+        IMapRenderingService mapRenderingService,
         IUserSettingsService userSettingsService,
         IDbContextFactory<AppDbContext> dbContextFactory)
     {
@@ -304,6 +306,7 @@ public class MainWindowViewModel : ObservableObject
         _produccionEditFactory = produccionEditFactory;
         _jsonImportService = jsonImportService;
         _mareaImportService = mareaImportService;
+        _mapRenderingService = mapRenderingService;
         _userSettingsService = userSettingsService;
 
         SearchPlaceholder = "Buscar...";
@@ -931,11 +934,33 @@ public class MainWindowViewModel : ObservableObject
             return;
         }
 
-        var viewModel = new ExportarRecursosViewModel();
+        var lances = await _lanceService.GetLancesAsync(mareaId: activeMarea.ID);
+        var viewModel = new ExportarRecursosViewModel(activeMarea, lances.ToList(), _mapRenderingService);
         ActiveDialog = viewModel;
 
-        await viewModel.DialogResult.Task;
+        bool result = await viewModel.DialogResult.Task;
         ActiveDialog = null;
+
+        if (result)
+        {
+            bool openFolder = await ShowConfirmationAsync("Exportación completada", "¿Desea abrir la carpeta donde se generaron los archivos?");
+            if (openFolder)
+            {
+                try
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = viewModel.ExportPath,
+                        UseShellExecute = true,
+                        Verb = "open"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    ShowMessage("Error", $"No se pudo abrir la carpeta: {ex.Message}", null, MessageDialogType.Error);
+                }
+            }
+        }
     }
 
     public bool IsSystemThemeActive => CurrentThemeMode == AppThemeMode.System;

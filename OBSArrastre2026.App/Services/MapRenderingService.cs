@@ -11,8 +11,7 @@ namespace OBSArrastre2026.App.Services
     public class MapRenderingService : IMapRenderingService
     {
         private const int Dpi = 220;
-        private const int Width = (int)(9.5 * Dpi);
-        private const int Height = (int)(3.6 * Dpi);
+        // Se eliminan Width y Height constantes para usar dimensionamiento dinámico
 
         // Colores base
         private static readonly SKColor ColorOcean = SKColors.White;
@@ -32,12 +31,20 @@ namespace OBSArrastre2026.App.Services
 
             var (lonMin, lonMax, latMin, latMax) = ComputeEnvelope(lats, lons);
 
-            using var surface = SKSurface.Create(new SKImageInfo(Width, Height));
+            // Calcular dimensiones dinámicas
+            CalculateLayout(lonMin, lonMax, latMin, latMax, out int width, out int height, out var plotRect, out float scale, out double cosLat);
+
+            using var surface = SKSurface.Create(new SKImageInfo(width, height));
             var canvas = surface.Canvas;
             canvas.Clear(ColorOcean);
 
-            // Proyección con corrección de aspecto y centrado
-            var project = CreateProjector(lonMin, lonMax, latMin, latMax, out var plotRect);
+            // Proyector simplificado basado en el layout calculado
+            Func<double, double, SKPoint> project = (lon, lat) =>
+            {
+                float x = (float)(plotRect.Left + (lon - lonMin) * cosLat * scale);
+                float y = (float)(plotRect.Top + (latMax - lat) * scale);
+                return new SKPoint(x, y);
+            };
 
             canvas.Save();
             canvas.ClipRect(plotRect);
@@ -62,12 +69,18 @@ namespace OBSArrastre2026.App.Services
             if (!lats.Any() || !lons.Any()) return Array.Empty<byte>();
 
             var (lonMin, lonMax, latMin, latMax) = ComputeEnvelope(lats, lons);
+            CalculateLayout(lonMin, lonMax, latMin, latMax, out int width, out int height, out var plotRect, out float scale, out double cosLat);
 
-            using var surface = SKSurface.Create(new SKImageInfo(Width, Height));
+            using var surface = SKSurface.Create(new SKImageInfo(width, height));
             var canvas = surface.Canvas;
             canvas.Clear(ColorOcean);
 
-            var project = CreateProjector(lonMin, lonMax, latMin, latMax, out var plotRect);
+            Func<double, double, SKPoint> project = (lon, lat) =>
+            {
+                float x = (float)(plotRect.Left + (lon - lonMin) * cosLat * scale);
+                float y = (float)(plotRect.Top + (latMax - lat) * scale);
+                return new SKPoint(x, y);
+            };
 
             canvas.Save();
             canvas.ClipRect(plotRect);
@@ -83,38 +96,32 @@ namespace OBSArrastre2026.App.Services
             return data.ToArray();
         }
 
-        private Func<double, double, SKPoint> CreateProjector(double lonMin, double lonMax, double latMin, double latMax, out SKRect plotRect)
+        private void CalculateLayout(double lonMin, double lonMax, double latMin, double latMax, out int width, out int height, out SKRect plotRect, out float scale, out double cosLat)
         {
-            float marginL = 0.07f * Width;
-            float marginR = 0.95f * Width;
-            float marginT = 0.05f * Height;
-            float marginB = 0.82f * Height;
-            float availableWidth = marginR - marginL;
-            float availableHeight = marginB - marginT;
-
             double midLat = (latMin + latMax) / 2.0;
-            double cosLat = Math.Cos(midLat * Math.PI / 180.0);
+            cosLat = Math.Cos(midLat * Math.PI / 180.0);
 
             double geoWidth = (lonMax - lonMin) * cosLat;
             double geoHeight = (latMax - latMin);
 
-            // Escala: pixels por grado de latitud
-            float scale = (float)Math.Min(availableWidth / geoWidth, availableHeight / geoHeight);
+            // Altura de referencia para el área de dibujo (plot)
+            // Usamos un valor que proporcione buena resolución en el informe
+            float targetPlotHeight = 800f; 
+            scale = (float)(targetPlotHeight / geoHeight);
 
-            float finalWidth = (float)(geoWidth * scale);
-            float finalHeight = (float)(geoHeight * scale);
+            float plotW = (float)(geoWidth * scale);
+            float plotH = (float)(geoHeight * scale);
 
-            float offsetX = marginL + (availableWidth - finalWidth) / 2f;
-            float offsetY = marginT + (availableHeight - finalHeight) / 2f;
+            // Márgenes fijos en píxeles para etiquetas y ejes
+            float padL = 130f; // Espacio para latitudes y etiquetas LS/LW
+            float padR = 60f;
+            float padT = 60f;
+            float padB = 130f; // Espacio para longitudes
 
-            plotRect = new SKRect(offsetX, offsetY, offsetX + finalWidth, offsetY + finalHeight);
+            width = (int)Math.Ceiling(plotW + padL + padR);
+            height = (int)Math.Ceiling(plotH + padT + padB);
 
-            return (lon, lat) =>
-            {
-                float x = (float)(offsetX + (lon - lonMin) * cosLat * scale);
-                float y = (float)(offsetY + (latMax - lat) * scale);
-                return new SKPoint(x, y);
-            };
+            plotRect = new SKRect(padL, padT, padL + plotW, padT + plotH);
         }
 
         private (double lonMin, double lonMax, double latMin, double latMax) ComputeEnvelope(List<double> lats, List<double> lons)
