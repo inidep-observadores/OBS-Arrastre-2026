@@ -9,5 +9,7 @@ public enum NavigationSection
     Produccion,
     ControlProduccion,
     ReemplazoEspecie,
-    ConfigurarUnidadDescarte
+    ConfigurarUnidadDescarte,
+    Separator,
+    GenerarRecursosInforme
 }

@@ -71,7 +71,7 @@ public class MareaIntegrationTests
             _extractor.ReadSubmuestrasAsync(Arg.Any<string>()).Returns(new List<LegacySubmuestra>());
             _extractor.ReadLgAsync(Arg.Any<string>()).Returns(new List<LegacyLg>());
 
-            _reportService.GenerateValidationPdf(Arg.Any<MareaValidationReport>()).Returns(new byte[] { 1, 2, 3 });
+            _reportService.GenerateValidationPdfAsync(Arg.Any<MareaValidationReport>()).Returns(Task.FromResult(new byte[] { 1, 2, 3 }));
 
             // Act
                         var result = await _importService.ProcessMareaImportAsync(tempPath, "TEST", 100, 2026, new List<MareaEtapa>());
@@ -83,7 +83,7 @@ public class MareaIntegrationTests
             lance1Muestra.Tallies.Should().HaveCount(2);
             lance1Muestra.UltTalla.Should().Be(15);
 
-            _reportService.Received(1).GenerateValidationPdf(Arg.Any<MareaValidationReport>());
+            await _reportService.Received(1).GenerateValidationPdfAsync(Arg.Any<MareaValidationReport>());
         }
         finally
         {
@@ -112,7 +112,7 @@ public class MareaIntegrationTests
             _extractor.ReadSubmuestrasAsync(Arg.Any<string>()).Returns(new List<LegacySubmuestra>());
             _extractor.ReadLgAsync(Arg.Any<string>()).Returns(new List<LegacyLg>());
             
-            _reportService.GenerateValidationPdf(Arg.Any<MareaValidationReport>()).Returns(new byte[] { 1, 2, 3 });
+            _reportService.GenerateValidationPdfAsync(Arg.Any<MareaValidationReport>()).Returns(Task.FromResult(new byte[] { 1, 2, 3 }));
 
             // Act
                         var result = await _importService.ProcessMareaImportAsync(tempPath, "TEST", 100, 2026, new List<MareaEtapa>());

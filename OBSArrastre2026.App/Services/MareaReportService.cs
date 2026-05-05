@@ -46,15 +46,6 @@ public class MareaReportService : IMareaReportService
 
     public async Task<byte[]> GenerateControlProduccionPdfAsync(ControlProduccionReport report)
     {
-        // Pre-generar mapas para cada etapa de forma asíncrona real
-        var mapasEtapas = new Dictionary<int, byte[]>();
-        foreach (var etapa in report.Etapas)
-        {
-            if (etapa.Lats.Any() && etapa.Lons.Any())
-            {
-                mapasEtapas[etapa.NumeroEtapa] = await _mapRenderingService.RenderMapToBytesAsync(etapa.Lats, etapa.Lons);
-            }
-        }
 
         return await Task.Run(() => Document.Create(container =>
         {
@@ -77,11 +68,6 @@ public class MareaReportService : IMareaReportService
                             ComposeEtapaSubHeader(col, etapa);
                         }
 
-                        if (mapasEtapas.TryGetValue(etapa.NumeroEtapa, out var mapaBytes))
-                        {
-                            col.Item().PaddingVertical(10).AlignCenter().Width(450).Image(mapaBytes);
-                        }
-                        
                         ComposeControlProduccionContent(col.Item(), etapa);
                         col.Item().PaddingBottom(20);
                     }

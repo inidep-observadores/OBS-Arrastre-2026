@@ -42,8 +42,8 @@ public class MareaImportServiceTests
         _extractor.ReadSubmuestrasAsync(Arg.Any<string>())
             .Returns(new List<LegacySubmuestra>());
 
-        _report.GenerateValidationPdf(Arg.Any<MareaValidationReport>())
-            .Returns(new byte[] { 1, 2, 3 });
+        _report.GenerateValidationPdfAsync(Arg.Any<MareaValidationReport>())
+            .Returns(Task.FromResult(new byte[] { 1, 2, 3 }));
 
         // Act
         string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
@@ -57,6 +57,6 @@ public class MareaImportServiceTests
         // Assert
         result.Should().NotBeNull();
         await _extractor.Received(1).ReadCapturasAsync(Arg.Is<string>(s => s.Contains("C10026")));
-        _report.Received(1).GenerateValidationPdf(Arg.Any<MareaValidationReport>());
+        await _report.Received(1).GenerateValidationPdfAsync(Arg.Any<MareaValidationReport>());
     }
 }

@@ -398,11 +398,18 @@
                          ItemContainerStyle="{StaticResource SidebarItemStyle}">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Grid x:Name="RootGrid" Background="Transparent">
+                            <Grid x:Name="RootGrid" Background="Transparent" MinHeight="36">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="28" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
+
+                                <Rectangle x:Name="SeparatorLine" 
+                                           Grid.ColumnSpan="2" 
+                                           Height="1" 
+                                           Fill="{DynamicResource SidebarBorderBrush}" 
+                                           Margin="0,12" 
+                                           Visibility="Collapsed" />
 
                                 <TextBlock x:Name="IconText"
                                            HorizontalAlignment="Center"
@@ -420,6 +427,12 @@
                                            Text="{Binding Title}" />
                             </Grid>
                             <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding Section}" Value="{x:Static models:NavigationSection.Separator}">
+                                    <Setter TargetName="IconText" Property="Visibility" Value="Collapsed" />
+                                    <Setter TargetName="TitleText" Property="Visibility" Value="Collapsed" />
+                                    <Setter TargetName="SeparatorLine" Property="Visibility" Value="Visible" />
+                                    <Setter TargetName="RootGrid" Property="MinHeight" Value="25" />
+                                </DataTrigger>
                                 <DataTrigger Binding="{Binding IsEnabled}" Value="False">
                                     <Setter TargetName="RootGrid" Property="Opacity" Value="0.3" />
                                     <Setter TargetName="IconText" Property="Foreground" Value="Gray" />

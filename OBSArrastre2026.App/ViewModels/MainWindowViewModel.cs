@@ -338,6 +338,9 @@ public class MainWindowViewModel : ObservableObject
             NavigationItems.Add(navigationItem);
         }
 
+        NavigationItems.Add(new NavigationItemViewModel(NavigationSection.Separator, "", "", ""));
+        NavigationItems.Add(new NavigationItemViewModel(NavigationSection.GenerarRecursosInforme, "Generar recursos informe", "Mapas y archivos auxiliares", "📦", true));
+
         _currentThemeMode = _themeService.CurrentMode;
         SelectedNavigationItem = NavigationItems.FirstOrDefault();
 
@@ -605,6 +608,17 @@ public class MainWindowViewModel : ObservableObject
             if (value?.Section == NavigationSection.ConfigurarUnidadDescarte)
             {
                 _ = OpenConfigurarUnidadDescarteAsync();
+                return;
+            }
+
+            if (value?.Section == NavigationSection.GenerarRecursosInforme)
+            {
+                _ = OpenGenerarRecursosInformeAsync();
+                return;
+            }
+
+            if (value?.Section == NavigationSection.Separator)
+            {
                 return;
             }
 
@@ -906,6 +920,22 @@ public class MainWindowViewModel : ObservableObject
                 ShowMessage("Error", "No se pudo actualizar la unidad de descarte.", ex.Message, MessageDialogType.Error);
             }
         }
+    }
+
+    private async Task OpenGenerarRecursosInformeAsync()
+    {
+        var activeMarea = _activeMareaManager.ActiveMarea;
+        if (activeMarea == null)
+        {
+            ShowMessage("Sin marea activa", "Debe seleccionar una marea activa para realizar esta acción.", null, MessageDialogType.Warning);
+            return;
+        }
+
+        var viewModel = new ExportarRecursosViewModel();
+        ActiveDialog = viewModel;
+
+        await viewModel.DialogResult.Task;
+        ActiveDialog = null;
     }
 
     public bool IsSystemThemeActive => CurrentThemeMode == AppThemeMode.System;

@@ -908,6 +908,91 @@
             </Border>
         </DataTemplate>
 
+        <!-- Diálogo de Exportación de Recursos -->
+        <DataTemplate DataType="{x:Type vm:ExportarRecursosViewModel}">
+            <Border Width="500" 
+                    Background="{DynamicResource CardBackgroundBrush}"
+                    BorderBrush="{DynamicResource CardBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="16"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="40" ShadowDepth="10" Opacity="0.15" Color="Black"/>
+                </Border.Effect>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="24,20" CornerRadius="16,16,0,0">
+                        <StackPanel>
+                            <TextBlock Text="GENERAR RECURSOS INFORME" 
+                                       FontSize="11" FontWeight="Bold" 
+                                       Foreground="{DynamicResource AccentBrush}" />
+                            <TextBlock Text="Exportación Masiva de Recursos" 
+                                       FontSize="18" FontWeight="SemiBold" 
+                                       Foreground="{DynamicResource PrimaryTextBrush}"
+                                       Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="1" Padding="24,30">
+                        <StackPanel>
+                            <TextBlock Text="Seleccione la carpeta donde se guardarán los mapas y archivos auxiliares del informe." 
+                                       Foreground="{DynamicResource SecondaryTextBrush}" 
+                                       TextWrapping="Wrap"
+                                       FontSize="13"
+                                       LineHeight="20"
+                                       Margin="0,0,0,24"/>
+                            
+                            <Label Content="Carpeta de destino" Style="{StaticResource FormLabelStyle}" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding ExportPath}" 
+                                         Style="{StaticResource PremiumTextBoxStyle}" 
+                                         IsReadOnly="True"
+                                         Tag="Seleccione una carpeta..."
+                                         Height="40" />
+                                <Button Grid.Column="1" 
+                                        Command="{Binding BrowseCommand}"
+                                        Content="Examinar..." 
+                                        Style="{StaticResource ThemeButtonStyle}"
+                                        Margin="8,0,0,0"
+                                        Padding="12,0" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="2" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="24,20" CornerRadius="0,0,16,16">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button Content="CERRAR" 
+                                    Command="{Binding CloseCommand}"
+                                    Style="{StaticResource ThemeButtonStyle}"
+                                    Height="44"
+                                    Margin="0,0,8,0"/>
+                            <Button Grid.Column="1"
+                                    Content="ACEPTAR" 
+                                    Command="{Binding AcceptCommand}"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Height="44"
+                                    Margin="8,0,0,0"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
         <!-- Diálogo de Importación DBF -->
         <DataTemplate DataType="{x:Type vm:ImportDbfViewModel}">
             <Border Width="650" 
