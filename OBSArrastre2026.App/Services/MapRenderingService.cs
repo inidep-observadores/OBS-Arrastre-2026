@@ -39,9 +39,13 @@ namespace OBSArrastre2026.App.Services
             // Proyección con corrección de aspecto y centrado
             var project = CreateProjector(lonMin, lonMax, latMin, latMax, out var plotRect);
 
+            canvas.Save();
+            canvas.ClipRect(plotRect);
             DrawBackgroundGrid(canvas, lonMin, lonMax, latMin, latMax, project);
             await DrawGeoJsonLayers(canvas, project, lonMin, lonMax, latMin, latMax);
             DrawPoints(canvas, lats, lons, project);
+            canvas.Restore();
+
             DrawAxesAndScales(canvas, lonMin, lonMax, latMin, latMax, project, plotRect);
 
             using var image = surface.Snapshot();
@@ -65,9 +69,13 @@ namespace OBSArrastre2026.App.Services
 
             var project = CreateProjector(lonMin, lonMax, latMin, latMax, out var plotRect);
 
+            canvas.Save();
+            canvas.ClipRect(plotRect);
             DrawBackgroundGrid(canvas, lonMin, lonMax, latMin, latMax, project);
             await DrawGeoJsonLayers(canvas, project, lonMin, lonMax, latMin, latMax);
             DrawPoints(canvas, lats, lons, project);
+            canvas.Restore();
+
             DrawAxesAndScales(canvas, lonMin, lonMax, latMin, latMax, project, plotRect);
 
             using var image = surface.Snapshot();
@@ -77,10 +85,10 @@ namespace OBSArrastre2026.App.Services
 
         private Func<double, double, SKPoint> CreateProjector(double lonMin, double lonMax, double latMin, double latMax, out SKRect plotRect)
         {
-            float marginL = 0.05f * Width;
+            float marginL = 0.07f * Width;
             float marginR = 0.95f * Width;
             float marginT = 0.05f * Height;
-            float marginB = 0.91f * Height;
+            float marginB = 0.82f * Height;
             float availableWidth = marginR - marginL;
             float availableHeight = marginB - marginT;
 
