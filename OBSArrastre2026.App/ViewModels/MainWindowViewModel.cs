@@ -1829,7 +1829,8 @@ public class MainWindowViewModel : ObservableObject
                 "Dif. %",
                 "");
 
-            var summary = produccion
+            // Agrupar producción por ID efectivo (manejando Rayas)
+            var prodSummary = produccion
                 .GroupBy(p => 
                 {
                     if (IsRaya(p.Especie) && (IsGenericRaya(p.Especie) || !_commonRayaIds.Contains(p.EspecieId!)))
@@ -1838,60 +1839,61 @@ public class MainWindowViewModel : ObservableObject
                     }
                     return p.EspecieId;
                 })
-                .Select(g => new
-                {
-                    EspecieId = g.Key,
-                    EspecieNombre = g.Key == RayaGenericVirtualId ? "Rayas (Rajidae - Otras/Genérico)" : (g.First().Especie?.NombreVulgar 
-                        ?? g.First().Especie?.NombreCientifico 
-                        ?? g.First().Comentarios?.Replace("Importado: ", "") 
-                        ?? "Desconocida"),
-                    PesoProcesadoTotal = g.Sum(p => p.Kg ?? 0),
-                    CapturaReconstruida = g.Sum(p => (p.Kg ?? 0) * (p.Factor ?? 1.0))
-                })
-                .ToList();
-
-            var results = new List<ControlProduccionListItemViewModel>();
-            foreach (var item in summary)
-            {
-                double capturaNetaTotal = 0;
-                bool isRayaGenericGroup = item.EspecieId == RayaGenericVirtualId;
-
-                foreach (var lance in lances)
-                {
-                    var catchItems = lance.ItemsCaptura.Where(c => 
+                .ToDictionary(
+                    g => g.Key,
+                    g => new
                     {
-                        if (c.EspecieID == item.EspecieId) return true;
-                        
-                        // Si la fila de producción es el grupo genérico de rayas
-                        if (item.EspecieId == RayaGenericVirtualId)
-                        {
-                            // Acepta cualquier raya de captura que sea genérica o huérfana
-                            if (IsRaya(c.Especie) && (IsGenericRaya(c.Especie) || !_commonRayaIds.Contains(c.EspecieID!)))
-                            {
-                                return true;
-                            }
-                        }
-                        return false;
+                        EspecieNombre = g.Key == RayaGenericVirtualId ? "Rayas (Rajidae - Otras/Genérico)" : (g.First().Especie?.NombreVulgar 
+                            ?? g.First().Especie?.NombreCientifico 
+                            ?? g.First().Comentarios?.Replace("Importado: ", "") 
+                            ?? "Desconocida"),
+                        PesoProcesadoTotal = g.Sum(p => p.Kg ?? 0),
+                        CapturaReconstruida = g.Sum(p => (p.Kg ?? 0) * (p.Factor ?? 1.0))
                     });
 
-                    foreach (var catchItem in catchItems)
+            // Agrupar capturas por ID efectivo (manejando Rayas)
+            var catchSummary = lances
+                .SelectMany(l => l.ItemsCaptura)
+                .GroupBy(c => 
+                {
+                    if (IsRaya(c.Especie) && (IsGenericRaya(c.Especie) || !_commonRayaIds.Contains(c.EspecieID!)))
                     {
-                        capturaNetaTotal += catchItem.CapturaTotalKgCalculado - catchItem.PesoDescarteCalculado;
+                        return RayaGenericVirtualId;
                     }
-                }
+                    return c.EspecieID;
+                })
+                .ToDictionary(
+                    g => g.Key,
+                    g => new
+                    {
+                        EspecieNombre = g.Key == RayaGenericVirtualId ? "Rayas (Rajidae - Otras/Genérico)" : (g.First().Especie?.NombreVulgar 
+                            ?? g.First().Especie?.NombreCientifico 
+                            ?? "Desconocida"),
+                        CapturaTotal = g.Sum(c => c.CapturaTotalKgCalculado - c.PesoDescarteCalculado)
+                    });
+
+            // Unir ambos universos de especies
+            var allSpeciesIds = prodSummary.Keys.Union(catchSummary.Keys).ToList();
+            var results = new List<ControlProduccionListItemViewModel>();
+
+            foreach (var spId in allSpeciesIds)
+            {
+                prodSummary.TryGetValue(spId, out var pData);
+                catchSummary.TryGetValue(spId, out var cData);
 
                 results.Add(new ControlProduccionListItemViewModel
                 {
-                    Especie = item.EspecieNombre,
-                    EspecieId = item.EspecieId,
-                    ProduccionTotal = item.PesoProcesadoTotal,
-                    CapturaReconstruida = item.CapturaReconstruida,
-                    CapturaTotal = capturaNetaTotal,
+                    Especie = pData?.EspecieNombre ?? cData?.EspecieNombre ?? "Desconocida",
+                    EspecieId = spId,
+                    ProduccionTotal = pData?.PesoProcesadoTotal ?? 0,
+                    CapturaReconstruida = pData?.CapturaReconstruida ?? 0,
+                    CapturaTotal = cData?.CapturaTotal ?? 0,
                     IsSummaryView = true
                 });
             }
 
-            var viewModels = results.OrderBy(r => r.Especie).ToList();
+            // Ordenar por CapturaTotal de mayor a menor (pedido por el usuario)
+            var viewModels = results.OrderByDescending(r => r.CapturaTotal).ToList();
             Records.Clear();
             foreach (var vm in viewModels) Records.Add(vm);
         }
@@ -1919,67 +1921,63 @@ public class MainWindowViewModel : ObservableObject
 
             bool isRayaGenericGroup = ControlProduccionSelectedEspecieId == RayaGenericVirtualId;
 
-            var produccionFiltrada = produccion
+            // Agrupar producción filtrada por fecha
+            var prodByDate = produccion
                 .Where(p => isRayaGenericGroup 
                     ? (IsRaya(p.Especie) && (IsGenericRaya(p.Especie) || !_commonRayaIds.Contains(p.EspecieId!))) 
                     : p.EspecieId == ControlProduccionSelectedEspecieId)
                 .Where(p => DateTime.TryParse(p.Fecha, out _))
                 .GroupBy(p => DateTime.Parse(p.Fecha).Date)
+                .ToDictionary(
+                    g => g.Key,
+                    g => new
+                    {
+                        EspecieNombre = isRayaGenericGroup ? "Rayas (Rajidae - Otras/Genérico)" : (g.First().Especie?.NombreVulgar 
+                            ?? g.First().Especie?.NombreCientifico 
+                            ?? g.First().Comentarios?.Replace("Importado: ", "") 
+                            ?? "Desconocida"),
+                        PesoProcesadoTotal = g.Sum(p => p.Kg ?? 0),
+                        CapturaReconstruida = g.Sum(p => (p.Kg ?? 0) * (p.Factor ?? 1.0))
+                    });
+
+            // Agrupar capturas filtradas por fecha
+            var catchByDate = lances
+                .Where(l => DateTime.TryParse(l.Fecha, out _))
+                .GroupBy(l => DateTime.Parse(l.Fecha).Date)
                 .Select(g => new
                 {
                     Fecha = g.Key,
-                    EspecieId = ControlProduccionSelectedEspecieId,
-                    EspecieNombre = isRayaGenericGroup ? "Rayas (Rajidae - Otras/Genérico)" : (g.First().Especie?.NombreVulgar 
-                        ?? g.First().Especie?.NombreCientifico 
-                        ?? g.First().Comentarios?.Replace("Importado: ", "") 
-                        ?? "Desconocida"),
-                    PesoProcesadoTotal = g.Sum(p => p.Kg ?? 0),
-                    CapturaReconstruida = g.Sum(p => (p.Kg ?? 0) * (p.Factor ?? 1.0))
-                });
+                    CapturaTotal = g.SelectMany(l => l.ItemsCaptura)
+                        .Where(c => isRayaGenericGroup 
+                            ? (IsRaya(c.Especie) && (IsGenericRaya(c.Especie) || !_commonRayaIds.Contains(c.EspecieID!))) 
+                            : c.EspecieID == ControlProduccionSelectedEspecieId)
+                        .Sum(c => c.CapturaTotalKgCalculado - c.PesoDescarteCalculado)
+                })
+                .Where(x => x.CapturaTotal > 0)
+                .ToDictionary(x => x.Fecha, x => x.CapturaTotal);
 
+            // Unir fechas
+            var allDates = prodByDate.Keys.Union(catchByDate.Keys).OrderBy(d => d).ToList();
             var results = new List<ControlProduccionListItemViewModel>();
-            foreach (var pDay in produccionFiltrada)
+
+            foreach (var date in allDates)
             {
-                double capturaNetaTotal = 0;
-                var lancesDelDia = lances
-                    .Where(l => DateTime.TryParse(l.Fecha, out var ld) && ld.Date == pDay.Fecha)
-                    .ToList();
-                
-                foreach (var lance in lancesDelDia)
-                {
-                    var catchItems = lance.ItemsCaptura.Where(c => 
-                    {
-                        if (c.EspecieID == pDay.EspecieId) return true;
-
-                        if (pDay.EspecieId == RayaGenericVirtualId)
-                        {
-                            if (IsRaya(c.Especie) && (IsGenericRaya(c.Especie) || !_commonRayaIds.Contains(c.EspecieID!)))
-                            {
-                                return true;
-                            }
-                        }
-                        return false;
-                    });
-
-                    foreach (var catchItem in catchItems)
-                    {
-                        capturaNetaTotal += catchItem.CapturaTotalKgCalculado - catchItem.PesoDescarteCalculado;
-                    }
-                }
+                prodByDate.TryGetValue(date, out var pData);
+                catchByDate.TryGetValue(date, out var cTotal);
 
                 results.Add(new ControlProduccionListItemViewModel
                 {
-                    Fecha = pDay.Fecha,
-                    Especie = pDay.EspecieNombre,
-                    EspecieId = pDay.EspecieId!,
-                    ProduccionTotal = pDay.PesoProcesadoTotal,
-                    CapturaReconstruida = pDay.CapturaReconstruida,
-                    CapturaTotal = capturaNetaTotal,
+                    Fecha = date,
+                    Especie = pData?.EspecieNombre ?? (isRayaGenericGroup ? "Rayas (Rajidae - Otras/Genérico)" : ControlProduccionSelectedEspecie?.NombreVulgar ?? "Desconocida"),
+                    EspecieId = ControlProduccionSelectedEspecieId!,
+                    ProduccionTotal = pData?.PesoProcesadoTotal ?? 0,
+                    CapturaReconstruida = pData?.CapturaReconstruida ?? 0,
+                    CapturaTotal = cTotal,
                     IsSummaryView = false
                 });
             }
 
-            var viewModels = results.OrderBy(r => r.Fecha).ToList();
+            var viewModels = results.ToList(); // Ya vienen ordenados por fecha por allDates
             Records.Clear();
             foreach (var vm in viewModels) Records.Add(vm);
 
