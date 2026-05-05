@@ -631,7 +631,9 @@ public sealed class MareaValidationEngine
                     }
                 }
 
-                long speciesIdForLookup = m.CodEspec; // Usar código numérico directo si existe
+                // Usar el código ya resuelto y puenteado en la sección de integridad (REQ-3.4.4)
+                long speciesIdForLookup = codEspecieMuestra > 0 ? codEspecieMuestra : m.CodEspec;
+                
                 if (speciesIdForLookup == 0 && !string.IsNullOrEmpty(m.Especie))
                 {
                     if (especiesDict == null || !especiesDict.TryGetValue(m.Especie.Trim().ToUpper(), out speciesIdForLookup))
