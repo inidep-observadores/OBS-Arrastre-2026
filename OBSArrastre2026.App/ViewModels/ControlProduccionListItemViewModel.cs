@@ -29,7 +29,7 @@ public sealed class ControlProduccionListItemViewModel : ObservableObject
         : (CapturaReconstruida > 0 ? -100.0 : 0);
 
     public string DiferenciaKgDisplay => DiferenciaKg.ToString("N1");
-    public string DiferenciaPorcentajeDisplay => DiferenciaPorcentaje.ToString("N1") + "%";
+    public string DiferenciaPorcentajeDisplay => DiferenciaPorcentaje.ToString("N2") + "%";
 
     public bool HasDiferenciaSignificativa => Math.Abs(DiferenciaKg) > (CapturaRetenida * 0.01);
 }

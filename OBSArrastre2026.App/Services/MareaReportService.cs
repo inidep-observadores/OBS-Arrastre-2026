@@ -41,6 +41,7 @@ public class MareaReportService : IMareaReportService
     {
         return Document.Create(container =>
         {
+            // Primera página: Landscape para el cuadro comparativo
             container.Page(page =>
             {
                 page.Size(PageSizes.A4.Landscape());
@@ -52,6 +53,29 @@ public class MareaReportService : IMareaReportService
                 ComposeControlProduccionContent(page.Content(), report);
                 ComposeFooter(page.Footer());
             });
+
+            // Segunda página: Portrait para Resumen por Área y Detalle de Producción
+            if (report.AreaSummaries.Any() || report.ProduccionDetalle.Any())
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(1, Unit.Centimetre);
+                    page.PageColor(Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(8).FontFamily(Fonts.Verdana));
+
+                    ComposeHeader(page.Header(), report.Barco, report.Marea, report.Anio, report.FechaInicioMarea, report.FechaFinMarea, "RESUMEN POR ÁREA Y DETALLE DE PRODUCCIÓN");
+                    
+                    page.Content().PaddingVertical(10).Column(col => 
+                    {
+                        ComposeAreaSummaryContent(col, report);
+                        col.Item().PaddingVertical(20).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+                        ComposeProductionDetailContent(col, report);
+                    });
+
+                    ComposeFooter(page.Footer());
+                });
+            }
         }).GeneratePdf();
     }
 
@@ -210,6 +234,100 @@ public class MareaReportService : IMareaReportService
                     }
                 });
             }
+        });
+    }
+
+    private void ComposeAreaSummaryContent(ColumnDescriptor col, ControlProduccionReport report)
+    {
+        if (!report.AreaSummaries.Any()) return;
+
+        col.Item().PaddingTop(10).Text("RESUMEN POR ÁREA (Especies Predominantes >= 20%)").FontSize(11).SemiBold();
+
+        var groupedBySpecies = report.AreaSummaries.GroupBy(s => s.Especie);
+
+        foreach (var speciesGroup in groupedBySpecies)
+        {
+            col.Item().PaddingTop(15).PaddingBottom(5).Text(speciesGroup.Key).FontSize(10).SemiBold().FontColor(Colors.Blue.Medium);
+            
+            col.Item().Table(table =>
+            {
+                table.ColumnsDefinition(columns =>
+                {
+                    columns.RelativeColumn(); // Área
+                    columns.RelativeColumn(); // Captura
+                    columns.RelativeColumn(); // Descarte
+                    columns.RelativeColumn(); // Días
+                    columns.RelativeColumn(); // Lances
+                });
+
+                table.Header(header =>
+                {
+                    header.Cell().Element(HeaderStyle).Text("Área");
+                    header.Cell().Element(HeaderStyle).AlignRight().Text("Captura");
+                    header.Cell().Element(HeaderStyle).AlignRight().Text("Descarte");
+                    header.Cell().Element(HeaderStyle).AlignRight().Text("Días");
+                    header.Cell().Element(HeaderStyle).AlignRight().Text("Lances");
+                });
+
+                foreach (var item in speciesGroup)
+                {
+                    table.Cell().Element(ContentStyle).Text(item.Area);
+                    table.Cell().Element(ContentStyle).AlignRight().Text(item.CapturaKg.ToString("N1"));
+                    table.Cell().Element(ContentStyle).AlignRight().Text(item.DescarteKg.ToString("N1"));
+                    table.Cell().Element(ContentStyle).AlignRight().Text(item.DiasPesca.ToString("N0"));
+                    table.Cell().Element(ContentStyle).AlignRight().Text(item.CantidadLances.ToString("N0"));
+                }
+
+                // Total de la especie
+                table.Cell().Element(FooterStyle).Text("Total");
+                table.Cell().Element(FooterStyle).AlignRight().Text(speciesGroup.Sum(s => s.CapturaKg).ToString("N1"));
+                table.Cell().Element(FooterStyle).AlignRight().Text(speciesGroup.Sum(s => s.DescarteKg).ToString("N1"));
+                table.Cell().Element(FooterStyle).Text("");
+                table.Cell().Element(FooterStyle).Text("");
+
+                IContainer ContentStyle(IContainer container) => container.PaddingVertical(2).BorderBottom(1).BorderColor(Colors.Grey.Lighten4);
+                IContainer FooterStyle(IContainer container) => container.PaddingVertical(5).BorderTop(1).BorderColor(Colors.Black).DefaultTextStyle(x => x.SemiBold());
+            });
+        }
+    }
+
+    private void ComposeProductionDetailContent(ColumnDescriptor col, ControlProduccionReport report)
+    {
+        col.Item().PaddingTop(10).PaddingBottom(5).Text("DETALLE DE PRODUCCIÓN").FontSize(11).SemiBold();
+        
+        col.Item().Table(table =>
+        {
+            table.ColumnsDefinition(columns =>
+            {
+                columns.RelativeColumn(3); // Especie
+                columns.RelativeColumn(2); // Producto
+                columns.RelativeColumn(2); // Categoría
+                columns.RelativeColumn(2); // Kilos
+            });
+
+            table.Header(header =>
+            {
+                header.Cell().Element(HeaderStyle).Text("Especie");
+                header.Cell().Element(HeaderStyle).Text("Producto");
+                header.Cell().Element(HeaderStyle).Text("Categoría");
+                header.Cell().Element(HeaderStyle).AlignRight().Text("Kilos");
+            });
+
+            foreach (var item in report.ProduccionDetalle)
+            {
+                table.Cell().Element(ContentStyle).Text(item.Especie);
+                table.Cell().Element(ContentStyle).Text(item.Producto);
+                table.Cell().Element(ContentStyle).Text(item.Categoria);
+                table.Cell().Element(ContentStyle).AlignRight().Text(item.Kilos.ToString("N1"));
+            }
+
+            table.Cell().Element(FooterStyle).Text("Total General");
+            table.Cell().Element(FooterStyle).Text("");
+            table.Cell().Element(FooterStyle).Text("");
+            table.Cell().Element(FooterStyle).AlignRight().Text(report.ProduccionDetalle.Sum(p => p.Kilos).ToString("N1"));
+
+            IContainer ContentStyle(IContainer container) => container.PaddingVertical(2).BorderBottom(1).BorderColor(Colors.Grey.Lighten4);
+            IContainer FooterStyle(IContainer container) => container.PaddingVertical(5).BorderTop(1).BorderColor(Colors.Black).DefaultTextStyle(x => x.SemiBold());
         });
     }
 

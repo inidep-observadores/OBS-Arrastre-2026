@@ -1789,6 +1789,72 @@ public class MainWindowViewModel : ObservableObject
 
         try
         {
+            await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+            
+            // 1. Obtener todos los lances de la marea para el agrupamiento por área
+            var allLances = await dbContext.Lances
+                .Include(l => l.MareaEtapa)
+                .Include(l => l.ItemsCaptura)
+                    .ThenInclude(ic => ic.Especie)
+                .Where(l => l.MareaEtapa!.MareaID == _activeMareaManager.ActiveMareaId)
+                .ToListAsync();
+
+            // Asegurar que cada ítem de captura tenga la referencia al lance
+            foreach (var lance in allLances)
+            {
+                foreach (var item in lance.ItemsCaptura) item.Lance = lance;
+            }
+
+            // 2. Obtener toda la producción detallada de la marea
+            var allProduccion = new List<RegistroProduccion>();
+            foreach (var etapa in _activeMareaManager.ActiveMarea.Etapas)
+            {
+                var etapaProduccion = await dbContext.RegistrosProduccion
+                    .Include(rp => rp.Especie)
+                    .Include(rp => rp.Producto)
+                    .Where(rp => rp.MareaEtapaId == etapa.ID)
+                    .ToListAsync();
+                allProduccion.AddRange(etapaProduccion);
+            }
+
+            double totalProduccionMarea = allProduccion.Sum(p => p.Kg ?? 0);
+
+            // 3. Determinar especies predominantes (>= 20% de la producción total)
+            var speciesProduction = allProduccion
+                .GroupBy(p => p.Especie?.NombreVulgar ?? p.Comentarios?.Replace("Importado: ", "") ?? "Desconocida")
+                .Select(g => new { Especie = g.Key, TotalKg = g.Sum(p => p.Kg ?? 0) })
+                .Where(x => totalProduccionMarea > 0 && (x.TotalKg / totalProduccionMarea) >= 0.20)
+                .Select(x => x.Especie)
+                .ToList();
+
+            var areaSummaries = new List<ControlProduccionAreaSummary>();
+            foreach (var predominantSpecies in speciesProduction)
+            {
+                var speciesLances = allLances
+                    .Where(l => l.ItemsCaptura.Any(ic => (ic.Especie?.NombreVulgar ?? "Desconocida") == predominantSpecies))
+                    .ToList();
+
+                var groupedByArea = speciesLances
+                    .GroupBy(l => $"{(int)Math.Abs(l.LatitudInicioDecimal ?? 0)}{(int)Math.Abs(l.LongitudInicioDecimal ?? 0)}")
+                    .Select(g => new ControlProduccionAreaSummary
+                    {
+                        Especie = predominantSpecies,
+                        Area = g.Key,
+                        CapturaKg = g.Sum(l => l.ItemsCaptura
+                            .Where(ic => (ic.Especie?.NombreVulgar ?? "Desconocida") == predominantSpecies)
+                            .Sum(ic => ic.CapturaTotalKgCalculado)),
+                        DescarteKg = g.Sum(l => l.ItemsCaptura
+                            .Where(ic => (ic.Especie?.NombreVulgar ?? "Desconocida") == predominantSpecies)
+                            .Sum(ic => ic.PesoDescarteCalculado)),
+                        CantidadLances = g.Count(),
+                        DiasPesca = g.Select(l => l.Fecha).Distinct().Count()
+                    })
+                    .OrderBy(a => a.Area)
+                    .ToList();
+
+                areaSummaries.AddRange(groupedByArea);
+            }
+
             var report = new ControlProduccionReport
             {
                 Barco = _activeMareaManager.ActiveMarea.Buque?.Nombre ?? "S/D",
@@ -1807,7 +1873,18 @@ public class MainWindowViewModel : ObservableObject
                     DiferenciaKg = i.DiferenciaKg,
                     DiferenciaPorcentaje = i.DiferenciaPorcentajeDisplay,
                     HasDiferenciaSignificativa = i.HasDiferenciaSignificativa
-                }).ToList()
+                }).ToList(),
+                AreaSummaries = areaSummaries,
+                ProduccionDetalle = allProduccion.Select(p => new ControlProduccionDetalleItem
+                {
+                    Especie = p.Especie?.NombreVulgar ?? p.Comentarios?.Replace("Importado: ", "") ?? "Desconocida",
+                    Producto = p.Producto?.Codigo ?? "S/D",
+                    Categoria = p.Categoria ?? "",
+                    Kilos = p.Kg ?? 0
+                })
+                .OrderBy(p => p.Especie)
+                .ThenBy(p => p.Producto)
+                .ToList()
             };
 
             var pdfBytes = _reportService.GenerateControlProduccionPdf(report);

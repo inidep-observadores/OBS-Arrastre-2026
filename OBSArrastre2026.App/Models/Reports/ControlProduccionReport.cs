@@ -16,6 +16,24 @@ public class ControlProduccionReportItem
     public bool HasDiferenciaSignificativa { get; set; }
 }
 
+public class ControlProduccionAreaSummary
+{
+    public string Especie { get; set; } = string.Empty;
+    public string Area { get; set; } = string.Empty;
+    public double CapturaKg { get; set; }
+    public double DescarteKg { get; set; }
+    public double DiasPesca { get; set; }
+    public int CantidadLances { get; set; }
+}
+
+public class ControlProduccionDetalleItem
+{
+    public string Especie { get; set; } = string.Empty;
+    public string Producto { get; set; } = string.Empty;
+    public string Categoria { get; set; } = string.Empty;
+    public double Kilos { get; set; }
+}
+
 public class ControlProduccionReport
 {
     public string Barco { get; set; } = string.Empty;
@@ -24,5 +42,7 @@ public class ControlProduccionReport
     public DateTime? FechaInicioMarea { get; set; }
     public DateTime? FechaFinMarea { get; set; }
     public List<ControlProduccionReportItem> Items { get; set; } = new();
+    public List<ControlProduccionAreaSummary> AreaSummaries { get; set; } = new();
+    public List<ControlProduccionDetalleItem> ProduccionDetalle { get; set; } = new();
     public DateTime FechaGeneracion { get; set; } = DateTime.Now;
 }
