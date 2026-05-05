@@ -530,6 +530,8 @@ public sealed class MareaValidationEngine
             // --- NUEVAS VALIDACIONES DE INTEGRIDAD (Punto 2) ---
 
             var lanceCorrespondiente = capturas.FirstOrDefault(c => (int)c.Lance == (int)m.Lance);
+            long codEspecieMuestra = m.CodEspec;
+
             if (lanceCorrespondiente != null)
             {
                 // REQ-3.2.4: Consistencia de Fecha (Muestra vs Lance)
@@ -544,7 +546,6 @@ public sealed class MareaValidationEngine
 
                 // REQ-3.4.4: Consistencia de Especie (Muestra vs Captura)
                 // Verificar si la especie muestreada existe en el registro de captura con kg > 0
-                long codEspecieMuestra = m.CodEspec;
                 if (!especiesCodigosValidos.Contains(codEspecieMuestra))
                 {
                     // El código no está en especies actuales. Probar puente.
