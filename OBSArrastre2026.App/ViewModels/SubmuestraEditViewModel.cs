@@ -22,6 +22,7 @@ public sealed class SubmuestraEditViewModel : ValidatableViewModelBase<Submuestr
 
     private string _especieNombre = string.Empty;
     private string _pesoMuestraDisplay = string.Empty;
+    private ItemSubmuestraRowViewModel? _selectedSubmuestra;
 
     public SubmuestraEditViewModel(
         Action onClose,
@@ -39,6 +40,8 @@ public sealed class SubmuestraEditViewModel : ValidatableViewModelBase<Submuestr
         CancelCommand = new RelayCommand(Cancel);
         AddItemCommand = new RelayCommand(AddItem);
         RemoveItemCommand = new RelayCommand<ItemSubmuestraRowViewModel>(RemoveItem);
+        GoToNextCommand = new RelayCommand(GoToNext, () => CanGoToNext);
+        GoToPreviousCommand = new RelayCommand(GoToPrevious, () => CanGoToPrevious);
 
         _ = InitializeAsync();
     }
@@ -56,10 +59,27 @@ public sealed class SubmuestraEditViewModel : ValidatableViewModelBase<Submuestr
     public string EspecieNombre { get => _especieNombre; set => SetProperty(ref _especieNombre, value); }
     public string PesoMuestraDisplay { get => _pesoMuestraDisplay; set => SetProperty(ref _pesoMuestraDisplay, value); }
 
+    public ItemSubmuestraRowViewModel? SelectedSubmuestra
+    {
+        get => _selectedSubmuestra;
+        set
+        {
+            if (SetProperty(ref _selectedSubmuestra, value))
+            {
+                OnPropertyChanged(nameof(CanGoToNext));
+                OnPropertyChanged(nameof(CanGoToPrevious));
+                (GoToNextCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                (GoToPreviousCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
     public ICommand AddItemCommand { get; }
     public ICommand RemoveItemCommand { get; }
+    public ICommand GoToNextCommand { get; }
+    public ICommand GoToPreviousCommand { get; }
 
     private async Task InitializeAsync()
     {
@@ -94,6 +114,26 @@ public sealed class SubmuestraEditViewModel : ValidatableViewModelBase<Submuestr
         var newItem = new ItemSubmuestra { MuestraID = _muestraId, NroEjemplar = lastNro + 1 };
         var vm = new ItemSubmuestraRowViewModel(newItem);
         Submuestras.Add(vm);
+        SelectedSubmuestra = vm;
+    }
+
+    public bool CanGoToNext => SelectedSubmuestra != null && Submuestras.IndexOf(SelectedSubmuestra) < Submuestras.Count - 1;
+    public bool CanGoToPrevious => SelectedSubmuestra != null && Submuestras.IndexOf(SelectedSubmuestra) > 0;
+
+    private void GoToNext()
+    {
+        if (CanGoToNext)
+        {
+            SelectedSubmuestra = Submuestras[Submuestras.IndexOf(SelectedSubmuestra!) + 1];
+        }
+    }
+
+    private void GoToPrevious()
+    {
+        if (CanGoToPrevious)
+        {
+            SelectedSubmuestra = Submuestras[Submuestras.IndexOf(SelectedSubmuestra!) - 1];
+        }
     }
 
     private void RemoveItem(ItemSubmuestraRowViewModel? vm)

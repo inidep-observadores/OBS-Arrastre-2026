@@ -241,6 +241,7 @@
                                         <Button Content="ANTERIOR" 
                                                 Command="{Binding DataContext.GoToPreviousCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
                                                 Style="{StaticResource ThemeButtonStyle}"
+                                                IsTabStop="False"
                                                 FontSize="10" Height="36"/>
                                         <Button Grid.Column="2" 
                                                 Content="SIGUIENTE" 
