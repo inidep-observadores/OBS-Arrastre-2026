@@ -565,13 +565,8 @@ public sealed class MareaValidationEngine
                     {
                         var searchName = m.Especie.Trim().ToUpper().Normalize(NormalizationForm.FormC);
                         
-                        // REQ: Caso especial Granadero
-                        if (searchName == "GRANADERO")
-                        {
-                            codEspecieMuestra = "7210090401";
-                        }
                         // 1. Buscar en actuales por nombre
-                        else if (especiesDict.TryGetValue(searchName, out string newCode))
+                        if (especiesDict.TryGetValue(searchName, out string newCode))
                         {
                             codEspecieMuestra = newCode;
                         }

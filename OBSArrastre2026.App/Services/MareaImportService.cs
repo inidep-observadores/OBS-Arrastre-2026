@@ -271,12 +271,8 @@ public class MareaImportService : IMareaImportService
             if (!string.IsNullOrEmpty(e.NombreCientifico))
                 especieByNombreMap[e.NombreCientifico.Trim().ToUpper().Normalize(NormalizationForm.FormC)] = e.ID;
         }
-        
-        // REQ: Excepción Granadero para resolver ambigüedad histórica
-        if (especieByCodigoMap.TryGetValue("7210090401", out var granaderoId))
-        {
-            especieByNombreMap["GRANADERO"] = granaderoId;
-        }
+ 
+        // LÓGICA DE PUENTE CON ESPECIES VIEJAS:
 
         // LÓGICA DE PUENTE CON ESPECIES VIEJAS:
         // Usamos la tabla especies_viejas como puente para encontrar el código que mapea a la tabla especies actual.
@@ -532,7 +528,13 @@ public class MareaImportService : IMareaImportService
                     if (!string.IsNullOrEmpty(rp.Especie))
                     {
                         var searchName = rp.Especie.Trim().ToUpper().Normalize(NormalizationForm.FormC);
-                        if (!especieByNombreMap.TryGetValue(searchName, out speciesId))
+                        
+                        // REQ: Excepción Granadero solo para producción (comercial)
+                        if (searchName == "GRANADERO")
+                        {
+                            especieByCodigoMap.TryGetValue("7210090401", out speciesId);
+                        }
+                        else if (!especieByNombreMap.TryGetValue(searchName, out speciesId))
                         {
                             // Fallback: Probar si el campo Especie trae el código INIDEP directamente (normalizado)
                             var searchCode = NormalizeInidepCode(rp.Especie);

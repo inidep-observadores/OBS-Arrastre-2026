@@ -76,9 +76,6 @@ public class MareaValidationService : IMareaValidationService
             if (!string.IsNullOrEmpty(esp.NombreCientifico))
                 especiesDict[esp.NombreCientifico.Trim().ToUpper()] = code;
         }
-        
-        // REQ: Excepción Granadero para resolver ambigüedad histórica
-        especiesDict["GRANADERO"] = "7210090401";
 
         var especiesViejasDB = await dbContext.EspeciesViejas
             .Where(e => e.CodigoInidep != null)
