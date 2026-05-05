@@ -951,7 +951,7 @@
                             </Border>
 
                             <ListBox x:Name="RecordsList" Grid.Row="3"
-                                     ItemsSource="{Binding Records}"
+                                     ItemsSource="{Binding RecordsView}"
                                      SelectedItem="{Binding SelectedRecord}"
                                      Background="Transparent"
                                      BorderThickness="0"
@@ -978,6 +978,25 @@
                                         </Setter>
                                     </Style>
                                 </ListBox.ItemContainerStyle>
+
+                                <ListBox.GroupStyle>
+                                    <GroupStyle>
+                                        <GroupStyle.HeaderTemplate>
+                                            <DataTemplate>
+                                                <Border Background="{DynamicResource SidebarSecondaryBackgroundBrush}" 
+                                                        Padding="12,8" 
+                                                        Margin="0,16,0,8"
+                                                        BorderBrush="{DynamicResource SidebarBorderBrush}"
+                                                        BorderThickness="0,0,0,1">
+                                                    <TextBlock Text="{Binding Name}" 
+                                                               FontWeight="Bold" 
+                                                               FontSize="14"
+                                                               Foreground="{DynamicResource AccentBrush}"/>
+                                                </Border>
+                                            </DataTemplate>
+                                        </GroupStyle.HeaderTemplate>
+                                    </GroupStyle>
+                                </ListBox.GroupStyle>
                             </ListBox>
                         </Grid>
 

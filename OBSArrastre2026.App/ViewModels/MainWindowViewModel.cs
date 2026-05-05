@@ -13,6 +13,8 @@ using OBSArrastre2026.App.Data;
 using GMap.NET;
 using System.IO;
 using System.Diagnostics;
+using System.ComponentModel;
+using System.Windows.Data;
 using OBSArrastre2026.App.Models.Reports;
 
 namespace OBSArrastre2026.App.ViewModels;
@@ -362,6 +364,7 @@ public class MainWindowViewModel : ObservableObject
         GoToEndCommand = new RelayCommand(() => CurrentTrackPointIndex = CurrentTrack.Count - 1, () => CurrentTrack.Any());
 
         UpdateNavigationState();
+        RecordsView = CollectionViewSource.GetDefaultView(Records);
     }
 
 
@@ -397,6 +400,7 @@ public class MainWindowViewModel : ObservableObject
     public ObservableCollection<string> ActiveFilters { get; } = [];
 
     public ObservableCollection<object> Records { get; } = [];
+    public ICollectionView RecordsView { get; }
 
     public ObservableCollection<BuqueListItemViewModel> Buques { get; } = [];
 
@@ -453,6 +457,7 @@ public class MainWindowViewModel : ObservableObject
 
         var viewModels = samples.Select(m => new MuestraListItemViewModel(m)).ToList();
         
+        RecordsView.GroupDescriptions.Clear();
         Records.Clear();
         foreach (var vm in viewModels)
         {
@@ -482,6 +487,7 @@ public class MainWindowViewModel : ObservableObject
             .Select(p => new ProduccionListItemViewModel(p))
             .ToList();
         
+        RecordsView.GroupDescriptions.Clear();
         Records.Clear();
         foreach (var vm in viewModels)
         {
@@ -1194,6 +1200,7 @@ public class MainWindowViewModel : ObservableObject
 
             var viewModels = mareas.Select(m => new MareaListItemViewModel(m, _activeMareaManager, _validationService, _reportService)).ToList();
             
+            RecordsView.GroupDescriptions.Clear();
             Records.Clear();
             foreach (var vm in viewModels)
             {
@@ -1256,6 +1263,7 @@ public class MainWindowViewModel : ObservableObject
         {
             if (string.IsNullOrEmpty(_activeMareaManager.ActiveMareaId))
             {
+                RecordsView.GroupDescriptions.Clear();
                 Records.Clear();
                 ActiveFilters.Clear();
                 return;
@@ -1273,6 +1281,7 @@ public class MainWindowViewModel : ObservableObject
 
             var viewModels = lances.Select(l => new LanceListItemViewModel(l)).ToList();
             
+            RecordsView.GroupDescriptions.Clear();
             Records.Clear();
             foreach (var vm in viewModels) Records.Add(vm);
 
@@ -1997,9 +2006,9 @@ public class MainWindowViewModel : ObservableObject
 
         if (string.IsNullOrEmpty(ControlProduccionSelectedEspecieId))
         {
-            // VISTA AGRUPADA POR ESPECIE
+            // VISTA AGRUPADA POR ETAPA Y ESPECIE
             PageTitle = "Control Capt./Prod.";
-            PageDescription = "Balance de masa total por especie para la marea activa.";
+            PageDescription = "Balance de masa por etapa para la marea activa.";
             
             SetColumnHeaders(
                 "Especie",
@@ -2012,75 +2021,66 @@ public class MainWindowViewModel : ObservableObject
                 "Dif. %",
                 "");
 
-            // Agrupar producción por ID efectivo (manejando Rayas)
-            var prodSummary = produccion
-                .GroupBy(p => 
-                {
-                    if (IsRaya(p.Especie) && (IsGenericRaya(p.Especie) || !_commonRayaIds.Contains(p.EspecieId!)))
-                    {
-                        return RayaGenericVirtualId;
-                    }
-                    return p.EspecieId;
-                })
-                .ToDictionary(
-                    g => g.Key,
-                    g => new
-                    {
-                        EspecieNombre = g.Key == RayaGenericVirtualId ? "Rayas (Rajidae - Otras/Genérico)" : (g.First().Especie?.FullDisplayName 
-                            ?? g.First().Comentarios?.Replace("Importado: ", "") 
-                            ?? "Desconocida"),
+            Records.Clear();
+            var etapasOrdenadas = activeMarea.Etapas.OrderBy(e => e.FechaZarpada).ToList();
+            
+            for (int i = 0; i < etapasOrdenadas.Count; i++)
+            {
+                var etapa = etapasOrdenadas[i];
+                var etapaLances = lances.Where(l => l.MareaEtapaId == etapa.ID).ToList();
+                var etapaProduccion = produccion.Where(p => p.MareaEtapaId == etapa.ID).ToList();
+                var etapaNombre = $"Etapa {i + 1} ({etapa.FechaZarpada:dd/MM} - {etapa.FechaArribo?.ToString("dd/MM") ?? "Act."})";
+
+                // Agrupar producción de la etapa
+                var prodSummary = etapaProduccion
+                    .GroupBy(p => (IsRaya(p.Especie) && (IsGenericRaya(p.Especie) || !_commonRayaIds.Contains(p.EspecieId!))) ? RayaGenericVirtualId : p.EspecieId)
+                    .ToDictionary(g => g.Key, g => new {
+                        EspecieNombre = g.Key == RayaGenericVirtualId ? "Rayas (Rajidae - Otras/Genérico)" : (g.First().Especie?.FullDisplayName ?? g.First().Comentarios?.Replace("Importado: ", "") ?? "Desconocida"),
                         PesoProcesadoTotal = g.Sum(p => p.Kg ?? 0),
                         CapturaReconstruida = g.Sum(p => (p.Kg ?? 0) * (p.Factor ?? 1.0))
                     });
 
-            // Agrupar capturas por ID efectivo (manejando Rayas)
-            var catchSummary = lances
-                .SelectMany(l => l.ItemsCaptura)
-                .GroupBy(c => 
-                {
-                    if (IsRaya(c.Especie) && (IsGenericRaya(c.Especie) || !_commonRayaIds.Contains(c.EspecieID!)))
-                    {
-                        return RayaGenericVirtualId;
-                    }
-                    return c.EspecieID;
-                })
-                .ToDictionary(
-                    g => g.Key,
-                    g => new
-                    {
-                        EspecieNombre = g.Key == RayaGenericVirtualId ? "Rayas (Rajidae - Otras/Genérico)" : (g.First().Especie?.FullDisplayName 
-                            ?? "Desconocida"),
+                // Agrupar capturas de la etapa
+                var catchSummary = etapaLances.SelectMany(l => l.ItemsCaptura)
+                    .GroupBy(c => (IsRaya(c.Especie) && (IsGenericRaya(c.Especie) || !_commonRayaIds.Contains(c.EspecieID!))) ? RayaGenericVirtualId : c.EspecieID)
+                    .ToDictionary(g => g.Key, g => new {
+                        EspecieNombre = g.Key == RayaGenericVirtualId ? "Rayas (Rajidae - Otras/Genérico)" : (g.First().Especie?.FullDisplayName ?? "Desconocida"),
                         CapturaBruta = g.Sum(c => c.CapturaTotalKgCalculado),
                         DescarteKg = g.Sum(c => c.PesoDescarteCalculado),
                         CapturaRetenida = g.Sum(c => c.CapturaTotalKgCalculado - c.PesoDescarteCalculado)
                     });
 
-            // Unir ambos universos de especies
-            var allSpeciesIds = prodSummary.Keys.Union(catchSummary.Keys).ToList();
-            var results = new List<ControlProduccionListItemViewModel>();
-
-            foreach (var spId in allSpeciesIds)
-            {
-                prodSummary.TryGetValue(spId, out var pData);
-                catchSummary.TryGetValue(spId, out var cData);
-
-                results.Add(new ControlProduccionListItemViewModel
+                var allSpeciesIds = prodSummary.Keys.Union(catchSummary.Keys)
+                    .OrderByDescending(spId => {
+                        catchSummary.TryGetValue(spId, out var c);
+                        return c?.CapturaBruta ?? 0;
+                    })
+                    .ToList();
+                    
+                foreach (var spId in allSpeciesIds)
                 {
-                    Especie = pData?.EspecieNombre ?? cData?.EspecieNombre ?? "Desconocida",
-                    EspecieId = spId,
-                    ProduccionTotal = pData?.PesoProcesadoTotal ?? 0,
-                    CapturaReconstruida = pData?.CapturaReconstruida ?? 0,
-                    CapturaBruta = cData?.CapturaBruta ?? 0,
-                    DescarteKg = cData?.DescarteKg ?? 0,
-                    CapturaRetenida = cData?.CapturaRetenida ?? 0,
-                    IsSummaryView = true
-                });
+                    prodSummary.TryGetValue(spId, out var pData);
+                    catchSummary.TryGetValue(spId, out var cData);
+
+                    Records.Add(new ControlProduccionListItemViewModel
+                    {
+                        NumeroEtapa = i + 1,
+                        EtapaDisplay = etapaNombre,
+                        Especie = pData?.EspecieNombre ?? cData?.EspecieNombre ?? "Desconocida",
+                        EspecieId = spId,
+                        ProduccionTotal = pData?.PesoProcesadoTotal ?? 0,
+                        CapturaReconstruida = pData?.CapturaReconstruida ?? 0,
+                        CapturaBruta = cData?.CapturaBruta ?? 0,
+                        DescarteKg = cData?.DescarteKg ?? 0,
+                        CapturaRetenida = cData?.CapturaRetenida ?? 0,
+                        IsSummaryView = true
+                    });
+                }
             }
 
-            // Ordenar por CapturaBruta de mayor a menor (pedido por el usuario)
-            var viewModels = results.OrderByDescending(r => r.CapturaBruta).ToList();
-            Records.Clear();
-            foreach (var vm in viewModels) Records.Add(vm);
+            // Aplicar agrupación en la vista
+            RecordsView.GroupDescriptions.Clear();
+            RecordsView.GroupDescriptions.Add(new PropertyGroupDescription(nameof(ControlProduccionListItemViewModel.EtapaDisplay)));
         }
         else
         {
@@ -2177,6 +2177,7 @@ public class MainWindowViewModel : ObservableObject
             }
 
             var viewModels = results.ToList(); // Ya vienen ordenados por fecha por allDates
+            RecordsView.GroupDescriptions.Clear();
             Records.Clear();
             foreach (var vm in viewModels) Records.Add(vm);
 

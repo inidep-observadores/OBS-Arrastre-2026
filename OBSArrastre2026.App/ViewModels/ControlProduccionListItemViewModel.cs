@@ -13,6 +13,8 @@ public sealed class ControlProduccionListItemViewModel : ObservableObject
     public double CapturaBruta { get; set; }
     public double DescarteKg { get; set; }
     public double CapturaRetenida { get; set; }
+    public int NumeroEtapa { get; set; }
+    public string EtapaDisplay { get; set; } = string.Empty;
     public bool IsSummaryView { get; set; }
 
     public string FechaDisplay => Fecha.ToString("dd/MM/yyyy");
