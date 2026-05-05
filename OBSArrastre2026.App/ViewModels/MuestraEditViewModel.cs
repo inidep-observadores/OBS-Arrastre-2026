@@ -27,6 +27,7 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
     private bool _isExpanded;
     private string _searchText = string.Empty;
     private Especie? _selectedEspecie;
+    private FrecuenciaTallaViewModel? _selectedFrecuencia;
 
     public MuestraEditViewModel(
         Action onClose,
@@ -46,6 +47,8 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
         CancelCommand = new RelayCommand(Cancel);
         AddFrecuenciaCommand = new RelayCommand(AddFrecuencia);
         RemoveFrecuenciaCommand = new RelayCommand<FrecuenciaTallaViewModel>(RemoveFrecuencia);
+        GoToNextCommand = new RelayCommand(GoToNext, () => CanGoToNext);
+        GoToPreviousCommand = new RelayCommand(GoToPrevious, () => CanGoToPrevious);
 
         _ = InitializeAsync();
     }
@@ -125,6 +128,19 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
         }
     }
 
+    public FrecuenciaTallaViewModel? SelectedFrecuencia
+    {
+        get => _selectedFrecuencia;
+        set
+        {
+            if (SetProperty(ref _selectedFrecuencia, value))
+            {
+                (GoToNextCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                (GoToPreviousCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
     public bool EsLangostino => SelectedEspecie?.CodigoInidep == "5139030101";
 
     public IEnumerable<Especie> FilteredEspecies
@@ -151,6 +167,11 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
     public ICommand CancelCommand { get; }
     public ICommand AddFrecuenciaCommand { get; }
     public ICommand RemoveFrecuenciaCommand { get; }
+    public ICommand GoToNextCommand { get; }
+    public ICommand GoToPreviousCommand { get; }
+
+    public bool CanGoToNext => SelectedFrecuencia != null && FrecuenciasTallas.IndexOf(SelectedFrecuencia) < FrecuenciasTallas.Count - 1;
+    public bool CanGoToPrevious => SelectedFrecuencia != null && FrecuenciasTallas.IndexOf(SelectedFrecuencia) > 0;
 
     private async Task InitializeAsync()
     {
@@ -173,6 +194,11 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
                     {
                         FrecuenciasTallas.Add(new FrecuenciaTallaViewModel(f));
                     }
+
+                    if (FrecuenciasTallas.Any())
+                    {
+                        SelectedFrecuencia = FrecuenciasTallas.First();
+                    }
                 }
             }
         }
@@ -185,7 +211,29 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
     private void AddFrecuencia()
     {
         var lastTalla = FrecuenciasTallas.LastOrDefault()?.Talla ?? 0;
-        FrecuenciasTallas.Add(new FrecuenciaTallaViewModel { Talla = lastTalla + 1 });
+        var next = new FrecuenciaTallaViewModel { Talla = lastTalla + 1 };
+        FrecuenciasTallas.Add(next);
+        SelectedFrecuencia = next;
+    }
+
+    private void GoToNext()
+    {
+        if (SelectedFrecuencia == null) return;
+        int index = FrecuenciasTallas.IndexOf(SelectedFrecuencia);
+        if (index < FrecuenciasTallas.Count - 1)
+        {
+            SelectedFrecuencia = FrecuenciasTallas[index + 1];
+        }
+    }
+
+    private void GoToPrevious()
+    {
+        if (SelectedFrecuencia == null) return;
+        int index = FrecuenciasTallas.IndexOf(SelectedFrecuencia);
+        if (index > 0)
+        {
+            SelectedFrecuencia = FrecuenciasTallas[index - 1];
+        }
     }
 
     private void RemoveFrecuencia(FrecuenciaTallaViewModel? vm)

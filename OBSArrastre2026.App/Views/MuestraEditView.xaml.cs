@@ -1,4 +1,7 @@
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using OBSArrastre2026.App.ViewModels;
 
 namespace OBSArrastre2026.App.Views;
 
@@ -7,44 +10,32 @@ public partial class MuestraEditView : UserControl
     public MuestraEditView()
     {
         InitializeComponent();
-        DataContextChanged += MuestraEditView_DataContextChanged;
+        this.DataContextChanged += MuestraEditView_DataContextChanged;
     }
 
-    private void MuestraEditView_DataContextChanged(object sender, System.Windows.DependencyPropertyChangedEventArgs e)
+    private void MuestraEditView_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
-        if (e.OldValue is ViewModels.MuestraEditViewModel oldVm)
-        {
-            oldVm.FrecuenciasTallas.CollectionChanged -= FrecuenciasTallas_CollectionChanged;
-        }
-        if (e.NewValue is ViewModels.MuestraEditViewModel newVm)
-        {
-            newVm.FrecuenciasTallas.CollectionChanged += FrecuenciasTallas_CollectionChanged;
-        }
+        if (e.OldValue is MuestraEditViewModel oldVm)
+            oldVm.PropertyChanged -= Vm_PropertyChanged;
+
+        if (e.NewValue is MuestraEditViewModel newVm)
+            newVm.PropertyChanged += Vm_PropertyChanged;
     }
 
-    private void FrecuenciasTallas_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+    private void Vm_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)
+        if (e.PropertyName == nameof(MuestraEditViewModel.SelectedFrecuencia))
         {
-            var newItem = e.NewItems?[0];
-            if (newItem != null)
+            // Cuando cambia la frecuencia seleccionada, ponemos el foco en el primer campo del formulario lateral
+            Dispatcher.BeginInvoke(new System.Action(() =>
             {
-                Dispatcher.BeginInvoke(new System.Action(() =>
+                var textBox = this.FindName("FirstField") as TextBox;
+                if (textBox != null)
                 {
-                    FrecuenciasGrid.SelectedItem = newItem;
-                    FrecuenciasGrid.ScrollIntoView(newItem);
-                    
-                    // Intentar dar foco a la primera celda del nuevo item
-                    FrecuenciasGrid.UpdateLayout();
-                    var row = (DataGridRow)FrecuenciasGrid.ItemContainerGenerator.ContainerFromItem(newItem);
-                    if (row != null)
-                    {
-                        var cell = FrecuenciasGrid.Columns[0].GetCellContent(row)?.Parent as DataGridCell;
-                        cell?.Focus();
-                        FrecuenciasGrid.BeginEdit();
-                    }
-                }), System.Windows.Threading.DispatcherPriority.Background);
-            }
+                    textBox.Focus();
+                    textBox.SelectAll();
+                }
+            }), System.Windows.Threading.DispatcherPriority.Input);
         }
     }
 
@@ -60,6 +51,20 @@ public partial class MuestraEditView : UserControl
                     textBox.SelectionLength = 0;
                     textBox.CaretIndex = textBox.Text.Length;
                 }), System.Windows.Threading.DispatcherPriority.Input);
+            }
+        }
+    }
+
+    private void LateralForm_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter || e.Key == Key.Return)
+        {
+            var element = Keyboard.FocusedElement as UIElement;
+            if (element is TextBox)
+            {
+                // Si estamos en un TextBox, el ENTER actúa como TAB para mover al siguiente campo
+                e.Handled = true;
+                element.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
             }
         }
     }
