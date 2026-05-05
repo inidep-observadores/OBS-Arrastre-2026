@@ -20,9 +20,9 @@ public sealed class MareaValidationEngine
         List<LegacyLg> lgs,
         List<LegacyTracking> tracking,
         List<LegacyProduccion> produccion,
-        Dictionary<string, long> especiesDict,
-        Dictionary<string, long> especiesViejasDict,
-        HashSet<long> especiesCodigosValidos,
+        Dictionary<string, string> especiesDict,
+        Dictionary<string, string> especiesViejasDict,
+        HashSet<string> especiesCodigosValidos,
         Dictionary<(string EspecieId, int Sexo), (double A, double B)> largoPesoCatalogo)
     {
         var report = new MareaValidationReport
@@ -53,7 +53,7 @@ public sealed class MareaValidationEngine
         return report;
     }
 
-    private void ValidateProduction(MareaValidationReport report, List<LegacyProduccion> produccion, Dictionary<string, long> especiesDict, Dictionary<string, long> especiesViejasDict, HashSet<long> especiesCodigosValidos, List<LegacyCaptura> capturas)
+    private void ValidateProduction(MareaValidationReport report, List<LegacyProduccion> produccion, Dictionary<string, string> especiesDict, Dictionary<string, string> especiesViejasDict, HashSet<string> especiesCodigosValidos, List<LegacyCaptura> capturas)
     {
         // 1. Validar existencia de especie por nombre
         var setNombresVulgares = new HashSet<string>(especiesDict.Keys, StringComparer.OrdinalIgnoreCase);
@@ -66,7 +66,7 @@ public sealed class MareaValidationEngine
                 // 1. Buscar en especies actuales
                 if (setNombresVulgares.Contains(name)) return false;
                 // 2. Buscar en especies viejas (puente)
-                if (especiesViejasDict.TryGetValue(name, out long oldCode))
+                if (especiesViejasDict.TryGetValue(name, out string oldCode))
                 {
                     // 3. Verificar si el código de la vieja existe en las actuales
                     if (especiesCodigosValidos.Contains(oldCode)) return false;
@@ -74,10 +74,7 @@ public sealed class MareaValidationEngine
                 
                 // 4. Fallback final: ¿Es un código INIDEP?
                 // (Para validación, los códigos válidos están en especiesCodigosValidos)
-                if (double.TryParse(name, out double d))
-                {
-                    if (especiesCodigosValidos.Contains((long)d)) return false;
-                }
+                if (especiesCodigosValidos.Contains(name)) return false;
                 
                 return true;
             })
@@ -148,12 +145,12 @@ public sealed class MareaValidationEngine
             foreach (var nombreEspecie in nombresEspeciesProduccion)
             {
                 var searchName = nombreEspecie.Normalize(NormalizationForm.FormC);
-                if (!especiesDict.TryGetValue(searchName, out long codEspecie))
+                if (!especiesDict.TryGetValue(searchName, out string codEspecie))
                 {
                     if (!especiesViejasDict.TryGetValue(searchName, out codEspecie))
                     {
                         // Fallback: ¿Es un código?
-                        if (double.TryParse(searchName, out double d)) codEspecie = (long)d;
+                        if (especiesCodigosValidos.Contains(searchName)) codEspecie = searchName;
                         else continue;
                     }
                 }
@@ -508,9 +505,9 @@ public sealed class MareaValidationEngine
 
     private void ValidateSamples(MareaValidationReport report, List<LegacyMuestra> muestras, List<LegacyCaptura> capturas, List<LegacyLg> lgs, 
         Dictionary<(string EspecieId, int Sexo), (double A, double B)> largoPesoCatalogo,
-        Dictionary<string, long> especiesDict,
-        Dictionary<string, long> especiesViejasDict,
-        HashSet<long> especiesCodigosValidos)
+        Dictionary<string, string> especiesDict,
+        Dictionary<string, string> especiesViejasDict,
+        HashSet<string> especiesCodigosValidos)
     {
         foreach (var m in muestras)
         {
@@ -530,7 +527,7 @@ public sealed class MareaValidationEngine
             // --- NUEVAS VALIDACIONES DE INTEGRIDAD (Punto 2) ---
 
             var lanceCorrespondiente = capturas.FirstOrDefault(c => (int)c.Lance == (int)m.Lance);
-            long codEspecieMuestra = m.CodEspec;
+            string codEspecieMuestra = m.CodEspec;
 
             if (lanceCorrespondiente != null)
             {
@@ -561,12 +558,12 @@ public sealed class MareaValidationEngine
                     {
                         var searchName = m.Especie.Trim().ToUpper();
                         // 1. Buscar en actuales por nombre
-                        if (especiesDict.TryGetValue(searchName, out long newCode))
+                        if (especiesDict.TryGetValue(searchName, out string newCode))
                         {
                             codEspecieMuestra = newCode;
                         }
                         // 2. Buscar en viejas por nombre
-                        else if (especiesViejasDict.TryGetValue(searchName, out long bridgeCode))
+                        else if (especiesViejasDict.TryGetValue(searchName, out string bridgeCode))
                         {
                             // 3. Verificar puente a actuales
                             if (especiesCodigosValidos.Contains(bridgeCode))
@@ -577,7 +574,7 @@ public sealed class MareaValidationEngine
                     }
                 }
 
-                if (codEspecieMuestra > 0)
+                if (!string.IsNullOrEmpty(codEspecieMuestra))
                 {
                     bool capturada = lanceCorrespondiente.Especies.ContainsKey(codEspecieMuestra) && lanceCorrespondiente.Especies[codEspecieMuestra] > 0;
                     if (!capturada)
@@ -599,7 +596,7 @@ public sealed class MareaValidationEngine
                 // Intentar obtener parámetros fallback (general o del LG legado)
                 double fallbackA = 0, fallbackB = 0;
                 bool hasFallback = false;
-                long especieIdNum = 0;
+                string especieIdNum = "";
 
                 if (!string.IsNullOrEmpty(m.Especie))
                 {
@@ -609,10 +606,9 @@ public sealed class MareaValidationEngine
                     }
                 }
 
-                if (especieIdNum > 0)
+                if (!string.IsNullOrEmpty(especieIdNum))
                 {
-                    string espIdTemp = especieIdNum.ToString();
-                    if (largoPesoCatalogo.TryGetValue((espIdTemp, 0), out var paramsGral))
+                    if (largoPesoCatalogo.TryGetValue((especieIdNum, 0), out var paramsGral))
                     {
                         fallbackA = paramsGral.A;
                         fallbackB = paramsGral.B;
@@ -632,9 +628,9 @@ public sealed class MareaValidationEngine
                 }
 
                 // Usar el código ya resuelto y puenteado en la sección de integridad (REQ-3.4.4)
-                long speciesIdForLookup = codEspecieMuestra > 0 ? codEspecieMuestra : m.CodEspec;
+                string speciesIdForLookup = !string.IsNullOrEmpty(codEspecieMuestra) ? codEspecieMuestra : m.CodEspec;
                 
-                if (speciesIdForLookup == 0 && !string.IsNullOrEmpty(m.Especie))
+                if (string.IsNullOrEmpty(speciesIdForLookup) && !string.IsNullOrEmpty(m.Especie))
                 {
                     if (especiesDict == null || !especiesDict.TryGetValue(m.Especie.Trim().ToUpper(), out speciesIdForLookup))
                     {
@@ -645,7 +641,7 @@ public sealed class MareaValidationEngine
                     }
                 }
 
-                string espId = speciesIdForLookup.ToString().Trim();
+                string espId = (speciesIdForLookup ?? "").Trim();
 
                 if (hasFallback || (largoPesoCatalogo != null && largoPesoCatalogo.Any(k => k.Key.EspecieId.Trim() == espId)))
                 {
@@ -762,7 +758,7 @@ public sealed class MareaValidationEngine
                 }
             }
             // --- NUEVA VALIDACIÓN: Peso Muestra vs Peso Captura ---
-            if (lanceCorrespondiente != null && codEspecieMuestra > 0)
+            if (lanceCorrespondiente != null && !string.IsNullOrEmpty(codEspecieMuestra))
             {
                 if (lanceCorrespondiente.Especies.TryGetValue(codEspecieMuestra, out double kilosCaptura))
                 {
@@ -781,10 +777,10 @@ public sealed class MareaValidationEngine
         {
             string ctx = $"Archivo L* - Lance {lg.Lance}";
             
-            // Buscar muestra correspondiente a Langostino (Código fijo 5139030101)
+            // Buscar muestra correspondiente a Langostino (Código fijo "5139030101")
             var muestraM = muestras.FirstOrDefault(m => 
                 (int)m.Lance == (int)lg.Lance && 
-                m.CodEspec == 5139030101);
+                m.CodEspec == "5139030101");
 
             if (muestraM == null)
             {

@@ -50,18 +50,18 @@ public class MareaIntegrationTests
                 new() { Lance = 1, Barco = "TEST", Marea = 100, CaptTotal = 500, LatInic = 43.15, LongInic = 55.30 },
                 new() { Lance = 2, Barco = "TEST", Marea = 100, CaptTotal = 300, ProfInic = 100, ProfFinal = 110 }
             };
-            capturas[0].Especies[1] = 500;
-            capturas[1].Especies[1] = 300;
+            capturas[0].Especies["1"] = 500;
+            capturas[1].Especies["1"] = 300;
 
             var muestras = new List<LegacyMuestra>
             {
-                new() { Lance = 1, Barco = "TEST", Marea = 100, CodEspec = 1, PrimTalla = 10, UltTalla = 12 }
+                new() { Lance = 1, Barco = "TEST", Marea = 100, CodEspec = "1", PrimTalla = 10, UltTalla = 12 }
             };
             muestras[0].Tallies.Add(new DecodedTally(10, 0, 0, 0, 5));
 
             var muestrasX = new List<LegacyMuestra>
             {
-                new() { Lance = 1, Barco = "TEST", Marea = 100, CodEspec = 1, PrimTalla = 15, UltTalla = 15 }
+                new() { Lance = 1, Barco = "TEST", Marea = 100, CodEspec = "1", PrimTalla = 15, UltTalla = 15 }
             };
             muestrasX[0].Tallies.Add(new DecodedTally(15, 0, 0, 0, 2));
 
@@ -105,7 +105,7 @@ public class MareaIntegrationTests
             {
                 new() { Lance = 1, Barco = "TEST", Marea = 100, CaptTotal = 999 }
             };
-            capturas[0].Especies[1] = 500;
+            capturas[0].Especies["1"] = 500;
 
             _extractor.ReadCapturasAsync(Arg.Any<string>()).Returns(capturas);
             _extractor.ReadMuestrasAsync(Arg.Any<string>()).Returns(new List<LegacyMuestra>());

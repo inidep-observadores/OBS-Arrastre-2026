@@ -67,35 +67,31 @@ public class MareaValidationService : IMareaValidationService
             .Where(e => e.CodigoInidep != null && (e.NombreVulgar != null || e.NombreCientifico != null))
             .ToListAsync();
 
-        var especiesDict = new Dictionary<string, long>();
+        var especiesDict = new Dictionary<string, string>();
         foreach (var esp in especiesDB)
         {
-            if (long.TryParse(esp.CodigoInidep, out long code))
-            {
-                if (!string.IsNullOrEmpty(esp.NombreVulgar))
-                    especiesDict[esp.NombreVulgar.Trim().ToUpper()] = code;
-                if (!string.IsNullOrEmpty(esp.NombreCientifico))
-                    especiesDict[esp.NombreCientifico.Trim().ToUpper()] = code;
-            }
+            string code = esp.CodigoInidep ?? esp.ID; // Usar código si existe, sino ID interno
+            if (!string.IsNullOrEmpty(esp.NombreVulgar))
+                especiesDict[esp.NombreVulgar.Trim().ToUpper()] = code;
+            if (!string.IsNullOrEmpty(esp.NombreCientifico))
+                especiesDict[esp.NombreCientifico.Trim().ToUpper()] = code;
         }
 
         var especiesViejasDB = await dbContext.EspeciesViejas
             .Where(e => e.CodigoInidep != null)
             .ToListAsync();
 
-        var especiesViejasDict = new Dictionary<string, long>();
+        var especiesViejasDict = new Dictionary<string, string>();
         foreach (var esp in especiesViejasDB)
         {
-            if (long.TryParse(esp.CodigoInidep, out long code))
-            {
-                if (!string.IsNullOrEmpty(esp.NombreVulgar))
-                    especiesViejasDict[esp.NombreVulgar.Trim().ToUpper()] = code;
-                if (!string.IsNullOrEmpty(esp.NombreCientifico))
-                    especiesViejasDict[esp.NombreCientifico.Trim().ToUpper()] = code;
-            }
+            string code = esp.CodigoInidep ?? esp.ID;
+            if (!string.IsNullOrEmpty(esp.NombreVulgar))
+                especiesViejasDict[esp.NombreVulgar.Trim().ToUpper()] = code;
+            if (!string.IsNullOrEmpty(esp.NombreCientifico))
+                especiesViejasDict[esp.NombreCientifico.Trim().ToUpper()] = code;
         }
 
-        var especiesCodigosValidos = new HashSet<long>(especiesDict.Values);
+        var especiesCodigosValidos = new HashSet<string>(especiesDict.Values);
 
         // Extraer rangos de fechas de las etapas
         var etapasFechas = marea.Etapas
@@ -142,10 +138,14 @@ public class MareaValidationService : IMareaValidationService
 
                 foreach (var ic in lance.ItemsCaptura)
                 {
-                    if (long.TryParse(ic.Especie?.CodigoInidep, out long cod))
+                    if (ic.Especie != null)
                     {
-                        cap.Especies[cod] = ic.DatoCaptura;
-                        cap.DescartesPorEspecie[cod] = ic.DatoDescarte;
+                        string cod = ic.Especie.CodigoInidep ?? ic.Especie.ID;
+                        if (!cap.Especies.ContainsKey(cod)) cap.Especies[cod] = 0;
+                        if (!cap.DescartesPorEspecie.ContainsKey(cod)) cap.DescartesPorEspecie[cod] = 0;
+
+                        cap.Especies[cod] += ic.DatoCaptura;
+                        cap.DescartesPorEspecie[cod] += ic.DatoDescarte;
                     }
                 }
                 capturas.Add(cap);
@@ -159,7 +159,7 @@ public class MareaValidationService : IMareaValidationService
                         Lance = lance.NroLance,
                         Fecha = DateTime.Parse(lance.Fecha),
                         Especie = m.Especie?.NombreCientifico ?? "",
-                        CodEspec = long.TryParse(m.Especie?.CodigoInidep, out long c) ? c : 0,
+                        CodEspec = m.Especie?.CodigoInidep ?? m.Especie?.ID ?? "",
                         Intervalo = (int)m.Intervalo,
                         PesoMues = Math.Round((m.PesoMuestra_PesoGramos ?? 0) / 1000.0, 2),
                         Area = _validator.CalculateArea(lance.LatitudInicioDecimal ?? 0, lance.LongitudInicioDecimal ?? 0)
@@ -221,10 +221,7 @@ public class MareaValidationService : IMareaValidationService
         var largoPesoCatalogo = largoPesoDB
             .Where(lp => lp.Especie?.CodigoInidep != null)
             .ToDictionary(
-                lp => {
-                    string rawId = lp.Especie!.CodigoInidep!.Trim();
-                    return (EspecieId: long.TryParse(rawId, out long n) ? n.ToString() : rawId, Sexo: lp.Sexo);
-                },
+                lp => (EspecieId: lp.Especie?.CodigoInidep ?? lp.Especie?.ID ?? "", Sexo: lp.Sexo),
                 lp => (A: lp.ParamA, B: lp.ParamB)
             );
 

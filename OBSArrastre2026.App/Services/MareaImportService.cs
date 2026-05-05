@@ -159,16 +159,16 @@ public class MareaImportService : IMareaImportService
             .Where(e => e.CodigoInidep != null && (e.NombreVulgar != null || e.NombreCientifico != null))
             .ToListAsync();
 
-        var especiesDict = new Dictionary<string, long>();
+        var especiesDict = new Dictionary<string, string>();
         foreach (var esp in especiesDB)
         {
             var codeStr = NormalizeInidepCode(esp.CodigoInidep);
-            if (long.TryParse(codeStr, out long code))
+            if (!string.IsNullOrEmpty(codeStr))
             {
                 if (!string.IsNullOrEmpty(esp.NombreVulgar))
-                    especiesDict[esp.NombreVulgar.Trim().ToUpper().Normalize(NormalizationForm.FormC)] = code;
+                    especiesDict[esp.NombreVulgar.Trim().ToUpper().Normalize(NormalizationForm.FormC)] = codeStr;
                 if (!string.IsNullOrEmpty(esp.NombreCientifico))
-                    especiesDict[esp.NombreCientifico.Trim().ToUpper().Normalize(NormalizationForm.FormC)] = code;
+                    especiesDict[esp.NombreCientifico.Trim().ToUpper().Normalize(NormalizationForm.FormC)] = codeStr;
             }
         }
 
@@ -176,22 +176,22 @@ public class MareaImportService : IMareaImportService
             .Where(e => e.CodigoInidep != null)
             .ToListAsync();
 
-        var especiesViejasDict = new Dictionary<string, long>();
+        var especiesViejasDict = new Dictionary<string, string>();
         var setEspeciesViejasExistentes = new HashSet<string>();
         foreach (var esp in especiesViejasDB)
         {
             var codeStr = NormalizeInidepCode(esp.CodigoInidep);
             setEspeciesViejasExistentes.Add(codeStr);
-            if (long.TryParse(codeStr, out long code))
+            if (!string.IsNullOrEmpty(codeStr))
             {
                 if (!string.IsNullOrEmpty(esp.NombreVulgar))
-                    especiesViejasDict[esp.NombreVulgar.Trim().ToUpper().Normalize(NormalizationForm.FormC)] = code;
+                    especiesViejasDict[esp.NombreVulgar.Trim().ToUpper().Normalize(NormalizationForm.FormC)] = codeStr;
                 if (!string.IsNullOrEmpty(esp.NombreCientifico))
-                    especiesViejasDict[esp.NombreCientifico.Trim().ToUpper().Normalize(NormalizationForm.FormC)] = code;
+                    especiesViejasDict[esp.NombreCientifico.Trim().ToUpper().Normalize(NormalizationForm.FormC)] = codeStr;
             }
         }
 
-        var especiesCodigosValidos = new HashSet<long>(especiesDict.Values);
+        var especiesCodigosValidos = new HashSet<string>(especiesDict.Values);
 
         foreach (var c in capturas)
         {
@@ -204,8 +204,7 @@ public class MareaImportService : IMareaImportService
 
             foreach (var spCode in c.Especies.Keys)
             {
-                string sCode = spCode.ToString().Trim();
-                if (!setEspeciesExistentes.Contains(sCode) && !setEspeciesViejasExistentes.Contains(sCode))
+                if (!setEspeciesExistentes.Contains(spCode) && !setEspeciesViejasExistentes.Contains(spCode))
                 {
                     report.AddIssue(ValidationLevel.Fatal, "Catálogo Especies", $"La especie legado con código '{spCode}' no existe ni en el catálogo actual ni en el histórico.", $"Captura Lance {c.Lance}");
                 }
@@ -214,8 +213,7 @@ public class MareaImportService : IMareaImportService
 
         foreach (var m in muestras)
         {
-            string sCode = m.CodEspec.ToString().Trim();
-            if (!setEspeciesExistentes.Contains(sCode) && !setEspeciesViejasExistentes.Contains(sCode))
+            if (!setEspeciesExistentes.Contains(m.CodEspec) && !setEspeciesViejasExistentes.Contains(m.CodEspec))
             {
                 report.AddIssue(ValidationLevel.Fatal, "Catálogo Especies", $"La especie legado con código '{m.CodEspec}' no existe ni en el catálogo actual ni en el histórico.", $"Muestra Lance {m.Lance}");
             }
@@ -339,8 +337,7 @@ public class MareaImportService : IMareaImportService
             // Items de Captura (Especies por código o puente)
             foreach (var kvp in c.Especies)
             {
-                string sCode = kvp.Key.ToString().Trim();
-                if (kvp.Value > 0 && especieByCodigoMap.TryGetValue(sCode, out var especieId))
+                if (kvp.Value > 0 && especieByCodigoMap.TryGetValue(kvp.Key, out var especieId))
                 {
                     lance.ItemsCaptura.Add(new ItemCaptura
                     {
@@ -366,7 +363,7 @@ public class MareaImportService : IMareaImportService
             {
                 // Resolución de especie: Priorizar código, luego nombre (con puente incluido en especieByNombreMap)
                 string? especieId = null;
-                if (rm.CodEspec > 0) especieByCodigoMap.TryGetValue(rm.CodEspec.ToString().Trim(), out especieId);
+                if (!string.IsNullOrEmpty(rm.CodEspec)) especieByCodigoMap.TryGetValue(rm.CodEspec.Trim(), out especieId);
                 
                 if (especieId == null && !string.IsNullOrEmpty(rm.Especie))
                 {

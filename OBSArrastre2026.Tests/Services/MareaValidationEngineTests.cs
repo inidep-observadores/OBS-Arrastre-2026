@@ -36,8 +36,8 @@ public class MareaValidationEngineTests
             Marea = 100,
             CaptTotal = 500
         };
-        c.Especies[1] = 100;
-        c.Especies[2] = 100;
+        c.Especies["1"] = 100;
+        c.Especies["2"] = 100;
 
         var capturas = new List<LegacyCaptura> { c };
 
@@ -61,7 +61,7 @@ public class MareaValidationEngineTests
     {
         // Arrange
         var c = new LegacyCaptura { Lance = 1, Barco = "B", Marea = 100 };
-        c.Especies[1] = 10;
+        c.Especies["1"] = 10;
         
         var submuestras = new List<LegacySubmuestra>
         {
@@ -80,9 +80,9 @@ public class MareaValidationEngineTests
     {
         // Arrange
         var c1 = new LegacyCaptura { Lance = 1, Barco = "B", Marea = 100 };
-        c1.Especies[1] = 10;
+        c1.Especies["1"] = 10;
         var c2 = new LegacyCaptura { Lance = 3, Barco = "B", Marea = 100 };
-        c2.Especies[1] = 10;
+        c2.Especies["1"] = 10;
 
         var capturas = new List<LegacyCaptura> { c1, c2 };
 
@@ -98,7 +98,7 @@ public class MareaValidationEngineTests
     {
         // Arrange
         var c = new LegacyCaptura { Lance = 1, Barco = "B", Marea = 100, ProfInic = -5, ProfFinal = 2500 };
-        c.Especies[1] = 10;
+        c.Especies["1"] = 10;
 
         // Act
         var report = _engine.ValidateMarea("B", 2026, 100, new(), new() { c }, new(), new(), new(), new(), new(), new(), new(), new(), new());
@@ -129,18 +129,18 @@ public class MareaValidationEngineTests
     {
         // Arrange
         var capturas = new List<LegacyCaptura> { new() { Lance = 1, Barco = "B", Marea = 100 } };
-        capturas[0].Especies[7210040101] = 100;
+        capturas[0].Especies["7210040101"] = 100;
 
         var muestras = new List<LegacyMuestra>
         {
-            new() { Lance = 1, Especie = "MERLUZA COMUN", CodEspec = 7210040101, PesoMues = 0 }
+            new() { Lance = 1, Especie = "MERLUZA COMUN", CodEspec = "7210040101", PesoMues = 0 }
         };
         // Merluza Macho 40cm: a=0.01124, b=2.8340
         // P = 0.01124 * 40^2.8340 = 385.64g
         muestras[0].Tallies.Add(new DecodedTally(40, 10, 0, 0, 10)); // 10 machos de 40cm
         // Peso esperado: 10 * 385.64 / 1000 = 3.8564 kg
 
-        var especiesDict = new Dictionary<string, long> { ["MERLUZA COMUN"] = 7210040101 };
+        var especiesDict = new Dictionary<string, string> { ["MERLUZA COMUN"] = "7210040101" };
         var largoPeso = new Dictionary<(string, int), (double, double)>
         {
             [("7210040101", 1)] = (0.01124, 2.8340)

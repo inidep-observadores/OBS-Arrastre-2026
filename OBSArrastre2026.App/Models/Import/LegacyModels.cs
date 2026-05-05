@@ -49,8 +49,8 @@ public class LegacyCaptura
     public double? DistEPor { get; set; }
     
     // Especies (se manejan dinámicamente o por convención de nombres)
-    public Dictionary<long, double> Especies { get; } = new(); // CodEspecie -> KG
-    public Dictionary<long, double> DescartesPorEspecie { get; } = new(); // CodEspecie -> KG
+    public Dictionary<string, double> Especies { get; } = new(); // ID Especie -> KG
+    public Dictionary<string, double> DescartesPorEspecie { get; } = new(); // ID Especie -> KG
 }
 
 /// <summary>
@@ -63,7 +63,7 @@ public class LegacyMuestra
     public double Lance { get; set; }
     public DateTime Fecha { get; set; }
     public string Especie { get; set; } = string.Empty;
-    public long CodEspec { get; set; }
+    public string CodEspec { get; set; } = string.Empty;
     public double Area { get; set; }
     public int PrimTalla { get; set; }
     public int UltTalla { get; set; }
@@ -104,7 +104,7 @@ public class LegacyLg
     public double Marea { get; set; }
     public double Lance { get; set; }
     public DateTime Fecha { get; set; }
-    public long CodEspecIE { get; set; }
+    public string CodEspecIE { get; set; } = string.Empty;
     public double ParamA { get; set; }
     public double ParamB { get; set; }
     public Dictionary<int, double> Frecuencias { get; } = new(); // Índice -> Frecuencia
