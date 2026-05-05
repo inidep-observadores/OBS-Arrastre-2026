@@ -144,8 +144,15 @@ public sealed class MareaValidationEngine
 
             foreach (var nombreEspecie in nombresEspeciesProduccion)
             {
-                var searchName = nombreEspecie.Normalize(NormalizationForm.FormC);
-                if (!especiesDict.TryGetValue(searchName, out string codEspecie))
+                var searchName = nombreEspecie.Normalize(NormalizationForm.FormC).Trim().ToUpper();
+                string codEspecie = "";
+                
+                // REQ: Caso especial Granadero (Ambigüedad en datos legado)
+                if (searchName == "GRANADERO")
+                {
+                    codEspecie = "7210090401";
+                }
+                else if (!especiesDict.TryGetValue(searchName, out codEspecie))
                 {
                     if (!especiesViejasDict.TryGetValue(searchName, out codEspecie))
                     {
@@ -556,9 +563,15 @@ public sealed class MareaValidationEngine
                     }
                     else 
                     {
-                        var searchName = m.Especie.Trim().ToUpper();
+                        var searchName = m.Especie.Trim().ToUpper().Normalize(NormalizationForm.FormC);
+                        
+                        // REQ: Caso especial Granadero
+                        if (searchName == "GRANADERO")
+                        {
+                            codEspecieMuestra = "7210090401";
+                        }
                         // 1. Buscar en actuales por nombre
-                        if (especiesDict.TryGetValue(searchName, out string newCode))
+                        else if (especiesDict.TryGetValue(searchName, out string newCode))
                         {
                             codEspecieMuestra = newCode;
                         }

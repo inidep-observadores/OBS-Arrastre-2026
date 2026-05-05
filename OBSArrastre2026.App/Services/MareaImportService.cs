@@ -271,6 +271,12 @@ public class MareaImportService : IMareaImportService
             if (!string.IsNullOrEmpty(e.NombreCientifico))
                 especieByNombreMap[e.NombreCientifico.Trim().ToUpper().Normalize(NormalizationForm.FormC)] = e.ID;
         }
+        
+        // REQ: Excepción Granadero para resolver ambigüedad histórica
+        if (especieByCodigoMap.TryGetValue("7210090401", out var granaderoId))
+        {
+            especieByNombreMap["GRANADERO"] = granaderoId;
+        }
 
         // LÓGICA DE PUENTE CON ESPECIES VIEJAS:
         // Usamos la tabla especies_viejas como puente para encontrar el código que mapea a la tabla especies actual.
