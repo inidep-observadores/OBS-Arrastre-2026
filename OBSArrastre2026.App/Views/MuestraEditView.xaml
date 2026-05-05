@@ -11,7 +11,7 @@
         <Border Background="{DynamicResource ShellBackgroundBrush}"
                 Padding="40"
                 CornerRadius="0"
-                MaxWidth="1000"
+                MaxWidth="900"
                 MaxHeight="600"
                 VerticalAlignment="Center"
                 BorderBrush="{DynamicResource SidebarBorderBrush}"
@@ -177,23 +177,24 @@
                     <!-- FORMULARIO LATERAL DE EDICIÓN (DERECHA - FULL HEIGHT) -->
                     <Border Grid.Column="1" 
                             Width="340"
-                            Margin="20,0,0,0"
-                            BorderBrush="{DynamicResource SidebarBorderBrush}" 
-                            BorderThickness="1" 
-                            CornerRadius="0"
+                            Margin="24,0,0,0"
+                            Style="{StaticResource SurfaceBorderStyle}"
                             Background="{DynamicResource CardBackgroundBrush}"
                             Visibility="{Binding SelectedFrecuencia, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=invert}">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="15" Color="Black" Opacity="0.1" ShadowDepth="2" />
+                        </Border.Effect>
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
 
-                            <Border Background="{DynamicResource SurfaceBackgroundBrush}" Padding="16,10" BorderBrush="{DynamicResource SidebarBorderBrush}" BorderThickness="0,0,0,1">
-                                <TextBlock Text="EDICIÓN DE FILA" Style="{StaticResource SectionHeaderStyle}" FontSize="11" />
+                            <Border Background="{DynamicResource SurfaceBackgroundBrush}" Padding="16,12" BorderBrush="{DynamicResource SidebarBorderBrush}" BorderThickness="0,0,0,1">
+                                <TextBlock Text="EDICIÓN DE FILA" Style="{StaticResource SectionHeaderStyle}" HorizontalAlignment="Center" />
                             </Border>
 
-                            <ScrollViewer Grid.Row="1" Style="{StaticResource SlimScrollViewerStyle}" VerticalScrollBarVisibility="Auto" Padding="20">
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="24,20">
                                 <StackPanel DataContext="{Binding SelectedFrecuencia}" 
                                             PreviewKeyDown="LateralForm_PreviewKeyDown">
                                     
@@ -231,7 +232,7 @@
                                              Foreground="{DynamicResource AccentBrush}"
                                              Margin="0,0,0,20" />
 
-                                    <Border Background="{DynamicResource SurfaceBackgroundBrush}" Padding="12" CornerRadius="4" Margin="0,0,0,24">
+                                    <Border Background="{DynamicResource SurfaceBackgroundBrush}" Padding="16,12" CornerRadius="4" Margin="0,0,0,24">
                                         <Grid>
                                             <TextBlock Text="TOTAL FILA" FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center"/>
                                             <TextBlock Text="{Binding Total}" HorizontalAlignment="Right" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>

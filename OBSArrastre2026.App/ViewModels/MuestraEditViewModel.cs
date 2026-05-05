@@ -194,11 +194,6 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
                     {
                         FrecuenciasTallas.Add(new FrecuenciaTallaViewModel(f));
                     }
-
-                    if (FrecuenciasTallas.Any())
-                    {
-                        SelectedFrecuencia = FrecuenciasTallas.First();
-                    }
                 }
             }
         }
