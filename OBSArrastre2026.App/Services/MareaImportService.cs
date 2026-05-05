@@ -404,7 +404,8 @@ public class MareaImportService : IMareaImportService
                             Talla = tally.Size,
                             NroMachos = tally.Males,
                             NroHembras = tally.Females,
-                            NroIndeterminados = tally.Indeterminate
+                            NroIndeterminados = tally.Indeterminate,
+                            NroTotal = tally.Total
                         });
                     }
 

@@ -154,7 +154,7 @@
 
                                         <DataGridTextColumn Header="INDET." Binding="{Binding NroIndeterminados}" Width="65" ElementStyle="{StaticResource DataGridTextCenter}" />
                                         
-                                        <DataGridTextColumn Header="TOTAL" Binding="{Binding Total, Mode=OneWay}" Width="*" FontWeight="Bold" ElementStyle="{StaticResource DataGridTextRight}" />
+                                        <DataGridTextColumn Header="TOTAL" Binding="{Binding NroTotal, UpdateSourceTrigger=PropertyChanged}" Width="*" FontWeight="Bold" ElementStyle="{StaticResource DataGridTextRight}" />
 
                                         <DataGridTemplateColumn Width="40">
                                             <DataGridTemplateColumn.CellTemplate>
@@ -222,7 +222,14 @@
                                     </StackPanel>
 
                                     <Label Content="Nro. Indeterminados" Style="{StaticResource FormLabelStyle}" />
-                                    <TextBox Text="{Binding NroIndeterminados, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource PremiumTextBoxStyle}" Margin="0,0,0,20" />
+                                    <TextBox Text="{Binding NroIndeterminados, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource PremiumTextBoxStyle}" Margin="0,0,0,12" />
+
+                                    <Label Content="Nro. Total (Ejemplares)" Style="{StaticResource FormLabelStyle}" />
+                                    <TextBox Text="{Binding NroTotal, UpdateSourceTrigger=PropertyChanged}" 
+                                             Style="{StaticResource PremiumTextBoxStyle}" 
+                                             FontWeight="Bold"
+                                             Foreground="{DynamicResource AccentBrush}"
+                                             Margin="0,0,0,20" />
 
                                     <Border Background="{DynamicResource SurfaceBackgroundBrush}" Padding="12" CornerRadius="4" Margin="0,0,0,24">
                                         <Grid>

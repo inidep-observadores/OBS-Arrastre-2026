@@ -611,8 +611,8 @@ public sealed class MareaValidationEngine
 
                 if (especieIdNum > 0)
                 {
-                    string espId = especieIdNum.ToString();
-                    if (largoPesoCatalogo.TryGetValue((espId, 0), out var paramsGral))
+                    string espIdTemp = especieIdNum.ToString();
+                    if (largoPesoCatalogo.TryGetValue((espIdTemp, 0), out var paramsGral))
                     {
                         fallbackA = paramsGral.A;
                         fallbackB = paramsGral.B;
@@ -645,41 +645,34 @@ public sealed class MareaValidationEngine
                     }
                 }
 
-                string espIdLookupStr = speciesIdForLookup.ToString().Trim();
+                string espId = speciesIdForLookup.ToString().Trim();
 
-                if (hasFallback || (largoPesoCatalogo != null && largoPesoCatalogo.Any(k => k.Key.EspecieId.Trim() == espIdLookupStr)))
+                if (hasFallback || (largoPesoCatalogo != null && largoPesoCatalogo.Any(k => k.Key.EspecieId.Trim() == espId)))
                 {
-                    string espId = espIdLookupStr;
-                    
-                    // Función local para obtener parámetros con fallback y promedios
-                    (double A, double B) GetSmartParams(int targetSex)
+                    // Función local para obtener parámetros con fallback
+                    (double A, double B) GetSmartParams(int targetSex, out bool isSpecific)
                     {
                         (double A, double B) res = (0, 0);
-                        string method = "";
+                        isSpecific = false;
 
                         // 1. Intentar búsqueda exacta
-                        if (largoPesoCatalogo.TryGetValue((espId, targetSex), out res)) method = $"Exacta(Sexo:{targetSex})";
-                        
-                        // Fallback por si hay ceros a la izquierda o discrepancias de formato numérico en el string
-                        if (res.A <= 0 && long.TryParse(espId, out long numericId))
+                        if (largoPesoCatalogo.TryGetValue((espId, targetSex), out res)) 
                         {
-                             string normalizedId = numericId.ToString();
-                             if (largoPesoCatalogo.TryGetValue((normalizedId, targetSex), out res)) method = $"ExactaNorm(Sexo:{targetSex})";
+                            isSpecific = (targetSex == 1 || targetSex == 2);
                         }
                         
                         // 2. Fallbacks de sexo
                         if (res.A <= 0)
                         {
-                            if (targetSex == 0 && largoPesoCatalogo.TryGetValue((espId, 3), out res)) method = "IndetLegacy(3)";
-                            else if (targetSex != 0 && largoPesoCatalogo.TryGetValue((espId, 0), out res)) method = "General(0)";
-                            else if (targetSex == 3 && largoPesoCatalogo.TryGetValue((espId, 0), out res)) method = "General(0) for 3";
+                            if (targetSex == 0 && largoPesoCatalogo.TryGetValue((espId, 3), out res)) { }
+                            else if (targetSex != 0 && largoPesoCatalogo.TryGetValue((espId, 0), out res)) { }
                         }
 
-                        // 3. Cualquier sexo
+                        // 3. Cualquier sexo (último recurso)
                         if (res.A <= 0)
                         {
                             var anyEntry = largoPesoCatalogo.FirstOrDefault(k => k.Key.EspecieId == espId);
-                            if (anyEntry.Key.EspecieId != null) { res = anyEntry.Value; method = $"CualquierSexo({anyEntry.Key.Sexo})"; }
+                            if (anyEntry.Key.EspecieId != null) { res = anyEntry.Value; }
                         }
 
                         // 4. Promedios
@@ -687,42 +680,67 @@ public sealed class MareaValidationEngine
                         {
                             bool hasM = largoPesoCatalogo.TryGetValue((espId, 1), out var pM);
                             bool hasF = largoPesoCatalogo.TryGetValue((espId, 2), out var pF);
-                            if (hasM && hasF) { res = ((pM.A + pF.A) / 2.0, (pM.B + pF.B) / 2.0); method = "Promedio(1+2)"; }
-                            else if (hasM) { res = pM; method = "SoloMacho(1)"; }
-                            else if (hasF) { res = pF; method = "SoloHembra(2)"; }
+                            if (hasM && hasF) { res = ((pM.A + pF.A) / 2.0, (pM.B + pF.B) / 2.0); }
+                            else if (hasM) { res = pM; }
+                            else if (hasF) { res = pF; }
                         }
 
-                        // 5. Fallback final
-                        if (res.A <= 0 && hasFallback) { res = (fallbackA, fallbackB); method = "Fallback(LG/Gral)"; }
-
-                        if (res.A > 0) lookupLogs.Add($"{method}: A={res.A}, B={res.B}");
+                        if (res.A <= 0 && hasFallback) { res = (fallbackA, fallbackB); }
                         return res;
+                    }
+
+                    // Validar consistencia de NroTotal vs suma de sexos
+                    for (int idx = 0; idx < m.Tallies.Count; idx++)
+                    {
+                        var tally = m.Tallies[idx];
+                        int sumaSexos = tally.Males + tally.Females + tally.Indeterminate;
+                        
+                        if (sumaSexos > 0 && tally.Total != sumaSexos)
+                        {
+                            int oldTotal = tally.Total;
+                            m.Tallies[idx] = tally with { Total = sumaSexos };
+                            report.AddIssue(ValidationLevel.AutoFixed, "Integridad", 
+                                $"Total en talla {tally.Size} ({oldTotal}) no coincide con suma de sexos ({sumaSexos}). Corregido.", ctx);
+                        }
                     }
 
                     foreach (var tally in m.Tallies)
                     {
                         double tallaCm = tally.Size; 
-                        double wMales = 0, wFemales = 0, wIndet = 0;
-
-                        if (tally.Males > 0)
-                        {
-                            var p = GetSmartParams(1);
-                            if (p.A > 0) { wMales = tally.Males * (p.A * Math.Pow(tallaCm, p.B)); foundAnyParams = true; }
-                        }
-                        if (tally.Females > 0)
-                        {
-                            var p = GetSmartParams(2);
-                            if (p.A > 0) { wFemales = tally.Females * (p.A * Math.Pow(tallaCm, p.B)); foundAnyParams = true; }
-                        }
-                        if (tally.Indeterminate > 0 || (tally.Males == 0 && tally.Females == 0 && tally.Total > 0))
-                        {
-                            var p = GetSmartParams(0);
-                            int count = tally.Indeterminate > 0 ? tally.Indeterminate : tally.Total;
-                            if (p.A > 0) { wIndet = count * (p.A * Math.Pow(tallaCm, p.B)); foundAnyParams = true; }
-                        }
                         
-                        totalWeight += (wMales + wFemales + wIndet) / 1000.0; 
+                        var pM = GetSmartParams(1, out bool specificM);
+                        var pH = GetSmartParams(2, out bool specificH);
+                        var pI = GetSmartParams(0, out _);
+
+                        // Si hay discriminación y fórmulas específicas para ambos sexos
+                        if ((tally.Males > 0 || tally.Females > 0) && specificM && specificH)
+                        {
+                            if (tally.Males > 0 && pM.A > 0) totalWeight += (tally.Males * (pM.A * Math.Pow(tallaCm, pM.B)));
+                            if (tally.Females > 0 && pH.A > 0) totalWeight += (tally.Females * (pH.A * Math.Pow(tallaCm, pH.B)));
+                            if (tally.Indeterminate > 0 && pI.A > 0) totalWeight += (tally.Indeterminate * (pI.A * Math.Pow(tallaCm, pI.B)));
+                            foundAnyParams = true;
+                        }
+                        // De lo contrario, si hay Indeterminados o conteo parcial, usamos fórmula general
+                        else if (tally.Males > 0 || tally.Females > 0 || tally.Indeterminate > 0)
+                        {
+                            if (pI.A > 0) 
+                            { 
+                                int suma = tally.Males + tally.Females + tally.Indeterminate;
+                                totalWeight += (suma * (pI.A * Math.Pow(tallaCm, pI.B))); 
+                                foundAnyParams = true; 
+                            }
+                        }
+                        // Si todo es cero pero hay Total (muestra sin discriminar)
+                        else if (tally.Total > 0)
+                        {
+                            if (pI.A > 0) 
+                            { 
+                                totalWeight += (tally.Total * (pI.A * Math.Pow(tallaCm, pI.B))); 
+                                foundAnyParams = true; 
+                            }
+                        }
                     }
+                    totalWeight /= 1000.0; // Pasar de gramos a kg
                 }
 
                 if (foundAnyParams && totalWeight > 0)
@@ -739,7 +757,7 @@ public sealed class MareaValidationEngine
                         ? $" Catálogo ({catalogCount} regs): [{string.Join(", ", largoPesoCatalogo.Keys.Take(3).Select(k => $"{k.EspecieId}:{k.Sexo}"))}...]" 
                         : " Catálogo vacío";
                         
-                    string debugInfo = $"[ID Resuelto: {espIdLookupStr}, Nombre: '{m.Especie}', CodEspec Original: {m.CodEspec}]{catalogPreview}{logText}";
+                    string debugInfo = $"[ID Resuelto: {espId}, Nombre: '{m.Especie}', CodEspec Original: {m.CodEspec}]{catalogPreview}{logText}";
                     report.AddIssue(ValidationLevel.Error, "Biometría", $"Peso de muestra es 0 y no se pudieron encontrar parámetros de biometría para la especie '{m.Especie}'.", ctx);
                 }
             }

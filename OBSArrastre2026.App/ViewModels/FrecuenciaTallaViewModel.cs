@@ -9,6 +9,7 @@ public sealed class FrecuenciaTallaViewModel : ObservableObject
     private int _nroMachos;
     private int _nroHembras;
     private int _nroIndeterminados;
+    private int _nroTotal;
     private int _nroLangostinosMachoMaduros;
     private int _nroLangostinosHembraMaduras;
     private int _nroLangostinosHembraImpregnadas;
@@ -25,6 +26,7 @@ public sealed class FrecuenciaTallaViewModel : ObservableObject
         NroLangostinosMachoMaduros = entity.NroLangostinosMachoMaduros;
         NroLangostinosHembraMaduras = entity.NroLangostinosHembraMaduras;
         NroLangostinosHembraImpregnadas = entity.NroLangostinosHembraImpregnadas;
+        NroTotal = entity.NroTotal;
     }
 
     public string Id { get; set; } = Guid.NewGuid().ToString();
@@ -36,7 +38,7 @@ public sealed class FrecuenciaTallaViewModel : ObservableObject
         set 
         {
             if (SetProperty(ref _nroMachos, value))
-                OnPropertyChanged(nameof(Total));
+                UpdateTotal();
         } 
     }
     public int NroHembras 
@@ -45,7 +47,7 @@ public sealed class FrecuenciaTallaViewModel : ObservableObject
         set 
         {
             if (SetProperty(ref _nroHembras, value))
-                OnPropertyChanged(nameof(Total));
+                UpdateTotal();
         } 
     }
     public int NroIndeterminados 
@@ -54,7 +56,7 @@ public sealed class FrecuenciaTallaViewModel : ObservableObject
         set 
         {
             if (SetProperty(ref _nroIndeterminados, value))
-                OnPropertyChanged(nameof(Total));
+                UpdateTotal();
         } 
     }
 
@@ -62,7 +64,19 @@ public sealed class FrecuenciaTallaViewModel : ObservableObject
     public int NroLangostinosHembraMaduras { get => _nroLangostinosHembraMaduras; set => SetProperty(ref _nroLangostinosHembraMaduras, value); }
     public int NroLangostinosHembraImpregnadas { get => _nroLangostinosHembraImpregnadas; set => SetProperty(ref _nroLangostinosHembraImpregnadas, value); }
 
-    public int Total => NroMachos + NroHembras + NroIndeterminados;
+    public int NroTotal { get => _nroTotal; set => SetProperty(ref _nroTotal, value); }
+    public int Total => NroTotal;
+
+    private void UpdateTotal()
+    {
+        int suma = NroMachos + NroHembras + NroIndeterminados;
+        if (suma > 0)
+        {
+            NroTotal = suma;
+        }
+        OnPropertyChanged(nameof(Total));
+    }
+
 
     public FrecuenciaTalla ToEntity()
     {
@@ -75,7 +89,8 @@ public sealed class FrecuenciaTallaViewModel : ObservableObject
             NroIndeterminados = NroIndeterminados,
             NroLangostinosMachoMaduros = NroLangostinosMachoMaduros,
             NroLangostinosHembraMaduras = NroLangostinosHembraMaduras,
-            NroLangostinosHembraImpregnadas = NroLangostinosHembraImpregnadas
+            NroLangostinosHembraImpregnadas = NroLangostinosHembraImpregnadas,
+            NroTotal = NroTotal
         };
     }
 }
