@@ -113,11 +113,11 @@ public class MainWindowViewModel : ObservableObject
         private set => SetProperty(ref _totalDescarteKg, value);
     }
 
-    private double _totalNetaKg;
-    public double TotalNetaKg
+    private double _totalRetenidaKg;
+    public double TotalRetenidaKg
     {
-        get => _totalNetaKg;
-        private set => SetProperty(ref _totalNetaKg, value);
+        get => _totalRetenidaKg;
+        private set => SetProperty(ref _totalRetenidaKg, value);
     }
 
 
@@ -910,6 +910,8 @@ public class MainWindowViewModel : ObservableObject
     public string Column5Header { get; private set; } = string.Empty;
     public string Column6Header { get; private set; } = string.Empty;
     public string Column7Header { get; private set; } = string.Empty;
+    public string Column8Header { get; private set; } = string.Empty;
+    public string Column9Header { get; private set; } = string.Empty;
 
     public ICommand ClearActiveMareaCommand => new AsyncRelayCommand(() => _activeMareaManager.SetActiveMareaAsync(null));
 
@@ -1480,7 +1482,7 @@ public class MainWindowViewModel : ObservableObject
     }
 
 
-    private void SetColumnHeaders(string column1, string column2, string column3, string column4, string column5, string column6 = "", string column7 = "")
+    private void SetColumnHeaders(string column1, string column2, string column3, string column4, string column5, string column6 = "", string column7 = "", string column8 = "", string column9 = "")
     {
         Column1Header = column1;
         Column2Header = column2;
@@ -1489,6 +1491,8 @@ public class MainWindowViewModel : ObservableObject
         Column5Header = column5;
         Column6Header = column6;
         Column7Header = column7;
+        Column8Header = column8;
+        Column9Header = column9;
 
         OnPropertyChanged(nameof(Column1Header));
         OnPropertyChanged(nameof(Column2Header));
@@ -1497,6 +1501,8 @@ public class MainWindowViewModel : ObservableObject
         OnPropertyChanged(nameof(Column5Header));
         OnPropertyChanged(nameof(Column6Header));
         OnPropertyChanged(nameof(Column7Header));
+        OnPropertyChanged(nameof(Column8Header));
+        OnPropertyChanged(nameof(Column9Header));
     }
 
     private string FormatCoordinate(double? value, bool isLatitude)
@@ -1605,7 +1611,7 @@ public class MainWindowViewModel : ObservableObject
             if (catchKg > 0 || discardKg > 0)
             {
                 var especiesNombres = catchItemsList
-                    .Select(c => c.Especie?.NombreVulgar ?? c.Especie?.NombreCientifico ?? c.EspecieID)
+                    .Select(c => c.Especie?.FullDisplayName ?? "Desconocida")
                     .Where(n => n != null)
                     .Distinct()
                     .ToList();
@@ -1624,7 +1630,7 @@ public class MainWindowViewModel : ObservableObject
 
         TotalCapturaKg = ControlLanceDetails.Sum(d => d.CapturaKg);
         TotalDescarteKg = ControlLanceDetails.Sum(d => d.DescarteKg);
-        TotalNetaKg = ControlLanceDetails.Sum(d => d.NetaKg);
+        TotalRetenidaKg = ControlLanceDetails.Sum(d => d.NetaKg);
     }
 
     private static void ReplaceItems<T>(ObservableCollection<T> target, IEnumerable<T> source)
@@ -1824,7 +1830,9 @@ public class MainWindowViewModel : ObservableObject
                 "Especie",
                 "Prod. Total",
                 "Capt. Recon.",
-                "Capt. Total",
+                "Captura",
+                "Descarte",
+                "Capt. Retenida",
                 "Dif. Kg",
                 "Dif. %",
                 "");
@@ -1843,8 +1851,7 @@ public class MainWindowViewModel : ObservableObject
                     g => g.Key,
                     g => new
                     {
-                        EspecieNombre = g.Key == RayaGenericVirtualId ? "Rayas (Rajidae - Otras/Genérico)" : (g.First().Especie?.NombreVulgar 
-                            ?? g.First().Especie?.NombreCientifico 
+                        EspecieNombre = g.Key == RayaGenericVirtualId ? "Rayas (Rajidae - Otras/Genérico)" : (g.First().Especie?.FullDisplayName 
                             ?? g.First().Comentarios?.Replace("Importado: ", "") 
                             ?? "Desconocida"),
                         PesoProcesadoTotal = g.Sum(p => p.Kg ?? 0),
@@ -1866,10 +1873,11 @@ public class MainWindowViewModel : ObservableObject
                     g => g.Key,
                     g => new
                     {
-                        EspecieNombre = g.Key == RayaGenericVirtualId ? "Rayas (Rajidae - Otras/Genérico)" : (g.First().Especie?.NombreVulgar 
-                            ?? g.First().Especie?.NombreCientifico 
+                        EspecieNombre = g.Key == RayaGenericVirtualId ? "Rayas (Rajidae - Otras/Genérico)" : (g.First().Especie?.FullDisplayName 
                             ?? "Desconocida"),
-                        CapturaTotal = g.Sum(c => c.CapturaTotalKgCalculado - c.PesoDescarteCalculado)
+                        CapturaBruta = g.Sum(c => c.CapturaTotalKgCalculado),
+                        DescarteKg = g.Sum(c => c.PesoDescarteCalculado),
+                        CapturaRetenida = g.Sum(c => c.CapturaTotalKgCalculado - c.PesoDescarteCalculado)
                     });
 
             // Unir ambos universos de especies
@@ -1887,13 +1895,15 @@ public class MainWindowViewModel : ObservableObject
                     EspecieId = spId,
                     ProduccionTotal = pData?.PesoProcesadoTotal ?? 0,
                     CapturaReconstruida = pData?.CapturaReconstruida ?? 0,
-                    CapturaTotal = cData?.CapturaTotal ?? 0,
+                    CapturaBruta = cData?.CapturaBruta ?? 0,
+                    DescarteKg = cData?.DescarteKg ?? 0,
+                    CapturaRetenida = cData?.CapturaRetenida ?? 0,
                     IsSummaryView = true
                 });
             }
 
-            // Ordenar por CapturaTotal de mayor a menor (pedido por el usuario)
-            var viewModels = results.OrderByDescending(r => r.CapturaTotal).ToList();
+            // Ordenar por CapturaBruta de mayor a menor (pedido por el usuario)
+            var viewModels = results.OrderByDescending(r => r.CapturaBruta).ToList();
             Records.Clear();
             foreach (var vm in viewModels) Records.Add(vm);
         }
@@ -1914,7 +1924,9 @@ public class MainWindowViewModel : ObservableObject
                 "Fecha",
                 "Prod. Total",
                 "Capt. Recon.",
-                "Capt. Total",
+                "Captura",
+                "Descarte",
+                "Capt. Retenida",
                 "Dif. Kg",
                 "Dif. %",
                 "");
@@ -1947,14 +1959,24 @@ public class MainWindowViewModel : ObservableObject
                 .Select(g => new
                 {
                     Fecha = g.Key,
-                    CapturaTotal = g.SelectMany(l => l.ItemsCaptura)
+                    CapturaBruta = g.SelectMany(l => l.ItemsCaptura)
+                        .Where(c => isRayaGenericGroup 
+                            ? (IsRaya(c.Especie) && (IsGenericRaya(c.Especie) || !_commonRayaIds.Contains(c.EspecieID!))) 
+                            : c.EspecieID == ControlProduccionSelectedEspecieId)
+                        .Sum(c => c.CapturaTotalKgCalculado),
+                    DescarteKg = g.SelectMany(l => l.ItemsCaptura)
+                        .Where(c => isRayaGenericGroup 
+                            ? (IsRaya(c.Especie) && (IsGenericRaya(c.Especie) || !_commonRayaIds.Contains(c.EspecieID!))) 
+                            : c.EspecieID == ControlProduccionSelectedEspecieId)
+                        .Sum(c => c.PesoDescarteCalculado),
+                    CapturaRetenida = g.SelectMany(l => l.ItemsCaptura)
                         .Where(c => isRayaGenericGroup 
                             ? (IsRaya(c.Especie) && (IsGenericRaya(c.Especie) || !_commonRayaIds.Contains(c.EspecieID!))) 
                             : c.EspecieID == ControlProduccionSelectedEspecieId)
                         .Sum(c => c.CapturaTotalKgCalculado - c.PesoDescarteCalculado)
                 })
-                .Where(x => x.CapturaTotal > 0)
-                .ToDictionary(x => x.Fecha, x => x.CapturaTotal);
+                .Where(x => x.CapturaRetenida > 0 || x.CapturaBruta > 0)
+                .ToDictionary(x => x.Fecha, x => x);
 
             // Unir fechas
             var allDates = prodByDate.Keys.Union(catchByDate.Keys).OrderBy(d => d).ToList();
@@ -1963,7 +1985,7 @@ public class MainWindowViewModel : ObservableObject
             foreach (var date in allDates)
             {
                 prodByDate.TryGetValue(date, out var pData);
-                catchByDate.TryGetValue(date, out var cTotal);
+                catchByDate.TryGetValue(date, out var cData);
 
                 results.Add(new ControlProduccionListItemViewModel
                 {
@@ -1972,7 +1994,9 @@ public class MainWindowViewModel : ObservableObject
                     EspecieId = ControlProduccionSelectedEspecieId!,
                     ProduccionTotal = pData?.PesoProcesadoTotal ?? 0,
                     CapturaReconstruida = pData?.CapturaReconstruida ?? 0,
-                    CapturaTotal = cTotal,
+                    CapturaBruta = cData?.CapturaBruta ?? 0,
+                    DescarteKg = cData?.DescarteKg ?? 0,
+                    CapturaRetenida = cData?.CapturaRetenida ?? 0,
                     IsSummaryView = false
                 });
             }

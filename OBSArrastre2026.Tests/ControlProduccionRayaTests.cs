@@ -26,6 +26,7 @@ public class ControlProduccionRayaTests
     private readonly ILanceService _lanceService;
     private readonly IMuestraService _muestraService;
     private readonly ISubmuestraService _submuestraService;
+    private readonly IUserSettingsService _userSettingsService;
 
     public ControlProduccionRayaTests()
     {
@@ -51,6 +52,8 @@ public class ControlProduccionRayaTests
         _lanceService = Substitute.For<ILanceService>();
         _muestraService = Substitute.For<IMuestraService>();
         _submuestraService = Substitute.For<ISubmuestraService>();
+        _userSettingsService = Substitute.For<IUserSettingsService>();
+        _userSettingsService.GetSettings().Returns(new UserSettings());
     }
 
     [Fact]
@@ -119,7 +122,7 @@ public class ControlProduccionRayaTests
         rayaRow!.ProduccionTotal.Should().Be(50);
         
         // La captura de 100kg de Raya Pintada (huérfana) debería sumarse aquí
-        rayaRow.CapturaTotal.Should().Be(100, "La captura de la raya huérfana debería sumarse a la fila genérica");
+        rayaRow.CapturaRetenida.Should().Be(100, "La captura de la raya huérfana debería sumarse a la fila genérica");
     }
 
     [Fact]
@@ -203,6 +206,7 @@ public class ControlProduccionRayaTests
             _reportService,
             _jsonImportService,
             _mareaImportService,
+            _userSettingsService,
             _dbContextFactory);
     }
 }
@@ -228,8 +232,9 @@ public class TestMainWindowViewModel : MainWindowViewModel
         IMareaReportService mareaReportService,
         IJsonImportService jsonImportService,
         IMareaImportService mareaImportService,
+        IUserSettingsService userSettingsService,
         IDbContextFactory<AppDbContext> dbContextFactory) 
-        : base(mockShellDataService, themeService, mareaService, buqueService, lanceService, muestraService, activeMareaManager, mareaEditFactory, lanceEditFactory, muestraEditFactory, submuestraEditFactory, submuestraService, produccionService, produccionEditFactory, validationService, mareaReportService, jsonImportService, mareaImportService, dbContextFactory)
+        : base(mockShellDataService, themeService, mareaService, buqueService, lanceService, muestraService, activeMareaManager, mareaEditFactory, lanceEditFactory, muestraEditFactory, submuestraEditFactory, submuestraService, produccionService, produccionEditFactory, validationService, mareaReportService, jsonImportService, mareaImportService, userSettingsService, dbContextFactory)
     {
     }
 
