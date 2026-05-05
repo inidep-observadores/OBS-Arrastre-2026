@@ -1058,6 +1058,7 @@ public class MainWindowViewModel : ObservableObject
                 "Fecha",
                 "Especie",
                 "Producto",
+                "Categoría",
                 "Factor",
                 "Kg");
 

@@ -21,6 +21,8 @@ public sealed class ProduccionListItemViewModel(RegistroProduccion registro) : O
     
     public string ProductoCodigo => registro.Producto?.Codigo ?? "-";
     
+    public string Categoria => registro.Categoria ?? "-";
+
     public string ProductoDescripcion => registro.Producto?.Descripcion ?? "-";
 
     public double Factor => registro.Factor ?? 0;

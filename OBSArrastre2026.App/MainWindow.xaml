@@ -227,7 +227,7 @@
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type vm:ProduccionListItemViewModel}">
-            <Border Style="{StaticResource TableRowStyle}" Cursor="Hand">
+            <Border Style="{StaticResource TableRowStyle}" Cursor="Hand" Padding="18,8">
                 <Border.InputBindings>
                     <MouseBinding MouseAction="LeftDoubleClick" 
                                    Command="{Binding DataContext.OpenSelectedRecordEditCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
@@ -238,15 +238,21 @@
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="0.5*" />
+                        <ColumnDefinition Width="0.5*" />
                     </Grid.ColumnDefinitions>
+                    
                     <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Text="{Binding FechaDisplay}" />
                     <TextBlock Grid.Column="1" Style="{StaticResource BodySecondaryStyle}" Text="{Binding EspecieDisplay}" />
                     <TextBlock Grid.Column="2" Style="{StaticResource BodySecondaryStyle}" Text="{Binding ProductoCodigo}" />
-                    <TextBlock Grid.Column="3" Style="{StaticResource BodySecondaryStyle}" Text="{Binding Factor, StringFormat=\{0:F2\}}" />
-                    <TextBlock Grid.Column="4" Style="{StaticResource BodySecondaryStyle}" Text="{Binding Kg, StringFormat=\{0:F2\}}" />
+                    <TextBlock Grid.Column="3" Style="{StaticResource BodySecondaryStyle}" Text="{Binding Categoria}" />
+                    <TextBlock Grid.Column="4" Style="{StaticResource BodySecondaryStyle}" HorizontalAlignment="Right" Text="{Binding Factor, StringFormat=\{0:F2\}}" />
+                    <TextBlock Grid.Column="5" Style="{StaticResource BodySecondaryStyle}" HorizontalAlignment="Right" Text="{Binding Kg, StringFormat=\{0:F2\}}" />
 
-                    <Button Grid.Column="5"
+                    <Button Grid.Column="8"
                             Command="{Binding DataContext.DeleteRecordCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                             CommandParameter="{Binding}"
                             ToolTip="Eliminar registro de producción"
@@ -909,6 +915,9 @@
                                                     <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
                                                         <Setter Property="HorizontalAlignment" Value="Right" />
                                                     </DataTrigger>
+                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Produccion}">
+                                                        <Setter Property="HorizontalAlignment" Value="Right" />
+                                                    </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </TextBlock.Style>
@@ -918,6 +927,9 @@
                                             <Style TargetType="TextBlock" BasedOn="{StaticResource HeaderLabelStyle}">
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
+                                                        <Setter Property="HorizontalAlignment" Value="Right" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Produccion}">
                                                         <Setter Property="HorizontalAlignment" Value="Right" />
                                                     </DataTrigger>
                                                 </Style.Triggers>
