@@ -1830,7 +1830,9 @@ public class MainWindowViewModel : ObservableObject
                 {
                     NumeroEtapa = i + 1,
                     FechaInicio = etapa.FechaZarpada,
-                    FechaFin = etapa.FechaArribo ?? DateTime.Now
+                    FechaFin = etapa.FechaArribo ?? DateTime.Now,
+                    Lats = etapaLances.Where(l => l.LatitudInicioDecimal.HasValue).Select(l => l.LatitudInicioDecimal!.Value).ToList(),
+                    Lons = etapaLances.Where(l => l.LongitudInicioDecimal.HasValue).Select(l => l.LongitudInicioDecimal!.Value).ToList()
                 };
 
                 // 3. Balance de masa (Items) para la etapa
@@ -1940,7 +1942,7 @@ public class MainWindowViewModel : ObservableObject
                 report.Etapas.Add(etapaReport);
             }
 
-            var pdfBytes = _reportService.GenerateControlProduccionPdf(report);
+            var pdfBytes = await _reportService.GenerateControlProduccionPdfAsync(report);
             string tempPath = Path.Combine(Path.GetTempPath(), $"Control_Produccion_{report.Barco}_{report.Marea}_{report.Anio}.pdf");
             await File.WriteAllBytesAsync(tempPath, pdfBytes);
 

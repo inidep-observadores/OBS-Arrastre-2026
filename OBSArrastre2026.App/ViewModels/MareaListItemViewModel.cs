@@ -84,7 +84,7 @@ public sealed class MareaListItemViewModel : ObservableObject
                 var report = await _validationService.ValidateExistingMareaAsync(Marea.ID);
                 
                 StatusText = "Reglas de validación aplicadas. Generando PDF...";
-                var pdfBytes = _reportService.GenerateValidationPdf(report);
+                var pdfBytes = await _reportService.GenerateValidationPdfAsync(report);
                 
                 StatusText = "PDF generado. Finalizando...";
                 return new { Bytes = pdfBytes, Report = report };

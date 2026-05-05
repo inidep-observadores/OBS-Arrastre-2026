@@ -237,7 +237,7 @@ public class MareaImportService : IMareaImportService
         report.ArchivosProcesados = archivosEncontrados;
 
         // 6. Generar Reporte PDF
-        var pdfBytes = _reporter.GenerateValidationPdf(report);
+        var pdfBytes = await _reporter.GenerateValidationPdfAsync(report);
         string reportPath = Path.Combine(basePath, "Reports", $"Audit_{barco}_{marea}_{anio}.pdf");
         Directory.CreateDirectory(Path.GetDirectoryName(reportPath)!);
         await File.WriteAllBytesAsync(reportPath, pdfBytes);

@@ -40,6 +40,8 @@ public class ControlProduccionEtapaReport
     public int NumeroEtapa { get; set; }
     public DateTime FechaInicio { get; set; }
     public DateTime FechaFin { get; set; }
+    public List<double> Lats { get; set; } = new();
+    public List<double> Lons { get; set; } = new();
     public List<ControlProduccionReportItem> Items { get; set; } = new();
     public List<ControlProduccionAreaSummary> AreaSummaries { get; set; } = new();
     public List<ControlProduccionDetalleItem> ProduccionDetalle { get; set; } = new();

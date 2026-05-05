@@ -1,0 +1,28 @@
+{
+"type": "FeatureCollection",
+"name": "Puertos",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "LON": -58.38334, "LAT": -34.58333, "NOMBRE": "BUENOS AIRES", "CODIGO": "12", "LON_1": 58.23, "LAT_1": 34.35 }, "geometry": { "type": "Point", "coordinates": [ -58.38334, -34.58333 ] } },
+{ "type": "Feature", "properties": { "LON": -52.08333, "LAT": -32.13334, "NOMBRE": "RIO GRANDE (BRASIL)", "CODIGO": "20", "LON_1": 52.05, "LAT_1": 32.08 }, "geometry": { "type": "Point", "coordinates": [ -52.08333, -32.13334 ] } },
+{ "type": "Feature", "properties": { "LON": -56.2, "LAT": -34.9, "NOMBRE": "MONTEVIDEO", "CODIGO": "XX", "LON_1": 56.12, "LAT_1": 34.54 }, "geometry": { "type": "Point", "coordinates": [ -56.2, -34.9 ] } },
+{ "type": "Feature", "properties": { "LON": -57.31667, "LAT": -35.73333, "NOMBRE": "SAMBOROMBON", "CODIGO": "21", "LON_1": 57.19, "LAT_1": 35.44 }, "geometry": { "type": "Point", "coordinates": [ -57.31667, -35.73333 ] } },
+{ "type": "Feature", "properties": { "LON": -56.78333, "LAT": -36.33333, "NOMBRE": "SAN CLEMENTE", "CODIGO": "14", "LON_1": 56.47, "LAT_1": 36.2 }, "geometry": { "type": "Point", "coordinates": [ -56.78333, -36.33333 ] } },
+{ "type": "Feature", "properties": { "LON": -57.55, "LAT": -38.06667, "NOMBRE": "MAR DEL PLATA", "CODIGO": "1", "LON_1": 57.33, "LAT_1": 38.04 }, "geometry": { "type": "Point", "coordinates": [ -57.55, -38.06667 ] } },
+{ "type": "Feature", "properties": { "LON": -58.7, "LAT": -38.58333, "NOMBRE": "QUEQUEN", "CODIGO": "2", "LON_1": 58.42, "LAT_1": 38.35 }, "geometry": { "type": "Point", "coordinates": [ -58.7, -38.58333 ] } },
+{ "type": "Feature", "properties": { "LON": -62.16667, "LAT": -38.75, "NOMBRE": "BAHIA BLANCA", "CODIGO": "3", "LON_1": 62.1, "LAT_1": 38.45 }, "geometry": { "type": "Point", "coordinates": [ -62.16667, -38.75 ] } },
+{ "type": "Feature", "properties": { "LON": -62.23333, "LAT": -40.55, "NOMBRE": "BAHIA SAN BLAS", "CODIGO": "15", "LON_1": 62.14, "LAT_1": 40.33 }, "geometry": { "type": "Point", "coordinates": [ -62.23333, -40.55 ] } },
+{ "type": "Feature", "properties": { "LON": -64.96667, "LAT": -40.73333, "NOMBRE": "SAN ANTONIO OESTE", "CODIGO": "9", "LON_1": 64.58, "LAT_1": 40.44 }, "geometry": { "type": "Point", "coordinates": [ -64.96667, -40.73333 ] } },
+{ "type": "Feature", "properties": { "LON": -62.86666, "LAT": -40.9, "NOMBRE": "VIEDMA", "CODIGO": "22", "LON_1": 62.52, "LAT_1": 40.54 }, "geometry": { "type": "Point", "coordinates": [ -62.86666, -40.9 ] } },
+{ "type": "Feature", "properties": { "LON": -65.05, "LAT": -42.76667, "NOMBRE": "PUERTO MADRYN", "CODIGO": "4", "LON_1": 65.03, "LAT_1": 42.46 }, "geometry": { "type": "Point", "coordinates": [ -65.05, -42.76667 ] } },
+{ "type": "Feature", "properties": { "LON": -65.06667, "LAT": -43.33333, "NOMBRE": "RAWSON", "CODIGO": "7", "LON_1": 65.04, "LAT_1": 43.2 }, "geometry": { "type": "Point", "coordinates": [ -65.06667, -43.33333 ] } },
+{ "type": "Feature", "properties": { "LON": -65.73333, "LAT": -44.8, "NOMBRE": "BAHIA CAMARONES", "CODIGO": "11", "LON_1": 65.44, "LAT_1": 44.48 }, "geometry": { "type": "Point", "coordinates": [ -65.73333, -44.8 ] } },
+{ "type": "Feature", "properties": { "LON": -67.5, "LAT": -45.88334, "NOMBRE": "COMOD. RIVAD.", "CODIGO": "6", "LON_1": 67.3, "LAT_1": 45.53 }, "geometry": { "type": "Point", "coordinates": [ -67.5, -45.88334 ] } },
+{ "type": "Feature", "properties": { "LON": -67.53333, "LAT": -46.43333, "NOMBRE": "CALETA OLIVIA", "CODIGO": "16", "LON_1": 67.32, "LAT_1": 46.26 }, "geometry": { "type": "Point", "coordinates": [ -67.53333, -46.43333 ] } },
+{ "type": "Feature", "properties": { "LON": -65.91666, "LAT": -47.76667, "NOMBRE": "DESEADO", "CODIGO": "5", "LON_1": 65.55, "LAT_1": 47.46 }, "geometry": { "type": "Point", "coordinates": [ -65.91666, -47.76667 ] } },
+{ "type": "Feature", "properties": { "LON": -67.73333, "LAT": -49.31667, "NOMBRE": "SAN JULIAN", "CODIGO": "17", "LON_1": 67.44, "LAT_1": 49.19 }, "geometry": { "type": "Point", "coordinates": [ -67.73333, -49.31667 ] } },
+{ "type": "Feature", "properties": { "LON": -68.41666, "LAT": -50.11666, "NOMBRE": "PUNTA QUILLA", "CODIGO": "23", "LON_1": 68.25, "LAT_1": 50.07 }, "geometry": { "type": "Point", "coordinates": [ -68.41666, -50.11666 ] } },
+{ "type": "Feature", "properties": { "LON": -69.2, "LAT": -51.63334, "NOMBRE": "RIO GALLEGOS", "CODIGO": "19", "LON_1": 69.12, "LAT_1": 51.38 }, "geometry": { "type": "Point", "coordinates": [ -69.2, -51.63334 ] } },
+{ "type": "Feature", "properties": { "LON": -68.3, "LAT": -54.83333, "NOMBRE": "USHUAIA", "CODIGO": "10", "LON_1": 68.18, "LAT_1": 54.5 }, "geometry": { "type": "Point", "coordinates": [ -68.3, -54.83333 ] } }
+]
+}

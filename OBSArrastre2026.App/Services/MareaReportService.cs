@@ -8,20 +8,27 @@ namespace OBSArrastre2026.App.Services;
 
 public interface IMareaReportService
 {
-    byte[] GenerateValidationPdf(MareaValidationReport report);
-    byte[] GenerateControlProduccionPdf(ControlProduccionReport report);
+    Task<byte[]> GenerateValidationPdfAsync(MareaValidationReport report);
+    Task<byte[]> GenerateControlProduccionPdfAsync(ControlProduccionReport report);
 }
 
 public class MareaReportService : IMareaReportService
 {
+    private readonly IMapRenderingService _mapRenderingService;
+
     static MareaReportService()
     {
         QuestPDF.Settings.License = LicenseType.Community;
     }
 
-    public byte[] GenerateValidationPdf(MareaValidationReport report)
+    public MareaReportService(IMapRenderingService mapRenderingService)
     {
-        return Document.Create(container =>
+        _mapRenderingService = mapRenderingService;
+    }
+
+    public async Task<byte[]> GenerateValidationPdfAsync(MareaValidationReport report)
+    {
+        return await Task.Run(() => Document.Create(container =>
         {
             container.Page(page =>
             {
@@ -34,12 +41,22 @@ public class MareaReportService : IMareaReportService
                 ComposeValidationContent(page.Content(), report);
                 ComposeFooter(page.Footer());
             });
-        }).GeneratePdf();
+        }).GeneratePdf());
     }
 
-    public byte[] GenerateControlProduccionPdf(ControlProduccionReport report)
+    public async Task<byte[]> GenerateControlProduccionPdfAsync(ControlProduccionReport report)
     {
-        return Document.Create(container =>
+        // Pre-generar mapas para cada etapa de forma asíncrona real
+        var mapasEtapas = new Dictionary<int, byte[]>();
+        foreach (var etapa in report.Etapas)
+        {
+            if (etapa.Lats.Any() && etapa.Lons.Any())
+            {
+                mapasEtapas[etapa.NumeroEtapa] = await _mapRenderingService.RenderMapToBytesAsync(etapa.Lats, etapa.Lons);
+            }
+        }
+
+        return await Task.Run(() => Document.Create(container =>
         {
             // Primera parte: Balance de masa por Etapa (Landscape)
             container.Page(page =>
@@ -58,6 +75,11 @@ public class MareaReportService : IMareaReportService
                         if (report.Etapas.Count > 1)
                         {
                             ComposeEtapaSubHeader(col, etapa);
+                        }
+
+                        if (mapasEtapas.TryGetValue(etapa.NumeroEtapa, out var mapaBytes))
+                        {
+                            col.Item().PaddingVertical(10).AlignCenter().Width(450).Image(mapaBytes);
                         }
                         
                         ComposeControlProduccionContent(col.Item(), etapa);
@@ -96,7 +118,7 @@ public class MareaReportService : IMareaReportService
 
                 ComposeFooter(page.Footer());
             });
-        }).GeneratePdf();
+        }).GeneratePdf());
     }
 
     private void ComposeEtapaSubHeader(ColumnDescriptor col, ControlProduccionEtapaReport etapa)
