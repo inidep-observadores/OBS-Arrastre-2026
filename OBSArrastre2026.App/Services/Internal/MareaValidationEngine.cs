@@ -740,6 +740,19 @@ public sealed class MareaValidationEngine
                     report.AddIssue(ValidationLevel.Error, "Biometría", $"Peso de muestra es 0 y no se pudieron encontrar parámetros de biometría para la especie '{m.Especie}'.", ctx);
                 }
             }
+            // --- NUEVA VALIDACIÓN: Peso Muestra vs Peso Captura ---
+            if (lanceCorrespondiente != null && codEspecieMuestra > 0)
+            {
+                if (lanceCorrespondiente.Especies.TryGetValue(codEspecieMuestra, out double kilosCaptura))
+                {
+                    // Tolerancia de 10 gramos por redondeos en la conversión gramos/kilos
+                    if (m.PesoMues > kilosCaptura + 0.01)
+                    {
+                        report.AddIssue(ValidationLevel.Error, "Integridad", 
+                            $"Inconsistencia: El peso de la muestra ({m.PesoMues:F2} kg) es superior a la captura registrada de la especie ({kilosCaptura:F2} kg) en el lance {m.Lance}.", ctx);
+                    }
+                }
+            }
         }
 
         // --- VALIDACIÓN DE INTEGRIDAD L* vs M* ---
