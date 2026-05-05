@@ -11,6 +11,9 @@ using OBSArrastre2026.App.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 using OBSArrastre2026.App.Data;
 using GMap.NET;
+using System.IO;
+using System.Diagnostics;
+using OBSArrastre2026.App.Models.Reports;
 
 namespace OBSArrastre2026.App.ViewModels;
 
@@ -322,6 +325,7 @@ public class MainWindowViewModel : ObservableObject
         NavigateToControlProduccionDetailCommand = new AsyncRelayCommand<ControlProduccionListItemViewModel>(NavigateToControlProduccionDetailAsync);
         BackControlProduccionCommand = new RelayCommand(BackToControlProduccionSummary);
         EditLanceFromDetailCommand = new RelayCommand<ControlLanceDetailViewModel>(OpenEditLanceFromDetail);
+        ExportControlProduccionPdfCommand = new AsyncRelayCommand(ExportControlProduccionPdfAsync);
 
         var settings = _userSettingsService.GetSettings();
         _mareasFilterAnio = settings.LastSelectedMareaAnio ?? DateTime.Today.Year;
@@ -419,6 +423,7 @@ public class MainWindowViewModel : ObservableObject
     public ICommand NavigateToControlProduccionDetailCommand { get; }
     public ICommand BackControlProduccionCommand { get; }
     public ICommand EditLanceFromDetailCommand { get; }
+    public ICommand ExportControlProduccionPdfCommand { get; }
     
     public ICommand PlayCommand { get; }
     public ICommand PauseCommand { get; }
@@ -1769,6 +1774,56 @@ public class MainWindowViewModel : ObservableObject
         ControlProduccionSelectedEspecieId = null;
         ControlProduccionSelectedEspecie = null;
         _ = LoadControlProduccionAsync();
+    }
+
+    private async Task ExportControlProduccionPdfAsync()
+    {
+        if (_activeMareaManager.ActiveMarea == null) return;
+        
+        var items = Records.OfType<ControlProduccionListItemViewModel>().ToList();
+        if (!items.Any())
+        {
+            System.Windows.MessageBox.Show("No hay datos para exportar en la vista actual.", "Aviso", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            return;
+        }
+
+        try
+        {
+            var report = new ControlProduccionReport
+            {
+                Barco = _activeMareaManager.ActiveMarea.Buque?.Nombre ?? "S/D",
+                Marea = _activeMareaManager.ActiveMarea.NumeroInidep.ToString(),
+                Anio = _activeMareaManager.ActiveMarea.AnioInidep,
+                FechaInicioMarea = _activeMareaManager.ActiveMarea.FechaInicio,
+                FechaFinMarea = _activeMareaManager.ActiveMarea.FechaFin,
+                Items = items.Select(i => new ControlProduccionReportItem
+                {
+                    Especie = i.Especie,
+                    ProduccionTotal = i.ProduccionTotal,
+                    CapturaReconstruida = i.CapturaReconstruida,
+                    CapturaBruta = i.CapturaBruta,
+                    DescarteKg = i.DescarteKg,
+                    CapturaRetenida = i.CapturaRetenida,
+                    DiferenciaKg = i.DiferenciaKg,
+                    DiferenciaPorcentaje = i.DiferenciaPorcentajeDisplay,
+                    HasDiferenciaSignificativa = i.HasDiferenciaSignificativa
+                }).ToList()
+            };
+
+            var pdfBytes = _reportService.GenerateControlProduccionPdf(report);
+            string tempPath = Path.Combine(Path.GetTempPath(), $"Control_Produccion_{report.Barco}_{report.Marea}_{report.Anio}.pdf");
+            await File.WriteAllBytesAsync(tempPath, pdfBytes);
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = tempPath,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"Error al generar el PDF: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
     }
 
     private async Task LoadControlProduccionAsync()

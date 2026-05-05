@@ -507,6 +507,30 @@
                                Foreground="{DynamicResource SecondaryTextBrush}"
                                Text="{Binding PageDescription}" />
                 </StackPanel>
+                
+                <Button Command="{Binding ExportControlProduccionPdfCommand}" 
+                        Margin="32,0,0,0"
+                        VerticalAlignment="Bottom"
+                        Padding="16,10"
+                        ToolTip="Generar reporte PDF del resumen de producción">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="📄" Margin="0,0,8,0" VerticalAlignment="Center" FontSize="16"/>
+                        <TextBlock Text="EXPORTAR RESUMEN" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                    </StackPanel>
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsControlProduccionDetailVisible}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1"

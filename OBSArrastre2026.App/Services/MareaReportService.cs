@@ -2,12 +2,14 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using OBSArrastre2026.App.Models.Import;
+using OBSArrastre2026.App.Models.Reports;
 
 namespace OBSArrastre2026.App.Services;
 
 public interface IMareaReportService
 {
     byte[] GenerateValidationPdf(MareaValidationReport report);
+    byte[] GenerateControlProduccionPdf(ControlProduccionReport report);
 }
 
 public class MareaReportService : IMareaReportService
@@ -28,14 +30,32 @@ public class MareaReportService : IMareaReportService
                 page.PageColor(Colors.White);
                 page.DefaultTextStyle(x => x.FontSize(8).FontFamily(Fonts.Verdana));
 
-                ComposeHeader(page.Header(), report);
-                ComposeContent(page.Content(), report);
+                ComposeHeader(page.Header(), report.Barco, report.Marea, report.Año, report.FechaInicioMarea, report.FechaFinMarea, "REPORTE DE AUDITORÍA DE MAREA");
+                ComposeValidationContent(page.Content(), report);
                 ComposeFooter(page.Footer());
             });
         }).GeneratePdf();
     }
 
-    private void ComposeHeader(IContainer container, MareaValidationReport report)
+    public byte[] GenerateControlProduccionPdf(ControlProduccionReport report)
+    {
+        return Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4.Landscape());
+                page.Margin(1, Unit.Centimetre);
+                page.PageColor(Colors.White);
+                page.DefaultTextStyle(x => x.FontSize(8).FontFamily(Fonts.Verdana));
+
+                ComposeHeader(page.Header(), report.Barco, report.Marea, report.Anio, report.FechaInicioMarea, report.FechaFinMarea, "CONTROL DE CAPTURA Y PRODUCCIÓN");
+                ComposeControlProduccionContent(page.Content(), report);
+                ComposeFooter(page.Footer());
+            });
+        }).GeneratePdf();
+    }
+
+    private void ComposeHeader(IContainer container, string barco, string marea, int anio, DateTime? fechaInicio, DateTime? fechaFin, string titulo)
     {
         container.Column(col =>
         {
@@ -43,26 +63,32 @@ public class MareaReportService : IMareaReportService
             {
                 row.RelativeItem().Column(c =>
                 {
-                    c.Item().Text("REPORTE DE AUDITORÍA DE MAREA").FontSize(14).SemiBold().FontColor(Colors.Blue.Medium);
+                    c.Item().Text(titulo).FontSize(14).SemiBold().FontColor(Colors.Blue.Medium);
                     
-                    var mareaInfo = $"{report.Barco} - Marea {report.Marea} ({report.Año})";
-                    if (report.FechaInicioMarea.HasValue && report.FechaFinMarea.HasValue)
+                    var mareaInfo = $"{barco} - Marea {marea} ({anio})";
+                    if (fechaInicio.HasValue && fechaFin.HasValue)
                     {
-                        mareaInfo += $" | {report.FechaInicioMarea:dd/MM/yyyy} — {report.FechaFinMarea:dd/MM/yyyy}";
+                        mareaInfo += $" | {fechaInicio:dd/MM/yyyy} — {fechaFin:dd/MM/yyyy}";
                     }
                     c.Item().Text(mareaInfo).FontSize(9);
                 });
 
                 row.ConstantItem(100).Column(c =>
                 {
-                    c.Item().Text("Checklist").AlignRight().FontSize(9).FontColor(Colors.Grey.Medium);
+                    c.Item().Text("Reporte").AlignRight().FontSize(9).FontColor(Colors.Grey.Medium);
                     c.Item().Text(DateTime.Now.ToString("dd/MM/yyyy")).AlignRight().FontSize(9);
                 });
             });
+        });
+    }
 
+    private void ComposeValidationContent(IContainer container, MareaValidationReport report)
+    {
+        container.PaddingVertical(10).Column(col =>
+        {
             if (report.Etapas.Any())
             {
-                col.Item().PaddingTop(2).Row(row =>
+                col.Item().PaddingBottom(10).Row(row =>
                 {
                     row.ConstantItem(40).Text("Etapas:").FontSize(7).SemiBold().FontColor(Colors.Grey.Medium);
                     
@@ -82,13 +108,7 @@ public class MareaReportService : IMareaReportService
                     });
                 });
             }
-        });
-    }
 
-    private void ComposeContent(IContainer container, MareaValidationReport report)
-    {
-        container.PaddingVertical(10).Column(col =>
-        {
             // Resumen ejecutivo
             col.Item().PaddingBottom(10).BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Row(row =>
             {
@@ -131,12 +151,10 @@ public class MareaReportService : IMareaReportService
 
                     table.Header(header =>
                     {
-                        header.Cell().Element(CellStyle).Text("Categoría");
-                        header.Cell().Element(CellStyle).Text("Observación");
-                        header.Cell().Element(CellStyle).Text("Contexto");
-                        header.Cell().Element(CellStyle).AlignRight().Text("Ok");
-
-                        static IContainer CellStyle(IContainer container) => container.DefaultTextStyle(x => x.SemiBold()).PaddingVertical(5).BorderBottom(1).BorderColor(Colors.Black);
+                        header.Cell().Element(HeaderStyle).Text("Categoría");
+                        header.Cell().Element(HeaderStyle).Text("Observación");
+                        header.Cell().Element(HeaderStyle).Text("Contexto");
+                        header.Cell().Element(HeaderStyle).AlignRight().Text("Ok");
                     });
 
                     var sortedIssues = report.Issues
@@ -194,6 +212,64 @@ public class MareaReportService : IMareaReportService
             }
         });
     }
+
+    private void ComposeControlProduccionContent(IContainer container, ControlProduccionReport report)
+    {
+        container.PaddingVertical(10).Column(col =>
+        {
+            col.Item().Table(table =>
+            {
+                table.ColumnsDefinition(columns =>
+                {
+                    columns.RelativeColumn(3); // Especie
+                    columns.RelativeColumn(2); // Prod. Total
+                    columns.RelativeColumn(2); // Capt. Recon.
+                    columns.RelativeColumn(2); // Captura
+                    columns.RelativeColumn(2); // Descarte
+                    columns.RelativeColumn(2); // Capt. Retenida
+                    columns.RelativeColumn(2); // Dif. Kg
+                    columns.RelativeColumn(1.5f); // Dif. %
+                });
+
+                table.Header(header =>
+                {
+                    header.Cell().Element(HeaderStyle).Text("Especie");
+                    header.Cell().Element(HeaderStyle).AlignRight().Text("Prod. Total");
+                    header.Cell().Element(HeaderStyle).AlignRight().Text("Capt. Recon.");
+                    header.Cell().Element(HeaderStyle).AlignRight().Text("Captura");
+                    header.Cell().Element(HeaderStyle).AlignRight().Text("Descarte");
+                    header.Cell().Element(HeaderStyle).AlignRight().Text("Capt. Retenida");
+                    header.Cell().Element(HeaderStyle).AlignRight().Text("Dif. Kg");
+                    header.Cell().Element(HeaderStyle).AlignRight().Text("Dif. %");
+                });
+
+                foreach (var item in report.Items)
+                {
+                    table.Cell().Element(ContentStyle).Text(item.Especie);
+                    table.Cell().Element(ContentStyle).AlignRight().Text(item.ProduccionTotal.ToString("N1"));
+                    table.Cell().Element(ContentStyle).AlignRight().Text(item.CapturaReconstruida.ToString("N1"));
+                    table.Cell().Element(ContentStyle).AlignRight().Text(item.CapturaBruta.ToString("N1"));
+                    table.Cell().Element(ContentStyle).AlignRight().Text(item.DescarteKg.ToString("N1"));
+                    table.Cell().Element(ContentStyle).AlignRight().Text(item.CapturaRetenida.ToString("N1"));
+                    table.Cell().Element(ContentStyle).AlignRight().Text(item.DiferenciaKg.ToString("N1"));
+                    
+                    var diffCell = table.Cell().Element(ContentStyle).AlignRight();
+                    if (item.HasDiferenciaSignificativa)
+                    {
+                        diffCell.Text(item.DiferenciaPorcentaje).SemiBold().FontColor(Colors.Red.Medium);
+                    }
+                    else
+                    {
+                        diffCell.Text(item.DiferenciaPorcentaje);
+                    }
+
+                    IContainer ContentStyle(IContainer container) => container.PaddingVertical(5).BorderBottom(1).BorderColor(Colors.Grey.Lighten3);
+                }
+            });
+        });
+    }
+
+    private static IContainer HeaderStyle(IContainer container) => container.DefaultTextStyle(x => x.SemiBold()).PaddingVertical(5).BorderBottom(1).BorderColor(Colors.Black);
 
     private void ComposeFooter(IContainer container)
     {
