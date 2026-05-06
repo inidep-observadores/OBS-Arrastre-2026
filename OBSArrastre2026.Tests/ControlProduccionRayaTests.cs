@@ -28,6 +28,7 @@ public class ControlProduccionRayaTests
     private readonly ISubmuestraService _submuestraService;
     private readonly IUserSettingsService _userSettingsService;
     private readonly IMapRenderingService _mapRenderingService;
+    private readonly IExcelReportService _excelReportService;
 
     public ControlProduccionRayaTests()
     {
@@ -56,6 +57,7 @@ public class ControlProduccionRayaTests
         _userSettingsService = Substitute.For<IUserSettingsService>();
         _userSettingsService.GetSettings().Returns(new UserSettings());
         _mapRenderingService = Substitute.For<IMapRenderingService>();
+        _excelReportService = Substitute.For<IExcelReportService>();
     }
 
     [Fact]
@@ -209,6 +211,7 @@ public class ControlProduccionRayaTests
             _jsonImportService,
             _mareaImportService,
             _mapRenderingService,
+            _excelReportService,
             _userSettingsService,
             _dbContextFactory);
     }
@@ -236,9 +239,10 @@ public class TestMainWindowViewModel : MainWindowViewModel
         IJsonImportService jsonImportService,
         IMareaImportService mareaImportService,
         IMapRenderingService mapRenderingService,
+        IExcelReportService excelReportService,
         IUserSettingsService userSettingsService,
         IDbContextFactory<AppDbContext> dbContextFactory) 
-        : base(mockShellDataService, themeService, mareaService, buqueService, lanceService, muestraService, activeMareaManager, mareaEditFactory, lanceEditFactory, muestraEditFactory, submuestraEditFactory, submuestraService, produccionService, produccionEditFactory, validationService, mareaReportService, jsonImportService, mareaImportService, mapRenderingService, userSettingsService, dbContextFactory)
+        : base(mockShellDataService, themeService, mareaService, buqueService, lanceService, muestraService, activeMareaManager, mareaEditFactory, lanceEditFactory, muestraEditFactory, submuestraEditFactory, submuestraService, produccionService, produccionEditFactory, validationService, mareaReportService, jsonImportService, mareaImportService, mapRenderingService, excelReportService, userSettingsService, dbContextFactory)
     {
     }
 

@@ -15,6 +15,7 @@ namespace OBSArrastre2026.App.ViewModels;
 public class ExportarRecursosViewModel : ObservableObject
 {
     private readonly IMapRenderingService _mapService;
+    private readonly IExcelReportService _excelService;
     private readonly Marea _marea;
     private readonly List<Lance> _lances;
     private string _exportPath = string.Empty;
@@ -56,11 +57,12 @@ public class ExportarRecursosViewModel : ObservableObject
 
     public TaskCompletionSource<bool> DialogResult { get; } = new();
 
-    public ExportarRecursosViewModel(Marea marea, List<Lance> lances, IMapRenderingService mapService)
+    public ExportarRecursosViewModel(Marea marea, List<Lance> lances, IMapRenderingService mapService, IExcelReportService excelService)
     {
         _marea = marea;
         _lances = lances;
         _mapService = mapService;
+        _excelService = excelService;
 
         AcceptCommand = new AsyncRelayCommand(ExecuteExportAsync, () => CanAccept);
         CloseCommand = new RelayCommand(() => DialogResult.TrySetResult(false), () => !IsBusy);
@@ -123,14 +125,21 @@ public class ExportarRecursosViewModel : ObservableObject
     {
         if (etapa == null) return;
 
-        // 1. Guardar mapa
-        var etapaLances = _lances.Where(l => l.MareaEtapaId == etapa.ID && l.LatitudInicioDecimal.HasValue && l.LongitudInicioDecimal.HasValue).ToList();
-        if (etapaLances.Any())
+        var etapaLances = _lances.Where(l => l.MareaEtapaId == etapa.ID).ToList();
+        if (!etapaLances.Any()) return;
+
+        // 1. Guardar mapa (si hay coordenadas)
+        var lancesConCoord = etapaLances.Where(l => l.LatitudInicioDecimal.HasValue && l.LongitudInicioDecimal.HasValue).ToList();
+        if (lancesConCoord.Any())
         {
-            var lats = etapaLances.Select(l => l.LatitudInicioDecimal!.Value);
-            var lons = etapaLances.Select(l => l.LongitudInicioDecimal!.Value);
+            var lats = lancesConCoord.Select(l => l.LatitudInicioDecimal!.Value);
+            var lons = lancesConCoord.Select(l => l.LongitudInicioDecimal!.Value);
             string mapPath = Path.Combine(targetFolder, "mapa.png");
             await _mapService.RenderMapAsync(lats, lons, mapPath);
         }
+
+        // 2. Guardar Tablas Excel
+        string excelPath = Path.Combine(targetFolder, "Tablas.xlsx");
+        await _excelService.GenerateTablasExcelAsync(etapaLances, excelPath);
     }
 }

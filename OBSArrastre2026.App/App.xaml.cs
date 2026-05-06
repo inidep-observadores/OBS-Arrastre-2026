@@ -70,6 +70,7 @@ public partial class App : Application
                 services.AddSingleton<IMareaValidationService, MareaValidationService>();
                 services.AddSingleton<GeoJsonService>();
                 services.AddSingleton<IMapRenderingService, MapRenderingService>();
+                services.AddSingleton<IExcelReportService, ExcelReportService>();
 
                 // Validación y ViewModels
                 services.AddValidatorsFromAssemblyContaining<App>();

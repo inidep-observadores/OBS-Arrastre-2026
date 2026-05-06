@@ -41,6 +41,7 @@ public class MainWindowViewModel : ObservableObject
     private readonly IJsonImportService _jsonImportService;
     private readonly IMareaImportService _mareaImportService;
     private readonly IMapRenderingService _mapRenderingService;
+    private readonly IExcelReportService _excelReportService;
     private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
     private NavigationItemViewModel? _selectedNavigationItem;
     private string _pageTitle = string.Empty;
@@ -284,6 +285,7 @@ public class MainWindowViewModel : ObservableObject
         IJsonImportService jsonImportService,
         IMareaImportService mareaImportService,
         IMapRenderingService mapRenderingService,
+        IExcelReportService excelReportService,
         IUserSettingsService userSettingsService,
         IDbContextFactory<AppDbContext> dbContextFactory)
     {
@@ -307,6 +309,7 @@ public class MainWindowViewModel : ObservableObject
         _jsonImportService = jsonImportService;
         _mareaImportService = mareaImportService;
         _mapRenderingService = mapRenderingService;
+        _excelReportService = excelReportService;
         _userSettingsService = userSettingsService;
 
         SearchPlaceholder = "Buscar...";
@@ -935,7 +938,7 @@ public class MainWindowViewModel : ObservableObject
         }
 
         var lances = await _lanceService.GetLancesAsync(mareaId: activeMarea.ID);
-        var viewModel = new ExportarRecursosViewModel(activeMarea, lances.ToList(), _mapRenderingService);
+        var viewModel = new ExportarRecursosViewModel(activeMarea, lances.ToList(), _mapRenderingService, _excelReportService);
         ActiveDialog = viewModel;
 
         bool result = await viewModel.DialogResult.Task;
