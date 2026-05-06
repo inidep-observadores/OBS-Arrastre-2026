@@ -243,7 +243,7 @@ public sealed partial class ImportDbfViewModel : ObservableObject
 
             // 1. Validar (Incluyendo validación de etapas)
             BusyMessage = "Validando integridad de archivos DBF...";
-            var report = await _importService.ProcessMareaImportAsync(basePath, _barco, _mareaNum, _anio, currentEtapas);
+            var report = await _importService.ProcessMareaImportAsync(basePath, mareaUpdated!);
             report.UnidadDescarte = SelectedTipoDatoDescarte;
 
             if (report.HasFatalErrors)

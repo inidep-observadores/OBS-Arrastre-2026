@@ -24,6 +24,10 @@ public class MareaValidationReport
     public string Barco { get; set; } = string.Empty;
     public string Marea { get; set; } = string.Empty;
     public int Año { get; set; }
+    public int? BuqueCodigo { get; set; }
+    public string? ObservadorNombre { get; set; }
+    public string? ObservadorApellido { get; set; }
+    public int? ObservadorCodigo { get; set; }
     public TipoDatoDescarte UnidadDescarte { get; set; } = TipoDatoDescarte.Kilogramos;
     
     public DateTime? FechaInicioMarea { get; set; }

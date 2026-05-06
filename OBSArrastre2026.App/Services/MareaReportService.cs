@@ -37,7 +37,8 @@ public class MareaReportService : IMareaReportService
                 page.PageColor(Colors.White);
                 page.DefaultTextStyle(x => x.FontSize(8).FontFamily(Fonts.Verdana));
 
-                ComposeHeader(page.Header(), report.Barco, report.Marea, report.Año, report.FechaInicioMarea, report.FechaFinMarea, "REPORTE DE AUDITORÍA DE MAREA");
+                ComposeHeader(page.Header(), report.Barco, report.Marea, report.Año, report.FechaInicioMarea, report.FechaFinMarea, "REPORTE DE AUDITORÍA DE MAREA",
+                    report.BuqueCodigo, report.ObservadorNombre, report.ObservadorApellido, report.ObservadorCodigo);
                 ComposeValidationContent(page.Content(), report);
                 ComposeFooter(page.Footer());
             });
@@ -57,7 +58,8 @@ public class MareaReportService : IMareaReportService
                 page.PageColor(Colors.White);
                 page.DefaultTextStyle(x => x.FontSize(8).FontFamily(Fonts.Verdana));
 
-                ComposeHeader(page.Header(), report.Barco, report.Marea, report.Anio, report.FechaInicioMarea, report.FechaFinMarea, "CONTROL DE CAPTURA Y PRODUCCIÓN POR ETAPA");
+                ComposeHeader(page.Header(), report.Barco, report.Marea, report.Anio, report.FechaInicioMarea, report.FechaFinMarea, "CONTROL DE CAPTURA Y PRODUCCIÓN POR ETAPA",
+                    report.BuqueCodigo, report.ObservadorNombre, report.ObservadorApellido, report.ObservadorCodigo);
                 
                 page.Content().PaddingVertical(10).Column(col => 
                 {
@@ -84,7 +86,8 @@ public class MareaReportService : IMareaReportService
                 page.PageColor(Colors.White);
                 page.DefaultTextStyle(x => x.FontSize(8).FontFamily(Fonts.Verdana));
 
-                ComposeHeader(page.Header(), report.Barco, report.Marea, report.Anio, report.FechaInicioMarea, report.FechaFinMarea, "RESUMEN POR ÁREA Y DETALLE POR ETAPA");
+                ComposeHeader(page.Header(), report.Barco, report.Marea, report.Anio, report.FechaInicioMarea, report.FechaFinMarea, "RESUMEN POR ÁREA Y DETALLE POR ETAPA",
+                    report.BuqueCodigo, report.ObservadorNombre, report.ObservadorApellido, report.ObservadorCodigo);
                 
                 page.Content().PaddingVertical(10).Column(col => 
                 {
@@ -116,7 +119,8 @@ public class MareaReportService : IMareaReportService
         });
     }
 
-    private void ComposeHeader(IContainer container, string barco, string marea, int anio, DateTime? fechaInicio, DateTime? fechaFin, string titulo)
+    private void ComposeHeader(IContainer container, string barco, string marea, int anio, DateTime? fechaInicio, DateTime? fechaFin, string titulo,
+        int? buqueCodigo = null, string? obsNombre = null, string? obsApellido = null, int? obsCodigo = null)
     {
         container.Column(col =>
         {
@@ -126,12 +130,23 @@ public class MareaReportService : IMareaReportService
                 {
                     c.Item().Text(titulo).FontSize(14).SemiBold().FontColor(Colors.Blue.Medium);
                     
-                    var mareaInfo = $"{barco} - Marea {marea} ({anio})";
+                    var buqueInfo = buqueCodigo.HasValue ? $"{barco} ({buqueCodigo})" : barco;
+                    var mareaInfo = $"{buqueInfo} - Marea {marea} ({anio})";
+                    
                     if (fechaInicio.HasValue && fechaFin.HasValue)
                     {
                         mareaInfo += $" | {fechaInicio:dd/MM/yyyy} — {fechaFin:dd/MM/yyyy}";
                     }
                     c.Item().Text(mareaInfo).FontSize(9);
+
+                    if (!string.IsNullOrEmpty(obsNombre) || !string.IsNullOrEmpty(obsApellido))
+                    {
+                        var obsInfo = "Observador: ";
+                        if (!string.IsNullOrEmpty(obsApellido)) obsInfo += obsApellido;
+                        if (!string.IsNullOrEmpty(obsNombre)) obsInfo += (string.IsNullOrEmpty(obsApellido) ? "" : ", ") + obsNombre;
+                        if (obsCodigo.HasValue) obsInfo += $" ({obsCodigo})";
+                        c.Item().Text(obsInfo).FontSize(8).Italic().FontColor(Colors.Grey.Darken2);
+                    }
                 });
 
                 row.ConstantItem(100).Column(c =>

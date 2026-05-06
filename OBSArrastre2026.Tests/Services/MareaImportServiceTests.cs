@@ -52,7 +52,14 @@ public class MareaImportServiceTests
         File.WriteAllText(Path.Combine(tempDir, "M10026.DBF"), "");
         File.WriteAllText(Path.Combine(tempDir, "P10026.DBF"), "");
 
-        var result = await _service.ProcessMareaImportAsync(tempDir, "TEST", 100, 2026, new List<MareaEtapa>());
+        var marea = new Marea 
+        { 
+            Buque = new Buque { Nombre = "TEST" }, 
+            NumeroInidep = 100, 
+            AnioInidep = 2026,
+            Etapas = new List<MareaEtapa>()
+        };
+        var result = await _service.ProcessMareaImportAsync(tempDir, marea);
 
         // Assert
         result.Should().NotBeNull();

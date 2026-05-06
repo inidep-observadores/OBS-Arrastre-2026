@@ -131,6 +131,6 @@ public class ExportarRecursosViewModel : ObservableObject
         // 2. Guardar Tablas Excel
         var etapaProduccion = await _lanceService.GetProduccionAsync(etapa.ID);
         string excelPath = Path.Combine(targetFolder, $"{prefix}Tablas.xlsx");
-        await _excelService.GenerateTablasExcelAsync(etapaLances, etapaProduccion, excelPath);
+        await _excelService.GenerateTablasExcelAsync(_marea, etapaLances, etapaProduccion, excelPath);
     }
 }

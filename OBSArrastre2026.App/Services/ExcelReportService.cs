@@ -10,7 +10,7 @@ namespace OBSArrastre2026.App.Services
 {
     public class ExcelReportService : IExcelReportService
     {
-        public async Task GenerateTablasExcelAsync(IEnumerable<Lance> lances, IEnumerable<RegistroProduccion> produccion, string outputPath)
+        public async Task GenerateTablasExcelAsync(Marea marea, IEnumerable<Lance> lances, IEnumerable<RegistroProduccion> produccion, string outputPath)
         {
             await Task.Run(() =>
             {
@@ -21,24 +21,69 @@ namespace OBSArrastre2026.App.Services
                 
                 // --- HOJA: ESPECIES ---
                 GenerateSpeciesSheet(workbook, lancesList);
+                AddMetadataHeader(workbook.Worksheets.Last(), marea, 7);
 
                 // --- HOJA: DISTRIBUCIÓN ---
                 GenerateDistribucionSheet(workbook, lancesList);
+                AddMetadataHeader(workbook.Worksheets.Last(), marea, 9);
 
                 // --- HOJA: ÁREAS ---
                 GenerateAreasSheet(workbook, lancesList);
+                AddMetadataHeader(workbook.Worksheets.Last(), marea, 7);
 
                 // --- HOJA: PRODUCCIÓN ---
                 GenerateProduccionSheet(workbook, produccionList);
+                if (workbook.Worksheets.Any(w => w.Name == "Producción"))
+                {
+                    var ws = workbook.Worksheet("Producción");
+                    AddMetadataHeader(ws, marea, 5);
+                }
 
                 // --- HOJA: GIS ---
                 GenerateGisSheet(workbook, lancesList);
+                AddMetadataHeader(workbook.Worksheets.Last(), marea, 6);
 
                 // --- HOJAS: FRECUENCIAS POR ESPECIE ---
+                int countBefore = workbook.Worksheets.Count;
                 GenerateFrequencySheets(workbook, lancesList);
+                int countAfter = workbook.Worksheets.Count;
+                
+                for (int i = countBefore + 1; i <= countAfter; i++)
+                {
+                    AddMetadataHeader(workbook.Worksheet(i), marea, 8);
+                }
 
                 workbook.SaveAs(outputPath);
             });
+        }
+
+        private void AddMetadataHeader(IXLWorksheet worksheet, Marea? marea, int lastColumn)
+        {
+            if (marea == null) return;
+
+            worksheet.Row(1).InsertRowsAbove(3);
+            
+            var buqueInfo = marea.BuqueCodigo.HasValue ? $"{marea.Buque?.Nombre} ({marea.BuqueCodigo})" : marea.Buque?.Nombre;
+            var mareaInfo = $"{buqueInfo} - Marea {marea.NumeroInidep} ({marea.AnioInidep})";
+            
+            var cellMarea = worksheet.Cell(1, 1);
+            cellMarea.Value = mareaInfo;
+            cellMarea.Style.Font.Bold = true;
+            cellMarea.Style.Font.FontSize = 14;
+            worksheet.Range(1, 1, 1, lastColumn).Merge();
+
+            var obsInfo = "Observador: ";
+            if (!string.IsNullOrEmpty(marea.ObservadorApellido)) obsInfo += marea.ObservadorApellido;
+            if (!string.IsNullOrEmpty(marea.ObservadorNombre)) obsInfo += (string.IsNullOrEmpty(marea.ObservadorApellido) ? "" : ", ") + marea.ObservadorNombre;
+            if (marea.ObservadorCodigo.HasValue) obsInfo += $" ({marea.ObservadorCodigo})";
+            
+            var cellObs = worksheet.Cell(2, 1);
+            cellObs.Value = obsInfo;
+            cellObs.Style.Font.Italic = true;
+            cellObs.Style.Font.FontSize = 11;
+            worksheet.Range(2, 1, 2, lastColumn).Merge();
+
+            worksheet.Row(3).Height = 10; // Espaciador
         }
 
         private void GenerateFrequencySheets(XLWorkbook workbook, List<Lance> lancesList)

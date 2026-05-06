@@ -1857,6 +1857,10 @@ public class MainWindowViewModel : ObservableObject
                 Barco = _activeMareaManager.ActiveMarea.Buque?.Nombre ?? "S/D",
                 Marea = _activeMareaManager.ActiveMarea.NumeroInidep.ToString(),
                 Anio = _activeMareaManager.ActiveMarea.AnioInidep,
+                BuqueCodigo = _activeMareaManager.ActiveMarea.BuqueCodigo,
+                ObservadorNombre = _activeMareaManager.ActiveMarea.ObservadorNombre,
+                ObservadorApellido = _activeMareaManager.ActiveMarea.ObservadorApellido,
+                ObservadorCodigo = _activeMareaManager.ActiveMarea.ObservadorCodigo,
                 FechaInicioMarea = _activeMareaManager.ActiveMarea.FechaInicio,
                 FechaFinMarea = _activeMareaManager.ActiveMarea.FechaFin
             };

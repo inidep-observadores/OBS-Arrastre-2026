@@ -52,6 +52,10 @@ public class ControlProduccionReport
     public string Barco { get; set; } = string.Empty;
     public string Marea { get; set; } = string.Empty;
     public int Anio { get; set; }
+    public int? BuqueCodigo { get; set; }
+    public string? ObservadorNombre { get; set; }
+    public string? ObservadorApellido { get; set; }
+    public int? ObservadorCodigo { get; set; }
     public DateTime? FechaInicioMarea { get; set; }
     public DateTime? FechaFinMarea { get; set; }
     public List<ControlProduccionEtapaReport> Etapas { get; set; } = new();

@@ -74,7 +74,15 @@ public class MareaIntegrationTests
             _reportService.GenerateValidationPdfAsync(Arg.Any<MareaValidationReport>()).Returns(Task.FromResult(new byte[] { 1, 2, 3 }));
 
             // Act
-                        var result = await _importService.ProcessMareaImportAsync(tempPath, "TEST", 100, 2026, new List<MareaEtapa>());
+            var marea = new Marea 
+            { 
+                Buque = new Buque { Nombre = "TEST" }, 
+                NumeroInidep = 100, 
+                AnioInidep = 2026,
+                Etapas = new List<MareaEtapa>()
+            };
+            var result = await _importService.ProcessMareaImportAsync(tempPath, marea);
+
 
             // Assert
             result.Should().NotBeNull();
@@ -115,7 +123,15 @@ public class MareaIntegrationTests
             _reportService.GenerateValidationPdfAsync(Arg.Any<MareaValidationReport>()).Returns(Task.FromResult(new byte[] { 1, 2, 3 }));
 
             // Act
-                        var result = await _importService.ProcessMareaImportAsync(tempPath, "TEST", 100, 2026, new List<MareaEtapa>());
+            var marea = new Marea 
+            { 
+                Buque = new Buque { Nombre = "TEST" }, 
+                NumeroInidep = 100, 
+                AnioInidep = 2026,
+                Etapas = new List<MareaEtapa>()
+            };
+            var result = await _importService.ProcessMareaImportAsync(tempPath, marea);
+
 
             // Assert
             result.Issues.Should().Contain(i => i.Category == "Captura" && i.Level == ValidationLevel.AutoFixed);

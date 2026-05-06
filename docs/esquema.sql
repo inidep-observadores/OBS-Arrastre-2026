@@ -70,6 +70,10 @@ CREATE TABLE mareas (
     FechaInicio TEXT NOT NULL,
     FechaFin TEXT NULL,
     BuqueID TEXT NULL,
+    BuqueCodigo INTEGER NULL,
+    ObservadorNombre TEXT NULL,
+    ObservadorApellido TEXT NULL,
+    ObservadorCodigo INTEGER NULL,
     CONSTRAINT fk_mareas_buques_buque_id FOREIGN KEY (BuqueID) REFERENCES buques (ID)
 );
 

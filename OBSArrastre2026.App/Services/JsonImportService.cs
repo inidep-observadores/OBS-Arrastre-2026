@@ -244,7 +244,11 @@ public sealed class JsonImportService : IJsonImportService
                     NumeroInidep = mareaDto.Numero,
                     Comentarios = mareaDto.Comentarios,
                     FechaInicio = mareaDto.FechaInicio,
-                    FechaFin = mareaDto.FechaFin
+                    FechaFin = mareaDto.FechaFin,
+                    BuqueCodigo = mareaDto.BuqueCodigo,
+                    ObservadorNombre = mareaDto.ObservadorNombre,
+                    ObservadorApellido = mareaDto.ObservadorApellido,
+                    ObservadorCodigo = mareaDto.ObservadorCodigo
                 };
 
                 foreach (var eDto in mareaDto.Etapas)
@@ -296,6 +300,10 @@ public sealed class JsonImportService : IJsonImportService
         marea.Comentarios = dto.Comentarios;
         marea.FechaInicio = dto.FechaInicio;
         marea.FechaFin = dto.FechaFin;
+        marea.BuqueCodigo = dto.BuqueCodigo;
+        marea.ObservadorNombre = dto.ObservadorNombre;
+        marea.ObservadorApellido = dto.ObservadorApellido;
+        marea.ObservadorCodigo = dto.ObservadorCodigo;
 
         // Reemplazar etapas (Borrado físico seguido de inserción)
         context.MareaEtapas.RemoveRange(marea.Etapas);
@@ -326,6 +334,10 @@ public sealed class JsonImportService : IJsonImportService
         public string? Comentarios { get; set; }
         public DateTime FechaInicio { get; set; }
         public DateTime? FechaFin { get; set; }
+        public int? BuqueCodigo { get; set; }
+        public string? ObservadorNombre { get; set; }
+        public string? ObservadorApellido { get; set; }
+        public int? ObservadorCodigo { get; set; }
         public List<PortableEtapaDto> Etapas { get; set; } = new();
     }
 

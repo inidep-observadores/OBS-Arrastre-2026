@@ -10,7 +10,7 @@ namespace OBSArrastre2026.App.Services;
 
 public interface IMareaImportService
 {
-    Task<MareaValidationReport> ProcessMareaImportAsync(string basePath, string barco, int marea, int anio, IEnumerable<MareaEtapa> etapas);
+    Task<MareaValidationReport> ProcessMareaImportAsync(string basePath, Marea marea);
     Task ImportAsync(string mareaId, MareaValidationReport report);
     Task<bool> HasDataAsync(string mareaId);
     Task ClearMareaDataAsync(string mareaId);
@@ -66,17 +66,22 @@ public class MareaImportService : IMareaImportService
         return null;
     }
 
-    public async Task<MareaValidationReport> ProcessMareaImportAsync(string basePath, string barco, int marea, int anio, IEnumerable<MareaEtapa> etapas)
+    public async Task<MareaValidationReport> ProcessMareaImportAsync(string basePath, Marea marea)
     {
+        string barco = marea.Buque?.Nombre ?? "S/D";
+        int mareaNum = marea.NumeroInidep;
+        int anio = marea.AnioInidep;
+        var etapas = marea.Etapas;
+
         // 1. Resolver rutas de forma flexible (Marea 3 Año 2026 -> S326, S0326, S00326, etc.)
-        string? cPath = ResolveFilePath(basePath, "C", marea, anio);
-        string? mPath = ResolveFilePath(basePath, "M", marea, anio);
-        string? mdPath = ResolveFilePath(basePath, "MD", marea, anio); // Tallas de descarte
-        string? xPath = ResolveFilePath(basePath, "X", marea, anio);
-        string? sPath = ResolveFilePath(basePath, "S", marea, anio);
-        string? lPath = ResolveFilePath(basePath, "L", marea, anio);
-        string? tPath = ResolveFilePath(basePath, "T", marea, anio);
-        string? pPath = ResolveFilePath(basePath, "P", marea, anio);
+        string? cPath = ResolveFilePath(basePath, "C", mareaNum, anio);
+        string? mPath = ResolveFilePath(basePath, "M", mareaNum, anio);
+        string? mdPath = ResolveFilePath(basePath, "MD", mareaNum, anio); // Tallas de descarte
+        string? xPath = ResolveFilePath(basePath, "X", mareaNum, anio);
+        string? sPath = ResolveFilePath(basePath, "S", mareaNum, anio);
+        string? lPath = ResolveFilePath(basePath, "L", mareaNum, anio);
+        string? tPath = ResolveFilePath(basePath, "T", mareaNum, anio);
+        string? pPath = ResolveFilePath(basePath, "P", mareaNum, anio);
 
         var report = new MareaValidationReport();
 
@@ -233,7 +238,25 @@ public class MareaImportService : IMareaImportService
                 lp => (A: lp.ParamA, B: lp.ParamB)
             );
 
-        report = _validator.ValidateMarea(barco, anio, marea, etapasFechas, capturas, muestras, submuestras, lgs, tracking, produccion, especiesDict, especiesViejasDict, especiesCodigosValidos, largoPesoCatalogo);
+        report = _validator.ValidateMarea(
+            barco, 
+            anio, 
+            mareaNum, 
+            marea.BuqueCodigo,
+            marea.ObservadorNombre,
+            marea.ObservadorApellido,
+            marea.ObservadorCodigo,
+            etapasFechas, 
+            capturas, 
+            muestras, 
+            submuestras, 
+            lgs, 
+            tracking, 
+            produccion, 
+            especiesDict, 
+            especiesViejasDict, 
+            especiesCodigosValidos, 
+            largoPesoCatalogo);
         report.ArchivosProcesados = archivosEncontrados;
 
         // 6. Generar Reporte PDF
