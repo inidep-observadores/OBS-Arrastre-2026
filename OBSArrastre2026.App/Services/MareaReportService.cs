@@ -168,11 +168,11 @@ public class MareaReportService : IMareaReportService
                 table.Cell().Element(style).Text(item.NombreCientifico).Italic();
                 table.Cell().Element(style).AlignRight().Text(item.CapturaTotal.ToString("N1"));
                 table.Cell().Element(style).AlignRight().Text(item.DescarteKg.ToString("N1"));
-                table.Cell().Element(style).AlignRight().Text(item.DescartePorcentaje.ToString("N1") + "%");
+                table.Cell().Element(style).AlignRight().Text(item.DescartePorcentaje.ToString("N2") + "%");
                 table.Cell().Element(style).AlignRight().Text(item.ProduccionTotal.ToString("N1"));
                 table.Cell().Element(style).AlignRight().Text(item.NroLances.ToString());
                 table.Cell().Element(style).AlignRight().Text(item.NroDias.ToString());
-                table.Cell().Element(style).AlignRight().Text(item.PorcentajeJuveniles?.ToString("N1") + "%" ?? "-");
+                table.Cell().Element(style).AlignRight().Text(item.PorcentajeJuveniles?.ToString("N2") + "%" ?? "-");
             }
         });
 
