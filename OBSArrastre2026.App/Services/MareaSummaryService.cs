@@ -177,7 +177,7 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
             }
         }
         
-        section.EspeciesMuestreadas = section.EspeciesMuestreadas.OrderBy(e => e.NombreCientifico).ToList();
+        section.EspeciesMuestreadas = section.EspeciesMuestreadas.OrderByDescending(e => e.MuestrasCaptura).ThenBy(e => e.NombreCientifico).ToList();
         section.EspeciesObjetivo = section.EspeciesObjetivo.OrderByDescending(e => e.ProduccionTotal).ToList();
 
         // Áreas
@@ -191,7 +191,7 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
             }).ToList();
 
         section.Areas = areaGroups.OrderBy(a => a.Area).ToList();
-        section.AreaMasLances = areaGroups.OrderByDescending(a => a.CantidadLances).FirstOrDefault()?.Area ?? "-";
+        section.AreaMasLances = areaGroups.OrderByDescending(a => a.CantidadLances).ThenByDescending(a => a.CapturaKg).FirstOrDefault()?.Area ?? "-";
         section.AreaMayorCaptura = areaGroups.OrderByDescending(a => a.CapturaKg).FirstOrDefault()?.Area ?? "-";
 
         return section;
