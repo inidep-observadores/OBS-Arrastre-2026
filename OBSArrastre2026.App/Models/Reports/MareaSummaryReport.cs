@@ -18,6 +18,15 @@ public class MareaSummarySpeciesItem
     public bool EsObjetivo { get; set; }
 }
 
+public class MareaSummarySampledSpeciesItem
+{
+    public string EspecieId { get; set; } = string.Empty;
+    public string NombreCientifico { get; set; } = string.Empty;
+    public int MuestrasCaptura { get; set; }
+    public int MuestrasDescarte { get; set; }
+    public int MuestrasConSubmuestra { get; set; }
+}
+
 public class MareaSummaryAreaItem
 {
     public string Area { get; set; } = string.Empty;
@@ -39,6 +48,9 @@ public class MareaSummarySection
     public int CantidadMuestrasCaptura { get; set; }
     public int CantidadMuestrasDescarte { get; set; }
     public int CantidadSubmuestras { get; set; }
+
+    // Especies Muestreadas
+    public List<MareaSummarySampledSpeciesItem> EspeciesMuestreadas { get; set; } = new();
 
     // Especies Objetivo
     public List<MareaSummarySpeciesItem> EspeciesObjetivo { get; set; } = new();

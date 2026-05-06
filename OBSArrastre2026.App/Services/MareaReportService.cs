@@ -98,6 +98,40 @@ public class MareaReportService : IMareaReportService
             });
         });
 
+        // Especies Muestreadas
+        if (section.EspeciesMuestreadas.Any())
+        {
+            col.Item().PaddingTop(15).Text("ESPECIES MUESTREADAS").FontSize(10).SemiBold().FontColor(Colors.Blue.Medium);
+            col.Item().PaddingTop(5).Table(table =>
+            {
+                table.ColumnsDefinition(columns =>
+                {
+                    columns.RelativeColumn(3); // Especie
+                    columns.RelativeColumn(1); // M. Captura
+                    columns.RelativeColumn(1); // M. Descarte
+                    columns.RelativeColumn(1); // M. c/Sub.
+                });
+
+                table.Header(header =>
+                {
+                    header.Cell().Element(HeaderStyle).Text("Especie");
+                    header.Cell().Element(HeaderStyle).AlignRight().Text("M. Captura");
+                    header.Cell().Element(HeaderStyle).AlignRight().Text("M. Descarte");
+                    header.Cell().Element(HeaderStyle).AlignRight().Text("M. c/Sub.");
+                });
+
+                foreach (var item in section.EspeciesMuestreadas)
+                {
+                    table.Cell().Element(CellStyle).Text(item.NombreCientifico).Italic();
+                    table.Cell().Element(CellStyle).AlignRight().Text(item.MuestrasCaptura.ToString());
+                    table.Cell().Element(CellStyle).AlignRight().Text(item.MuestrasDescarte.ToString());
+                    table.Cell().Element(CellStyle).AlignRight().Text(item.MuestrasConSubmuestra.ToString());
+                }
+                
+                IContainer CellStyle(IContainer container) => container.PaddingVertical(2).BorderBottom(1).BorderColor(Colors.Grey.Lighten4);
+            });
+        }
+
         // Especies Objetivo
         col.Item().PaddingTop(10).Text("PRINCIPALES ESPECIES OBJETIVO").FontSize(10).SemiBold().FontColor(Colors.Blue.Medium);
         col.Item().PaddingTop(5).Table(table =>

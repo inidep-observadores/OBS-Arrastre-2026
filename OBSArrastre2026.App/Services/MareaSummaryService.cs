@@ -99,7 +99,7 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
         var todasMuestras = lances.SelectMany(l => l.Muestras).ToList();
         section.CantidadMuestrasCaptura = todasMuestras.Count(m => m.TipoMuestra == 1);
         section.CantidadMuestrasDescarte = todasMuestras.Count(m => m.TipoMuestra == 2);
-        section.CantidadSubmuestras = todasMuestras.Sum(m => m.ItemsSubmuestras.Count);
+        section.CantidadSubmuestras = todasMuestras.Count(m => m.ItemsSubmuestras.Any());
 
         // Especies Objetivo y Estadísticas por Especie
         double totalProduccionGlobal = produccion.Sum(p => p.Kg ?? 0);
@@ -152,12 +152,26 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
                 }
             }
 
-            if (item.EsObjetivo || item.CapturaTotal > 0 || item.ProduccionTotal > 0)
+            // Especies Muestreadas
+            if (muestrasEspecie.Any())
+            {
+                section.EspeciesMuestreadas.Add(new MareaSummarySampledSpeciesItem
+                {
+                    EspecieId = espId!,
+                    NombreCientifico = item.NombreCientifico,
+                    MuestrasCaptura = muestrasEspecie.Count(m => m.TipoMuestra == 1),
+                    MuestrasDescarte = muestrasEspecie.Count(m => m.TipoMuestra == 2),
+                    MuestrasConSubmuestra = muestrasEspecie.Count(m => m.ItemsSubmuestras.Any())
+                });
+            }
+
+            if (item.EsObjetivo)
             {
                 section.EspeciesObjetivo.Add(item);
             }
         }
         
+        section.EspeciesMuestreadas = section.EspeciesMuestreadas.OrderBy(e => e.NombreCientifico).ToList();
         section.EspeciesObjetivo = section.EspeciesObjetivo.OrderByDescending(e => e.ProduccionTotal).ToList();
 
         // Áreas

@@ -136,7 +136,7 @@
                                         </Style.Triggers>
                                     </Style>
                                 </Button.Style>
-                                <TextBlock Text="📋" FontSize="16" VerticalAlignment="Center" Foreground="{DynamicResource AccentBrush}"/>
+                                <TextBlock Text="✓" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Foreground="{DynamicResource AccentBrush}"/>
                             </Button>
 
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
