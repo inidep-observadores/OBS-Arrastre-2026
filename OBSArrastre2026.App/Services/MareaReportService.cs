@@ -10,6 +10,7 @@ public interface IMareaReportService
 {
     Task<byte[]> GenerateValidationPdfAsync(MareaValidationReport report);
     Task<byte[]> GenerateControlProduccionPdfAsync(ControlProduccionReport report);
+    Task<byte[]> GenerateMareaSummaryPdfAsync(MareaSummaryReport report);
 }
 
 public class MareaReportService : IMareaReportService
@@ -24,6 +25,182 @@ public class MareaReportService : IMareaReportService
     public MareaReportService(IMapRenderingService mapRenderingService)
     {
         _mapRenderingService = mapRenderingService;
+    }
+
+    public async Task<byte[]> GenerateMareaSummaryPdfAsync(MareaSummaryReport report)
+    {
+        return await Task.Run(() => Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(1, Unit.Centimetre);
+                page.PageColor(Colors.White);
+                page.DefaultTextStyle(x => x.FontSize(8).FontFamily(Fonts.Verdana));
+
+                ComposeHeader(page.Header(), report.Barco, report.Marea, report.Anio, report.FechaInicioMarea, report.FechaFinMarea, "RESUMEN DE DATOS DE MAREA",
+                    report.BuqueCodigo, report.ObservadorNombre, report.ObservadorApellido, report.ObservadorCodigo);
+                
+                page.Content().PaddingVertical(10).Column(col => 
+                {
+                    ComposeMareaSummarySection(col, report.ResumenGeneral);
+
+                    if (report.ResumenEtapas.Any())
+                    {
+                        foreach (var etapa in report.ResumenEtapas)
+                        {
+                            col.Item().PageBreak();
+                            ComposeMareaSummarySection(col, etapa);
+                        }
+                    }
+                });
+
+                ComposeFooter(page.Footer());
+            });
+        }).GeneratePdf());
+    }
+
+    private void ComposeMareaSummarySection(ColumnDescriptor col, MareaSummarySection section)
+    {
+        col.Item().PaddingTop(10).Background(Colors.Grey.Lighten4).Padding(8).Text(section.Titulo).FontSize(12).SemiBold().FontColor(Colors.Blue.Medium);
+
+        col.Item().PaddingVertical(10).Row(row =>
+        {
+            row.RelativeItem().Column(c =>
+            {
+                c.Item().Text("Días Navegados").FontSize(7).FontColor(Colors.Grey.Medium);
+                c.Item().Text(section.DiasNavegados.ToString()).FontSize(10).SemiBold();
+            });
+            row.RelativeItem().Column(c =>
+            {
+                c.Item().Text("Días de Pesca").FontSize(7).FontColor(Colors.Grey.Medium);
+                c.Item().Text(section.DiasPesca.ToString()).FontSize(10).SemiBold();
+            });
+            row.RelativeItem().Column(c =>
+            {
+                c.Item().Text("Total Lances").FontSize(7).FontColor(Colors.Grey.Medium);
+                c.Item().Text(section.CantidadLances.ToString()).FontSize(10).SemiBold();
+            });
+            row.RelativeItem().Column(c =>
+            {
+                c.Item().Text("Muestras Captura").FontSize(7).FontColor(Colors.Grey.Medium);
+                c.Item().Text(section.CantidadMuestrasCaptura.ToString()).FontSize(10).SemiBold();
+            });
+            row.RelativeItem().Column(c =>
+            {
+                c.Item().Text("Muestras Descarte").FontSize(7).FontColor(Colors.Grey.Medium);
+                c.Item().Text(section.CantidadMuestrasDescarte.ToString()).FontSize(10).SemiBold();
+            });
+            row.RelativeItem().Column(c =>
+            {
+                c.Item().Text("Submuestras").FontSize(7).FontColor(Colors.Grey.Medium);
+                c.Item().Text(section.CantidadSubmuestras.ToString()).FontSize(10).SemiBold();
+            });
+        });
+
+        // Especies Objetivo
+        col.Item().PaddingTop(10).Text("PRINCIPALES ESPECIES OBJETIVO").FontSize(10).SemiBold().FontColor(Colors.Blue.Medium);
+        col.Item().PaddingTop(5).Table(table =>
+        {
+            table.ColumnsDefinition(columns =>
+            {
+                columns.RelativeColumn(3); // Especie
+                columns.RelativeColumn(1.5f); // Captura
+                columns.RelativeColumn(1.5f); // Descarte
+                columns.RelativeColumn(1.2f); // Desc %
+                columns.RelativeColumn(1.5f); // Prod
+                columns.RelativeColumn(1); // Lan
+                columns.RelativeColumn(1); // Días
+                columns.RelativeColumn(1.2f); // Juv %
+            });
+
+            table.Header(header =>
+            {
+                header.Cell().Element(HeaderStyle).Text("Especie");
+                header.Cell().Element(HeaderStyle).AlignRight().Text("Captura (kg)");
+                header.Cell().Element(HeaderStyle).AlignRight().Text("Descarte (kg)");
+                header.Cell().Element(HeaderStyle).AlignRight().Text("Desc %");
+                header.Cell().Element(HeaderStyle).AlignRight().Text("Prod (kg)");
+                header.Cell().Element(HeaderStyle).AlignRight().Text("Lan");
+                header.Cell().Element(HeaderStyle).AlignRight().Text("Días");
+                header.Cell().Element(HeaderStyle).AlignRight().Text("Juv %");
+            });
+
+            foreach (var item in section.EspeciesObjetivo)
+            {
+                var style = item.EsObjetivo ? (Func<IContainer, IContainer>)(c => c.PaddingVertical(2).BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Background(Colors.Blue.Lighten5)) 
+                                           : (Func<IContainer, IContainer>)(c => c.PaddingVertical(2).BorderBottom(1).BorderColor(Colors.Grey.Lighten4));
+
+                table.Cell().Element(style).Text(item.NombreCientifico).Italic();
+                table.Cell().Element(style).AlignRight().Text(item.CapturaTotal.ToString("N1"));
+                table.Cell().Element(style).AlignRight().Text(item.DescarteKg.ToString("N1"));
+                table.Cell().Element(style).AlignRight().Text(item.DescartePorcentaje.ToString("N1") + "%");
+                table.Cell().Element(style).AlignRight().Text(item.ProduccionTotal.ToString("N1"));
+                table.Cell().Element(style).AlignRight().Text(item.NroLances.ToString());
+                table.Cell().Element(style).AlignRight().Text(item.NroDias.ToString());
+                table.Cell().Element(style).AlignRight().Text(item.PorcentajeJuveniles?.ToString("N1") + "%" ?? "-");
+            }
+        });
+
+        // Áreas
+        col.Item().PaddingTop(20).Row(row =>
+        {
+            row.RelativeItem().Column(c =>
+            {
+                c.Item().Text("ÁREAS DE TRABAJO").FontSize(10).SemiBold().FontColor(Colors.Blue.Medium);
+                c.Item().PaddingTop(5).Table(table =>
+                {
+                    table.ColumnsDefinition(columns =>
+                    {
+                        columns.RelativeColumn(); // Área
+                        columns.RelativeColumn(); // Lances
+                        columns.RelativeColumn(); // Captura
+                        columns.RelativeColumn(); // Días
+                    });
+
+                    table.Header(header =>
+                    {
+                        header.Cell().Element(HeaderStyle).Text("Área");
+                        header.Cell().Element(HeaderStyle).AlignRight().Text("Lances");
+                        header.Cell().Element(HeaderStyle).AlignRight().Text("Captura");
+                        header.Cell().Element(HeaderStyle).AlignRight().Text("Días");
+                    });
+
+                    foreach (var area in section.Areas)
+                    {
+                        table.Cell().Element(CellStyle).Text(area.Area);
+                        table.Cell().Element(CellStyle).AlignRight().Text(area.CantidadLances.ToString());
+                        table.Cell().Element(CellStyle).AlignRight().Text(area.CapturaKg.ToString("N1"));
+                        table.Cell().Element(CellStyle).AlignRight().Text(area.DiasPesca.ToString());
+                    }
+
+                    IContainer CellStyle(IContainer container) => container.PaddingVertical(2).BorderBottom(1).BorderColor(Colors.Grey.Lighten4);
+                });
+            });
+
+            row.ConstantItem(20);
+
+            row.ConstantItem(150).Column(c =>
+            {
+                c.Item().PaddingTop(30).Border(1).BorderColor(Colors.Blue.Medium).Padding(10).Column(inner =>
+                {
+                    inner.Item().Text("DESTACADOS").FontSize(9).SemiBold().FontColor(Colors.Blue.Medium).AlignCenter();
+                    
+                    if (section.AreaMasLances == section.AreaMayorCaptura)
+                    {
+                        inner.Item().PaddingTop(15).Text("Área de mayor captura y Nº de lances").FontSize(7).FontColor(Colors.Grey.Medium).AlignCenter();
+                        inner.Item().Text(section.AreaMasLances).FontSize(14).SemiBold().AlignCenter();
+                    }
+                    else
+                    {
+                        inner.Item().PaddingTop(10).Text("Área con más lances").FontSize(7).FontColor(Colors.Grey.Medium).AlignCenter();
+                        inner.Item().Text(section.AreaMasLances).FontSize(11).SemiBold().AlignCenter();
+                        inner.Item().PaddingTop(10).Text("Área de mayor captura").FontSize(7).FontColor(Colors.Grey.Medium).AlignCenter();
+                        inner.Item().Text(section.AreaMayorCaptura).FontSize(11).SemiBold().AlignCenter();
+                    }
+                });
+            });
+        });
     }
 
     public async Task<byte[]> GenerateValidationPdfAsync(MareaValidationReport report)

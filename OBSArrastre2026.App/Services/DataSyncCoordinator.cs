@@ -1,4 +1,5 @@
 using System.IO;
+using System.Collections.Generic;
 
 namespace OBSArrastre2026.App.Services;
 
@@ -61,31 +62,33 @@ public sealed class DataSyncCoordinator : IDataSyncCoordinator
         var localDbfFile = Path.Combine(_rawPath, dbfFilename);
         var jsonFile = Path.Combine(_stagingPath, jsonFilename);
 
-        // Fallback: Si no está en Data/Import/Raw, buscar en carpetas probables
-        string dbfFile = localDbfFile;
-        if (!File.Exists(dbfFile))
+        var searchPaths = new List<string>
         {
-            var searchPaths = new[] 
-            {
-                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "source_data", dbfFilename),
-                Path.Combine(FindProjectRoot(AppDomain.CurrentDomain.BaseDirectory) ?? "", "source_data", dbfFilename),
-                Path.Combine(FindProjectRoot(AppDomain.CurrentDomain.BaseDirectory) ?? "", "OBSArrastre2026.App", "Data", "Import", "Raw", dbfFilename),
-                Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory)?.FullName ?? "", "source_data", dbfFilename),
-                Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory)?.Parent?.FullName ?? "", "source_data", dbfFilename)
-            };
+            Path.Combine(_rawPath, dbfFilename),
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "source_data", dbfFilename),
+            Path.Combine(FindProjectRoot(AppDomain.CurrentDomain.BaseDirectory) ?? "", "source_data", dbfFilename),
+            Path.Combine(FindProjectRoot(AppDomain.CurrentDomain.BaseDirectory) ?? "", "OBSArrastre2026.App", "Data", "Import", "Raw", dbfFilename),
+            Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory)?.FullName ?? "", "source_data", dbfFilename),
+            Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory)?.Parent?.FullName ?? "", "source_data", dbfFilename)
+        };
 
-            foreach (var path in searchPaths)
+        string? dbfFile = null;
+        DateTime latestDate = DateTime.MinValue;
+
+        foreach (var path in searchPaths)
+        {
+            if (!string.IsNullOrEmpty(path) && File.Exists(path))
             {
-                if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                var currentInfo = new FileInfo(path);
+                if (currentInfo.LastWriteTime > latestDate)
                 {
                     dbfFile = path;
-                    System.Diagnostics.Debug.WriteLine($"Sincronización: Encontrado archivo origen en {path}");
-                    break;
+                    latestDate = currentInfo.LastWriteTime;
                 }
             }
         }
 
-        if (!File.Exists(dbfFile))
+        if (dbfFile == null)
         {
             Console.WriteLine($"Sincronización ERROR: No se encontró el archivo origen para {dbfFilename}.");
             System.Diagnostics.Debug.WriteLine($"Sincronización error: No se encontró el archivo origen para {dbfFilename}. Buscado en {dbfFile}");

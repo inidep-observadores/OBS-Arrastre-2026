@@ -71,6 +71,7 @@ public partial class App : Application
                 services.AddSingleton<GeoJsonService>();
                 services.AddSingleton<IMapRenderingService, MapRenderingService>();
                 services.AddSingleton<IExcelReportService, ExcelReportService>();
+                services.AddSingleton<IMareaSummaryService, MareaSummaryService>();
 
                 // Validación y ViewModels
                 services.AddValidatorsFromAssemblyContaining<App>();
@@ -91,7 +92,8 @@ public partial class App : Application
                         var buqueService = sp.GetRequiredService<IBuqueService>();
                         var mareaImportService = sp.GetRequiredService<IMareaImportService>();
                         var jsonImportService = sp.GetRequiredService<IJsonImportService>();
-                        return new MareaEditViewModel(onClose, validator, mareaService, buqueService, mareaImportService, jsonImportService, mareaId);
+                        var activeMareaManager = sp.GetRequiredService<IActiveMareaManager>();
+                        return new MareaEditViewModel(onClose, validator, mareaService, buqueService, mareaImportService, jsonImportService, activeMareaManager, mareaId);
                     });
 
                 services.AddSingleton<Func<Action, string, string?, LanceEditViewModel>>(sp =>

@@ -248,7 +248,7 @@ public sealed class MareaValidationEngine
         }
         foreach (var p in produccion.Where(p => p.Fecha.Date < minDate || p.Fecha.Date > maxDate))
         {
-            report.AddIssue(ValidationLevel.Error, "Consistencia Temporal", $"Producción con fecha {p.Fecha:dd/MM/yyyy} fuera del rango de etapas de marea.");
+            report.AddIssue(ValidationLevel.Fatal, "Consistencia Temporal", $"Producción con fecha {p.Fecha:dd/MM/yyyy} fuera del rango de etapas de marea ({minDate:dd/MM/yyyy} al {maxDate:dd/MM/yyyy}).");
         }
     }
 

@@ -293,7 +293,10 @@ public sealed class JsonImportService : IJsonImportService
 
         // Actualizar buque si coincide el nombre
         var buque = await context.Buques.FirstOrDefaultAsync(b => b.Nombre == dto.BuqueNombre);
-        if (buque != null) marea.BuqueID = buque.Id;
+        if (buque == null)
+            throw new InvalidOperationException($"El buque '{dto.BuqueNombre}' especificado en la metadata JSON no se encuentra en el catálogo local. Debe darlo de alta antes de importar.");
+        
+        marea.BuqueID = buque.Id;
 
         marea.AnioInidep = dto.Anio;
         marea.NumeroInidep = dto.Numero;

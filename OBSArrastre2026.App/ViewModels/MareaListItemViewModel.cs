@@ -11,20 +11,24 @@ public sealed class MareaListItemViewModel : ObservableObject
     private readonly IActiveMareaManager _activeMareaManager;
     private readonly IMareaValidationService _validationService;
     private readonly IMareaReportService _reportService;
+    private readonly IMareaSummaryService _summaryService;
 
     public MareaListItemViewModel(
         Marea marea, 
         IActiveMareaManager activeMareaManager,
         IMareaValidationService validationService,
-        IMareaReportService reportService)
+        IMareaReportService reportService,
+        IMareaSummaryService summaryService)
     {
         Marea = marea;
         _activeMareaManager = activeMareaManager;
         _validationService = validationService;
         _reportService = reportService;
+        _summaryService = summaryService;
 
         SetActiveCommand = new AsyncRelayCommand(() => _activeMareaManager.SetActiveMareaAsync(Marea.ID));
         ValidateCommand = new AsyncRelayCommand(ValidateAsync);
+        GenerateSummaryCommand = new AsyncRelayCommand(GenerateSummaryAsync);
     }
 
     public Marea Marea { get; }
@@ -47,6 +51,7 @@ public sealed class MareaListItemViewModel : ObservableObject
 
     public ICommand SetActiveCommand { get; }
     public ICommand ValidateCommand { get; }
+    public ICommand GenerateSummaryCommand { get; }
 
     private bool _isValidating;
     public bool IsValidating
@@ -60,6 +65,44 @@ public sealed class MareaListItemViewModel : ObservableObject
     {
         get => _statusText;
         set => SetProperty(ref _statusText, value);
+    }
+
+    private async Task GenerateSummaryAsync()
+    {
+        if (IsValidating) return;
+
+        IsValidating = true;
+        StatusText = "Generando resumen...";
+        try
+        {
+            var pdfBytes = await Task.Run(async () => 
+            {
+                StatusText = "Recolectando datos de la marea...";
+                var report = await _summaryService.GetMareaSummaryAsync(Marea.ID);
+                
+                StatusText = "Generando PDF...";
+                return await _reportService.GenerateMareaSummaryPdfAsync(report);
+            });
+
+            StatusText = "Abriendo reporte...";
+            string tempPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"Resumen_Marea_{Marea.Buque?.Nombre ?? "Marea"}_{Marea.NumeroInidep}_{Marea.AnioInidep}.pdf");
+            await System.IO.File.WriteAllBytesAsync(tempPath, pdfBytes);
+
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = tempPath,
+                UseShellExecute = true
+            });
+        }
+        catch (System.Exception ex)
+        {
+            System.Windows.MessageBox.Show($"Error al generar el resumen: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
+        finally
+        {
+            IsValidating = false;
+            StatusText = string.Empty;
+        }
     }
 
     private async Task ValidateAsync()

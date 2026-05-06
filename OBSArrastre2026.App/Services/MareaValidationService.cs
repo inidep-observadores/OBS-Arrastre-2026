@@ -267,6 +267,34 @@ public class MareaValidationService : IMareaValidationService
                         hayCambios = true;
                     }
                 }
+
+                foreach (var muestra in lance.Muestras)
+                {
+                    // Buscar la muestra legacy correspondiente (por especie)
+                    var legacyMuestra = muestrasList.FirstOrDefault(m => 
+                        (int)m.Lance == lance.NroLance && 
+                        (m.CodEspec == (muestra.Especie?.CodigoInidep ?? muestra.Especie?.ID) || m.Especie == muestra.Especie?.NombreCientifico));
+
+                    if (legacyMuestra != null)
+                    {
+                        double dbPesoGramos = muestra.PesoMuestra_PesoGramos ?? 0;
+                        double legacyPesoGramos = legacyMuestra.PesoMues * 1000;
+
+                        if (Math.Abs(dbPesoGramos - legacyPesoGramos) > 1.0) // Diferencia mayor a 1 gramo
+                        {
+                            muestra.PesoMuestra_PesoGramos = legacyPesoGramos;
+                            
+                            // Recalcular ejemplares por kg si tenemos el dato
+                            int totalEjemplares = muestra.FrecuenciasTallas.Sum(f => f.NroTotal);
+                            if (legacyMuestra.PesoMues > 0)
+                            {
+                                muestra.EjemplaresPorKg = (int)Math.Round(totalEjemplares / legacyMuestra.PesoMues);
+                            }
+                            
+                            hayCambios = true;
+                        }
+                    }
+                }
             }
         }
 

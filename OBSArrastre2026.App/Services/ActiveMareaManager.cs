@@ -57,6 +57,14 @@ public sealed class ActiveMareaManager : IActiveMareaManager
         }
     }
 
+    public async Task RefreshAsync()
+    {
+        if (!string.IsNullOrEmpty(ActiveMareaId))
+        {
+            await SetActiveMareaAsync(ActiveMareaId);
+        }
+    }
+
     public async Task SetActiveMareaAsync(string? mareaId)
     {
         ActiveMareaId = mareaId;

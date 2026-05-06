@@ -136,7 +136,7 @@ public sealed partial class ImportDbfViewModel : ObservableObject
     public ICommand AcceptCommand { get; }
     public ICommand CancelCommand { get; }
 
-    public Action<string, string, string?, MessageDialogType>? ShowMessage { get; set; }
+    public Func<string, string, string?, MessageDialogType, Task>? ShowMessage { get; set; }
     public Func<string, string, Task<bool>>? ShowConfirmation { get; set; }
 
     private void AddFiles()
@@ -249,16 +249,17 @@ public sealed partial class ImportDbfViewModel : ObservableObject
             if (report.HasFatalErrors)
             {
                 // Abrir PDF de auditoría
-                string reportPath = Path.Combine(basePath, "Reports", $"Audit_{_barco}_{_mareaNum}_{_anio}.pdf");
+                string safeBarco = (_barco ?? "S-D").Replace("/", "-").Replace("\\", "-");
+                string reportPath = Path.Combine(basePath, "Reports", $"Audit_{safeBarco}_{_mareaNum}_{_anio}.pdf");
                 
                 if (File.Exists(reportPath))
                 {
                     Process.Start(new ProcessStartInfo(reportPath) { UseShellExecute = true });
-                    ShowMessage?.Invoke("Errores de Validación", "Se detectaron errores graves que impiden la importación. Se ha abierto el reporte PDF con el detalle.", null, MessageDialogType.Error);
+                    if (ShowMessage != null) await ShowMessage("Errores de Validación", "Se detectaron errores graves que impiden la importación. Se ha abierto el reporte PDF con el detalle.", null, MessageDialogType.Error);
                 }
                 else
                 {
-                    ShowMessage?.Invoke("Errores de Validación", "Se detectaron errores graves, pero no se pudo localizar el archivo de reporte.", null, MessageDialogType.Error);
+                    if (ShowMessage != null) await ShowMessage("Errores de Validación", "Se detectaron errores graves, pero no se pudo localizar el archivo de reporte.", null, MessageDialogType.Error);
                 }
                 _onFinished(null);
                 return;
@@ -290,7 +291,7 @@ public sealed partial class ImportDbfViewModel : ObservableObject
         catch (Exception ex)
         {
             IsBusy = false;
-            ShowMessage?.Invoke("Error de Importación", $"Ocurrió un error inesperado: {ex.Message}", ex.ToString(), MessageDialogType.Error);
+            if (ShowMessage != null) await ShowMessage("Error de Importación", $"Ocurrió un error inesperado: {ex.Message}", ex.ToString(), MessageDialogType.Error);
             _onFinished(null);
         }
         finally

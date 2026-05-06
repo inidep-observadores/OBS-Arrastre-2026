@@ -15,6 +15,7 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
     private readonly IBuqueService _buqueService;
     private readonly IMareaImportService _mareaImportService;
     private readonly IJsonImportService _jsonImportService;
+    private readonly IActiveMareaManager _activeMareaManager;
     private readonly Action _onClose;
     private string? _mareaId;
     private int _anioInidep;
@@ -33,6 +34,7 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
         IBuqueService buqueService,
         IMareaImportService mareaImportService,
         IJsonImportService jsonImportService,
+        IActiveMareaManager activeMareaManager,
         string? mareaId = null) : base(validator)
     {
         _onClose = onClose;
@@ -40,6 +42,7 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
         _buqueService = buqueService;
         _mareaImportService = mareaImportService;
         _jsonImportService = jsonImportService;
+        _activeMareaManager = activeMareaManager;
         _mareaId = mareaId;
         
         _fechaInicio = DateTime.Today;
@@ -149,7 +152,7 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
     {
         if (AnioInidep < 2000 || NumeroInidep <= 0)
         {
-            ShowMessage?.Invoke("Validación", "Se requiere Año y Número de Marea válidos para importar.", null, MessageDialogType.Warning);
+            if (ShowMessage != null) await ShowMessage("Validación", "Se requiere Año y Número de Marea válidos para importar.", null, MessageDialogType.Warning);
             return;
         }
 
@@ -158,7 +161,7 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
             // Si es una marea nueva, guardamos un borrador para obtener un ID
             if (SelectedBuque == null)
             {
-                ShowMessage?.Invoke("Validación", "Debe seleccionar un Buque antes de importar, o importar desde un JSON que lo contenga.", null, MessageDialogType.Warning);
+                if (ShowMessage != null) await ShowMessage("Validación", "Debe seleccionar un Buque antes de importar, o importar desde un JSON que lo contenga.", null, MessageDialogType.Warning);
                 // Si el usuario va a importar de JSON, tal vez no necesite seleccionar buque aún.
                 // Pero necesitamos un ID. Generamos uno.
                 _mareaId = Guid.NewGuid().ToString();
@@ -187,7 +190,7 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
             }
             catch (Exception ex)
             {
-                ShowMessage?.Invoke("Error", $"No se pudo limpiar la marea: {ex.Message}", ex.ToString(), MessageDialogType.Error);
+                if (ShowMessage != null) await ShowMessage("Error", $"No se pudo limpiar la marea: {ex.Message}", ex.ToString(), MessageDialogType.Error);
                 return;
             }
             finally
@@ -200,7 +203,7 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
         var mareaFull = await _mareaService.GetMareaAsync(_mareaId);
         if (mareaFull == null || !mareaFull.Etapas.Any())
         {
-            ShowMessage?.Invoke("Sin Etapas", "No se puede importar datos si la marea no tiene al menos una etapa cargada.", null, MessageDialogType.Warning);
+            if (ShowMessage != null) await ShowMessage("Sin Etapas", "No se puede importar datos si la marea no tiene al menos una etapa cargada.", null, MessageDialogType.Warning);
             return;
         }
 
@@ -214,20 +217,26 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
             _mareaService,
             SelectedBuque?.Nombre ?? "Sin Nombre",
             mareaFull.Etapas,
-            files => 
+            async files => 
             {
                 ShowCustomDialog?.Invoke(null); // Cerrar diálogos
                 
                 // Siempre refrescamos los detalles (por si se crearon etapas o cambió el buque)
-                _ = RefreshDetailsAsync();
+                await RefreshDetailsAsync();
+
+                // Si la marea que estamos editando es la activa, refrescamos el gestor global
+                if (_mareaId == _activeMareaManager.ActiveMareaId)
+                {
+                    await _activeMareaManager.RefreshAsync();
+                }
 
                 if (files != null)
                 {
-                    ShowMessage?.Invoke("Éxito", "La importación finalizó correctamente. Los lances y muestras han sido guardados en la base de datos.", null, MessageDialogType.Success);
+                    if (ShowMessage != null) await ShowMessage("Éxito", "La importación finalizó correctamente. Los lances y muestras han sido guardados en la base de datos.", null, MessageDialogType.Success);
                 }
             });
 
-        importVm.ShowMessage = (title, msg, details, type) => ShowMessage?.Invoke(title, msg, details, type);
+        importVm.ShowMessage = (title, msg, details, type) => ShowMessage != null ? ShowMessage(title, msg, details, type) : Task.CompletedTask;
         importVm.ShowConfirmation = (title, msg) => ShowConfirmation?.Invoke(title, msg) ?? Task.FromResult(false);
         ShowCustomDialog?.Invoke(importVm);
     }
@@ -237,7 +246,7 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
         await InitializeAsync();
     }
 
-    public Action<string, string, string?, MessageDialogType>? ShowMessage { get; set; }
+    public Func<string, string, string?, MessageDialogType, Task>? ShowMessage { get; set; }
 
     private async Task InitializeAsync()
     {
@@ -319,7 +328,7 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
                     var existing = await _mareaService.FindMareaAsync(NumeroInidep, AnioInidep);
                     if (existing != null)
                     {
-                        ShowMessage?.Invoke("Marea Duplicada", $"Ya existe una marea registrada con el código {NumeroInidep}/{AnioInidep % 100:D2} para el buque {existing.Buque?.Nombre ?? "desconocido"}.", null, MessageDialogType.Warning);
+                        if (ShowMessage != null) await ShowMessage("Marea Duplicada", $"Ya existe una marea registrada con el código {NumeroInidep}/{AnioInidep % 100:D2} para el buque {existing.Buque?.Nombre ?? "desconocido"}.", null, MessageDialogType.Warning);
                         return;
                     }
                 }

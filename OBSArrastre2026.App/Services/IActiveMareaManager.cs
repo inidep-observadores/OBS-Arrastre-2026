@@ -11,5 +11,6 @@ public interface IActiveMareaManager : INotifyPropertyChanged
     Marea? ActiveMarea { get; }
     
     Task SetActiveMareaAsync(string? mareaId);
+    Task RefreshAsync();
     Task InitializeAsync();
 }

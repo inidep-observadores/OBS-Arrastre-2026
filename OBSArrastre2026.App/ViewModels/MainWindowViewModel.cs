@@ -42,6 +42,7 @@ public class MainWindowViewModel : ObservableObject
     private readonly IMareaImportService _mareaImportService;
     private readonly IMapRenderingService _mapRenderingService;
     private readonly IExcelReportService _excelReportService;
+    private readonly IMareaSummaryService _mareaSummaryService;
     private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
     private NavigationItemViewModel? _selectedNavigationItem;
     private string _pageTitle = string.Empty;
@@ -286,6 +287,7 @@ public class MainWindowViewModel : ObservableObject
         IMareaImportService mareaImportService,
         IMapRenderingService mapRenderingService,
         IExcelReportService excelReportService,
+        IMareaSummaryService mareaSummaryService,
         IUserSettingsService userSettingsService,
         IDbContextFactory<AppDbContext> dbContextFactory)
     {
@@ -310,6 +312,7 @@ public class MainWindowViewModel : ObservableObject
         _mareaImportService = mareaImportService;
         _mapRenderingService = mapRenderingService;
         _excelReportService = excelReportService;
+        _mareaSummaryService = mareaSummaryService;
         _userSettingsService = userSettingsService;
 
         SearchPlaceholder = "Buscar...";
@@ -869,6 +872,17 @@ public class MainWindowViewModel : ObservableObject
         ActiveDialog = new MessageDialogViewModel(title, message, details, type, () => ActiveDialog = null);
     }
 
+    public Task ShowMessageAsync(string title, string message, string? details = null, MessageDialogType type = MessageDialogType.Info)
+    {
+        var tcs = new TaskCompletionSource();
+        ActiveDialog = new MessageDialogViewModel(title, message, details, type, () => 
+        {
+            ActiveDialog = null;
+            tcs.SetResult();
+        });
+        return tcs.Task;
+    }
+
     public Task<bool> ShowConfirmationAsync(string title, string message)
     {
         var tcs = new TaskCompletionSource<bool>();
@@ -1257,7 +1271,7 @@ public class MainWindowViewModel : ObservableObject
                 filterHasta,
                 _mareasSearchText);
 
-            var viewModels = mareas.Select(m => new MareaListItemViewModel(m, _activeMareaManager, _validationService, _reportService)).ToList();
+            var viewModels = mareas.Select(m => new MareaListItemViewModel(m, _activeMareaManager, _validationService, _reportService, _mareaSummaryService)).ToList();
             
             RecordsView.GroupDescriptions.Clear();
             Records.Clear();
@@ -1293,10 +1307,11 @@ public class MainWindowViewModel : ObservableObject
         var vm = _mareaEditFactory(() => 
         {
             CurrentEditViewModel = null;
-            _ = LoadMareasAsync(); // Recargar lista al cerrar
+            _ = _activeMareaManager.RefreshAsync();
+            _ = RefreshCurrentSectionAsync();
         }, null);
         vm.ShowCustomDialog = diag => ActiveDialog = diag;
-        vm.ShowMessage = (t, m, d, type) => ShowMessage(t, m, d, type);
+        vm.ShowMessage = (t, m, d, type) => ShowMessageAsync(t, m, d, type);
         vm.ShowConfirmation = (t, m) => ShowConfirmationAsync(t, m);
         CurrentEditViewModel = vm;
     }
@@ -1308,10 +1323,11 @@ public class MainWindowViewModel : ObservableObject
         var vm = _mareaEditFactory(() => 
         {
             CurrentEditViewModel = null;
-            _ = LoadMareasAsync(); // Recargar lista al cerrar
+            _ = _activeMareaManager.RefreshAsync();
+            _ = RefreshCurrentSectionAsync();
         }, item.ID);
         vm.ShowCustomDialog = diag => ActiveDialog = diag;
-        vm.ShowMessage = (t, m, d, type) => ShowMessage(t, m, d, type);
+        vm.ShowMessage = (t, m, d, type) => ShowMessageAsync(t, m, d, type);
         vm.ShowConfirmation = (t, m) => ShowConfirmationAsync(t, m);
         CurrentEditViewModel = vm;
     }
@@ -1800,6 +1816,17 @@ public class MainWindowViewModel : ObservableObject
                 // Refrescamos siempre la lista (pedido por el usuario)
                 await LoadMareasAsync();
                 await LoadFilterDataAsync();
+                
+                // Si la importación pudo haber afectado a la marea activa, refrescamos todo
+                if (!string.IsNullOrEmpty(_activeMareaManager.ActiveMareaId))
+                {
+                    await _activeMareaManager.RefreshAsync();
+                    await RefreshCurrentSectionAsync();
+                }
+                else 
+                {
+                    await RefreshCurrentSectionAsync();
+                }
 
                 if (files != null)
                 {
@@ -1807,7 +1834,7 @@ public class MainWindowViewModel : ObservableObject
                 }
             });
 
-        importVm.ShowMessage = (title, msg, details, type) => ShowMessage(title, msg, details, type);
+        importVm.ShowMessage = (title, msg, details, type) => ShowMessageAsync(title, msg, details, type);
         importVm.ShowConfirmation = (title, msg) => ShowConfirmationAsync(title, msg);
 
         ActiveDialog = importVm;

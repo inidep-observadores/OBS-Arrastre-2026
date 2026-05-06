@@ -86,6 +86,10 @@ public sealed class DatabaseInitializer(IDbContextFactory<AppDbContext> dbContex
             new { Code = "7102010201", Sexo = 1, A = 0.00150, B = 3.1500, Medida = "LT", Obs = "Tiburón espinoso" },
             new { Code = "7102010201", Sexo = 2, A = 0.00110, B = 3.2500, Medida = "LT", Obs = "Tiburón espinoso" },
 
+            // Pintarroja (S. bivius) - 7106010101
+            new { Code = "7106010101", Sexo = 1, A = 0.00180, B = 3.1200, Medida = "LT", Obs = "Banco Namuncurá" },
+            new { Code = "7106010101", Sexo = 2, A = 0.00130, B = 3.2100, Medida = "LT", Obs = "Banco Namuncurá" },
+
             // Calamar (I. argentinus) - 5702150101
             new { Code = "5702150101", Sexo = 0, A = 0.01100, B = 3.1500, Medida = "LM", Obs = "Largo de Manto" }
         };

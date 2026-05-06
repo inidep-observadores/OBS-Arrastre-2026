@@ -61,7 +61,6 @@
                         <ColumnDefinition Width="0.9*" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Text="{Binding CodigoDisplay}" />
                     <TextBlock Grid.Column="1" Style="{StaticResource BodySecondaryStyle}" Text="{Binding BuqueNombre}" />
@@ -93,27 +92,26 @@
                         </TextBlock>
                     </Border>
                     
-                    <!-- Botón para Establecer como Activa -->
-                    <Button Grid.Column="6" 
-                            Command="{Binding SetActiveCommand}"
-                            ToolTip="Establecer como marea activa"
-                            Margin="8,0,0,0">
-                        <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource ThemeButtonStyle}">
-                                <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                        <Setter Property="Foreground" Value="{DynamicResource WarningForegroundBrush}" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                        <TextBlock Text="★" FontSize="18" VerticalAlignment="Center" />
-                    </Button>
-                    
-                    <Grid Grid.Column="7" Margin="8,0,0,0">
-                        <Button Command="{Binding ValidateCommand}"
-                                ToolTip="Validar datos y generar PDF">
+                    <StackPanel Grid.Column="6" Orientation="Horizontal" HorizontalAlignment="Right" Margin="8,0,0,0">
+                        <!-- Botón para Establecer como Activa -->
+                        <Button Command="{Binding SetActiveCommand}"
+                                ToolTip="Establecer como marea activa">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource ThemeButtonStyle}">
+                                    <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                            <Setter Property="Foreground" Value="{DynamicResource WarningForegroundBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <TextBlock Text="★" FontSize="18" VerticalAlignment="Center" />
+                        </Button>
+
+                        <Button Command="{Binding GenerateSummaryCommand}"
+                                ToolTip="Generar Resumen de Marea (PDF)"
+                                Margin="8,0,0,0">
                             <Button.Style>
                                 <Style TargetType="Button" BasedOn="{StaticResource ThemeButtonStyle}">
                                     <Style.Triggers>
@@ -123,33 +121,48 @@
                                     </Style.Triggers>
                                 </Style>
                             </Button.Style>
-                            <TextBlock Text="📋" FontSize="16" VerticalAlignment="Center" Foreground="{DynamicResource AccentBrush}"/>
+                            <TextBlock Text="📄" FontSize="16" VerticalAlignment="Center" Foreground="{DynamicResource AccentBrush}"/>
                         </Button>
 
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <StackPanel.Style>
-                                <Style TargetType="StackPanel">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsValidating}" Value="True">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </StackPanel.Style>
-                            <ProgressBar IsIndeterminate="True" Width="16" Height="16" Margin="0,0,5,0" />
-                            <TextBlock Text="{Binding StatusText}" FontSize="10" FontStyle="Italic" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}"/>
-                        </StackPanel>
-                    </Grid>
+                        <Grid Margin="8,0,0,0">
+                            <Button Command="{Binding ValidateCommand}"
+                                    ToolTip="Validar datos y generar PDF">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource ThemeButtonStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsValidating}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <TextBlock Text="📋" FontSize="16" VerticalAlignment="Center" Foreground="{DynamicResource AccentBrush}"/>
+                            </Button>
 
-                    <Button Grid.Column="8"
-                            Command="{Binding DataContext.DeleteRecordCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                            CommandParameter="{Binding}"
-                            ToolTip="Eliminar marea y todos sus datos"
-                            Style="{StaticResource ThemeButtonStyle}"
-                            Margin="8,0,0,0">
-                        <TextBlock Text="🗑" FontSize="16" Foreground="{DynamicResource DangerForegroundBrush}" VerticalAlignment="Center" />
-                    </Button>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsValidating}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                                <ProgressBar IsIndeterminate="True" Width="16" Height="16" Margin="0,0,5,0" />
+                                <TextBlock Text="{Binding StatusText}" FontSize="10" FontStyle="Italic" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Button Command="{Binding DataContext.DeleteRecordCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="{Binding}"
+                                ToolTip="Eliminar marea y todos sus datos"
+                                Style="{StaticResource ThemeButtonStyle}"
+                                Margin="8,0,0,0">
+                            <TextBlock Text="🗑" FontSize="16" Foreground="{DynamicResource DangerForegroundBrush}" VerticalAlignment="Center" />
+                        </Button>
+                    </StackPanel>
                 </Grid>
             </Border>
         </DataTemplate>

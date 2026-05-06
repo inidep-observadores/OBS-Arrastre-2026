@@ -86,11 +86,11 @@ public class MareaImportService : IMareaImportService
         var report = new MareaValidationReport();
 
         // Verificar archivos obligatorios (usando nombres amigables para el reporte si no se encuentran)
-        string suffix = $"{marea:D2}{anio % 100:D2}.DBF"; // Nombre sugerido para el error
-        if (cPath == null) report.AddIssue(ValidationLevel.Error, "Sistema", $"El archivo de CAPTURA obligatorio no se encuentra (esperado C*{suffix})");
-        if (mPath == null) report.AddIssue(ValidationLevel.Error, "Sistema", $"El archivo de MUESTRA obligatorio no se encuentra (esperado M*{suffix})");
+        string suffix = $"{mareaNum:D2}{anio % 100:D2}.DBF"; // Nombre sugerido para el error
+        if (cPath == null) report.AddIssue(ValidationLevel.Fatal, "Sistema", $"El archivo de CAPTURA obligatorio no se encuentra (esperado C*{suffix})");
+        if (mPath == null) report.AddIssue(ValidationLevel.Fatal, "Sistema", $"El archivo de MUESTRA obligatorio no se encuentra (esperado M*{suffix})");
         if (sPath == null) report.AddIssue(ValidationLevel.Warning, "Sistema", $"El archivo de SUBMUESTRA no se encuentra (esperado S*{suffix})");
-        if (pPath == null) report.AddIssue(ValidationLevel.Error, "Sistema", $"El archivo de PRODUCCIÓN obligatorio no se encuentra (esperado P*{suffix})");
+        if (pPath == null) report.AddIssue(ValidationLevel.Fatal, "Sistema", $"El archivo de PRODUCCIÓN obligatorio no se encuentra (esperado P*{suffix})");
 
         // 2. Extraer datos (si los paths fueron resueltos)
         var capturas = cPath != null ? await _extractor.ReadCapturasAsync(cPath) ?? new() : new();
@@ -164,6 +164,8 @@ public class MareaImportService : IMareaImportService
             .Where(e => e.CodigoInidep != null && (e.NombreVulgar != null || e.NombreCientifico != null))
             .ToListAsync();
 
+        var productos = await dbContext.Productos.ToListAsync();
+
         var especiesDict = new Dictionary<string, string>();
         foreach (var esp in especiesDB)
         {
@@ -201,7 +203,7 @@ public class MareaImportService : IMareaImportService
         foreach (var c in capturas)
         {
             var lanceTime = GetLanceDateTime(c);
-            var etapa = etapas.FirstOrDefault(e => lanceTime >= e.FechaZarpada && lanceTime <= (e.FechaArribo ?? DateTime.MaxValue));
+            var etapa = etapas.FirstOrDefault(e => lanceTime >= e.FechaZarpada && lanceTime < (e.FechaArribo?.Date.AddDays(1) ?? DateTime.MaxValue));
             if (etapa == null)
             {
                 report.AddIssue(ValidationLevel.Fatal, "Etapa", $"El lance {c.Lance} ({lanceTime:g}) no cae dentro de ninguna etapa definida de la marea.", $"Lance {c.Lance}");
@@ -224,8 +226,18 @@ public class MareaImportService : IMareaImportService
             }
         }
 
+        // Validar productos (P*)
+        var productosNombres = new HashSet<string>(productos.Select(p => p.Codigo.Trim().ToUpper()), StringComparer.OrdinalIgnoreCase);
+        foreach (var p in produccion)
+        {
+            if (!string.IsNullOrEmpty(p.Producto) && !productosNombres.Contains(p.Producto.Trim().ToUpper()))
+            {
+                report.AddIssue(ValidationLevel.Error, "Catálogo Productos", $"El producto '{p.Producto}' no se encuentra en el catálogo local. Se importará como comentario.", $"Fecha {p.Fecha:dd/MM/yyyy}");
+            }
+        }
+
         // 5. Validar y Guardar datos en el reporte para el paso de commit
-        var etapasFechas = etapas.Select(e => (Inicio: e.FechaZarpada, Fin: e.FechaArribo ?? e.FechaZarpada)).ToList();
+        var etapasFechas = etapas.Select(e => (Inicio: e.FechaZarpada, Fin: e.FechaArribo ?? DateTime.MaxValue)).ToList();
 
         var largoPesoDB = await dbContext.EspeciesLargoPeso
             .Include(lp => lp.Especie)
@@ -261,7 +273,8 @@ public class MareaImportService : IMareaImportService
 
         // 6. Generar Reporte PDF
         var pdfBytes = await _reporter.GenerateValidationPdfAsync(report);
-        string reportPath = Path.Combine(basePath, "Reports", $"Audit_{barco}_{marea}_{anio}.pdf");
+        string safeBarco = barco.Replace("/", "-").Replace("\\", "-");
+        string reportPath = Path.Combine(basePath, "Reports", $"Audit_{safeBarco}_{mareaNum}_{anio}.pdf");
         Directory.CreateDirectory(Path.GetDirectoryName(reportPath)!);
         await File.WriteAllBytesAsync(reportPath, pdfBytes);
 
@@ -295,9 +308,6 @@ public class MareaImportService : IMareaImportService
                 especieByNombreMap[e.NombreCientifico.Trim().ToUpper().Normalize(NormalizationForm.FormC)] = e.ID;
         }
  
-        // LÓGICA DE PUENTE CON ESPECIES VIEJAS:
-
-        // LÓGICA DE PUENTE CON ESPECIES VIEJAS:
         // Usamos la tabla especies_viejas como puente para encontrar el código que mapea a la tabla especies actual.
         var especiesViejasCatalogo = await dbContext.EspeciesViejas.ToListAsync();
         foreach (var ev in especiesViejasCatalogo)
@@ -321,7 +331,7 @@ public class MareaImportService : IMareaImportService
         foreach (var c in report.Capturas)
         {
             var lanceTime = GetLanceDateTime(c);
-            var etapa = marea.Etapas.FirstOrDefault(e => lanceTime >= e.FechaZarpada && lanceTime <= (e.FechaArribo ?? DateTime.MaxValue));
+            var etapa = marea.Etapas.FirstOrDefault(e => lanceTime >= e.FechaZarpada && lanceTime < (e.FechaArribo?.Date.AddDays(1) ?? DateTime.MaxValue));
             
             if (etapa == null) continue;
 
