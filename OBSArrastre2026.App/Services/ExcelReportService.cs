@@ -254,7 +254,7 @@ namespace OBSArrastre2026.App.Services
                     {
                         using var ms = new MemoryStream(chartBytes);
                         worksheet.AddPicture(ms)
-                            .MoveTo(worksheet.Cell(row + 2, 1));
+                            .MoveTo(worksheet.Cell(6, 12)); // L6
                     }
                 }
 
@@ -285,9 +285,8 @@ namespace OBSArrastre2026.App.Services
             if (maxY <= 0) maxY = 10;
 
             var axisPaint = new SKPaint { Color = SKColors.Black, StrokeWidth = 1.5f, IsAntialias = true };
-            var gridPaint = new SKPaint { Color = SKColors.LightGray, StrokeWidth = 0.5f };
+            var gridPaint = new SKPaint { Color = SKColors.Gray, StrokeWidth = 1.0f, IsAntialias = true };
             var textPaint = new SKPaint { Color = SKColors.Black, TextSize = 14, IsAntialias = true, Typeface = SKTypeface.FromFamilyName("Times New Roman") };
-            var labelPaint = new SKPaint { Color = SKColors.Black, TextSize = 16, IsAntialias = true, FakeBoldText = true, Typeface = SKTypeface.FromFamilyName("Times New Roman") };
             var labelCenterPaint = new SKPaint { Color = SKColors.Black, TextSize = 16, IsAntialias = true, FakeBoldText = true, Typeface = SKTypeface.FromFamilyName("Times New Roman"), TextAlign = SKTextAlign.Center };
 
             int stepsY = 6;
@@ -328,7 +327,14 @@ namespace OBSArrastre2026.App.Services
                 path.MoveTo(points[0]);
                 for (int i = 1; i < points.Length; i++) path.LineTo(points[i]);
 
-                var paint = new SKPaint { Color = color, Style = SKPaintStyle.Stroke, StrokeWidth = 2, IsAntialias = true };
+                var paint = new SKPaint { 
+                    Color = color, 
+                    Style = SKPaintStyle.Stroke, 
+                    StrokeWidth = 2.5f, 
+                    IsAntialias = true,
+                    StrokeJoin = SKStrokeJoin.Round,
+                    StrokeCap = SKStrokeCap.Round
+                };
                 if (dashPattern != null) paint.PathEffect = SKPathEffect.CreateDash(dashPattern, 0);
                 canvas.DrawPath(path, paint);
             }
