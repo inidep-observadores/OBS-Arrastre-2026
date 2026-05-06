@@ -34,9 +34,130 @@ namespace OBSArrastre2026.App.Services
                 // --- HOJA: GIS ---
                 GenerateGisSheet(workbook, lancesList);
 
+                // --- HOJAS: FRECUENCIAS POR ESPECIE ---
+                GenerateFrequencySheets(workbook, lancesList);
+
                 workbook.SaveAs(outputPath);
             });
         }
+
+        private void GenerateFrequencySheets(XLWorkbook workbook, List<Lance> lancesList)
+        {
+            var todasMuestras = lancesList.SelectMany(l => l.Muestras).ToList();
+            var muestrasPorEspecie = todasMuestras
+                .GroupBy(m => m.EspecieID)
+                .Where(g => g.Count() > 2)
+                .ToList();
+
+            foreach (var grupo in muestrasPorEspecie)
+            {
+                var especie = grupo.First().Especie;
+                if (especie == null) continue;
+
+                string scientificName = especie.NombreCientifico ?? "Sin Nombre";
+                // Límite de 31 caracteres para nombres de hoja en Excel
+                string sheetName = scientificName.Length > 31 ? scientificName.Substring(0, 31) : scientificName;
+                
+                // Si la hoja ya existe (por truncamiento colisionado), buscamos un nombre único
+                int suffix = 1;
+                string baseName = sheetName;
+                while (workbook.Worksheets.Any(w => w.Name == sheetName))
+                {
+                    string suffixStr = $"({suffix++})";
+                    sheetName = baseName.Length + suffixStr.Length > 31 
+                        ? baseName.Substring(0, 31 - suffixStr.Length) + suffixStr 
+                        : baseName + suffixStr;
+                }
+
+                var worksheet = workbook.Worksheets.Add(sheetName);
+                worksheet.Style.Font.FontName = "Times New Roman";
+                worksheet.Style.Font.FontSize = 12;
+
+                // Nombre científico en A1
+                var cellA1 = worksheet.Cell(1, 1);
+                cellA1.Value = scientificName;
+                cellA1.Style.Font.Italic = true;
+                cellA1.Style.Font.Bold = true;
+
+                bool esLangostino = especie.CodigoInidep == "5139030101";
+
+                // Límite de talla comercial (si aplica)
+                int cutoff = GetSpeciesCutoff(especie.CodigoInidep);
+                if (cutoff > 0)
+                {
+                    // Dejar una columna en blanco (B1) y poner en C1
+                    var cellLimit = worksheet.Cell(1, 3);
+                    cellLimit.Value = $"Talla comercial: {cutoff}";
+                    cellLimit.Style.Font.Bold = true;
+                }
+
+                // Encabezados en Fila 3
+                var headers = new List<string> { "Talla" };
+                if (esLangostino) headers.Add("M.MAD");
+                headers.Add("MACHOS");
+                headers.Add("HEMBRAS");
+                if (esLangostino)
+                {
+                    headers.Add("H.MAD");
+                    headers.Add("H.IMP");
+                }
+                headers.Add("INDET");
+                headers.Add("TOTAL");
+
+                for (int i = 0; i < headers.Count; i++)
+                {
+                    var cell = worksheet.Cell(3, i + 1);
+                    cell.Value = headers[i];
+                    cell.Style.Font.Bold = true;
+                    cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                }
+
+                // Agrupar todas las frecuencias de esta especie por talla
+                var frecuenciasAgrupadas = grupo
+                    .SelectMany(m => m.FrecuenciasTallas)
+                    .GroupBy(f => f.Talla)
+                    .Select(g => new
+                    {
+                        Talla = g.Key,
+                        Machos = g.Sum(f => f.NroMachos),
+                        Hembras = g.Sum(f => f.NroHembras),
+                        Indet = g.Sum(f => f.NroIndeterminados),
+                        MMad = g.Sum(f => f.NroLangostinosMachoMaduros),
+                        HMad = g.Sum(f => f.NroLangostinosHembraMaduras),
+                        HImp = g.Sum(f => f.NroLangostinosHembraImpregnadas),
+                        Total = g.Sum(f => f.NroTotal)
+                    })
+                    .OrderBy(f => f.Talla)
+                    .ToList();
+
+                int row = 4;
+                foreach (var f in frecuenciasAgrupadas)
+                {
+                    int col = 1;
+                    worksheet.Cell(row, col++).Value = f.Talla;
+                    
+                    if (esLangostino)
+                    {
+                        worksheet.Cell(row, col++).Value = f.MMad;
+                    }
+                    worksheet.Cell(row, col++).Value = f.Machos;
+                    worksheet.Cell(row, col++).Value = f.Hembras;
+
+                    if (esLangostino)
+                    {
+                        worksheet.Cell(row, col++).Value = f.HMad;
+                        worksheet.Cell(row, col++).Value = f.HImp;
+                    }
+                    
+                    worksheet.Cell(row, col++).Value = f.Indet;
+                    worksheet.Cell(row, col++).Value = f.Total;
+                    row++;
+                }
+
+                worksheet.Columns().AdjustToContents();
+            }
+        }
+
 
         private void GenerateProduccionSheet(XLWorkbook workbook, List<RegistroProduccion> produccionList)
         {
