@@ -600,26 +600,38 @@ namespace OBSArrastre2026.App.Services
                 }
                 currentRow++;
 
-                // Calcular estadísticas por sexo
-                var statsMachos = CalculateStats(frecuencias, f => f.NroMachos, cutoff);
-                var statsHembras = CalculateStats(frecuencias, f => f.NroHembras, cutoff);
-                var statsIndet = CalculateStats(frecuencias, f => f.NroIndeterminados, cutoff);
-                
-                // Calcular Total como la suma de todos los individuos medidos
-                var statsTotal = CalculateStats(frecuencias, f => f.NroMachos + f.NroHembras + f.NroIndeterminados, cutoff);
+                // Calcular estadísticas
+                bool tieneDatosSexo = frecuencias.Any(f => f.NroMachos > 0 || f.NroHembras > 0 || f.NroIndeterminados > 0);
 
-                // Calcular Porcentajes (N_sexo / N_total * 100 * 100 para el formato x100)
-                double totalN = statsTotal.SumN;
-                statsMachos.Porcent = totalN > 0 ? (statsMachos.SumN / totalN) * 100 : 0;
-                statsHembras.Porcent = totalN > 0 ? (statsHembras.SumN / totalN) * 100 : 0;
-                statsIndet.Porcent = totalN > 0 ? (statsIndet.SumN / totalN) * 100 : 0;
-                statsTotal.Porcent = totalN > 0 ? 100 : 0;
+                if (tieneDatosSexo)
+                {
+                    var statsMachos = CalculateStats(frecuencias, f => f.NroMachos, cutoff);
+                    var statsHembras = CalculateStats(frecuencias, f => f.NroHembras, cutoff);
+                    var statsIndet = CalculateStats(frecuencias, f => f.NroIndeterminados, cutoff);
+                    var statsTotal = CalculateStats(frecuencias, f => f.NroMachos + f.NroHembras + f.NroIndeterminados, cutoff);
 
-                // Escribir Filas
-                WriteStatsRow(worksheet, ref currentRow, "Machos", statsMachos);
-                WriteStatsRow(worksheet, ref currentRow, "Hembras", statsHembras);
-                WriteStatsRow(worksheet, ref currentRow, "Indet.", statsIndet);
-                WriteStatsRow(worksheet, ref currentRow, "Total", statsTotal, true);
+                    // Calcular Porcentajes
+                    double totalN = statsTotal.SumN;
+                    statsMachos.Porcent = totalN > 0 ? (statsMachos.SumN / totalN) * 100 : 0;
+                    statsHembras.Porcent = totalN > 0 ? (statsHembras.SumN / totalN) * 100 : 0;
+                    statsIndet.Porcent = totalN > 0 ? (statsIndet.SumN / totalN) * 100 : 0;
+                    statsTotal.Porcent = totalN > 0 ? 100 : 0;
+
+                    // Escribir Filas
+                    WriteStatsRow(worksheet, ref currentRow, "Machos", statsMachos);
+                    WriteStatsRow(worksheet, ref currentRow, "Hembras", statsHembras);
+                    WriteStatsRow(worksheet, ref currentRow, "Indet.", statsIndet);
+                    WriteStatsRow(worksheet, ref currentRow, "Total", statsTotal, true);
+                }
+                else
+                {
+                    // Caso sin determinación de sexo: se basa en NroTotal
+                    var statsSinSexo = CalculateStats(frecuencias, f => f.NroTotal, cutoff);
+                    statsSinSexo.Porcent = statsSinSexo.SumN > 0 ? 100 : 0;
+
+                    WriteStatsRow(worksheet, ref currentRow, "Sin determinar sexo", statsSinSexo);
+                    WriteStatsRow(worksheet, ref currentRow, "Total", statsSinSexo, true);
+                }
 
                 currentRow += 2; // Espacio entre especies
             }
