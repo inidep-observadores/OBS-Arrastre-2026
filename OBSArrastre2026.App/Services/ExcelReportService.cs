@@ -510,7 +510,12 @@ namespace OBSArrastre2026.App.Services
             range.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
             range.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
             
-            ws.Range(row, 2, row, 9).Style.NumberFormat.Format = "#,##0.00";
+            // Decimales para Media, DesvSt, Porcent, CoefV y PorcentLimit
+            ws.Range(row, 2, row, 5).Style.NumberFormat.Format = "#,##0.00";
+            ws.Cell(row, 9).Style.NumberFormat.Format = "#,##0.00";
+
+            // Enteros para Suma N, Suma X y Suma X2
+            ws.Range(row, 6, row, 8).Style.NumberFormat.Format = "#,##0";
 
             row++;
         }
