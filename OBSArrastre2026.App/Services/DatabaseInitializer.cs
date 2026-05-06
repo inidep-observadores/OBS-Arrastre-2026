@@ -35,63 +35,64 @@ public sealed class DatabaseInitializer(IDbContextFactory<AppDbContext> dbContex
         var seedData = new[]
         {
             // Merluza común (M. hubbsi) - 7210040101
-            new { Code = "7210040101", Sexo = 1, A = 0.01124, B = 2.8340, Medida = "LT", Obs = "Stock Patagónico" },
-            new { Code = "7210040101", Sexo = 2, A = 0.00985, B = 2.8920, Medida = "LT", Obs = "Stock Patagónico" },
-            new { Code = "7210040101", Sexo = 0, A = 0.01050, B = 2.8630, Medida = "LT", Obs = "Promedio general" },
+            new { Code = "7210040101", Sexo = 0, A = 0.009, B = 2.92527, Medida = "LT", Obs = "Oficial 2026 - Total" },
+            new { Code = "7210040101", Sexo = 1, A = 0.01048, B = 2.87878, Medida = "LT", Obs = "Oficial 2026 - Machos" },
+            new { Code = "7210040101", Sexo = 2, A = 0.00855, B = 2.94086, Medida = "LT", Obs = "Oficial 2026 - Hembras" },
             
             // Abadejo (G. blacodes) - 7226030101
-            new { Code = "7226030101", Sexo = 1, A = 0.00225, B = 3.2150, Medida = "LT", Obs = "Datos consolidados" },
-            new { Code = "7226030101", Sexo = 2, A = 0.00238, B = 3.2080, Medida = "LT", Obs = "Datos consolidados" },
-            new { Code = "7226030101", Sexo = 0, A = 0.00231, B = 3.2115, Medida = "LT", Obs = "Promedio general" },
+            new { Code = "7226030101", Sexo = 0, A = 0.00096, B = 3.352, Medida = "LT", Obs = "Oficial 2026 - Total" },
 
             // Merluza de cola (M. magellanicus) - 7210040201
-            new { Code = "7210040201", Sexo = 1, A = 0.00791, B = 2.8150, Medida = "LT", Obs = "Campañas de invierno" },
-            new { Code = "7210040201", Sexo = 2, A = 0.00745, B = 2.8280, Medida = "LT", Obs = "Campañas de invierno" },
+            new { Code = "7210040201", Sexo = 0, A = 0.027, B = 3.03142, Medida = "LT", Obs = "Oficial 2026 - Total" },
+            new { Code = "7210040201", Sexo = 1, A = 0.029, B = 3.01028, Medida = "LT", Obs = "Oficial 2026 - Machos" },
+            new { Code = "7210040201", Sexo = 2, A = 0.025, B = 3.04753, Medida = "LT", Obs = "Oficial 2026 - Hembras" },
 
             // Merluza Austral (M. australis) - 7210040102
-            new { Code = "7210040102", Sexo = 1, A = 0.00560, B = 3.0740, Medida = "LT", Obs = "Faro Recalada / Sur" },
-            new { Code = "7210040102", Sexo = 2, A = 0.00510, B = 3.1050, Medida = "LT", Obs = "Faro Recalada / Sur" },
+            new { Code = "7210040102", Sexo = 0, A = 0.025, B = 3.2702, Medida = "LT", Obs = "Oficial 2026 - Total" },
 
             // Polaca (M. australis) - 7210030201
-            new { Code = "7210030201", Sexo = 1, A = 0.00455, B = 3.1250, Medida = "LT", Obs = "Área Sur" },
-            new { Code = "7210030201", Sexo = 2, A = 0.00472, B = 3.1180, Medida = "LT", Obs = "Área Sur" },
+            new { Code = "7210030201", Sexo = 0, A = 0.024, B = 3.248, Medida = "LT", Obs = "Oficial 2026 - Total" },
+            new { Code = "7210030201", Sexo = 1, A = 0.021, B = 3.2846, Medida = "LT", Obs = "Oficial 2026 - Machos" },
+            new { Code = "7210030201", Sexo = 2, A = 0.026, B = 3.2278, Medida = "LT", Obs = "Oficial 2026 - Hembras" },
 
             // Merluza negra (D. eleginoides) - 7218320101
-            new { Code = "7218320101", Sexo = 1, A = 0.01105, B = 3.0250, Medida = "LT", Obs = "Largo Total (LT)" },
-            new { Code = "7218320101", Sexo = 2, A = 0.01142, B = 2.9980, Medida = "LT", Obs = "Largo Total (LT)" },
-
-            // Corvina Rubia (M. furnieri) - 7218160101
-            new { Code = "7218160101", Sexo = 1, A = 0.00715, B = 3.0910, Medida = "LT", Obs = "Especie costera" },
-            new { Code = "7218160101", Sexo = 2, A = 0.00748, B = 3.0820, Medida = "LT", Obs = "Especie costera" },
+            new { Code = "7218320101", Sexo = 0, A = 0.0042, B = 3.19385, Medida = "LT", Obs = "Oficial 2026 - Total" },
 
             // Pescadilla (Cynoscion guatucupa) - 7218160501
-            new { Code = "7218160501", Sexo = 1, A = 0.00552, B = 3.1310, Medida = "LT", Obs = "Región Bonaerense" },
-            new { Code = "7218160501", Sexo = 2, A = 0.00571, B = 3.1190, Medida = "LT", Obs = "Región Bonaerense" },
+            new { Code = "7218160501", Sexo = 0, A = 0.00552, B = 3.1310, Medida = "LT", Obs = "Región Bonaerense" },
 
             // Savorín (S. porosa) - 7218350201
-            new { Code = "7218350201", Sexo = 0, A = 0.01250, B = 3.0500, Medida = "LT", Obs = "Poca diferenciación sexual" },
+            new { Code = "7218350201", Sexo = 0, A = 0.004, B = 3.1989, Medida = "LT", Obs = "Oficial 2026 - Total" },
 
-            // Granadero (M. holotrachys) - 7210090401
-            new { Code = "7210090401", Sexo = 0, A = 0.00040, B = 3.5200, Medida = "LPA", Obs = "Largo Preanal" },
+            // Granadero Grande (Macruronus spp.) - 7210090401
+            new { Code = "7210090401", Sexo = 0, A = 0.0044, B = 3.0251, Medida = "LPA", Obs = "Oficial 2026 - Grande" },
 
-            // Bacalao Austral (S. australis) - 7210020101
-            new { Code = "7210020101", Sexo = 1, A = 0.00405, B = 3.2650, Medida = "LT", Obs = "Bacalao criollo" },
-            new { Code = "7210020101", Sexo = 2, A = 0.00418, B = 3.2580, Medida = "LT", Obs = "Bacalao criollo" },
+            // Granadero Chico (C. fasciatus) - 7210090601
+            new { Code = "7210090601", Sexo = 0, A = 0.0038, B = 3.071, Medida = "LPA", Obs = "Oficial 2026 - Chico" },
 
-            // Tiburón sardinero (L. nasus) - 7105050101
-            new { Code = "7105050101", Sexo = 1, A = 0.01420, B = 2.9850, Medida = "LT", Obs = "Tiburón sardinero" },
-            new { Code = "7105050101", Sexo = 2, A = 0.01350, B = 3.0250, Medida = "LT", Obs = "Tiburón sardinero" },
+            // Bacalao Austral / Salilota (S. australis) - 7210020101
+            new { Code = "7210020101", Sexo = 0, A = 0.026, B = 2.7262, Medida = "LT", Obs = "Oficial 2026 - Total" },
+            new { Code = "7210020101", Sexo = 1, A = 0.03, B = 2.6755, Medida = "LT", Obs = "Oficial 2026 - Machos" },
+            new { Code = "7210020101", Sexo = 2, A = 0.024, B = 2.7518, Medida = "LT", Obs = "Oficial 2026 - Hembras" },
 
-            // Tiburón espinoso (S. acanthias) - 7102010201
-            new { Code = "7102010201", Sexo = 1, A = 0.00150, B = 3.1500, Medida = "LT", Obs = "Tiburón espinoso" },
-            new { Code = "7102010201", Sexo = 2, A = 0.00110, B = 3.2500, Medida = "LT", Obs = "Tiburón espinoso" },
+            // Gatuzo (Mustelus schmitti) - 7105010101
+            new { Code = "7105010101", Sexo = 0, A = 0.002, B = 3.1913, Medida = "LT", Obs = "Oficial 2026 - Total" },
 
-            // Pintarroja (S. bivius) - 7106010101
-            new { Code = "7106010101", Sexo = 1, A = 0.00180, B = 3.1200, Medida = "LT", Obs = "Banco Namuncurá" },
-            new { Code = "7106010101", Sexo = 2, A = 0.00130, B = 3.2100, Medida = "LT", Obs = "Banco Namuncurá" },
+            // Pez palo (Percophis brasiliensis) - 7218250101
+            new { Code = "7218250101", Sexo = 0, A = 0.00313, B = 3.082422, Medida = "LT", Obs = "Oficial 2026 - Sur" },
+
+            // Nototenia (Patagonotothen ramsayi) - 7218280105
+            new { Code = "7218280105", Sexo = 0, A = 0.0039, B = 3.32, Medida = "LT", Obs = "Oficial 2026 - Total" },
+
+            // Caballa (Scomber colias) - 7218360101
+            new { Code = "7218360101", Sexo = 0, A = 0.0007, B = 3.4959, Medida = "LT", Obs = "Oficial 2026 - Total" },
+
+            // Raya (Zearaja brevicaudata) - 7109010105
+            new { Code = "7109010105", Sexo = 1, A = 0.001, B = 3.2575, Medida = "LT", Obs = "Oficial 2026 - Machos" },
+            new { Code = "7109010105", Sexo = 2, A = 0.001, B = 3.2573, Medida = "LT", Obs = "Oficial 2026 - Hembras" },
 
             // Calamar (I. argentinus) - 5702150101
-            new { Code = "5702150101", Sexo = 0, A = 0.01100, B = 3.1500, Medida = "LM", Obs = "Largo de Manto" }
+            new { Code = "5702150101", Sexo = 0, A = 0.011, B = 3.15, Medida = "LM", Obs = "Largo de Manto" }
         };
 
         foreach (var data in seedData)
