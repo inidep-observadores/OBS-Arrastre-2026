@@ -87,28 +87,16 @@ public class ExportarRecursosViewModel : ObservableObject
 
     private async Task ExecuteExportAsync()
     {
-        if (!CanAccept) return;
-
         IsBusy = true;
         try
         {
             var etapas = _marea.Etapas.OrderBy(e => e.FechaZarpada).ToList();
-            
-            if (etapas.Count <= 1)
+            bool multipleEtapas = etapas.Count > 1;
+
+            for (int i = 0; i < etapas.Count; i++)
             {
-                await ExportEtapaAsync(etapas.FirstOrDefault(), ExportPath);
-            }
-            else
-            {
-                for (int i = 0; i < etapas.Count; i++)
-                {
-                    string etapaFolder = Path.Combine(ExportPath, $"Etapa {i + 1}");
-                    if (!Directory.Exists(etapaFolder))
-                    {
-                        Directory.CreateDirectory(etapaFolder);
-                    }
-                    await ExportEtapaAsync(etapas[i], etapaFolder);
-                }
+                string prefix = multipleEtapas ? $"Etapa{i + 1}-" : "";
+                await ExportEtapaAsync(etapas[i], ExportPath, prefix);
             }
 
             DialogResult.TrySetResult(true);
@@ -123,7 +111,7 @@ public class ExportarRecursosViewModel : ObservableObject
         }
     }
 
-    private async Task ExportEtapaAsync(MareaEtapa? etapa, string targetFolder)
+    private async Task ExportEtapaAsync(MareaEtapa? etapa, string targetFolder, string prefix)
     {
         if (etapa == null) return;
 
@@ -136,13 +124,13 @@ public class ExportarRecursosViewModel : ObservableObject
         {
             var lats = lancesConCoord.Select(l => l.LatitudInicioDecimal!.Value);
             var lons = lancesConCoord.Select(l => l.LongitudInicioDecimal!.Value);
-            string mapPath = Path.Combine(targetFolder, "mapa.png");
+            string mapPath = Path.Combine(targetFolder, $"{prefix}Mapa.png");
             await _mapService.RenderMapAsync(lats, lons, mapPath);
         }
 
         // 2. Guardar Tablas Excel
         var etapaProduccion = await _lanceService.GetProduccionAsync(etapa.ID);
-        string excelPath = Path.Combine(targetFolder, "Tablas.xlsx");
+        string excelPath = Path.Combine(targetFolder, $"{prefix}Tablas.xlsx");
         await _excelService.GenerateTablasExcelAsync(etapaLances, etapaProduccion, excelPath);
     }
 }
