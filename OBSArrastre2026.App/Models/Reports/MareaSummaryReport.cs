@@ -40,6 +40,9 @@ public class MareaSummarySection
     public string Titulo { get; set; } = string.Empty;
     public bool EsEtapa { get; set; }
     public int? NumeroEtapa { get; set; }
+    public DateTime? FechaInicio { get; set; }
+    public DateTime? FechaFin { get; set; }
+
     
     // Datos generales
     public int DiasNavegados { get; set; }

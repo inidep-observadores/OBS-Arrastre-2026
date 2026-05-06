@@ -43,9 +43,10 @@ public class MareaReportService : IMareaReportService
                 
                 page.Content().PaddingVertical(10).Column(col => 
                 {
-                    ComposeMareaSummarySection(col, report.ResumenGeneral);
+                    ComposeMareaSummarySection(col, report.ResumenGeneral, report.ResumenEtapas);
 
                     if (report.ResumenEtapas.Any())
+
                     {
                         foreach (var etapa in report.ResumenEtapas)
                         {
@@ -60,8 +61,9 @@ public class MareaReportService : IMareaReportService
         }).GeneratePdf());
     }
 
-    private void ComposeMareaSummarySection(ColumnDescriptor col, MareaSummarySection section)
+    private void ComposeMareaSummarySection(ColumnDescriptor col, MareaSummarySection section, List<MareaSummarySection>? allEtapas = null)
     {
+
         col.Item().PaddingTop(10).Background(Colors.Grey.Lighten4).Padding(8).Text(section.Titulo).FontSize(12).SemiBold().FontColor(Colors.Blue.Darken3);
 
         col.Item().PaddingVertical(10).Row(row =>
@@ -97,6 +99,41 @@ public class MareaReportService : IMareaReportService
                 c.Item().Text(section.CantidadSubmuestras.ToString()).FontSize(10).SemiBold();
             });
         });
+
+        // Detalle de Etapas (solo en resumen general si hay más de una)
+        if (!section.EsEtapa && allEtapas != null && allEtapas.Count > 1)
+        {
+            col.Item().PaddingTop(15).Text("DETALLE DE ETAPAS REALIZADAS").FontSize(10).SemiBold().FontColor(Colors.Blue.Darken3);
+            col.Item().PaddingTop(5).Table(table =>
+            {
+                table.ColumnsDefinition(columns =>
+                {
+                    columns.ConstantColumn(60); // # Etapa
+                    columns.RelativeColumn(2);  // Fecha Inicio - Fin
+                    columns.RelativeColumn(1);  // Días Navegados
+                    columns.RelativeColumn(1);  // Días Pesca
+                });
+
+                table.Header(header =>
+                {
+                    header.Cell().Element(HeaderStyle).Text("# Etapa");
+                    header.Cell().Element(HeaderStyle).Text("Fecha Inicio - Fin");
+                    header.Cell().Element(HeaderStyle).AlignRight().Text("Días Nav.");
+                    header.Cell().Element(HeaderStyle).AlignRight().Text("Días Pesca");
+                });
+
+                foreach (var etapa in allEtapas)
+                {
+                    table.Cell().Element(CellStyle).Text(etapa.NumeroEtapa?.ToString() ?? "-");
+                    table.Cell().Element(CellStyle).Text($"{etapa.FechaInicio:dd/MM/yyyy} — {etapa.FechaFin:dd/MM/yyyy}");
+                    table.Cell().Element(CellStyle).AlignRight().Text(etapa.DiasNavegados.ToString());
+                    table.Cell().Element(CellStyle).AlignRight().Text(etapa.DiasPesca.ToString());
+                }
+
+                IContainer CellStyle(IContainer container) => container.PaddingVertical(2).BorderBottom(1).BorderColor(Colors.Grey.Lighten4);
+            });
+        }
+
 
         // Especies Muestreadas
         if (section.EspeciesMuestreadas.Any())

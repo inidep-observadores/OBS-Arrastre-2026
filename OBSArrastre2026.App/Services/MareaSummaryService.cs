@@ -78,6 +78,12 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
     {
         var section = new MareaSummarySection { Titulo = titulo };
 
+        if (etapas.Any())
+        {
+            section.FechaInicio = etapas.Min(e => e.FechaZarpada);
+            section.FechaFin = etapas.Max(e => e.FechaArribo);
+        }
+
         // Días Navegados (Días únicos entre inicio y fin de cada etapa)
         var uniqueNavDays = new HashSet<DateTime>();
         foreach (var etapa in etapas)
