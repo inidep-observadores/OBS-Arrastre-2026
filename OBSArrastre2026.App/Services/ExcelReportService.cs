@@ -190,7 +190,7 @@ namespace OBSArrastre2026.App.Services
                     .ToList();
 
                 double totalIndividuosMuestra = frecuenciasAgrupadas.Sum(f => (double)f.Total);
-                var chartPoints = new List<(double Talla, double Machos, double Hembras, double Indet)>();
+                var chartPoints = new List<(double Talla, double Machos, double Hembras, double Indet, double Total)>();
 
                 int row = 4;
                 foreach (var f in frecuenciasAgrupadas)
@@ -215,12 +215,13 @@ namespace OBSArrastre2026.App.Services
                     worksheet.Cell(row, col++).Value = f.Total;
 
                     // Columnas de porcentaje
-                    double pMachos = 0, pHembras = 0, pIndet = 0;
+                    double pMachos = 0, pHembras = 0, pIndet = 0, pTotal = 0;
                     if (totalIndividuosMuestra > 0)
                     {
                         pMachos = (f.Machos * 100.0) / totalIndividuosMuestra;
                         pHembras = (f.Hembras * 100.0) / totalIndividuosMuestra;
                         pIndet = (f.Indet * 100.0) / totalIndividuosMuestra;
+                        pTotal = (f.Total * 100.0) / totalIndividuosMuestra;
 
                         worksheet.Cell(row, col).Value = pMachos;
                         worksheet.Cell(row, col++).Style.NumberFormat.Format = "0.00";
@@ -231,7 +232,7 @@ namespace OBSArrastre2026.App.Services
                         worksheet.Cell(row, col).Value = pIndet;
                         worksheet.Cell(row, col++).Style.NumberFormat.Format = "0.00";
 
-                        worksheet.Cell(row, col).Value = (f.Total * 100.0) / totalIndividuosMuestra;
+                        worksheet.Cell(row, col).Value = pTotal;
                         worksheet.Cell(row, col++).Style.NumberFormat.Format = "0.00";
                     }
                     else
@@ -242,14 +243,14 @@ namespace OBSArrastre2026.App.Services
                         worksheet.Cell(row, col++).Value = 0;
                     }
 
-                    chartPoints.Add((f.Talla, pMachos, pHembras, pIndet));
+                    chartPoints.Add((f.Talla, pMachos, pHembras, pIndet, pTotal));
                     row++;
                 }
 
                 // Insertar Gráfico
                 if (chartPoints.Any())
                 {
-                    var chartBytes = RenderFrequencyChart(chartPoints, cutoff, scientificName);
+                    var chartBytes = RenderFrequencyChart(chartPoints, cutoff, scientificName, esLangostino);
                     if (chartBytes.Length > 0)
                     {
                         using var ms = new MemoryStream(chartBytes);
@@ -262,7 +263,7 @@ namespace OBSArrastre2026.App.Services
             }
         }
 
-        private byte[] RenderFrequencyChart(List<(double Talla, double Machos, double Hembras, double Indet)> dataPoints, int cutoff, string title)
+        private byte[] RenderFrequencyChart(List<(double Talla, double Machos, double Hembras, double Indet, double Total)> dataPoints, int cutoff, string title, bool isLangostino)
         {
             int width = 900;
             int height = 550;
@@ -280,7 +281,7 @@ namespace OBSArrastre2026.App.Services
             double maxX = Math.Ceiling(dataPoints.Max(p => p.Talla) / 5.0) * 5.0;
             if (maxX - minX < 20) maxX = minX + 20;
 
-            double maxY = dataPoints.Max(p => Math.Max(p.Machos, Math.Max(p.Hembras, p.Indet)));
+            double maxY = dataPoints.Max(p => Math.Max(p.Machos, Math.Max(p.Hembras, Math.Max(p.Indet, p.Total))));
             maxY = Math.Ceiling(maxY / 2.0) * 2.0;
             if (maxY <= 0) maxY = 10;
 
@@ -315,7 +316,7 @@ namespace OBSArrastre2026.App.Services
             canvas.DrawText("Frecuencia relativa (%)", 25, height / 2, labelCenterPaint);
             canvas.Restore();
 
-            void DrawSeries(Func<(double Talla, double Machos, double Hembras, double Indet), double> selector, SKColor color, float[] dashPattern = null)
+            void DrawSeries(Func<(double Talla, double Machos, double Hembras, double Indet, double Total), double> selector, SKColor color, float[] dashPattern = null)
             {
                 var points = dataPoints.Select(p => new SKPoint(
                     margin + (float)(((p.Talla - minX) / (maxX - minX)) * chartWidth),
@@ -342,10 +343,19 @@ namespace OBSArrastre2026.App.Services
             bool hasMachos = dataPoints.Any(p => p.Machos > 0.01);
             bool hasHembras = dataPoints.Any(p => p.Hembras > 0.01);
             bool hasIndet = dataPoints.Any(p => p.Indet > 0.01);
+            bool hasTotal = dataPoints.Any(p => p.Total > 0.01);
+
+            bool plotTotal = isLangostino || (!hasMachos && !hasHembras && !hasIndet);
 
             if (hasMachos) DrawSeries(p => p.Machos, SKColors.Black);
             if (hasHembras) DrawSeries(p => p.Hembras, SKColors.Black, new float[] { 10, 5 });
             if (hasIndet) DrawSeries(p => p.Indet, SKColors.Gray, new float[] { 2, 2 });
+            
+            if (plotTotal && hasTotal)
+            {
+                SKColor totalColor = (hasMachos || hasHembras || hasIndet) ? SKColors.Blue : SKColors.Black;
+                DrawSeries(p => p.Total, totalColor);
+            }
 
             if (cutoff > 0 && cutoff >= minX && cutoff <= maxX)
             {
@@ -355,9 +365,16 @@ namespace OBSArrastre2026.App.Services
 
             float legendX = margin;
             float legendY = height - 15;
-            if (hasMachos) { canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Black, StrokeWidth = 2 }); canvas.DrawText("Machos", legendX + 35, legendY, textPaint); legendX += 130; }
-            if (hasHembras) { canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Black, StrokeWidth = 2, PathEffect = SKPathEffect.CreateDash(new float[] { 5, 3 }, 0) }); canvas.DrawText("Hembras", legendX + 35, legendY, textPaint); legendX += 130; }
-            if (hasIndet) { canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Gray, StrokeWidth = 2, PathEffect = SKPathEffect.CreateDash(new float[] { 2, 2 }, 0) }); canvas.DrawText("Indet.", legendX + 35, legendY, textPaint); }
+            if (hasMachos) { canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Black, StrokeWidth = 2.5f }); canvas.DrawText("Machos", legendX + 35, legendY, textPaint); legendX += 130; }
+            if (hasHembras) { canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Black, StrokeWidth = 2.5f, PathEffect = SKPathEffect.CreateDash(new float[] { 10, 5 }, 0) }); canvas.DrawText("Hembras", legendX + 35, legendY, textPaint); legendX += 130; }
+            if (hasIndet) { canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Gray, StrokeWidth = 2.5f, PathEffect = SKPathEffect.CreateDash(new float[] { 2, 2 }, 0) }); canvas.DrawText("Indet.", legendX + 35, legendY, textPaint); legendX += 130; }
+            
+            if (plotTotal && hasTotal)
+            {
+                SKColor tColor = (hasMachos || hasHembras || hasIndet) ? SKColors.Blue : SKColors.Black;
+                canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = tColor, StrokeWidth = 2.5f });
+                canvas.DrawText("Total", legendX + 35, legendY, textPaint);
+            }
 
             using var image = surface.Snapshot();
             using var pngData = image.Encode(SKEncodedImageFormat.Png, 100);
