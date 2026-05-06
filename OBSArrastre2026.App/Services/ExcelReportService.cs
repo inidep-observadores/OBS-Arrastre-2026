@@ -89,29 +89,36 @@ namespace OBSArrastre2026.App.Services
         private void GenerateFrequencySheets(XLWorkbook workbook, List<Lance> lancesList)
         {
             var todasMuestras = lancesList.SelectMany(l => l.Muestras).ToList();
-            var muestrasPorEspecie = todasMuestras
-                .GroupBy(m => m.EspecieID)
+            var muestrasAgrupadas = todasMuestras
+                .GroupBy(m => new { m.EspecieID, m.TipoMuestra })
                 .Where(g => g.Count() > 2)
                 .ToList();
 
-            foreach (var grupo in muestrasPorEspecie)
+            foreach (var grupo in muestrasAgrupadas)
             {
                 var especie = grupo.First().Especie;
                 if (especie == null) continue;
 
                 string scientificName = especie.NombreCientifico ?? "Sin Nombre";
+                string suffixTipo = grupo.Key.TipoMuestra == 2 ? " (D)" : " (C)";
+                
                 // Límite de 31 caracteres para nombres de hoja en Excel
-                string sheetName = scientificName.Length > 31 ? scientificName.Substring(0, 31) : scientificName;
+                string baseName = scientificName;
+                if (baseName.Length + suffixTipo.Length > 31)
+                {
+                    baseName = baseName.Substring(0, 31 - suffixTipo.Length);
+                }
+                string sheetName = baseName + suffixTipo;
                 
                 // Si la hoja ya existe (por truncamiento colisionado), buscamos un nombre único
-                int suffix = 1;
-                string baseName = sheetName;
+                int suffixNum = 1;
+                string finalBaseName = sheetName;
                 while (workbook.Worksheets.Any(w => w.Name == sheetName))
                 {
-                    string suffixStr = $"({suffix++})";
-                    sheetName = baseName.Length + suffixStr.Length > 31 
-                        ? baseName.Substring(0, 31 - suffixStr.Length) + suffixStr 
-                        : baseName + suffixStr;
+                    string uniqueSuffix = $"_{suffixNum++}";
+                    sheetName = finalBaseName.Length + uniqueSuffix.Length > 31 
+                        ? finalBaseName.Substring(0, 31 - uniqueSuffix.Length) + uniqueSuffix 
+                        : finalBaseName + uniqueSuffix;
                 }
 
                 var worksheet = workbook.Worksheets.Add(sheetName);
@@ -120,7 +127,7 @@ namespace OBSArrastre2026.App.Services
 
                 // Nombre científico en A1
                 var cellA1 = worksheet.Cell(1, 1);
-                cellA1.Value = scientificName;
+                cellA1.Value = $"{scientificName}{suffixTipo}";
                 cellA1.Style.Font.Italic = true;
                 cellA1.Style.Font.Bold = true;
 
@@ -497,11 +504,18 @@ namespace OBSArrastre2026.App.Services
                 "7210040101" => 35, // Merluza Hubbsi
                 "7210040201" => 59, // Merluza de Cola
                 "7226030101" => 70, // Abadejo
-                "7218280201" => 82, // Narval?
                 "7210030201" => 32, // Polaca
                 "7210040102" => 61, // Merluza Austral
-                "7218390102" => 29, // S?
-                "7204020101" => 93, // San Pedro?
+                "7210020101" => 40, // Salilota australis
+                "7218320101" => 82, // Merluza Negra
+                "7218350201" => 29, // Savorín
+                "7218160501" => 30, // Pescadilla común
+                "7204020101" => 9,  // Anchoíta
+                "7105010101" => 56, // Gatuzo
+                "7218250101" => 30, // Pez palo
+                "7218360101" => 24, // Caballa
+                "7109010105" => 78, // Raya
+                "5139440101" => 7,  // Centolla (70mm)
                 _ => 0
             };
         }
