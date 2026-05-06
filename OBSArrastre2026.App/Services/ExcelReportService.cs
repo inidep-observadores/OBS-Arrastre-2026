@@ -595,7 +595,7 @@ namespace OBSArrastre2026.App.Services
             worksheet.Cell(currentRow, 2).Value = totalKilos;
             worksheet.Cell(currentRow, 3).Value = totalDescarte;
             
-            worksheet.Cell(currentRow, 4).Value = speciesSummary.Any() ? speciesSummary.Average(s => s.DescartePorc) : 0;
+            worksheet.Cell(currentRow, 4).Value = totalKilos > 0 ? (totalDescarte * 100.0 / totalKilos) : 0;
             worksheet.Cell(currentRow, 5).Value = lancesList.Count;
             worksheet.Cell(currentRow, 6).Value = lancesList.Select(l => l.Fecha).Distinct().Count();
             worksheet.Cell(currentRow, 7).Value = Blank.Value;
@@ -671,7 +671,7 @@ namespace OBSArrastre2026.App.Services
             double totalDescarte = areaSummary.Sum(s => s.Descarte);
             worksheet.Cell(currentRow, 2).Value = totalKilos;
             worksheet.Cell(currentRow, 3).Value = totalDescarte;
-            worksheet.Cell(currentRow, 4).Value = areaSummary.Any() ? areaSummary.Average(s => s.DescartePorc) : 0;
+            worksheet.Cell(currentRow, 4).Value = totalKilos > 0 ? (totalDescarte * 100.0 / totalKilos) : 0;
             worksheet.Cell(currentRow, 5).Value = lancesList.Count;
             worksheet.Cell(currentRow, 6).Value = lancesList.Select(l => l.Fecha).Distinct().Count();
             worksheet.Cell(currentRow, 7).Value = Blank.Value;
