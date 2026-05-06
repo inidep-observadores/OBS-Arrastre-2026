@@ -255,7 +255,8 @@ namespace OBSArrastre2026.App.Services
                     {
                         using var ms = new MemoryStream(chartBytes);
                         worksheet.AddPicture(ms)
-                            .MoveTo(worksheet.Cell(6, 12)); // L6
+                            .MoveTo(worksheet.Cell(6, 14)) // N6
+                            .Scale(0.75);
                     }
                 }
 
