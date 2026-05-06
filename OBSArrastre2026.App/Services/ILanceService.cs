@@ -21,4 +21,5 @@ public interface ILanceService
     Task SaveLanceAsync(Lance lance, CancellationToken cancellationToken = default);
     Task DeleteLanceAsync(string id, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Especie>> GetEspeciesAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<RegistroProduccion>> GetProduccionAsync(string mareaEtapaId, CancellationToken cancellationToken = default);
 }

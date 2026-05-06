@@ -10,13 +10,14 @@ namespace OBSArrastre2026.App.Services
 {
     public class ExcelReportService : IExcelReportService
     {
-        public async Task GenerateTablasExcelAsync(IEnumerable<Lance> lances, string outputPath)
+        public async Task GenerateTablasExcelAsync(IEnumerable<Lance> lances, IEnumerable<RegistroProduccion> produccion, string outputPath)
         {
             await Task.Run(() =>
             {
                 using var workbook = new XLWorkbook();
                 
                 var lancesList = lances.ToList();
+                var produccionList = produccion.ToList();
                 
                 // --- HOJA: ESPECIES ---
                 GenerateSpeciesSheet(workbook, lancesList);
@@ -27,12 +28,101 @@ namespace OBSArrastre2026.App.Services
                 // --- HOJA: ÁREAS ---
                 GenerateAreasSheet(workbook, lancesList);
 
+                // --- HOJA: PRODUCCIÓN ---
+                GenerateProduccionSheet(workbook, produccionList);
+
                 // --- HOJA: GIS ---
                 GenerateGisSheet(workbook, lancesList);
 
                 workbook.SaveAs(outputPath);
             });
         }
+
+        private void GenerateProduccionSheet(XLWorkbook workbook, List<RegistroProduccion> produccionList)
+        {
+            if (!produccionList.Any()) return;
+
+            var worksheet = workbook.Worksheets.Add("Producción");
+            worksheet.Style.Font.FontName = "Times New Roman";
+            worksheet.Style.Font.FontSize = 12;
+
+            // Agrupar y sumarizar por Especie, Código de Producto y Categoría
+            var groupedProduccion = produccionList
+                .GroupBy(p => new 
+                { 
+                    EspecieId = p.EspecieId,
+                    EspecieNombre = p.Especie?.NombreCientifico ?? "Sin Especie",
+                    ProductoCodigo = p.Producto?.Codigo ?? "S/C",
+                    Categoria = p.Categoria ?? ""
+                })
+                .Select(g => new
+                {
+                    EspecieNombre = g.Key.EspecieNombre,
+                    ProductoCodigo = g.Key.ProductoCodigo,
+                    Categoria = g.Key.Categoria,
+                    TotalKg = g.Sum(x => x.Kg ?? 0),
+                    Factor = g.FirstOrDefault()?.Factor ?? 1
+                })
+                .OrderBy(g => g.EspecieNombre)
+                .ThenBy(g => g.ProductoCodigo)
+                .ToList();
+
+            // Determinar si incluir columna Categoría
+            bool incluirCategoria = groupedProduccion.Any(p => !string.IsNullOrWhiteSpace(p.Categoria));
+
+            // Encabezados
+            var headerList = new List<string> { "Especie", "Producto" };
+            if (incluirCategoria) headerList.Add("Categoría");
+            headerList.Add("Kilos");
+            headerList.Add("Factor");
+
+            for (int i = 0; i < headerList.Count; i++)
+            {
+                var cell = worksheet.Cell(1, i + 1);
+                cell.Value = headerList[i];
+                cell.Style.Font.Bold = true;
+                cell.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            }
+
+            int row = 2;
+            foreach (var p in groupedProduccion)
+            {
+                int col = 1;
+                
+                // Especie (Nombre Científico)
+                var cellEspecie = worksheet.Cell(row, col++);
+                cellEspecie.Value = p.EspecieNombre;
+                cellEspecie.Style.Font.Italic = true;
+
+                // Producto (CÓDIGO)
+                worksheet.Cell(row, col++).Value = p.ProductoCodigo;
+
+                // Categoría (opcional)
+                if (incluirCategoria)
+                {
+                    worksheet.Cell(row, col++).Value = p.Categoria;
+                }
+
+                // Kilos (Suma)
+                var cellKg = worksheet.Cell(row, col++);
+                cellKg.Value = p.TotalKg;
+                cellKg.Style.NumberFormat.Format = "#,##0.00";
+
+                // Factor (Primero)
+                var cellFactor = worksheet.Cell(row, col++);
+                cellFactor.Value = p.Factor;
+                cellFactor.Style.NumberFormat.Format = "#,##0.00";
+
+                // Bordes para la fila
+                worksheet.Range(row, 1, row, headerList.Count).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+                worksheet.Range(row, 1, row, headerList.Count).Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+
+                row++;
+            }
+
+            worksheet.Columns().AdjustToContents();
+        }
+
 
         private void GenerateGisSheet(XLWorkbook workbook, List<Lance> lancesList)
         {

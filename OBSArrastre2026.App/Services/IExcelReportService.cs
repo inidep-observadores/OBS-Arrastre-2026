@@ -6,6 +6,6 @@ namespace OBSArrastre2026.App.Services
 {
     public interface IExcelReportService
     {
-        Task GenerateTablasExcelAsync(IEnumerable<Lance> lances, string outputPath);
+        Task GenerateTablasExcelAsync(IEnumerable<Lance> lances, IEnumerable<RegistroProduccion> produccion, string outputPath);
     }
 }

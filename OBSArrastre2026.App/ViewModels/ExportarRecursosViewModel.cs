@@ -14,6 +14,7 @@ namespace OBSArrastre2026.App.ViewModels;
 
 public class ExportarRecursosViewModel : ObservableObject
 {
+    private readonly ILanceService _lanceService;
     private readonly IMapRenderingService _mapService;
     private readonly IExcelReportService _excelService;
     private readonly Marea _marea;
@@ -57,10 +58,11 @@ public class ExportarRecursosViewModel : ObservableObject
 
     public TaskCompletionSource<bool> DialogResult { get; } = new();
 
-    public ExportarRecursosViewModel(Marea marea, List<Lance> lances, IMapRenderingService mapService, IExcelReportService excelService)
+    public ExportarRecursosViewModel(Marea marea, List<Lance> lances, ILanceService lanceService, IMapRenderingService mapService, IExcelReportService excelService)
     {
         _marea = marea;
         _lances = lances;
+        _lanceService = lanceService;
         _mapService = mapService;
         _excelService = excelService;
 
@@ -139,7 +141,8 @@ public class ExportarRecursosViewModel : ObservableObject
         }
 
         // 2. Guardar Tablas Excel
+        var etapaProduccion = await _lanceService.GetProduccionAsync(etapa.ID);
         string excelPath = Path.Combine(targetFolder, "Tablas.xlsx");
-        await _excelService.GenerateTablasExcelAsync(etapaLances, excelPath);
+        await _excelService.GenerateTablasExcelAsync(etapaLances, etapaProduccion, excelPath);
     }
 }

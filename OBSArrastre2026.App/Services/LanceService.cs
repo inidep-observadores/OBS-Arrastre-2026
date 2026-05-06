@@ -150,4 +150,17 @@ public sealed class LanceService(IDbContextFactory<AppDbContext> dbContextFactor
             .ThenBy(e => e.NombreVulgar)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<RegistroProduccion>> GetProduccionAsync(string mareaEtapaId, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        return await dbContext.RegistrosProduccion
+            .Include(x => x.Producto)
+            .Include(x => x.Especie)
+            .Where(x => x.MareaEtapaId == mareaEtapaId)
+            .OrderBy(x => x.Fecha)
+            .ThenBy(x => x.Especie!.NombreVulgar)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
 }

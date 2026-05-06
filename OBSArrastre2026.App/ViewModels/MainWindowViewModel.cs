@@ -938,7 +938,7 @@ public class MainWindowViewModel : ObservableObject
         }
 
         var lances = await _lanceService.GetLancesAsync(mareaId: activeMarea.ID);
-        var viewModel = new ExportarRecursosViewModel(activeMarea, lances.ToList(), _mapRenderingService, _excelReportService);
+        var viewModel = new ExportarRecursosViewModel(activeMarea, lances.ToList(), _lanceService, _mapRenderingService, _excelReportService);
         ActiveDialog = viewModel;
 
         bool result = await viewModel.DialogResult.Task;
