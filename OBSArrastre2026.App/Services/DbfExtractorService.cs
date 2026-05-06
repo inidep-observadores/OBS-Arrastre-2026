@@ -247,7 +247,8 @@ public sealed class DbfExtractorService : IDbfExtractorService
                 CabFilad = GetDoubleNullable(reader, colMap, "CAB_FILAD"),
                 AberVert = GetDoubleNullable(reader, colMap, "ABER_VERT"),
                 DistAlas = GetDoubleNullable(reader, colMap, "DIST_ALAS"),
-                DistEPor = GetDoubleNullable(reader, colMap, "DIST_E_POR")
+                DistEPor = GetDoubleNullable(reader, colMap, "DIST_E_POR"),
+                Observac = GetString(reader, colMap, "OBSERVAC")
             };
 
             for (int i = 1; i <= 25; i++)

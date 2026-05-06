@@ -46,6 +46,7 @@ public sealed class Lance
     public double? DistanciaPortonesM { get; set; }
 
     public int SelectividadSiNo { get; set; } // 0 o 1
+    public string? Comentarios { get; set; }
 
     // Navigation properties
     public ICollection<Muestra> Muestras { get; set; } = new List<Muestra>();

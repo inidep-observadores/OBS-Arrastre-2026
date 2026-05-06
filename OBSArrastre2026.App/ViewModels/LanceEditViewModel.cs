@@ -196,6 +196,7 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
                     DistanciaAlasM = lance.DistanciaAlasM;
                     DistanciaPortonesM = lance.DistanciaPortonesM;
                     Selectividad = lance.SelectividadSiNo == 1;
+                    Comentarios = lance.Comentarios;
 
                     ItemsCaptura.Clear();
                     foreach (var item in lance.ItemsCaptura.OrderBy(i => i.NumeroOrden))
@@ -295,7 +296,8 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
                     AberturaVerticalM = AberturaVerticalM,
                     DistanciaAlasM = DistanciaAlasM,
                     DistanciaPortonesM = DistanciaPortonesM,
-                    SelectividadSiNo = Selectividad ? 1 : 0
+                    SelectividadSiNo = Selectividad ? 1 : 0,
+                    Comentarios = Comentarios
                 };
 
                 foreach (var itemVm in ItemsCaptura)

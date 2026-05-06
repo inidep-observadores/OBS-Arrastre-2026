@@ -47,6 +47,7 @@ public class LegacyCaptura
     public double? AberVert { get; set; }
     public double? DistAlas { get; set; }
     public double? DistEPor { get; set; }
+    public string? Observac { get; set; }
     
     // Especies (se manejan dinámicamente o por convención de nombres)
     public Dictionary<string, double> Especies { get; } = new(); // ID Especie -> KG

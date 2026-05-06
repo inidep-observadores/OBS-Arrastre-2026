@@ -134,6 +134,8 @@
                                     <RowDefinition Height="Auto" /> <!-- Fila 2: Prof, Viento, Temp, Pres, Capt -->
                                     <RowDefinition Height="Auto" /> <!-- Separador -->
                                     <RowDefinition Height="Auto" /> <!-- Fila 3: Arrastre, Malla, Cable, AbV, DistA, ProfA -->
+                                    <RowDefinition Height="Auto" /> <!-- Separador -->
+                                    <RowDefinition Height="Auto" /> <!-- Fila 4: Comentarios -->
                                 </Grid.RowDefinitions>
 
                                 <!-- FILA 1 DE LA PLANILLA PAPEL -->
@@ -373,6 +375,24 @@
                                     <!-- SELECTIVIDAD -->
                                     <StackPanel Grid.Column="12" VerticalAlignment="Bottom">
                                         <CheckBox Content="Selectividad" IsChecked="{Binding Selectividad}" FontSize="11" Margin="0,0,0,8" VerticalAlignment="Bottom" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Border Grid.Row="5" Height="10" />
+
+                                <!-- FILA 4: COMENTARIOS -->
+                                <Grid Grid.Row="6">
+                                    <StackPanel>
+                                        <TextBlock Text="COMENTARIOS / OBSERVACIONES" Style="{StaticResource PaperHeaderStyle}" />
+                                        <TextBox Text="{Binding Comentarios}" 
+                                                 Style="{StaticResource PaperTextBoxStyle}" 
+                                                 Height="60" 
+                                                 AcceptsReturn="True" 
+                                                 TextWrapping="Wrap" 
+                                                 VerticalScrollBarVisibility="Auto"
+                                                 HorizontalContentAlignment="Left"
+                                                 VerticalContentAlignment="Top"
+                                                 Padding="8,4" />
                                     </StackPanel>
                                 </Grid>
                             </Grid>
