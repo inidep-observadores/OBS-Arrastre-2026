@@ -428,8 +428,7 @@ namespace OBSArrastre2026.App.Services
                     TotalKg = g.Sum(x => x.Kg ?? 0),
                     Factor = g.FirstOrDefault()?.Factor ?? 1
                 })
-                .OrderBy(g => g.EspecieNombre)
-                .ThenBy(g => g.ProductoCodigo)
+                .OrderByDescending(g => g.TotalKg)
                 .ToList();
 
             // Determinar si incluir columna Categoría
