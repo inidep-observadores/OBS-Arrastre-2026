@@ -92,6 +92,8 @@ namespace OBSArrastre2026.App.Services
             var muestrasAgrupadas = todasMuestras
                 .GroupBy(m => new { m.EspecieID, m.TipoMuestra })
                 .Where(g => g.Count() > 2)
+                .OrderBy(g => g.First().Especie?.NombreCientifico)
+                .ThenBy(g => g.Key.TipoMuestra)
                 .ToList();
 
             foreach (var grupo in muestrasAgrupadas)
