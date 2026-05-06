@@ -27,9 +27,63 @@ namespace OBSArrastre2026.App.Services
                 // --- HOJA: ÁREAS ---
                 GenerateAreasSheet(workbook, lancesList);
 
+                // --- HOJA: GIS ---
+                GenerateGisSheet(workbook, lancesList);
+
                 workbook.SaveAs(outputPath);
             });
         }
+
+        private void GenerateGisSheet(XLWorkbook workbook, List<Lance> lancesList)
+        {
+            var worksheet = workbook.Worksheets.Add("GIS");
+            worksheet.Style.Font.FontName = "Times New Roman";
+            worksheet.Style.Font.FontSize = 12;
+
+            // Encabezados
+            var headers = new[] { "Buque", "marea", "lan", "fecha_hora", "latitud", "longitud" };
+            for (int i = 0; i < headers.Length; i++)
+            {
+                var cell = worksheet.Cell(1, i + 1);
+                cell.Value = headers[i];
+                cell.Style.Font.Bold = true;
+            }
+
+            int row = 2;
+            foreach (var lance in lancesList)
+            {
+                var marea = lance.MareaEtapa?.Marea;
+                var buque = marea?.Buque;
+
+                worksheet.Cell(row, 1).Value = buque?.Nombre ?? "";
+                worksheet.Cell(row, 2).Value = marea?.NumeroInidep ?? 0;
+                worksheet.Cell(row, 3).Value = lance.NroLance;
+                
+                // Combinar fecha y hora
+                string fullDateTimeStr = $"{lance.Fecha} {lance.HoraInicio ?? "00:00"}";
+                if (DateTime.TryParse(fullDateTimeStr, out var fechaHora))
+                {
+                    worksheet.Cell(row, 4).Value = fechaHora;
+                    worksheet.Cell(row, 4).Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
+                }
+                else
+                {
+                    worksheet.Cell(row, 4).Value = fullDateTimeStr;
+                }
+
+                worksheet.Cell(row, 5).Value = lance.LatitudInicioDecimal ?? 0;
+                worksheet.Cell(row, 6).Value = lance.LongitudInicioDecimal ?? 0;
+
+                // Formato numérico para coordenadas (4 decimales)
+                worksheet.Cell(row, 5).Style.NumberFormat.Format = "0.0000";
+                worksheet.Cell(row, 6).Style.NumberFormat.Format = "0.0000";
+
+                row++;
+            }
+
+            worksheet.Columns().AdjustToContents();
+        }
+
 
         private void GenerateDistribucionSheet(XLWorkbook workbook, List<Lance> lancesList)
         {
