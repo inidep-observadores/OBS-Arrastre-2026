@@ -316,7 +316,7 @@ namespace OBSArrastre2026.App.Services
             canvas.DrawText("Frecuencia relativa (%)", 25, height / 2, labelCenterPaint);
             canvas.Restore();
 
-            void DrawSeries(Func<(double Talla, double Machos, double Hembras, double Indet, double Total), double> selector, SKColor color, float[] dashPattern = null)
+            void DrawSeries(Func<(double Talla, double Machos, double Hembras, double Indet, double Total), double> selector, SKColor color, float[] dashPattern = null, float strokeWidth = 2.5f)
             {
                 var points = dataPoints.Select(p => new SKPoint(
                     margin + (float)(((p.Talla - minX) / (maxX - minX)) * chartWidth),
@@ -331,7 +331,7 @@ namespace OBSArrastre2026.App.Services
                 var paint = new SKPaint { 
                     Color = color, 
                     Style = SKPaintStyle.Stroke, 
-                    StrokeWidth = 2.5f, 
+                    StrokeWidth = strokeWidth, 
                     IsAntialias = true,
                     StrokeJoin = SKStrokeJoin.Round,
                     StrokeCap = SKStrokeCap.Round
@@ -347,15 +347,17 @@ namespace OBSArrastre2026.App.Services
 
             bool plotTotal = isLangostino || (!hasMachos && !hasHembras && !hasIndet);
 
-            if (hasMachos) DrawSeries(p => p.Machos, SKColors.Black);
-            if (hasHembras) DrawSeries(p => p.Hembras, SKColors.Black, new float[] { 10, 5 });
-            if (hasIndet) DrawSeries(p => p.Indet, SKColors.Gray, new float[] { 2, 2 });
-            
+            // Dibujar Total primero si es extra para que no tape las leyendas de los otros si se cruzan,
+            // pero como es la suma siempre estará arriba. Usamos grosor para destacar.
             if (plotTotal && hasTotal)
             {
-                SKColor totalColor = (hasMachos || hasHembras || hasIndet) ? SKColors.Blue : SKColors.Black;
-                DrawSeries(p => p.Total, totalColor);
+                float totalWidth = (hasMachos || hasHembras || hasIndet) ? 4.5f : 2.5f;
+                DrawSeries(p => p.Total, SKColors.Black, null, totalWidth);
             }
+
+            if (hasMachos) DrawSeries(p => p.Machos, SKColors.Black, null, 2.0f);
+            if (hasHembras) DrawSeries(p => p.Hembras, SKColors.Black, new float[] { 8, 4 }, 2.0f);
+            if (hasIndet) DrawSeries(p => p.Indet, SKColors.Black, new float[] { 2, 4 }, 2.0f);
 
             if (cutoff > 0 && cutoff >= minX && cutoff <= maxX)
             {
@@ -365,14 +367,14 @@ namespace OBSArrastre2026.App.Services
 
             float legendX = margin;
             float legendY = height - 15;
-            if (hasMachos) { canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Black, StrokeWidth = 2.5f }); canvas.DrawText("Machos", legendX + 35, legendY, textPaint); legendX += 130; }
-            if (hasHembras) { canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Black, StrokeWidth = 2.5f, PathEffect = SKPathEffect.CreateDash(new float[] { 10, 5 }, 0) }); canvas.DrawText("Hembras", legendX + 35, legendY, textPaint); legendX += 130; }
-            if (hasIndet) { canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Gray, StrokeWidth = 2.5f, PathEffect = SKPathEffect.CreateDash(new float[] { 2, 2 }, 0) }); canvas.DrawText("Indet.", legendX + 35, legendY, textPaint); legendX += 130; }
+            if (hasMachos) { canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Black, StrokeWidth = 2.0f }); canvas.DrawText("Machos", legendX + 35, legendY, textPaint); legendX += 130; }
+            if (hasHembras) { canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Black, StrokeWidth = 2.0f, PathEffect = SKPathEffect.CreateDash(new float[] { 8, 4 }, 0) }); canvas.DrawText("Hembras", legendX + 35, legendY, textPaint); legendX += 130; }
+            if (hasIndet) { canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Black, StrokeWidth = 2.0f, PathEffect = SKPathEffect.CreateDash(new float[] { 2, 4 }, 0) }); canvas.DrawText("Indet.", legendX + 35, legendY, textPaint); legendX += 130; }
             
             if (plotTotal && hasTotal)
             {
-                SKColor tColor = (hasMachos || hasHembras || hasIndet) ? SKColors.Blue : SKColors.Black;
-                canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = tColor, StrokeWidth = 2.5f });
+                float tWidth = (hasMachos || hasHembras || hasIndet) ? 4.5f : 2.5f;
+                canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Black, StrokeWidth = tWidth });
                 canvas.DrawText("Total", legendX + 35, legendY, textPaint);
             }
 
