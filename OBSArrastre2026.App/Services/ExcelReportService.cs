@@ -489,16 +489,16 @@ namespace OBSArrastre2026.App.Services
         {
             ws.Cell(row, 1).Value = label;
             
-            // Aplicar factor x100 observado en la referencia para Media, DesvSt, Porcent, CoefV y PorcentLimit
-            ws.Cell(row, 2).Value = stats.Media * 100;
-            ws.Cell(row, 3).Value = stats.DesvSt * 100;
-            ws.Cell(row, 4).Value = stats.Porcent * 100;
-            ws.Cell(row, 5).Value = stats.CoefV * 100;
+            // Los valores ya vienen calculados correctamente (porcentajes ya tienen el x100)
+            ws.Cell(row, 2).Value = stats.Media;
+            ws.Cell(row, 3).Value = stats.DesvSt;
+            ws.Cell(row, 4).Value = stats.Porcent;
+            ws.Cell(row, 5).Value = stats.CoefV;
             
             ws.Cell(row, 6).Value = stats.SumN;
             ws.Cell(row, 7).Value = stats.SumX;
             ws.Cell(row, 8).Value = stats.SumX2;
-            ws.Cell(row, 9).Value = stats.PorcentLimit * 100;
+            ws.Cell(row, 9).Value = stats.PorcentLimit;
 
             if (isBold)
             {
