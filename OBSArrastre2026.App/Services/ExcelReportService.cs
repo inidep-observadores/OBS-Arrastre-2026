@@ -281,22 +281,46 @@ namespace OBSArrastre2026.App.Services
             double maxX = Math.Ceiling(dataPoints.Max(p => p.Talla) / 5.0) * 5.0;
             if (maxX - minX < 20) maxX = minX + 20;
 
-            double maxY = dataPoints.Max(p => Math.Max(p.Machos, Math.Max(p.Hembras, Math.Max(p.Indet, p.Total))));
-            maxY = Math.Ceiling(maxY / 2.0) * 2.0;
-            if (maxY <= 0) maxY = 10;
+            bool hasMachos = dataPoints.Any(p => p.Machos > 0.01);
+            bool hasHembras = dataPoints.Any(p => p.Hembras > 0.01);
+            bool hasIndet = dataPoints.Any(p => p.Indet > 0.01);
+            bool hasTotal = dataPoints.Any(p => p.Total > 0.01);
+            bool plotTotal = isLangostino || (!hasMachos && !hasHembras && !hasIndet);
+
+            double maxYValue = dataPoints.Max(p => {
+                double val = Math.Max(p.Machos, Math.Max(p.Hembras, p.Indet));
+                if (plotTotal) val = Math.Max(val, p.Total);
+                return val;
+            });
+            if (maxYValue <= 0) maxYValue = 10;
+
+            // Lógica de "Nice Numbers" para el eje Y
+            double targetStep = maxYValue / 5.0;
+            double magnitude = Math.Pow(10, Math.Floor(Math.Log10(targetStep)));
+            if (double.IsInfinity(magnitude) || magnitude == 0) magnitude = 1;
+            double residual = targetStep / magnitude;
+            double step;
+            if (residual < 1.5) step = 1;
+            else if (residual < 3.5) step = 2;
+            else if (residual < 7.5) step = 5;
+            else step = 10;
+            step *= magnitude;
+
+            double maxY = Math.Ceiling(maxYValue / step) * step;
+            if (maxY == 0) maxY = step;
 
             var axisPaint = new SKPaint { Color = SKColors.Black, StrokeWidth = 1.5f, IsAntialias = true };
             var gridPaint = new SKPaint { Color = SKColors.Gray, StrokeWidth = 1.0f, IsAntialias = true };
             var textPaint = new SKPaint { Color = SKColors.Black, TextSize = 14, IsAntialias = true, Typeface = SKTypeface.FromFamilyName("Times New Roman") };
             var labelCenterPaint = new SKPaint { Color = SKColors.Black, TextSize = 16, IsAntialias = true, FakeBoldText = true, Typeface = SKTypeface.FromFamilyName("Times New Roman"), TextAlign = SKTextAlign.Center };
 
-            int stepsY = 6;
-            for (int i = 0; i <= stepsY; i++)
+            for (double yVal = 0; yVal <= maxY + (step/10.0); yVal += step)
             {
-                float yVal = (float)(maxY * i / stepsY);
                 float yPos = height - margin - 40 - (float)((yVal / maxY) * chartHeight);
                 canvas.DrawLine(margin, yPos, width - margin, yPos, gridPaint);
-                canvas.DrawText(yVal.ToString("0"), margin - 10, yPos + 5, new SKPaint { Color = SKColors.Black, TextSize = 12, TextAlign = SKTextAlign.Right, IsAntialias = true });
+                // Si el paso tiene decimales, mostramos 1 decimal. Si no, ninguno.
+                string format = (step % 1 == 0) ? "0" : "0.0";
+                canvas.DrawText(yVal.ToString(format), margin - 10, yPos + 5, new SKPaint { Color = SKColors.Black, TextSize = 12, TextAlign = SKTextAlign.Right, IsAntialias = true });
             }
 
             double xInterval = 4;
@@ -340,18 +364,11 @@ namespace OBSArrastre2026.App.Services
                 canvas.DrawPath(path, paint);
             }
 
-            bool hasMachos = dataPoints.Any(p => p.Machos > 0.01);
-            bool hasHembras = dataPoints.Any(p => p.Hembras > 0.01);
-            bool hasIndet = dataPoints.Any(p => p.Indet > 0.01);
-            bool hasTotal = dataPoints.Any(p => p.Total > 0.01);
-
-            bool plotTotal = isLangostino || (!hasMachos && !hasHembras && !hasIndet);
-
             // Dibujar Total primero si es extra para que no tape las leyendas de los otros si se cruzan,
             // pero como es la suma siempre estará arriba. Usamos grosor para destacar.
             if (plotTotal && hasTotal)
             {
-                float totalWidth = (hasMachos || hasHembras || hasIndet) ? 4.5f : 2.5f;
+                float totalWidth = (hasMachos || hasHembras || hasIndet) ? 3.2f : 2.2f;
                 DrawSeries(p => p.Total, SKColors.Black, null, totalWidth);
             }
 
@@ -373,7 +390,7 @@ namespace OBSArrastre2026.App.Services
             
             if (plotTotal && hasTotal)
             {
-                float tWidth = (hasMachos || hasHembras || hasIndet) ? 4.5f : 2.5f;
+                float tWidth = (hasMachos || hasHembras || hasIndet) ? 3.2f : 2.2f;
                 canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Black, StrokeWidth = tWidth });
                 canvas.DrawText("Total", legendX + 35, legendY, textPaint);
             }
