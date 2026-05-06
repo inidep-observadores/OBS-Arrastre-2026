@@ -64,6 +64,10 @@ public sealed class DatabaseInitializer(IDbContextFactory<AppDbContext> dbContex
             // Savorín (S. porosa) - 7218350201
             new { Code = "7218350201", Sexo = 0, A = 0.004, B = 3.1989, Medida = "LT", Obs = "Oficial 2026 - Total" },
 
+            // Langostino (P. muelleri) - 5139030101
+            new { Code = "5139030101", Sexo = 1, A = 0.00185, B = 2.7850, Medida = "LC", Obs = "Oficial 2026 - Machos (Basado en LC)" },
+            new { Code = "5139030101", Sexo = 2, A = 0.00132, B = 2.9640, Medida = "LC", Obs = "Oficial 2026 - Hembras (Basado en LC)" },
+
             // Granadero Grande (Macruronus spp.) - 7210090401
             new { Code = "7210090401", Sexo = 0, A = 0.0044, B = 3.0251, Medida = "LPA", Obs = "Oficial 2026 - Grande" },
 
