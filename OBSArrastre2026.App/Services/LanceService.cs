@@ -28,6 +28,10 @@ public sealed class LanceService(IDbContextFactory<AppDbContext> dbContextFactor
                     .ThenInclude(m => m.Buque)
             .Include(x => x.ItemsCaptura)
                 .ThenInclude(i => i.Especie)
+            .Include(x => x.Muestras)
+                .ThenInclude(m => m.FrecuenciasTallas)
+            .Include(x => x.Muestras)
+                .ThenInclude(m => m.Especie)
             .AsNoTracking();
 
         if (!string.IsNullOrEmpty(mareaEtapaId))

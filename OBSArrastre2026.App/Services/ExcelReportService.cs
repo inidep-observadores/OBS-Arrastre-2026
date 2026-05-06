@@ -21,12 +21,181 @@ namespace OBSArrastre2026.App.Services
                 // --- HOJA: ESPECIES ---
                 GenerateSpeciesSheet(workbook, lancesList);
 
+                // --- HOJA: DISTRIBUCIÓN ---
+                GenerateDistribucionSheet(workbook, lancesList);
+
                 // --- HOJA: ÁREAS ---
                 GenerateAreasSheet(workbook, lancesList);
 
                 workbook.SaveAs(outputPath);
             });
         }
+
+        private void GenerateDistribucionSheet(XLWorkbook workbook, List<Lance> lancesList)
+        {
+            var worksheet = workbook.Worksheets.Add("Distribución");
+            worksheet.Style.Font.FontName = "Times New Roman";
+            worksheet.Style.Font.FontSize = 12;
+
+            // Agrupar todas las frecuencias de talla por especie en la etapa
+            var allFrecuencias = lancesList
+                .SelectMany(l => l.Muestras)
+                .SelectMany(m => m.FrecuenciasTallas.Select(f => new { f, m.Especie }))
+                .Where(x => x.Especie != null)
+                .GroupBy(x => x.Especie!.ID)
+                .ToList();
+
+            int currentRow = 1;
+
+            foreach (var group in allFrecuencias)
+            {
+                var especie = group.First().Especie!;
+                var frecuencias = group.Select(x => x.f).ToList();
+
+                // Título de la especie (Nombre Científico)
+                worksheet.Cell(currentRow, 1).Value = especie.NombreCientifico;
+                worksheet.Cell(currentRow, 1).Style.Font.Bold = true;
+                worksheet.Cell(currentRow, 1).Style.Font.Italic = true;
+                currentRow++;
+
+                // Definir límite para % < X (basado en obsdist.PRG)
+                int cutoff = GetSpeciesCutoff(especie.CodigoInidep);
+                string cutoffHeader = cutoff > 0 ? $"%<{cutoff}" : "%<0";
+
+                // Encabezados de columnas
+                var colHeaders = new[] { "", "Media", "Desv.St.", "Porcent.", "Coef.V.", "Suma N", "Suma X", "Suma X2", cutoffHeader };
+                for (int i = 0; i < colHeaders.Length; i++)
+                {
+                    worksheet.Cell(currentRow, i + 1).Value = colHeaders[i];
+                    worksheet.Cell(currentRow, i + 1).Style.Font.Bold = true;
+                    worksheet.Cell(currentRow, i + 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                    worksheet.Cell(currentRow, i + 1).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+                }
+                currentRow++;
+
+                // Calcular estadísticas por sexo
+                var statsMachos = CalculateStats(frecuencias, f => f.NroMachos, cutoff);
+                var statsHembras = CalculateStats(frecuencias, f => f.NroHembras, cutoff);
+                var statsIndet = CalculateStats(frecuencias, f => f.NroIndeterminados, cutoff);
+                
+                // Calcular Total como la suma de todos los individuos medidos
+                var statsTotal = CalculateStats(frecuencias, f => f.NroMachos + f.NroHembras + f.NroIndeterminados, cutoff);
+
+                // Calcular Porcentajes (N_sexo / N_total * 100 * 100 para el formato x100)
+                double totalN = statsTotal.SumN;
+                statsMachos.Porcent = totalN > 0 ? (statsMachos.SumN / totalN) * 100 : 0;
+                statsHembras.Porcent = totalN > 0 ? (statsHembras.SumN / totalN) * 100 : 0;
+                statsIndet.Porcent = totalN > 0 ? (statsIndet.SumN / totalN) * 100 : 0;
+                statsTotal.Porcent = totalN > 0 ? 100 : 0;
+
+                // Escribir Filas
+                WriteStatsRow(worksheet, ref currentRow, "Machos", statsMachos);
+                WriteStatsRow(worksheet, ref currentRow, "Hembras", statsHembras);
+                WriteStatsRow(worksheet, ref currentRow, "Indet.", statsIndet);
+                WriteStatsRow(worksheet, ref currentRow, "Total", statsTotal, true);
+
+                currentRow += 2; // Espacio entre especies
+            }
+
+            // Formateo general de la hoja
+            worksheet.Columns().AdjustToContents();
+        }
+
+        private class StatsResult
+        {
+            public double Media { get; set; }
+            public double DesvSt { get; set; }
+            public double Porcent { get; set; }
+            public double CoefV { get; set; }
+            public double SumN { get; set; }
+            public double SumX { get; set; }
+            public double SumX2 { get; set; } // Representa (SumX)^2 / (N-1) según PRG
+            public double PorcentLimit { get; set; }
+        }
+
+        private StatsResult CalculateStats(List<FrecuenciaTalla> frecuencias, Func<FrecuenciaTalla, int> getCount, int cutoff)
+        {
+            var result = new StatsResult();
+            
+            double sumN = frecuencias.Sum(f => (double)getCount(f));
+            if (sumN == 0) return result;
+
+            double sumX = frecuencias.Sum(f => f.Talla * getCount(f));
+            double media = sumX / sumN;
+
+            double sumDevSq = frecuencias.Sum(f => Math.Pow(f.Talla - media, 2) * getCount(f));
+            double desvSt = sumN > 1 ? Math.Sqrt(sumDevSq / (sumN - 1)) : 0;
+
+            // Lógica FoxPro para SumX2 y CoefV
+            double bm = sumN > 1 ? sumX / (sumN - 1) : 0;
+            double sumX2_PRG = sumX * bm; // (SumX)^2 / (N-1)
+            
+            // CoefV según PRG: (DesvSt / bm) * 100
+            double coefV = bm > 0 ? (desvSt / bm) * 100 : 0;
+
+            // Porcentaje < Cutoff
+            double sumNLimit = cutoff > 0 ? frecuencias.Where(f => f.Talla < cutoff).Sum(f => (double)getCount(f)) : 0;
+            double porcentLimit = (sumNLimit / sumN) * 100;
+
+            result.SumN = sumN;
+            result.SumX = sumX;
+            result.SumX2 = sumX2_PRG;
+            result.Media = media;
+            result.DesvSt = desvSt;
+            result.CoefV = coefV;
+            result.PorcentLimit = porcentLimit;
+
+            return result;
+        }
+
+        private void WriteStatsRow(IXLWorksheet ws, ref int row, string label, StatsResult stats, bool isBold = false)
+        {
+            ws.Cell(row, 1).Value = label;
+            
+            // Aplicar factor x100 observado en la referencia para Media, DesvSt, Porcent, CoefV y PorcentLimit
+            ws.Cell(row, 2).Value = stats.Media * 100;
+            ws.Cell(row, 3).Value = stats.DesvSt * 100;
+            ws.Cell(row, 4).Value = stats.Porcent * 100;
+            ws.Cell(row, 5).Value = stats.CoefV * 100;
+            
+            ws.Cell(row, 6).Value = stats.SumN;
+            ws.Cell(row, 7).Value = stats.SumX;
+            ws.Cell(row, 8).Value = stats.SumX2;
+            ws.Cell(row, 9).Value = stats.PorcentLimit * 100;
+
+            if (isBold)
+            {
+                ws.Range(row, 1, row, 9).Style.Font.Bold = true;
+            }
+
+            // Bordes y formato numérico
+            var range = ws.Range(row, 1, row, 9);
+            range.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            range.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+            
+            ws.Range(row, 2, row, 9).Style.NumberFormat.Format = "#,##0.00";
+
+            row++;
+        }
+
+        private int GetSpeciesCutoff(string? codigoInidep)
+        {
+            if (string.IsNullOrEmpty(codigoInidep)) return 0;
+
+            return codigoInidep switch
+            {
+                "7210040101" => 35, // Merluza Hubbsi
+                "7210040201" => 59, // Merluza de Cola
+                "7226030101" => 70, // Abadejo
+                "7218280201" => 82, // Narval?
+                "7210030201" => 32, // Polaca
+                "7210040102" => 61, // Merluza Austral
+                "7218390102" => 29, // S?
+                "7204020101" => 93, // San Pedro?
+                _ => 0
+            };
+        }
+
 
         private void GenerateSpeciesSheet(XLWorkbook workbook, List<Lance> lancesList)
         {
