@@ -10,7 +10,7 @@ namespace OBSArrastre2026.App.Services
 {
     public class ExcelReportService : IExcelReportService
     {
-        public async Task GenerateTablasExcelAsync(Marea marea, IEnumerable<Lance> lances, IEnumerable<RegistroProduccion> produccion, string outputPath)
+        public async Task GenerateTablasExcelAsync(Marea marea, IEnumerable<Lance> lances, IEnumerable<RegistroProduccion> produccion, string outputPath, byte[]? mapImage = null)
         {
             await Task.Run(() =>
             {
@@ -40,7 +40,7 @@ namespace OBSArrastre2026.App.Services
                 }
 
                 // --- HOJA: GIS ---
-                GenerateGisSheet(workbook, lancesList);
+                GenerateGisSheet(workbook, lancesList, mapImage);
                 AddMetadataHeader(workbook.Worksheets.Last(), marea, 6);
 
                 // --- HOJAS: FRECUENCIAS POR ESPECIE ---
@@ -299,7 +299,7 @@ namespace OBSArrastre2026.App.Services
         }
 
 
-        private void GenerateGisSheet(XLWorkbook workbook, List<Lance> lancesList)
+        private void GenerateGisSheet(XLWorkbook workbook, List<Lance> lancesList, byte[]? mapImage)
         {
             var worksheet = workbook.Worksheets.Add("GIS");
             worksheet.Style.Font.FontName = "Times New Roman";
@@ -347,6 +347,25 @@ namespace OBSArrastre2026.App.Services
             }
 
             worksheet.Columns().AdjustToContents();
+
+            // Incrustar mapa si está disponible
+            if (mapImage != null && mapImage.Length > 0)
+            {
+                try 
+                {
+                    using var ms = new MemoryStream(mapImage);
+                    var picture = worksheet.AddPicture(ms)
+                        .WithName("MapaMarea")
+                        .MoveTo(worksheet.Cell(1, 8)); // Columna H
+                    
+                    // Escalamos un poco para que no ocupe demasiado espacio inicial
+                    picture.Scale(0.6); 
+                }
+                catch 
+                {
+                    // Si falla la inserción de imagen, el reporte sigue siendo válido sin ella
+                }
+            }
         }
 
 

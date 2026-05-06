@@ -119,18 +119,24 @@ public class ExportarRecursosViewModel : ObservableObject
         if (!etapaLances.Any()) return;
 
         // 1. Guardar mapa (si hay coordenadas)
+        byte[]? mapBytes = null;
         var lancesConCoord = etapaLances.Where(l => l.LatitudInicioDecimal.HasValue && l.LongitudInicioDecimal.HasValue).ToList();
         if (lancesConCoord.Any())
         {
             var lats = lancesConCoord.Select(l => l.LatitudInicioDecimal!.Value);
             var lons = lancesConCoord.Select(l => l.LongitudInicioDecimal!.Value);
             string mapPath = Path.Combine(targetFolder, $"{prefix}Mapa.png");
+            
+            // Guardar imagen física
             await _mapService.RenderMapAsync(lats, lons, mapPath);
+            
+            // Obtener bytes para incrustar en Excel
+            try { mapBytes = await _mapService.RenderMapToBytesAsync(lats, lons); } catch { }
         }
 
         // 2. Guardar Tablas Excel
         var etapaProduccion = await _lanceService.GetProduccionAsync(etapa.ID);
         string excelPath = Path.Combine(targetFolder, $"{prefix}Tablas.xlsx");
-        await _excelService.GenerateTablasExcelAsync(_marea, etapaLances, etapaProduccion, excelPath);
+        await _excelService.GenerateTablasExcelAsync(_marea, etapaLances, etapaProduccion, excelPath, mapBytes);
     }
 }
