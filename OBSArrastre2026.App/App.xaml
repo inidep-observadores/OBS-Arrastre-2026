@@ -990,19 +990,30 @@
                         </Grid>
                     </Border>
 
-                    <!-- Overlay de carga -->
-                    <Border Grid.RowSpan="3" Background="#80000000" CornerRadius="16"
+                    <!-- Overlay de carga mejorado -->
+                    <Border Grid.RowSpan="3" Background="#AA000000" CornerRadius="16"
                             Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}">
-                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                            <ProgressBar IsIndeterminate="True" Width="200" Height="4" 
-                                         Foreground="{DynamicResource AccentBrush}" 
-                                         Background="Transparent" BorderThickness="0"/>
-                            <TextBlock Text="Generando recursos..." 
-                                       Foreground="White" 
-                                       Margin="0,12,0,0" 
-                                       HorizontalAlignment="Center" 
-                                       FontWeight="SemiBold"/>
-                        </StackPanel>
+                        <Border Background="{DynamicResource CardBackgroundBrush}" 
+                                Padding="32,24" 
+                                CornerRadius="12" 
+                                VerticalAlignment="Center" 
+                                HorizontalAlignment="Center">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="30" Opacity="0.3" ShadowDepth="0" Color="Black"/>
+                            </Border.Effect>
+                            <StackPanel>
+                                <ProgressBar IsIndeterminate="True" Width="220" Height="4" 
+                                             Foreground="{DynamicResource AccentBrush}" 
+                                             Background="{DynamicResource CardBorderBrush}" 
+                                             BorderThickness="0"/>
+                                <TextBlock Text="Generando recursos..." 
+                                           Foreground="{DynamicResource PrimaryTextBrush}" 
+                                           Margin="0,16,0,0" 
+                                           HorizontalAlignment="Center" 
+                                           FontWeight="SemiBold"
+                                           FontSize="14"/>
+                            </StackPanel>
+                        </Border>
                     </Border>
                 </Grid>
             </Border>
