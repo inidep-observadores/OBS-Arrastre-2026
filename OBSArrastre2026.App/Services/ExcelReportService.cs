@@ -157,6 +157,9 @@ namespace OBSArrastre2026.App.Services
                 }
                 headers.Add("INDET");
                 headers.Add("TOTAL");
+                headers.Add("% MACHOS");
+                headers.Add("% HEMBRAS");
+                headers.Add("% INDET");
 
                 for (int i = 0; i < headers.Count; i++)
                 {
@@ -184,6 +187,8 @@ namespace OBSArrastre2026.App.Services
                     .OrderBy(f => f.Talla)
                     .ToList();
 
+                double totalIndividuosMuestra = frecuenciasAgrupadas.Sum(f => (double)f.Total);
+
                 int row = 4;
                 foreach (var f in frecuenciasAgrupadas)
                 {
@@ -205,6 +210,26 @@ namespace OBSArrastre2026.App.Services
                     
                     worksheet.Cell(row, col++).Value = f.Indet;
                     worksheet.Cell(row, col++).Value = f.Total;
+
+                    // Columnas de porcentaje
+                    if (totalIndividuosMuestra > 0)
+                    {
+                        worksheet.Cell(row, col).Value = (f.Machos * 100.0) / totalIndividuosMuestra;
+                        worksheet.Cell(row, col++).Style.NumberFormat.Format = "0.00";
+
+                        worksheet.Cell(row, col).Value = (f.Hembras * 100.0) / totalIndividuosMuestra;
+                        worksheet.Cell(row, col++).Style.NumberFormat.Format = "0.00";
+
+                        worksheet.Cell(row, col).Value = (f.Indet * 100.0) / totalIndividuosMuestra;
+                        worksheet.Cell(row, col++).Style.NumberFormat.Format = "0.00";
+                    }
+                    else
+                    {
+                        worksheet.Cell(row, col++).Value = 0;
+                        worksheet.Cell(row, col++).Value = 0;
+                        worksheet.Cell(row, col++).Value = 0;
+                    }
+
                     row++;
                 }
 
