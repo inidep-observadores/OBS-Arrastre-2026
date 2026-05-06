@@ -254,7 +254,6 @@ namespace OBSArrastre2026.App.Services
                     {
                         using var ms = new MemoryStream(chartBytes);
                         worksheet.AddPicture(ms)
-                            .WithName("GraficoFrecuencia")
                             .MoveTo(worksheet.Cell(row + 2, 1));
                     }
                 }
@@ -289,6 +288,7 @@ namespace OBSArrastre2026.App.Services
             var gridPaint = new SKPaint { Color = SKColors.LightGray, StrokeWidth = 0.5f };
             var textPaint = new SKPaint { Color = SKColors.Black, TextSize = 14, IsAntialias = true, Typeface = SKTypeface.FromFamilyName("Times New Roman") };
             var labelPaint = new SKPaint { Color = SKColors.Black, TextSize = 16, IsAntialias = true, FakeBoldText = true, Typeface = SKTypeface.FromFamilyName("Times New Roman") };
+            var labelCenterPaint = new SKPaint { Color = SKColors.Black, TextSize = 16, IsAntialias = true, FakeBoldText = true, Typeface = SKTypeface.FromFamilyName("Times New Roman"), TextAlign = SKTextAlign.Center };
 
             int stepsY = 6;
             for (int i = 0; i <= stepsY; i++)
@@ -309,11 +309,11 @@ namespace OBSArrastre2026.App.Services
 
             canvas.DrawLine(margin, height - margin - 40, width - margin, height - margin - 40, axisPaint);
             canvas.DrawLine(margin, margin, margin, height - margin - 40, axisPaint);
-            canvas.DrawText("Talla (cm)", width / 2, height - margin + 15, labelPaint with { TextAlign = SKTextAlign.Center });
+            canvas.DrawText("Talla (cm)", width / 2, height - margin + 15, labelCenterPaint);
             
             canvas.Save();
             canvas.RotateDegrees(-90, 25, height / 2);
-            canvas.DrawText("Frecuencia relativa (%)", 25, height / 2, labelPaint with { TextAlign = SKTextAlign.Center });
+            canvas.DrawText("Frecuencia relativa (%)", 25, height / 2, labelCenterPaint);
             canvas.Restore();
 
             void DrawSeries(Func<(double Talla, double Machos, double Hembras, double Indet), double> selector, SKColor color, float[] dashPattern = null)
