@@ -293,6 +293,7 @@ namespace OBSArrastre2026.App.Services
                 return val;
             });
             if (maxYValue <= 0) maxYValue = 10;
+            else maxYValue *= 1.12; // Añadir 12% de margen superior
 
             // Lógica de "Nice Numbers" para el eje Y
             double targetStep = maxYValue / 5.0;

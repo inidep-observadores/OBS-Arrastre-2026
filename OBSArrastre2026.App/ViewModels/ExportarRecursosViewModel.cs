@@ -118,25 +118,26 @@ public class ExportarRecursosViewModel : ObservableObject
         var etapaLances = _lances.Where(l => l.MareaEtapaId == etapa.ID).ToList();
         if (!etapaLances.Any()) return;
 
-        // 1. Guardar mapa (si hay coordenadas)
+        // 1. Obtener mapa para Excel (ya no se guarda como archivo separado)
         byte[]? mapBytes = null;
         var lancesConCoord = etapaLances.Where(l => l.LatitudInicioDecimal.HasValue && l.LongitudInicioDecimal.HasValue).ToList();
         if (lancesConCoord.Any())
         {
             var lats = lancesConCoord.Select(l => l.LatitudInicioDecimal!.Value);
             var lons = lancesConCoord.Select(l => l.LongitudInicioDecimal!.Value);
-            string mapPath = Path.Combine(targetFolder, $"{prefix}Mapa.png");
             
-            // Guardar imagen física
-            await _mapService.RenderMapAsync(lats, lons, mapPath);
-            
-            // Obtener bytes para incrustar en Excel
+            // Solo obtenemos bytes para incrustar en el libro de trabajo
             try { mapBytes = await _mapService.RenderMapToBytesAsync(lats, lons); } catch { }
         }
 
-        // 2. Guardar Tablas Excel
+        // 2. Guardar Informe Excel
         var etapaProduccion = await _lanceService.GetProduccionAsync(etapa.ID);
-        string excelPath = Path.Combine(targetFolder, $"{prefix}Tablas.xlsx");
+        
+        string aa = (_marea.AnioInidep % 100).ToString("00");
+        string nn = _marea.NumeroInidep.ToString("00");
+        string fileName = $"{prefix}Informe_{nn}{aa}.xlsx";
+        
+        string excelPath = Path.Combine(targetFolder, fileName);
         await _excelService.GenerateTablasExcelAsync(_marea, etapaLances, etapaProduccion, excelPath, mapBytes);
     }
 }
