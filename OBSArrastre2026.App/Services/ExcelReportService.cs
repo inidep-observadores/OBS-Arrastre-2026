@@ -355,7 +355,6 @@ namespace OBSArrastre2026.App.Services
                 {
                     using var ms = new MemoryStream(mapImage);
                     var picture = worksheet.AddPicture(ms)
-                        .WithName("MapaMarea")
                         .MoveTo(worksheet.Cell(1, 8)); // Columna H
                     
                     // Escalamos un poco para que no ocupe demasiado espacio inicial
