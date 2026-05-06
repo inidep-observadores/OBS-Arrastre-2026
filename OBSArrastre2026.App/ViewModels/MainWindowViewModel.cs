@@ -137,7 +137,7 @@ public class MainWindowViewModel : ObservableObject
     private string _mareasSearchText = string.Empty;
     
     // Filtros de Lances
-    private bool _showTrackLine;
+    private bool _showTrackLine = true;
     public bool ShowTrackLine
     {
         get => _showTrackLine;
@@ -151,7 +151,7 @@ public class MainWindowViewModel : ObservableObject
         }
     }
 
-    private bool _showTrackPoints;
+    private bool _showTrackPoints = true;
     public bool ShowTrackPoints
     {
         get => _showTrackPoints;
