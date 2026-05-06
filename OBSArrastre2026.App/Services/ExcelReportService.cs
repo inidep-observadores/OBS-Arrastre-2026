@@ -15,112 +15,213 @@ namespace OBSArrastre2026.App.Services
             await Task.Run(() =>
             {
                 using var workbook = new XLWorkbook();
-                var worksheet = workbook.Worksheets.Add("Especies");
-
-                // Configuración de fuente base
-                worksheet.Style.Font.FontName = "Times New Roman";
-                worksheet.Style.Font.FontSize = 12;
-
-                // Encabezados
-                worksheet.Cell(1, 1).Value = "Especie";
-                worksheet.Cell(1, 2).Value = "Kilos";
-                worksheet.Cell(1, 3).Value = "Descarte";
-                worksheet.Cell(1, 4).Value = "Desc.%";
-                worksheet.Cell(1, 5).Value = "Lances";
-                worksheet.Cell(1, 6).Value = "Días";
-                worksheet.Cell(1, 7).Value = "Horas";
-
-                var headerRange = worksheet.Range(1, 1, 1, 7);
-                headerRange.Style.Font.Bold = true;
-                headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-
-                // Agrupamiento de datos por especie
+                
                 var lancesList = lances.ToList();
-                var itemsCaptura = lancesList.SelectMany(l => l.ItemsCaptura).ToList();
-
-                var speciesSummary = itemsCaptura
-                    .GroupBy(i => i.EspecieID)
-                    .Select(g => {
-                        var especie = g.First().Especie;
-                        var lancesDeEspecie = g.Select(i => i.Lance).Where(l => l != null).Distinct().ToList();
-                        
-                        double kilos = g.Sum(i => i.CapturaTotalKgCalculado);
-                        double descarte = g.Sum(i => i.PesoDescarteCalculado);
-                        double horas = lancesDeEspecie.Sum(l => CalculateDurationHours(l!));
-                        int nroLances = lancesDeEspecie.Count;
-                        int nroDias = lancesDeEspecie.Select(l => l!.Fecha).Distinct().Count();
-
-                        return new {
-                            NombreCientifico = especie?.NombreCientifico ?? "Desconocida",
-                            Kilos = kilos,
-                            Descarte = descarte,
-                            DescartePorc = kilos > 0 ? (descarte * 100.0 / kilos) : 0,
-                            Lances = nroLances,
-                            Dias = nroDias,
-                            Horas = horas
-                        };
-                    })
-                    .OrderByDescending(s => s.Kilos)
-                    .ToList();
-
-                int currentRow = 2;
-                foreach (var item in speciesSummary)
-                {
-                    worksheet.Cell(currentRow, 1).Value = item.NombreCientifico;
-                    worksheet.Cell(currentRow, 1).Style.Font.Italic = true;
-                    
-                    worksheet.Cell(currentRow, 2).Value = item.Kilos;
-                    worksheet.Cell(currentRow, 3).Value = item.Descarte;
-                    worksheet.Cell(currentRow, 4).Value = item.DescartePorc;
-                    worksheet.Cell(currentRow, 5).Value = item.Lances;
-                    worksheet.Cell(currentRow, 6).Value = item.Dias;
-                    worksheet.Cell(currentRow, 7).Value = item.Horas;
-
-                    currentRow++;
-                }
-
-                // Totales
-                worksheet.Cell(currentRow, 1).Value = "TOTAL";
                 
-                double totalKilos = speciesSummary.Sum(s => s.Kilos);
-                double totalDescarte = speciesSummary.Sum(s => s.Descarte);
-                
-                worksheet.Cell(currentRow, 2).Value = totalKilos;
-                worksheet.Cell(currentRow, 3).Value = totalDescarte;
-                
-                // Desc. % es el promedio de los datos de las filas (promedio simple)
-                worksheet.Cell(currentRow, 4).Value = speciesSummary.Any() ? speciesSummary.Average(s => s.DescartePorc) : 0;
-                
-                worksheet.Cell(currentRow, 5).Value = lancesList.Count;
-                worksheet.Cell(currentRow, 6).Value = lancesList.Select(l => l.Fecha).Distinct().Count();
-                // La columna Horas del total se deja vacía explícitamente
-                worksheet.Cell(currentRow, 7).Value = Blank.Value;
-                
-                var totalRange = worksheet.Range(currentRow, 1, currentRow, 7);
-                totalRange.Style.Font.Bold = true;
+                // --- HOJA: ESPECIES ---
+                GenerateSpeciesSheet(workbook, lancesList);
 
-                // Formateo numérico
-                // Kilos, Descarte y Horas con 2 decimales y separador de miles
-                var decimalRange = worksheet.Range(2, 2, currentRow, 4); // Kilos, Descarte, %
-                decimalRange.Style.NumberFormat.Format = "#,##0.00";
-                
-                var horasRange = worksheet.Range(2, 7, currentRow - 1, 7); // Horas (filas de datos)
-                horasRange.Style.NumberFormat.Format = "#,##0.00";
-
-                // Lances y Días como enteros con separador de miles
-                var integerRange = worksheet.Range(2, 5, currentRow, 6);
-                integerRange.Style.NumberFormat.Format = "#,##0";
-
-                // Bordes
-                var fullRange = worksheet.Range(1, 1, currentRow, 7);
-                fullRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-                fullRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
-
-                // Ajustar columnas
-                worksheet.Columns().AdjustToContents();
+                // --- HOJA: ÁREAS ---
+                GenerateAreasSheet(workbook, lancesList);
 
                 workbook.SaveAs(outputPath);
             });
+        }
+
+        private void GenerateSpeciesSheet(XLWorkbook workbook, List<Lance> lancesList)
+        {
+            var worksheet = workbook.Worksheets.Add("Especies");
+
+            // Configuración de fuente base
+            worksheet.Style.Font.FontName = "Times New Roman";
+            worksheet.Style.Font.FontSize = 12;
+
+            // Encabezados
+            worksheet.Cell(1, 1).Value = "Especie";
+            worksheet.Cell(1, 2).Value = "Kilos";
+            worksheet.Cell(1, 3).Value = "Descarte";
+            worksheet.Cell(1, 4).Value = "Desc.%";
+            worksheet.Cell(1, 5).Value = "Lances";
+            worksheet.Cell(1, 6).Value = "Días";
+            worksheet.Cell(1, 7).Value = "Horas";
+
+            var headerRange = worksheet.Range(1, 1, 1, 7);
+            headerRange.Style.Font.Bold = true;
+            headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+            // Agrupamiento de datos por especie
+            var itemsCaptura = lancesList.SelectMany(l => l.ItemsCaptura).ToList();
+
+            var speciesSummary = itemsCaptura
+                .GroupBy(i => i.EspecieID)
+                .Select(g => {
+                    var especie = g.First().Especie;
+                    var lancesDeEspecie = g.Select(i => i.Lance).Where(l => l != null).Distinct().ToList();
+                    
+                    double kilos = g.Sum(i => i.CapturaTotalKgCalculado);
+                    double descarte = g.Sum(i => i.PesoDescarteCalculado);
+                    double horas = lancesDeEspecie.Sum(l => CalculateDurationHours(l!));
+                    int nroLances = lancesDeEspecie.Count;
+                    int nroDias = lancesDeEspecie.Select(l => l!.Fecha).Distinct().Count();
+
+                    return new {
+                        NombreCientifico = especie?.NombreCientifico ?? "Desconocida",
+                        Kilos = kilos,
+                        Descarte = descarte,
+                        DescartePorc = kilos > 0 ? (descarte * 100.0 / kilos) : 0,
+                        Lances = nroLances,
+                        Dias = nroDias,
+                        Horas = horas
+                    };
+                })
+                .OrderByDescending(s => s.Kilos)
+                .ToList();
+
+            int currentRow = 2;
+            foreach (var item in speciesSummary)
+            {
+                worksheet.Cell(currentRow, 1).Value = item.NombreCientifico;
+                worksheet.Cell(currentRow, 1).Style.Font.Italic = true;
+                
+                worksheet.Cell(currentRow, 2).Value = item.Kilos;
+                worksheet.Cell(currentRow, 3).Value = item.Descarte;
+                worksheet.Cell(currentRow, 4).Value = item.DescartePorc;
+                worksheet.Cell(currentRow, 5).Value = item.Lances;
+                worksheet.Cell(currentRow, 6).Value = item.Dias;
+                worksheet.Cell(currentRow, 7).Value = item.Horas;
+
+                currentRow++;
+            }
+
+            // Totales
+            worksheet.Cell(currentRow, 1).Value = "TOTAL";
+            
+            double totalKilos = speciesSummary.Sum(s => s.Kilos);
+            double totalDescarte = speciesSummary.Sum(s => s.Descarte);
+            
+            worksheet.Cell(currentRow, 2).Value = totalKilos;
+            worksheet.Cell(currentRow, 3).Value = totalDescarte;
+            
+            worksheet.Cell(currentRow, 4).Value = speciesSummary.Any() ? speciesSummary.Average(s => s.DescartePorc) : 0;
+            worksheet.Cell(currentRow, 5).Value = lancesList.Count;
+            worksheet.Cell(currentRow, 6).Value = lancesList.Select(l => l.Fecha).Distinct().Count();
+            worksheet.Cell(currentRow, 7).Value = Blank.Value;
+            
+            var totalRange = worksheet.Range(currentRow, 1, currentRow, 7);
+            totalRange.Style.Font.Bold = true;
+
+            ApplyFormatting(worksheet, currentRow);
+        }
+
+        private void GenerateAreasSheet(XLWorkbook workbook, List<Lance> lancesList)
+        {
+            var worksheet = workbook.Worksheets.Add("Áreas");
+
+            // Configuración de fuente base
+            worksheet.Style.Font.FontName = "Times New Roman";
+            worksheet.Style.Font.FontSize = 12;
+
+            // Encabezados
+            worksheet.Cell(1, 1).Value = "Área";
+            worksheet.Cell(1, 2).Value = "Kilos";
+            worksheet.Cell(1, 3).Value = "Descarte";
+            worksheet.Cell(1, 4).Value = "Desc.%";
+            worksheet.Cell(1, 5).Value = "Lances";
+            worksheet.Cell(1, 6).Value = "Días";
+            worksheet.Cell(1, 7).Value = "Horas";
+
+            var headerRange = worksheet.Range(1, 1, 1, 7);
+            headerRange.Style.Font.Bold = true;
+            headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+            // Agrupamiento de datos por Área (Cuadrícula)
+            var areaSummary = lancesList
+                .GroupBy(l => GetCuadricula(l))
+                .Select(g => {
+                    var lancesDeArea = g.ToList();
+                    double kilos = lancesDeArea.Sum(l => l.ItemsCaptura.Sum(i => i.CapturaTotalKgCalculado));
+                    double descarte = lancesDeArea.Sum(l => l.ItemsCaptura.Sum(i => i.PesoDescarteCalculado));
+                    double horas = lancesDeArea.Sum(l => CalculateDurationHours(l));
+                    int nroLances = lancesDeArea.Count;
+                    int nroDias = lancesDeArea.Select(l => l.Fecha).Distinct().Count();
+
+                    return new {
+                        Area = g.Key,
+                        Kilos = kilos,
+                        Descarte = descarte,
+                        DescartePorc = kilos > 0 ? (descarte * 100.0 / kilos) : 0,
+                        Lances = nroLances,
+                        Dias = nroDias,
+                        Horas = horas
+                    };
+                })
+                .OrderBy(s => s.Area)
+                .ToList();
+
+            int currentRow = 2;
+            foreach (var item in areaSummary)
+            {
+                worksheet.Cell(currentRow, 1).Value = item.Area;
+                worksheet.Cell(currentRow, 2).Value = item.Kilos;
+                worksheet.Cell(currentRow, 3).Value = item.Descarte;
+                worksheet.Cell(currentRow, 4).Value = item.DescartePorc;
+                worksheet.Cell(currentRow, 5).Value = item.Lances;
+                worksheet.Cell(currentRow, 6).Value = item.Dias;
+                worksheet.Cell(currentRow, 7).Value = item.Horas;
+
+                currentRow++;
+            }
+
+            // Totales (opcional, pero consistente con especies)
+            worksheet.Cell(currentRow, 1).Value = "TOTAL";
+            double totalKilos = areaSummary.Sum(s => s.Kilos);
+            double totalDescarte = areaSummary.Sum(s => s.Descarte);
+            worksheet.Cell(currentRow, 2).Value = totalKilos;
+            worksheet.Cell(currentRow, 3).Value = totalDescarte;
+            worksheet.Cell(currentRow, 4).Value = areaSummary.Any() ? areaSummary.Average(s => s.DescartePorc) : 0;
+            worksheet.Cell(currentRow, 5).Value = lancesList.Count;
+            worksheet.Cell(currentRow, 6).Value = lancesList.Select(l => l.Fecha).Distinct().Count();
+            worksheet.Cell(currentRow, 7).Value = Blank.Value;
+
+            var totalRange = worksheet.Range(currentRow, 1, currentRow, 7);
+            totalRange.Style.Font.Bold = true;
+
+            ApplyFormatting(worksheet, currentRow);
+        }
+
+        private void ApplyFormatting(IXLWorksheet worksheet, int lastRow)
+        {
+            // Formateo numérico
+            // Kilos, Descarte y Horas con 2 decimales y separador de miles
+            var decimalRange = worksheet.Range(2, 2, lastRow, 4); // Kilos, Descarte, %
+            decimalRange.Style.NumberFormat.Format = "#,##0.00";
+            
+            var horasRange = worksheet.Range(2, 7, lastRow - 1, 7); // Horas (filas de datos)
+            horasRange.Style.NumberFormat.Format = "#,##0.00";
+
+            // Lances y Días como enteros con separador de miles
+            var integerRange = worksheet.Range(2, 5, lastRow, 6);
+            integerRange.Style.NumberFormat.Format = "#,##0";
+
+            // Bordes
+            var fullRange = worksheet.Range(1, 1, lastRow, 7);
+            fullRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            fullRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+
+            // Ajustar columnas
+            worksheet.Columns().AdjustToContents();
+        }
+
+        private string GetCuadricula(Lance lance)
+        {
+            if (!lance.LatitudInicioDecimal.HasValue || !lance.LongitudInicioDecimal.HasValue) 
+                return "S/D";
+
+            double lat = Math.Abs(lance.LatitudInicioDecimal.Value);
+            double lon = Math.Abs(lance.LongitudInicioDecimal.Value);
+
+            int cuad = ((int)Math.Truncate(lat) * 100) + (int)Math.Truncate(lon);
+            return cuad.ToString();
         }
 
         private double CalculateDurationHours(Lance lance)
