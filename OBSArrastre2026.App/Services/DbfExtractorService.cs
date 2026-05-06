@@ -137,7 +137,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
     public async Task ExtractBuquesAsync(string dbfPath, string jsonOutputPath)
     {
         var records = new List<Dictionary<string, object?>>();
-        var options = GetOptions(dbfPath);
+        var options = new DbfDataReaderOptions { Encoding = Encoding.GetEncoding(850) };
 
         using (var dbfReader = new DbfDataReader.DbfDataReader(dbfPath, options))
         {
@@ -540,6 +540,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
             "RIP" => "IdRadial",
             "IMO" => "IMO",
             "MMSI" => "MMSI",
+            "NRO_EXP" => "MMSI",
             _ => null
         };
     }

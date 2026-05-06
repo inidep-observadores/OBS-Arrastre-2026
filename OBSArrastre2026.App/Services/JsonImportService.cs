@@ -59,11 +59,11 @@ public sealed class JsonImportService : IJsonImportService
                 if (nMatricula != 0) existing.Matricula = nMatricula;
                 if (nIdRadial != 0) existing.IdRadial = nIdRadial;
                 
-                if (item.TryGetProperty("IMO", out var imoProp) && imoProp.ValueKind == JsonValueKind.Number) 
-                    existing.IMO = imoProp.GetInt32();
+                if (int.TryParse(GetStringValue(item, "IMO"), out int nImo))
+                    existing.IMO = nImo;
                 
-                if (item.TryGetProperty("MMSI", out var mmsiProp) && mmsiProp.ValueKind == JsonValueKind.Number) 
-                    existing.MMSI = mmsiProp.GetInt32();
+                if (int.TryParse(GetStringValue(item, "MMSI"), out int nMmsi))
+                    existing.MMSI = nMmsi;
             }
             else
             {
@@ -74,8 +74,8 @@ public sealed class JsonImportService : IJsonImportService
                     Nombre = nombre,
                     Matricula = nMatricula,
                     IdRadial = nIdRadial,
-                    IMO = item.TryGetProperty("IMO", out var i) && i.ValueKind == JsonValueKind.Number ? i.GetInt32() : null,
-                    MMSI = item.TryGetProperty("MMSI", out var ms) && ms.ValueKind == JsonValueKind.Number ? ms.GetInt32() : null
+                    IMO = int.TryParse(GetStringValue(item, "IMO"), out int i) ? i : null,
+                    MMSI = int.TryParse(GetStringValue(item, "MMSI"), out int ms) ? ms : null
                 });
             }
         }
