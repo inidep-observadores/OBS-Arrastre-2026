@@ -62,7 +62,7 @@ public class MareaReportService : IMareaReportService
 
     private void ComposeMareaSummarySection(ColumnDescriptor col, MareaSummarySection section)
     {
-        col.Item().PaddingTop(10).Background(Colors.Grey.Lighten4).Padding(8).Text(section.Titulo).FontSize(12).SemiBold().FontColor(Colors.Blue.Medium);
+        col.Item().PaddingTop(10).Background(Colors.Grey.Lighten4).Padding(8).Text(section.Titulo).FontSize(12).SemiBold().FontColor(Colors.Blue.Darken3);
 
         col.Item().PaddingVertical(10).Row(row =>
         {
@@ -101,7 +101,7 @@ public class MareaReportService : IMareaReportService
         // Especies Muestreadas
         if (section.EspeciesMuestreadas.Any())
         {
-            col.Item().PaddingTop(15).Text("ESPECIES MUESTREADAS").FontSize(10).SemiBold().FontColor(Colors.Blue.Medium);
+            col.Item().PaddingTop(15).Text("ESPECIES MUESTREADAS").FontSize(10).SemiBold().FontColor(Colors.Blue.Darken3);
             col.Item().PaddingTop(5).Table(table =>
             {
                 table.ColumnsDefinition(columns =>
@@ -133,7 +133,7 @@ public class MareaReportService : IMareaReportService
         }
 
         // Especies Objetivo
-        col.Item().PaddingTop(10).Text("PRINCIPALES ESPECIES OBJETIVO").FontSize(10).SemiBold().FontColor(Colors.Blue.Medium);
+        col.Item().PaddingTop(10).Text("PRINCIPALES ESPECIES OBJETIVO").FontSize(10).SemiBold().FontColor(Colors.Blue.Darken3);
         col.Item().PaddingTop(5).Table(table =>
         {
             table.ColumnsDefinition(columns =>
@@ -162,7 +162,7 @@ public class MareaReportService : IMareaReportService
 
             foreach (var item in section.EspeciesObjetivo)
             {
-                var style = item.EsObjetivo ? (Func<IContainer, IContainer>)(c => c.PaddingVertical(2).BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Background(Colors.Blue.Lighten5)) 
+                var style = item.EsObjetivo ? (Func<IContainer, IContainer>)(c => c.PaddingVertical(2).BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Background(Colors.Blue.Lighten4)) 
                                            : (Func<IContainer, IContainer>)(c => c.PaddingVertical(2).BorderBottom(1).BorderColor(Colors.Grey.Lighten4));
 
                 table.Cell().Element(style).Text(item.NombreCientifico).Italic();
@@ -181,7 +181,7 @@ public class MareaReportService : IMareaReportService
         {
             row.RelativeItem().Column(c =>
             {
-                c.Item().Text("ÁREAS DE TRABAJO").FontSize(10).SemiBold().FontColor(Colors.Blue.Medium);
+                c.Item().Text("ÁREAS DE TRABAJO").FontSize(10).SemiBold().FontColor(Colors.Blue.Darken3);
                 c.Item().PaddingTop(5).Table(table =>
                 {
                     table.ColumnsDefinition(columns =>
@@ -216,9 +216,9 @@ public class MareaReportService : IMareaReportService
 
             row.ConstantItem(150).Column(c =>
             {
-                c.Item().PaddingTop(30).Border(1).BorderColor(Colors.Blue.Medium).Padding(10).Column(inner =>
+                c.Item().PaddingTop(30).Border(1).BorderColor(Colors.Blue.Darken3).Padding(10).Column(inner =>
                 {
-                    inner.Item().Text("DESTACADOS").FontSize(9).SemiBold().FontColor(Colors.Blue.Medium).AlignCenter();
+                    inner.Item().Text("DESTACADOS").FontSize(9).SemiBold().FontColor(Colors.Blue.Darken3).AlignCenter();
                     
                     if (section.AreaMasLances == section.AreaMayorCaptura)
                     {
@@ -339,7 +339,7 @@ public class MareaReportService : IMareaReportService
             {
                 row.RelativeItem().Column(c =>
                 {
-                    c.Item().Text(titulo).FontSize(14).SemiBold().FontColor(Colors.Blue.Medium);
+                    c.Item().Text(titulo).FontSize(14).SemiBold().FontColor(Colors.Blue.Darken3);
                     
                     var buqueInfo = buqueCodigo.HasValue ? $"{barco} ({buqueCodigo})" : barco;
                     var mareaInfo = $"{buqueInfo} - Marea {marea} ({anio})";
@@ -510,7 +510,7 @@ public class MareaReportService : IMareaReportService
 
         foreach (var speciesGroup in groupedBySpecies)
         {
-            col.Item().PaddingTop(15).PaddingBottom(5).Text(speciesGroup.Key).FontSize(10).SemiBold().FontColor(Colors.Blue.Medium);
+            col.Item().PaddingTop(15).PaddingBottom(5).Text(speciesGroup.Key).FontSize(10).SemiBold().FontColor(Colors.Blue.Darken3);
             
             col.Item().Table(table =>
             {
