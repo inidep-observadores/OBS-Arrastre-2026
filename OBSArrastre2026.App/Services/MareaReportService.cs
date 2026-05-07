@@ -833,7 +833,7 @@ public class MareaReportService : IMareaReportService
             {
                 // Título Principal
                 doc.InsertParagraph("INFORME DE MAREA")
-                    .Font("Times New Roman").FontSize(16).Bold().Alignment = Alignment.center;
+                    .Font("Times New Roman").FontSize(12).Bold().Alignment = Alignment.center;
                 doc.InsertParagraph().SpacingAfter(20);
 
                 // Cabecera
@@ -868,8 +868,8 @@ public class MareaReportService : IMareaReportService
 
                 // Secciones Manuales
                 doc.InsertParagraph("Descripción artes de pesca").Font("Times New Roman").FontSize(12).Bold().SpacingAfter(10);
-                doc.InsertParagraph("Denominación y tipo: Red de arrastre de fondo.").Font("Times New Roman").FontSize(10);
-                doc.InsertParagraph("Características generales:").Font("Times New Roman").FontSize(10);
+                doc.InsertParagraph("Denominación y tipo: Red de arrastre de fondo.").Font("Times New Roman").FontSize(12);
+                doc.InsertParagraph("Características generales:").Font("Times New Roman").FontSize(12);
                 doc.InsertParagraph().SpacingAfter(40);
 
                 doc.InsertParagraph("Metodología de captura, estimación y producción").Font("Times New Roman").FontSize(12).Bold().SpacingAfter(10);
@@ -878,11 +878,14 @@ public class MareaReportService : IMareaReportService
                 // Tablas Globales
                 doc.InsertParagraph("Datos de captura y producción total de la marea").Font("Times New Roman").FontSize(12).Bold().SpacingAfter(10);
                 
-                doc.InsertParagraph("Captura por especie").FontSize(11).Bold();
+                doc.InsertParagraph("Captura por especie").FontSize(12).Bold();
                 InsertSpeciesTable(doc, lances);
                 
-                doc.InsertParagraph("Producción total").FontSize(11).Bold().SpacingBefore(10);
+                doc.InsertParagraph("Producción total").FontSize(12).Bold().SpacingBefore(10);
                 InsertProduccionTable(doc, produccion);
+                
+                doc.InsertParagraph("Resumen por área").FontSize(12).Bold().SpacingBefore(10);
+                InsertAreaTable(doc, lances);
                 
                 doc.InsertParagraph().InsertPageBreakAfterSelf();
 
@@ -898,46 +901,17 @@ public class MareaReportService : IMareaReportService
 
                     if (multipleEtapas)
                     {
-                        doc.InsertParagraph($"VIAJE {i + 1}").Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
+                        doc.InsertParagraph($"VIAJE {i + 1}").Font("Times New Roman").FontSize(12).Bold().Alignment = Alignment.center;
                         doc.InsertParagraph().SpacingAfter(10);
                     }
 
-                    doc.InsertParagraph("Detalle de lances").FontSize(11).Bold().SpacingBefore(10);
-                    foreach (var lance in etapaLances)
-                    {
-                        var table = doc.AddTable(2, 7);
-                        table.Alignment = Alignment.center;
-                        string[] headers = { "Lance", "Fecha", "Posición", "Inicio", "Fin", "Prof. I", "Prof. F" };
-                        for (int j = 0; j < 7; j++) { table.Rows[0].Cells[j].Paragraphs[0].Append(headers[j]).Bold(); table.Rows[0].Cells[j].FillColor = XColor.LightGray; }
-                        
-                        table.Rows[1].Cells[0].Paragraphs[0].Append(lance.NroLance.ToString());
-                        table.Rows[1].Cells[1].Paragraphs[0].Append(lance.Fecha);
-                        table.Rows[1].Cells[2].Paragraphs[0].Append($"{lance.LatitudInicioDecimal:F2} / {lance.LongitudInicioDecimal:F2}");
-                        table.Rows[1].Cells[3].Paragraphs[0].Append(lance.HoraInicio ?? "-");
-                        table.Rows[1].Cells[4].Paragraphs[0].Append(lance.HoraFinal ?? "-");
-                        table.Rows[1].Cells[5].Paragraphs[0].Append(lance.ProfundidadInicioM?.ToString() ?? "-");
-                        table.Rows[1].Cells[6].Paragraphs[0].Append(lance.ProfundidadFinalM?.ToString() ?? "-");
-                        doc.InsertTable(table);
-                    }
 
-                    doc.InsertParagraph("Captura por Área (Etapa)").FontSize(11).Bold().SpacingBefore(10);
-                    var areaTable = doc.AddTable(etapaLances.Count + 1, 3);
-                    areaTable.Alignment = Alignment.center;
-                    string[] aHeaders = { "Cuadrado Estadístico", "Latitud", "Longitud" };
-                    for (int j = 0; j < 3; j++) { areaTable.Rows[0].Cells[j].Paragraphs[0].Append(aHeaders[j]).Bold(); areaTable.Rows[0].Cells[j].FillColor = XColor.LightGray; }
-
-                    for (int j = 0; j < etapaLances.Count; j++)
-                    {
-                        var l = etapaLances[j];
-                        areaTable.Rows[j + 1].Cells[0].Paragraphs[0].Append(GetCuadricula(l));
-                        areaTable.Rows[j + 1].Cells[1].Paragraphs[0].Append(l.LatitudInicioDecimal?.ToString("F4") ?? "-");
-                        areaTable.Rows[j + 1].Cells[2].Paragraphs[0].Append(l.LongitudInicioDecimal?.ToString("F4") ?? "-");
-                    }
-                    doc.InsertTable(areaTable);
+                    doc.InsertParagraph("Captura por Área (Etapa)").FontSize(12).Bold().SpacingBefore(10);
+                    InsertAreaTable(doc, etapaLances);
 
                     if (etapaProduccion.Any())
                     {
-                        doc.InsertParagraph("Producción (Etapa)").FontSize(11).Bold().SpacingBefore(10);
+                        doc.InsertParagraph("Producción (Etapa)").FontSize(12).Bold().SpacingBefore(10);
                         InsertProduccionTable(doc, etapaProduccion);
                     }
 
@@ -945,7 +919,7 @@ public class MareaReportService : IMareaReportService
                     var lancesConCoord = etapaLances.Where(l => l.LatitudInicioDecimal.HasValue && l.LongitudInicioDecimal.HasValue).ToList();
                     if (lancesConCoord.Any())
                     {
-                        doc.InsertParagraph("Localización del área de pesca (Etapa)").Font("Times New Roman").FontSize(11).Bold().Alignment = Alignment.center;
+                        doc.InsertParagraph("Localización del área de pesca (Etapa)").Font("Times New Roman").FontSize(12).Bold().Alignment = Alignment.center;
                         try
                         {
                             var lats = lancesConCoord.Select(l => l.LatitudInicioDecimal!.Value);
@@ -954,7 +928,13 @@ public class MareaReportService : IMareaReportService
                             using var mapMs = new MemoryStream(mapBytes);
                             var img = doc.AddImage(mapMs);
                             var pic = img.CreatePicture();
-                            pic.Width = 450; pic.Height = 350;
+                            
+                            // Obtener dimensiones reales para el aspect ratio
+                            using var codec = SKCodec.Create(new MemoryStream(mapBytes));
+                            double ratio = (double)codec.Info.Height / codec.Info.Width;
+                            
+                            pic.Width = 450; 
+                            pic.Height = (int)(450 * ratio);
                             var pMap = doc.InsertParagraph();
                             pMap.AppendPicture(pic);
                             pMap.Alignment = Alignment.center;
@@ -1010,37 +990,38 @@ public class MareaReportService : IMareaReportService
         var table = doc.AddTable(summary.Count + 2, 7);
         table.Alignment = Alignment.center;
         table.Design = TableDesign.TableGrid;
+        table.AutoFit = AutoFit.Window;
 
         // Headers
         string[] headers = { "Especie", "Kilos", "Descarte", "Desc.%", "Lances", "Días", "Horas" };
         for (int i = 0; i < headers.Length; i++)
         {
-            table.Rows[0].Cells[i].Paragraphs[0].Append(headers[i]).Bold().Font("Times New Roman").FontSize(10);
+            table.Rows[0].Cells[i].Paragraphs[0].Append(headers[i]).Bold().Font("Times New Roman").FontSize(12);
             table.Rows[0].Cells[i].FillColor = XColor.LightGray;
         }
 
         int rowIdx = 1;
         foreach (var s in summary)
         {
-            table.Rows[rowIdx].Cells[0].Paragraphs[0].Append(s.Nombre).Italic().Font("Times New Roman").FontSize(9);
-            table.Rows[rowIdx].Cells[1].Paragraphs[0].Append(s.Kilos.ToString("N1")).Font("Times New Roman").FontSize(9);
-            table.Rows[rowIdx].Cells[2].Paragraphs[0].Append(s.Descarte.ToString("N1")).Font("Times New Roman").FontSize(9);
-            table.Rows[rowIdx].Cells[3].Paragraphs[0].Append(s.DescartePct.ToString("N1")).Font("Times New Roman").FontSize(9);
-            table.Rows[rowIdx].Cells[4].Paragraphs[0].Append(s.Lances.ToString()).Font("Times New Roman").FontSize(9);
-            table.Rows[rowIdx].Cells[5].Paragraphs[0].Append(s.Dias.ToString()).Font("Times New Roman").FontSize(9);
-            table.Rows[rowIdx].Cells[6].Paragraphs[0].Append(s.Horas.ToString("N1")).Font("Times New Roman").FontSize(9);
+            table.Rows[rowIdx].Cells[0].Paragraphs[0].Append(s.Nombre).Italic().Font("Times New Roman").FontSize(12);
+            table.Rows[rowIdx].Cells[1].Paragraphs[0].Append(s.Kilos.ToString("N1")).Font("Times New Roman").FontSize(12);
+            table.Rows[rowIdx].Cells[2].Paragraphs[0].Append(s.Descarte.ToString("N1")).Font("Times New Roman").FontSize(12);
+            table.Rows[rowIdx].Cells[3].Paragraphs[0].Append(s.DescartePct.ToString("N1")).Font("Times New Roman").FontSize(12);
+            table.Rows[rowIdx].Cells[4].Paragraphs[0].Append(s.Lances.ToString()).Font("Times New Roman").FontSize(12);
+            table.Rows[rowIdx].Cells[5].Paragraphs[0].Append(s.Dias.ToString()).Font("Times New Roman").FontSize(12);
+            table.Rows[rowIdx].Cells[6].Paragraphs[0].Append(s.Horas.ToString("N1")).Font("Times New Roman").FontSize(12);
             rowIdx++;
         }
 
         // Totales
-        table.Rows[rowIdx].Cells[0].Paragraphs[0].Append("Totales").Bold().Font("Times New Roman").FontSize(9);
-        table.Rows[rowIdx].Cells[1].Paragraphs[0].Append(summary.Sum(s => s.Kilos).ToString("N1")).Bold().Font("Times New Roman").FontSize(9);
-        table.Rows[rowIdx].Cells[2].Paragraphs[0].Append(summary.Sum(s => s.Descarte).ToString("N1")).Bold().Font("Times New Roman").FontSize(9);
+        table.Rows[rowIdx].Cells[0].Paragraphs[0].Append("Totales").Bold().Font("Times New Roman").FontSize(12);
+        table.Rows[rowIdx].Cells[1].Paragraphs[0].Append(summary.Sum(s => s.Kilos).ToString("N1")).Bold().Font("Times New Roman").FontSize(12);
+        table.Rows[rowIdx].Cells[2].Paragraphs[0].Append(summary.Sum(s => s.Descarte).ToString("N1")).Bold().Font("Times New Roman").FontSize(12);
         double totalK = summary.Sum(s => s.Kilos);
         double totalD = summary.Sum(s => s.Descarte);
-        table.Rows[rowIdx].Cells[3].Paragraphs[0].Append(totalK > 0 ? (totalD * 100.0 / totalK).ToString("N1") : "0").Bold().Font("Times New Roman").FontSize(9);
-        table.Rows[rowIdx].Cells[4].Paragraphs[0].Append(lances.Count.ToString()).Bold().Font("Times New Roman").FontSize(9);
-        table.Rows[rowIdx].Cells[5].Paragraphs[0].Append(lances.Select(l => l.Fecha).Distinct().Count().ToString()).Bold().Font("Times New Roman").FontSize(9);
+        table.Rows[rowIdx].Cells[3].Paragraphs[0].Append(totalK > 0 ? (totalD * 100.0 / totalK).ToString("N1") : "0").Bold().Font("Times New Roman").FontSize(12);
+        table.Rows[rowIdx].Cells[4].Paragraphs[0].Append(lances.Count.ToString()).Bold().Font("Times New Roman").FontSize(12);
+        table.Rows[rowIdx].Cells[5].Paragraphs[0].Append(lances.Select(l => l.Fecha).Distinct().Count().ToString()).Bold().Font("Times New Roman").FontSize(12);
 
         doc.InsertTable(table);
     }
@@ -1077,24 +1058,25 @@ public class MareaReportService : IMareaReportService
         var table = doc.AddTable(areaSummary.Count + 1, 7);
         table.Alignment = Alignment.center;
         table.Design = TableDesign.TableGrid;
+        table.AutoFit = AutoFit.Window;
 
         string[] headers = { "Área", "Kilos", "Descarte", "Desc.%", "Lances", "Días", "Horas" };
         for (int i = 0; i < headers.Length; i++)
         {
-            table.Rows[0].Cells[i].Paragraphs[0].Append(headers[i]).Bold().Font("Times New Roman").FontSize(10);
+            table.Rows[0].Cells[i].Paragraphs[0].Append(headers[i]).Bold().Font("Times New Roman").FontSize(12);
             table.Rows[0].Cells[i].FillColor = XColor.LightGray;
         }
 
         for (int i = 0; i < areaSummary.Count; i++)
         {
             var a = areaSummary[i];
-            table.Rows[i+1].Cells[0].Paragraphs[0].Append(a.Area).Font("Times New Roman").FontSize(9);
-            table.Rows[i+1].Cells[1].Paragraphs[0].Append(a.Kilos.ToString("N1")).Font("Times New Roman").FontSize(9);
-            table.Rows[i+1].Cells[2].Paragraphs[0].Append(a.Descarte.ToString("N1")).Font("Times New Roman").FontSize(9);
-            table.Rows[i+1].Cells[3].Paragraphs[0].Append(a.DescartePct.ToString("N1")).Font("Times New Roman").FontSize(9);
-            table.Rows[i+1].Cells[4].Paragraphs[0].Append(a.Lances.ToString()).Font("Times New Roman").FontSize(9);
-            table.Rows[i+1].Cells[5].Paragraphs[0].Append(a.Dias.ToString()).Font("Times New Roman").FontSize(9);
-            table.Rows[i+1].Cells[6].Paragraphs[0].Append(a.Horas.ToString("N1")).Font("Times New Roman").FontSize(9);
+            table.Rows[i+1].Cells[0].Paragraphs[0].Append(a.Area).Font("Times New Roman").FontSize(12);
+            table.Rows[i+1].Cells[1].Paragraphs[0].Append(a.Kilos.ToString("N1")).Font("Times New Roman").FontSize(12);
+            table.Rows[i+1].Cells[2].Paragraphs[0].Append(a.Descarte.ToString("N1")).Font("Times New Roman").FontSize(12);
+            table.Rows[i+1].Cells[3].Paragraphs[0].Append(a.DescartePct.ToString("N1")).Font("Times New Roman").FontSize(12);
+            table.Rows[i+1].Cells[4].Paragraphs[0].Append(a.Lances.ToString()).Font("Times New Roman").FontSize(12);
+            table.Rows[i+1].Cells[5].Paragraphs[0].Append(a.Dias.ToString()).Font("Times New Roman").FontSize(12);
+            table.Rows[i+1].Cells[6].Paragraphs[0].Append(a.Horas.ToString("N1")).Font("Times New Roman").FontSize(12);
         }
         doc.InsertTable(table);
     }
@@ -1103,7 +1085,7 @@ public class MareaReportService : IMareaReportService
     {
         if (!produccion.Any())
         {
-            doc.InsertParagraph("No se registraron datos de producción para esta etapa.").Font("Times New Roman").FontSize(10);
+            doc.InsertParagraph("No se registraron datos de producción para esta etapa.").Font("Times New Roman").FontSize(12);
             return;
         }
 
@@ -1111,7 +1093,7 @@ public class MareaReportService : IMareaReportService
             .GroupBy(p => new { p.EspecieId, p.IdProducto, p.Categoria })
             .Select(g => new {
                 Especie = g.First().Especie?.NombreCientifico ?? "Desconocida",
-                Producto = g.First().Producto?.Descripcion ?? g.First().IdProducto ?? "S/D",
+                Producto = g.First().Producto?.Codigo ?? g.First().IdProducto ?? "S/C",
                 Categoria = g.Key.Categoria ?? "-",
                 Kilos = g.Sum(p => p.Kg ?? 0),
                 Factor = g.First().Factor ?? 1.0
@@ -1122,22 +1104,23 @@ public class MareaReportService : IMareaReportService
         var table = doc.AddTable(grouped.Count + 1, 5);
         table.Alignment = Alignment.center;
         table.Design = TableDesign.TableGrid;
+        table.AutoFit = AutoFit.Window;
 
         string[] headers = { "Especie", "Producto", "Categoría", "Kilos", "Factor" };
         for (int i = 0; i < headers.Length; i++)
         {
-            table.Rows[0].Cells[i].Paragraphs[0].Append(headers[i]).Bold().Font("Times New Roman").FontSize(10);
+            table.Rows[0].Cells[i].Paragraphs[0].Append(headers[i]).Bold().Font("Times New Roman").FontSize(12);
             table.Rows[0].Cells[i].FillColor = XColor.LightGray;
         }
 
         for (int i = 0; i < grouped.Count; i++)
         {
             var p = grouped[i];
-            table.Rows[i+1].Cells[0].Paragraphs[0].Append(p.Especie).Italic().Font("Times New Roman").FontSize(9);
-            table.Rows[i+1].Cells[1].Paragraphs[0].Append(p.Producto).Font("Times New Roman").FontSize(9);
-            table.Rows[i+1].Cells[2].Paragraphs[0].Append(p.Categoria).Font("Times New Roman").FontSize(9);
-            table.Rows[i+1].Cells[3].Paragraphs[0].Append(p.Kilos.ToString("N1")).Font("Times New Roman").FontSize(9);
-            table.Rows[i+1].Cells[4].Paragraphs[0].Append(p.Factor.ToString("N2")).Font("Times New Roman").FontSize(9);
+            table.Rows[i+1].Cells[0].Paragraphs[0].Append(p.Especie).Italic().Font("Times New Roman").FontSize(12);
+            table.Rows[i+1].Cells[1].Paragraphs[0].Append(p.Producto).Font("Times New Roman").FontSize(12);
+            table.Rows[i+1].Cells[2].Paragraphs[0].Append(p.Categoria).Font("Times New Roman").FontSize(12);
+            table.Rows[i+1].Cells[3].Paragraphs[0].Append(p.Kilos.ToString("N1")).Font("Times New Roman").FontSize(12);
+            table.Rows[i+1].Cells[4].Paragraphs[0].Append(p.Factor.ToString("N2")).Font("Times New Roman").FontSize(12);
         }
         doc.InsertTable(table);
     }
@@ -1159,7 +1142,7 @@ public class MareaReportService : IMareaReportService
             string tipoStr = g.Key.TipoMuestra == 2 ? "Descarte" : "Captura";
             doc.InsertParagraph($"Especie: {especie.NombreCientifico} ({tipoStr})")
                 .Font("Times New Roman")
-                .FontSize(11)
+                .FontSize(12)
                 .Bold()
                 .Italic()
                 .SpacingAfter(5);
@@ -1203,8 +1186,12 @@ public class MareaReportService : IMareaReportService
                         using var chartMs = new MemoryStream(chartBytes);
                         var chartImg = doc.AddImage(chartMs);
                         var chartPic = chartImg.CreatePicture();
+                        
+                        using var cCodec = SKCodec.Create(new MemoryStream(chartBytes));
+                        double cRatio = (double)cCodec.Info.Height / cCodec.Info.Width;
+                        
                         chartPic.Width = 500;
-                        chartPic.Height = 300;
+                        chartPic.Height = (int)(500 * cRatio);
                         
                         var pChart = doc.InsertParagraph();
                         pChart.AppendPicture(chartPic);
@@ -1346,24 +1333,25 @@ public class MareaReportService : IMareaReportService
         var table = doc.AddTable(5, 8);
         table.Alignment = Alignment.center;
         table.Design = TableDesign.TableGrid;
+        table.AutoFit = AutoFit.Window;
 
         string[] headers = { "Sexo", "Media", "Desv.St", "Porcent.", "Suma N", "Suma X", "Suma X2", cutoff > 0 ? $"%<{cutoff}" : "%<0" };
         for (int i = 0; i < headers.Length; i++)
         {
-            table.Rows[0].Cells[i].Paragraphs[0].Append(headers[i]).Bold().Font("Times New Roman").FontSize(9);
+            table.Rows[0].Cells[i].Paragraphs[0].Append(headers[i]).Bold().Font("Times New Roman").FontSize(12);
             table.Rows[0].Cells[i].FillColor = XColor.LightGray;
         }
 
         void FillRow(int r, string label, StatsResult s, bool bold = false)
         {
-            table.Rows[r].Cells[0].Paragraphs[0].Append(label).Font("Times New Roman").FontSize(9);
-            table.Rows[r].Cells[1].Paragraphs[0].Append(s.Media.ToString("N2")).Font("Times New Roman").FontSize(9);
-            table.Rows[r].Cells[2].Paragraphs[0].Append(s.DesvSt.ToString("N2")).Font("Times New Roman").FontSize(9);
-            table.Rows[r].Cells[3].Paragraphs[0].Append(s.Porcent.ToString("N1")).Font("Times New Roman").FontSize(9);
-            table.Rows[r].Cells[4].Paragraphs[0].Append(s.SumN.ToString("N0")).Font("Times New Roman").FontSize(9);
-            table.Rows[r].Cells[5].Paragraphs[0].Append(s.SumX.ToString("N0")).Font("Times New Roman").FontSize(9);
-            table.Rows[r].Cells[6].Paragraphs[0].Append(s.SumX2.ToString("N0")).Font("Times New Roman").FontSize(9);
-            table.Rows[r].Cells[7].Paragraphs[0].Append(s.PorcentLimit.ToString("N1")).Font("Times New Roman").FontSize(9);
+            table.Rows[r].Cells[0].Paragraphs[0].Append(label).Font("Times New Roman").FontSize(12);
+            table.Rows[r].Cells[1].Paragraphs[0].Append(s.Media.ToString("N2")).Font("Times New Roman").FontSize(12);
+            table.Rows[r].Cells[2].Paragraphs[0].Append(s.DesvSt.ToString("N2")).Font("Times New Roman").FontSize(12);
+            table.Rows[r].Cells[3].Paragraphs[0].Append(s.Porcent.ToString("N1")).Font("Times New Roman").FontSize(12);
+            table.Rows[r].Cells[4].Paragraphs[0].Append(s.SumN.ToString("N0")).Font("Times New Roman").FontSize(12);
+            table.Rows[r].Cells[5].Paragraphs[0].Append(s.SumX.ToString("N0")).Font("Times New Roman").FontSize(12);
+            table.Rows[r].Cells[6].Paragraphs[0].Append(s.SumX2.ToString("N0")).Font("Times New Roman").FontSize(12);
+            table.Rows[r].Cells[7].Paragraphs[0].Append(s.PorcentLimit.ToString("N1")).Font("Times New Roman").FontSize(12);
             if (bold) foreach(var cell in table.Rows[r].Cells) cell.Paragraphs[0].Bold();
         }
 
