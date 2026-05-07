@@ -306,7 +306,8 @@ public class MareaReportService : IMareaReportService
                 page.PageColor(Colors.White);
                 page.DefaultTextStyle(x => x.FontSize(8).FontFamily(Fonts.Verdana));
 
-                ComposeHeader(page.Header(), report.Barco, report.Marea, report.Anio, report.FechaInicioMarea, report.FechaFinMarea, "CONTROL DE CAPTURA Y PRODUCCIÓN POR ETAPA",
+                var tituloProduccion = report.Etapas.Count > 1 ? "CONTROL DE CAPTURA Y PRODUCCIÓN POR ETAPA" : "CONTROL DE CAPTURA Y PRODUCCIÓN";
+                ComposeHeader(page.Header(), report.Barco, report.Marea, report.Anio, report.FechaInicioMarea, report.FechaFinMarea, tituloProduccion,
                     report.BuqueCodigo, report.ObservadorNombre, report.ObservadorApellido, report.ObservadorCodigo);
                 
                 page.Content().PaddingVertical(10).Column(col => 
