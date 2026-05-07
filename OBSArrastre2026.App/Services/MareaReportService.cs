@@ -335,7 +335,7 @@ public class MareaReportService : IMareaReportService
                 page.PageColor(Colors.White);
                 page.DefaultTextStyle(x => x.FontSize(8).FontFamily(Fonts.Verdana));
 
-                ComposeHeader(page.Header(), report.Barco, report.Marea, report.Anio, report.FechaInicioMarea, report.FechaFinMarea, "RESUMEN POR ÁREA Y DETALLE POR ETAPA",
+                ComposeHeader(page.Header(), report.Barco, report.Marea, report.Anio, report.FechaInicioMarea, report.FechaFinMarea, "RESUMEN POR ÁREA Y DETALLE DE PRODUCCIÓN",
                     report.BuqueCodigo, report.ObservadorNombre, report.ObservadorApellido, report.ObservadorCodigo);
                 
                 page.Content().PaddingVertical(10).Column(col => 
@@ -618,7 +618,7 @@ public class MareaReportService : IMareaReportService
                 header.Cell().Element(HeaderStyle).AlignRight().Text("Kilos");
             });
 
-            foreach (var item in report.ProduccionDetalle)
+            foreach (var item in report.ProduccionDetalle.OrderByDescending(p => p.Kilos))
             {
                 table.Cell().Element(ContentStyle).Text(item.Especie);
                 table.Cell().Element(ContentStyle).Text(item.Producto);
