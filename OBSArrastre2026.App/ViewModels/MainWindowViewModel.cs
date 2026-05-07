@@ -2257,7 +2257,7 @@ public class MainWindowViewModel : ObservableObject
                 results.Add(new ControlProduccionListItemViewModel
                 {
                     Fecha = date,
-                    Especie = pData?.EspecieNombre ?? (isRayaGenericGroup ? "Rayas (Rajidae - Otras/Genérico)" : ControlProduccionSelectedEspecie?.NombreVulgar ?? "Desconocida"),
+                    Especie = pData?.EspecieNombre ?? (isRayaGenericGroup ? "Rayas (Rajidae - Otras/Genérico)" : ControlProduccionSelectedEspecie?.FullDisplayName ?? "Desconocida"),
                     EspecieId = ControlProduccionSelectedEspecieId!,
                     ProduccionTotal = pData?.PesoProcesadoTotal ?? 0,
                     CapturaReconstruida = pData?.CapturaReconstruida ?? 0,

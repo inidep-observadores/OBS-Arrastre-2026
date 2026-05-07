@@ -229,7 +229,7 @@ public sealed class CatchItemViewModel : ObservableObject
         {
             if (SelectedEspecie == null) return "Nueva especie...";
             
-            return $"{SelectedEspecie.NombreVulgar} - {DatoCapturaDisplay}";
+            return $"{SelectedEspecie.FullDisplayName} - {DatoCapturaDisplay}";
         }
     }
 

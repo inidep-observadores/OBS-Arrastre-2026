@@ -53,10 +53,10 @@
                 </Border.InputBindings>
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="1.0*" />
+                        <ColumnDefinition Width="1.8*" />
                         <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.8*" />
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.2*" />
@@ -177,10 +177,10 @@
                 </Border.InputBindings>
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="1.0*" />
+                        <ColumnDefinition Width="1.8*" />
                         <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.8*" />
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.2*" />
@@ -216,10 +216,10 @@
                 </Border.InputBindings>
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="1.0*" />
+                        <ColumnDefinition Width="1.8*" />
                         <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.8*" />
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.2*" />
@@ -252,10 +252,10 @@
                 </Border.InputBindings>
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="1.0*" />
+                        <ColumnDefinition Width="1.8*" />
                         <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.8*" />
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.2*" />
@@ -292,10 +292,10 @@
                 
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="1.0*" />
+                        <ColumnDefinition Width="1.8*" />
                         <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.8*" />
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.2*" />
@@ -365,7 +365,7 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="320" />
+            <ColumnDefinition Width="360" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
@@ -885,10 +885,10 @@
                                     BorderThickness="0,0,0,1">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="1.2*" />
+                                        <ColumnDefinition Width="1.0*" />
+                                        <ColumnDefinition Width="1.8*" />
                                         <ColumnDefinition Width="1.1*" />
-                                        <ColumnDefinition Width="1.1*" />
-                                        <ColumnDefinition Width="1.1*" />
+                                        <ColumnDefinition Width="1.8*" />
                                         <ColumnDefinition Width="1.1*" />
                                         <ColumnDefinition Width="1.1*" />
                                         <ColumnDefinition Width="1.2*" />

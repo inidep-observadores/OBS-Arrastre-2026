@@ -23,7 +23,7 @@ public sealed class MuestraListItemViewModel(Muestra muestra)
 
     public string LanceHora => Muestra.Lance?.HoraFinal ?? "-";
 
-    public string EspecieDisplay => Muestra.Especie?.NombreVulgar ?? "Sin Especie";
+    public string EspecieDisplay => Muestra.Especie?.FullDisplayName ?? "Sin Especie";
 
     public string PesoDisplay => Muestra.PesoMuestra_PesoGramos.HasValue 
         ? $"{(Muestra.PesoMuestra_PesoGramos.Value / 1000.0):N2} kg" 

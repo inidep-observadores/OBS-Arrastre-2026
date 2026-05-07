@@ -17,7 +17,7 @@ public sealed class ProduccionListItemViewModel(RegistroProduccion registro) : O
         }
     }
     
-    public string EspecieDisplay => registro.Especie?.NombreVulgar ?? "-";
+    public string EspecieDisplay => registro.Especie?.FullDisplayName ?? "-";
     
     public string ProductoCodigo => registro.Producto?.Codigo ?? "-";
     

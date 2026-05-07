@@ -57,31 +57,32 @@ namespace OBSArrastre2026.App.Services
 
             string geometryType = type.GetString() ?? "";
             Color color = GetColorForLayer(layerName);
+            double thickness = GetThicknessForLayer(layerName);
 
             switch (geometryType)
             {
                 case "LineString":
-                    markers.Add(CreateRoute(coordinates, layerName, color));
+                    markers.Add(CreateRoute(coordinates, layerName, color, thickness));
                     break;
                 case "Polygon":
-                    markers.Add(CreatePolygon(coordinates[0], layerName, color));
+                    markers.Add(CreatePolygon(coordinates[0], layerName, color, thickness));
                     break;
                 case "MultiPolygon":
                     foreach (var polyCoords in coordinates.EnumerateArray())
                     {
-                        markers.Add(CreatePolygon(polyCoords[0], layerName, color));
+                        markers.Add(CreatePolygon(polyCoords[0], layerName, color, thickness));
                     }
                     break;
                 case "MultiLineString":
                     foreach (var lineCoords in coordinates.EnumerateArray())
                     {
-                        markers.Add(CreateRoute(lineCoords, layerName, color));
+                        markers.Add(CreateRoute(lineCoords, layerName, color, thickness));
                     }
                     break;
             }
         }
 
-        private GMapRoute CreateRoute(JsonElement coordinates, string name, Color color)
+        private GMapRoute CreateRoute(JsonElement coordinates, string name, Color color, double thickness)
         {
             var points = new List<PointLatLng>();
             foreach (var coord in coordinates.EnumerateArray())
@@ -95,13 +96,13 @@ namespace OBSArrastre2026.App.Services
             route.Shape = new System.Windows.Shapes.Path
             {
                 Stroke = new SolidColorBrush(color),
-                StrokeThickness = 2,
+                StrokeThickness = thickness,
                 ToolTip = name
             };
             return route;
         }
 
-        private GMapPolygon CreatePolygon(JsonElement coordinates, string name, Color color)
+        private GMapPolygon CreatePolygon(JsonElement coordinates, string name, Color color, double thickness)
         {
             var points = new List<PointLatLng>();
             foreach (var coord in coordinates.EnumerateArray())
@@ -118,7 +119,7 @@ namespace OBSArrastre2026.App.Services
             {
                 Stroke = new SolidColorBrush(color),
                 Fill = new SolidColorBrush(polyColor),
-                StrokeThickness = 1,
+                StrokeThickness = thickness,
                 ToolTip = name
             };
             return polygon;
@@ -131,7 +132,16 @@ namespace OBSArrastre2026.App.Services
             if (name.Contains("territorial")) return Colors.SkyBlue;
             if (name.Contains("veda")) return Colors.Red;
             if (name.Contains("zcp")) return Colors.ForestGreen;
+            if (name.Contains("isobata") || name.Contains("mt")) return Color.FromArgb(0x60, 0x80, 0x80, 0x80); // Gris claro transparente
             return Colors.Gray;
+        }
+
+        private double GetThicknessForLayer(string name)
+        {
+            name = name.ToLower();
+            if (name.Contains("isobata") || name.Contains("mt")) return 0.5;
+            if (name.Contains("zee") || name.Contains("veda")) return 2.0;
+            return 1.0;
         }
     }
 }

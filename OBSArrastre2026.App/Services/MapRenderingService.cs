@@ -390,13 +390,15 @@ namespace OBSArrastre2026.App.Services
         {
             name = name.ToLower();
             if (name.Contains("land")) return new LayerStyle(ColorLand, ColorCoastline, 1.5f);
-            if (name.Contains("1000mt")) return new LayerStyle(SKColors.Transparent, SKColors.Black, 1.2f, true);
-            if (name.Contains("200mt")) return new LayerStyle(SKColors.Transparent, SKColors.Black, 1.0f, true);
-            if (name.Contains("100mt")) return new LayerStyle(SKColors.Transparent, SKColors.Black, 0.8f, true);
+            if (name.Contains("1000mt")) return new LayerStyle(SKColors.Transparent, new SKColor(0x80, 0x80, 0x80, 0x50), 0.5f, true);
+            if (name.Contains("200mt")) return new LayerStyle(SKColors.Transparent, new SKColor(0x80, 0x80, 0x80, 0x50), 0.4f, true);
+            if (name.Contains("100mt")) return new LayerStyle(SKColors.Transparent, new SKColor(0x80, 0x80, 0x80, 0x50), 0.3f, true);
             if (name.Contains("zee-50m")) return new LayerStyle(SKColors.Transparent, new SKColor(0x15, 0x65, 0xC0), 2.5f);
             if (name.Contains("zee-200millas")) return new LayerStyle(SKColors.Transparent, new SKColor(0xD3, 0x2F, 0x2F), 2.5f);
             if (name.Contains("veda")) return new LayerStyle(new SKColor(0xB7, 0x1C, 0x1C, 0x40), new SKColor(0xB7, 0x1C, 0x1C), 2.0f);
             
+            if (name.Contains("isobata") || name.Contains("mt")) return new LayerStyle(SKColors.Transparent, new SKColor(0x80, 0x80, 0x80, 0x50), 0.4f);
+
             return new LayerStyle(SKColors.Transparent, SKColors.Gray, 1.0f);
         }
 
