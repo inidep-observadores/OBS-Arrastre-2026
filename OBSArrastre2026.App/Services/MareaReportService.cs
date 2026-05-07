@@ -698,7 +698,7 @@ public class MareaReportService : IMareaReportService
     {
         container.Row(row =>
         {
-            row.RelativeItem().Text("OBS Arrastre 2026 - Auditoría de Calidad").FontSize(8).FontColor(Colors.Grey.Medium);
+            row.RelativeItem().Text("Programa Observadores a Bordo - Control de datos de marea").FontSize(8).FontColor(Colors.Grey.Medium);
             row.RelativeItem().AlignRight().Text(x =>
             {
                 x.Span("Página ");

@@ -1926,14 +1926,14 @@ public class MainWindowViewModel : ObservableObject
 
                 // 3. Balance de masa (Items) para la etapa
                 var prodSummary = etapaProduccion
-                    .GroupBy(p => p.Especie?.NombreVulgar ?? p.Comentarios?.Replace("Importado: ", "") ?? "Desconocida")
+                    .GroupBy(p => p.Especie?.FullDisplayName ?? p.Comentarios?.Replace("Importado: ", "") ?? "Desconocida")
                     .ToDictionary(g => g.Key, g => new {
                         ProduccionTotal = g.Sum(p => p.Kg ?? 0),
                         CapturaReconstruida = g.Sum(p => (p.Kg ?? 0) * (p.Factor ?? 1.0))
                     });
 
                 var catchSummary = etapaLances.SelectMany(l => l.ItemsCaptura)
-                    .GroupBy(c => c.Especie?.NombreVulgar ?? "Desconocida")
+                    .GroupBy(c => c.Especie?.FullDisplayName ?? "Desconocida")
                     .ToDictionary(g => g.Key, g => new {
                         CapturaBruta = g.Sum(c => c.CapturaTotalKgCalculado),
                         DescarteKg = g.Sum(c => c.PesoDescarteCalculado),
@@ -1980,7 +1980,7 @@ public class MainWindowViewModel : ObservableObject
 
                 foreach (var sp in predominantInEtapa)
                 {
-                    var spLances = etapaLances.Where(l => l.ItemsCaptura.Any(ic => (ic.Especie?.NombreVulgar ?? "Desconocida") == sp)).ToList();
+                    var spLances = etapaLances.Where(l => l.ItemsCaptura.Any(ic => (ic.Especie?.FullDisplayName ?? "Desconocida") == sp)).ToList();
                     var groupedByArea = spLances
                         .GroupBy(l => $"{(int)Math.Abs(l.LatitudInicioDecimal ?? 0)}{(int)Math.Abs(l.LongitudInicioDecimal ?? 0)}")
                         .Select(g => 
@@ -1999,8 +1999,8 @@ public class MainWindowViewModel : ObservableObject
                             {
                                 Especie = sp,
                                 Area = g.Key,
-                                CapturaKg = g.Sum(l => l.ItemsCaptura.Where(ic => (ic.Especie?.NombreVulgar ?? "Desconocida") == sp).Sum(ic => ic.CapturaTotalKgCalculado)),
-                                DescarteKg = g.Sum(l => l.ItemsCaptura.Where(ic => (ic.Especie?.NombreVulgar ?? "Desconocida") == sp).Sum(ic => ic.PesoDescarteCalculado)),
+                                CapturaKg = g.Sum(l => l.ItemsCaptura.Where(ic => (ic.Especie?.FullDisplayName ?? "Desconocida") == sp).Sum(ic => ic.CapturaTotalKgCalculado)),
+                                DescarteKg = g.Sum(l => l.ItemsCaptura.Where(ic => (ic.Especie?.FullDisplayName ?? "Desconocida") == sp).Sum(ic => ic.PesoDescarteCalculado)),
                                 TotalHoras = totalHoras,
                                 CantidadLances = g.Count(),
                                 DiasPesca = g.Select(l => l.Fecha).Distinct().Count()
@@ -2014,7 +2014,7 @@ public class MainWindowViewModel : ObservableObject
                 // 5. Detalle producción de la etapa (AGRUPADO)
                 etapaReport.ProduccionDetalle = etapaProduccion
                     .GroupBy(p => new { 
-                        Especie = p.Especie?.NombreVulgar ?? p.Comentarios?.Replace("Importado: ", "") ?? "Desconocida",
+                        Especie = p.Especie?.FullDisplayName ?? p.Comentarios?.Replace("Importado: ", "") ?? "Desconocida",
                         Producto = p.Producto?.Codigo ?? "S/D",
                         Categoria = p.Categoria ?? ""
                     })
