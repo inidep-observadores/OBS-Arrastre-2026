@@ -65,7 +65,7 @@ namespace OBSArrastre2026.App.Services
             worksheet.Row(1).InsertRowsAbove(3);
             
             var buqueInfo = marea.BuqueCodigo.HasValue ? $"{marea.Buque?.Nombre} ({marea.BuqueCodigo})" : marea.Buque?.Nombre;
-            var mareaInfo = $"{buqueInfo} - Marea {marea.NumeroInidep} ({marea.AnioInidep})";
+            var mareaInfo = $"{buqueInfo} - Marea {marea.NumeroInidep}/{marea.AnioInidep}";
             
             var cellMarea = worksheet.Cell(1, 1);
             cellMarea.Value = mareaInfo;

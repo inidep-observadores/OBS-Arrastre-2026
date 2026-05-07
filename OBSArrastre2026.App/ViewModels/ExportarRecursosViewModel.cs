@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
+using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using OBSArrastre2026.App.Data.Entities;
 using OBSArrastre2026.App.Services;
+using OBSArrastre2026.App.Models.Reports;
 
 namespace OBSArrastre2026.App.ViewModels;
 
@@ -17,10 +20,26 @@ public class ExportarRecursosViewModel : ObservableObject
     private readonly ILanceService _lanceService;
     private readonly IMapRenderingService _mapService;
     private readonly IExcelReportService _excelService;
+    private readonly IMareaReportService _reportService;
+    private readonly IMareaSummaryService _summaryService;
     private readonly Marea _marea;
     private readonly List<Lance> _lances;
     private string _exportPath = string.Empty;
     private bool _isBusy;
+    private bool _exportExcel = true;
+    private bool _exportWord = false;
+
+    public bool ExportExcel
+    {
+        get => _exportExcel;
+        set => SetProperty(ref _exportExcel, value);
+    }
+
+    public bool ExportWord
+    {
+        get => _exportWord;
+        set => SetProperty(ref _exportWord, value);
+    }
 
     public string ExportPath
     {
@@ -58,13 +77,18 @@ public class ExportarRecursosViewModel : ObservableObject
 
     public TaskCompletionSource<bool> DialogResult { get; } = new();
 
-    public ExportarRecursosViewModel(Marea marea, List<Lance> lances, ILanceService lanceService, IMapRenderingService mapService, IExcelReportService excelService)
+    public ExportarRecursosViewModel(Marea marea, List<Lance> lances, 
+        ILanceService lanceService, IMapRenderingService mapService, 
+        IExcelReportService excelService, IMareaReportService reportService,
+        IMareaSummaryService summaryService)
     {
         _marea = marea;
         _lances = lances;
         _lanceService = lanceService;
         _mapService = mapService;
         _excelService = excelService;
+        _reportService = reportService;
+        _summaryService = summaryService;
 
         AcceptCommand = new AsyncRelayCommand(ExecuteExportAsync, () => CanAccept);
         CloseCommand = new RelayCommand(() => DialogResult.TrySetResult(false), () => !IsBusy);
@@ -90,13 +114,20 @@ public class ExportarRecursosViewModel : ObservableObject
         IsBusy = true;
         try
         {
-            var etapas = _marea.Etapas.OrderBy(e => e.FechaZarpada).ToList();
-            bool multipleEtapas = etapas.Count > 1;
-
-            for (int i = 0; i < etapas.Count; i++)
+            if (ExportExcel)
             {
-                string prefix = multipleEtapas ? $"Etapa{i + 1}-" : "";
-                await ExportEtapaAsync(etapas[i], ExportPath, prefix);
+                var etapas = _marea.Etapas.OrderBy(e => e.FechaZarpada).ToList();
+                bool multipleEtapas = etapas.Count > 1;
+
+                for (int i = 0; i < etapas.Count; i++)
+                {
+                    string prefix = multipleEtapas ? $"Etapa{i + 1}-" : "";
+                    await ExportEtapaAsync(etapas[i], ExportPath, prefix);
+                }
+            }
+            else if (ExportWord)
+            {
+                await ExportFullWordAsync(ExportPath);
             }
 
             DialogResult.TrySetResult(true);
@@ -139,5 +170,47 @@ public class ExportarRecursosViewModel : ObservableObject
         
         string excelPath = Path.Combine(targetFolder, fileName);
         await _excelService.GenerateTablasExcelAsync(_marea, etapaLances, etapaProduccion, excelPath, mapBytes);
+    }
+
+    private async Task ExportFullWordAsync(string targetFolder)
+    {
+        var allProduccion = new List<RegistroProduccion>();
+        var etapas = _marea.Etapas.OrderBy(e => e.FechaZarpada).ToList();
+        foreach (var etapa in etapas)
+        {
+            var p = await _lanceService.GetProduccionAsync(etapa.ID);
+            allProduccion.AddRange(p);
+        }
+
+        var summary = await _summaryService.GetMareaSummaryAsync(_marea.ID);
+        var docBytes = await _reportService.GenerateFullMareaReportWordAsync(_marea, _lances, allProduccion, summary);
+
+        string aa = (_marea.AnioInidep % 100).ToString("00");
+        string nn = _marea.NumeroInidep.ToString("00");
+        string fileName = $"Informe_Marea_{nn}{aa}.docx";
+        string filePath = Path.Combine(targetFolder, fileName);
+
+        await File.WriteAllBytesAsync(filePath, docBytes);
+
+        // Preguntar si abrir
+        _ = Task.Run(() => {
+            System.Windows.Application.Current.Dispatcher.Invoke(() => {
+                var result = System.Windows.MessageBox.Show(
+                    "¿Desea abrir el archivo generado?", 
+                    "Archivo Guardado", 
+                    System.Windows.MessageBoxButton.YesNo, 
+                    System.Windows.MessageBoxImage.Question);
+                
+                if (result == System.Windows.MessageBoxResult.Yes)
+                {
+                    try
+                    {
+                        var p = new System.Diagnostics.Process { StartInfo = new System.Diagnostics.ProcessStartInfo(filePath) { UseShellExecute = true } };
+                        p.Start();
+                    }
+                    catch { }
+                }
+            });
+        });
     }
 }

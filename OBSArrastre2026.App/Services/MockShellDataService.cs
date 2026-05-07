@@ -29,7 +29,7 @@ public sealed class MockShellDataService : IMockShellDataService
         NavigationSection.Mareas => new(
             "Cabecera maestra",
             "Mareas",
-            "Lista mock de mareas basada en el esquema SQL. La prioridad es probar densidad, filtros y lectura rapida.",
+            "Gestión integral de las mareas del buque, incluyendo períodos operativos, estados de cierre y auditoría general.",
             "Nueva marea",
             "Codigo",
             "Buque",
@@ -48,7 +48,7 @@ public sealed class MockShellDataService : IMockShellDataService
         NavigationSection.Lances => new(
             "Actividad por etapa",
             "Lances",
-            "Maqueta de la tabla maestra lances, pensada para lectura operacional y futura integracion de filtros geograficos.",
+            "Registro detallado de lances de pesca con control de posición geográfica, tiempos de arrastre y captura total por especie.",
             "Nuevo lance",
             "Nro",
             "Fecha",
@@ -67,7 +67,7 @@ public sealed class MockShellDataService : IMockShellDataService
         NavigationSection.Muestras => new(
             "Control biologico",
             "Muestras",
-            "Vista mock de muestras, con foco en especie, origen y estado de revision de cada toma.",
+            "Administración de muestras biológicas y comerciales para el análisis de tallas y composición por especie.",
             "Nueva muestra",
             "ID",
             "Lance",
@@ -103,7 +103,7 @@ public sealed class MockShellDataService : IMockShellDataService
         NavigationSection.Produccion => new(
             "Parte operativo",
             "Produccion",
-            "Mock de registros_produccion, optimizado para carga diaria y contraste rapido entre producto y kilos.",
+            "Seguimiento diario de la producción a bordo, discriminado por producto, categoría, kilos y factores de conversión.",
             "Nuevo registro",
             "Fecha",
             "Marea",

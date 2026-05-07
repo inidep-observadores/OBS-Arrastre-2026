@@ -66,13 +66,13 @@ public static class MareaSummaryNarrativeBuilder
 
             sb.Normal($"desde el {e.FechaInicio:dd/MM/yyyy} al {e.FechaFin:dd/MM/yyyy}");
         }
-        sb.Normal(".\n");
+        sb.Normal(". ");
 
         // Captura total, descarte, lances, días
         sb.Normal($"Captura total de marea: {report.NarrativaCapturaTotal:N3} kg, ");
         sb.Normal(FormatDescartePct(report.NarrativaDescartePct));
         sb.Normal($", {report.NarrativaTotalLances} {Pluralizar(report.NarrativaTotalLances, "lance", "lances")}");
-        sb.Normal($", {report.NarrativaTotalDiasPesca} {Pluralizar(report.NarrativaTotalDiasPesca, "día pesca", "días pesca")}.\n");
+        sb.Normal($", {report.NarrativaTotalDiasPesca} {Pluralizar(report.NarrativaTotalDiasPesca, "día pesca", "días pesca")}. ");
 
         // Especie(s) objetivo
         if (report.NarrativaEspeciesObjetivo.Any())
@@ -107,7 +107,7 @@ public static class MareaSummaryNarrativeBuilder
             ? $"{OrdinalMasculino(etapa.Numero)} viaje: "
             : "El buque ";
 
-        sb.Bold(ordinal);
+        sb.Normal(ordinal);
 
         // Cuadrados estadísticos donde operó
         if (etapa.Cuadrados.Any())
@@ -226,7 +226,7 @@ public static class MareaSummaryNarrativeBuilder
         {
             var m = report.NarrativaMuestras[i];
             if (i > 0) sb.Normal(" – ");
-            sb.Underline($"{m.TotalMuestras} {m.NombreVulgar} ");
+            sb.Normal($"{m.TotalMuestras} {m.NombreVulgar} ");
             sb.Italic($"({m.NombreCientifico})");
         }
         sb.Normal(".");

@@ -348,7 +348,7 @@ public class MainWindowViewModel : ObservableObject
         }
 
         NavigationItems.Add(new NavigationItemViewModel(NavigationSection.Separator, "", "", ""));
-        NavigationItems.Add(new NavigationItemViewModel(NavigationSection.GenerarRecursosInforme, "Generar recursos informe", "Mapas y archivos auxiliares", "📦", true));
+        NavigationItems.Add(new NavigationItemViewModel(NavigationSection.GenerarRecursosInforme, "Generar recursos informe", "Cartografía y archivos auxiliares", "📦", true));
 
         _currentThemeMode = _themeService.CurrentMode;
         SelectedNavigationItem = NavigationItems.FirstOrDefault();
@@ -952,7 +952,7 @@ public class MainWindowViewModel : ObservableObject
         }
 
         var lances = await _lanceService.GetLancesAsync(mareaId: activeMarea.ID);
-        var viewModel = new ExportarRecursosViewModel(activeMarea, lances.ToList(), _lanceService, _mapRenderingService, _excelReportService);
+        var viewModel = new ExportarRecursosViewModel(activeMarea, lances.ToList(), _lanceService, _mapRenderingService, _excelReportService, _reportService, _mareaSummaryService);
         ActiveDialog = viewModel;
 
         bool result = await viewModel.DialogResult.Task;
@@ -1163,9 +1163,9 @@ public class MainWindowViewModel : ObservableObject
             };
             _ = ReemplazoEspecieVM.LoadDataAsync();
 
-            PageEyebrow = "Corrección de datos";
+            PageEyebrow = "Herramientas de marea";
             PageTitle = "Reemplazar especie";
-            PageDescription = "Herramienta para corregir identificaciones erróneas en la marea actual.";
+            PageDescription = "Permite reidentificar especies de forma masiva en todos los registros de la marea activa.";
             PrimaryActionLabel = "";
 
             return;

@@ -442,11 +442,37 @@ public sealed class MareaValidationEngine
         }
 
         // REQ-5.2: Secuencia de lances
-        var sortedLances = capturas.OrderBy(x => x.Lance).Select(x => (int)x.Lance).ToList();
-        for (int i = 0; i < sortedLances.Count - 1; i++)
+        var sortedByNumber = capturas.OrderBy(x => x.Lance).ToList();
+        for (int i = 0; i < sortedByNumber.Count - 1; i++)
         {
-            if (sortedLances[i+1] - sortedLances[i] > 1)
-                report.AddIssue(ValidationLevel.Warning, "Estructura", $"Salto en la secuencia de lances detectado entre {sortedLances[i]} y {sortedLances[i+1]}");
+            var current = sortedByNumber[i];
+            var next = sortedByNumber[i + 1];
+
+            // Brecha en numeración
+            if (next.Lance - current.Lance > 1)
+                report.AddIssue(ValidationLevel.Warning, "Estructura", $"Salto en la secuencia de lances detectado entre {current.Lance} y {next.Lance}");
+
+            // Coherencia cronológica vs numeración
+            var timeCurrent = current.Fecha.Date.Add(LegacyDecoder.DecodeTime(current.HoraInic));
+            var timeNext = next.Fecha.Date.Add(LegacyDecoder.DecodeTime(next.HoraInic));
+            
+            if (timeNext < timeCurrent)
+            {
+                report.AddIssue(ValidationLevel.Error, "Tiempo", 
+                    $"Inconsistencia cronológica: El lance {next.Lance} ({timeNext:dd/MM/yyyy HH:mm}) es anterior al lance {current.Lance} ({timeCurrent:dd/MM/yyyy HH:mm}).", 
+                    $"Lance {next.Lance}");
+            }
+
+            // Detección de solapamientos
+            var timeCurrentEnd = current.Fecha.Date.Add(LegacyDecoder.DecodeTime(current.HoraFinal));
+            if (timeCurrentEnd < timeCurrent) timeCurrentEnd = timeCurrentEnd.AddDays(1);
+
+            if (timeNext < timeCurrentEnd)
+            {
+                report.AddIssue(ValidationLevel.Error, "Tiempo", 
+                    $"Solapamiento detectado: El lance {next.Lance} inicia ({timeNext:HH:mm}) antes de que finalice el lance {current.Lance} ({timeCurrentEnd:HH:mm}).", 
+                    $"Lance {next.Lance}");
+            }
         }
 
         // Resolución de porcentaje de descarte (Heurística de consenso)

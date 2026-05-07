@@ -1,4 +1,6 @@
+using System.Windows;
 using System.Windows.Input;
+using Microsoft.Win32;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using OBSArrastre2026.App.Data.Entities;
@@ -75,24 +77,91 @@ public sealed class MareaListItemViewModel : ObservableObject
         StatusText = "Generando resumen...";
         try
         {
-            var pdfBytes = await Task.Run(async () => 
+            // Preguntar formato
+            var choice = MessageBox.Show(
+                "¿En qué formato desea generar el resumen de marea?\n\n" +
+                "• Presione SÍ para generar un PDF (Vista previa inmediata)\n" +
+                "• Presione NO para generar un documento WORD (Permite elegir dónde guardar)",
+                "Generar Resumen",
+                MessageBoxButton.YesNoCancel,
+                MessageBoxImage.Question);
+
+            if (choice == MessageBoxResult.Cancel) return;
+
+            bool isWord = choice == MessageBoxResult.No;
+            string? savePath = null;
+
+            if (isWord)
+            {
+                var saveDialog = new SaveFileDialog
+                {
+                    Filter = "Documento de Word (*.docx)|*.docx",
+                    FileName = $"Resumen_Marea_{Marea.Buque?.Nombre ?? "Marea"}_{Marea.NumeroInidep}_{Marea.AnioInidep}.docx",
+                    Title = "Guardar Resumen en Formato Word"
+                };
+
+                if (saveDialog.ShowDialog() == true)
+                {
+                    savePath = saveDialog.FileName;
+                }
+                else
+                {
+                    return;
+                }
+            }
+
+            IsValidating = true;
+            StatusText = isWord ? "Generando documento Word..." : "Generando resumen PDF...";
+
+            var fileBytes = await Task.Run(async () => 
             {
                 StatusText = "Recolectando datos de la marea...";
                 var report = await _summaryService.GetMareaSummaryAsync(Marea.ID);
                 
-                StatusText = "Generando PDF...";
-                return await _reportService.GenerateMareaSummaryPdfAsync(report);
+                if (isWord)
+                {
+                    StatusText = "Generando Word...";
+                    return await _reportService.GenerateMareaSummaryWordAsync(report);
+                }
+                else
+                {
+                    StatusText = "Generando PDF...";
+                    return await _reportService.GenerateMareaSummaryPdfAsync(report);
+                }
             });
 
-            StatusText = "Abriendo reporte...";
-            string tempPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"Resumen_Marea_{Marea.Buque?.Nombre ?? "Marea"}_{Marea.NumeroInidep}_{Marea.AnioInidep}.pdf");
-            await System.IO.File.WriteAllBytesAsync(tempPath, pdfBytes);
-
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            if (isWord && savePath != null)
             {
-                FileName = tempPath,
-                UseShellExecute = true
-            });
+                StatusText = "Guardando archivo...";
+                await System.IO.File.WriteAllBytesAsync(savePath, fileBytes);
+                
+                var openChoice = MessageBox.Show(
+                    "El documento Word ha sido generado y guardado correctamente.\n\n¿Desea abrir el archivo ahora?",
+                    "Proceso Finalizado",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (openChoice == MessageBoxResult.Yes)
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = savePath,
+                        UseShellExecute = true
+                    });
+                }
+            }
+            else if (!isWord)
+            {
+                StatusText = "Abriendo reporte...";
+                string tempPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"Resumen_Marea_{Marea.Buque?.Nombre ?? "Marea"}_{Marea.NumeroInidep}_{Marea.AnioInidep}.pdf");
+                await System.IO.File.WriteAllBytesAsync(tempPath, fileBytes);
+
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = tempPath,
+                    UseShellExecute = true
+                });
+            }
         }
         catch (System.Exception ex)
         {

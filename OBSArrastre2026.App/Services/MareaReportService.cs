@@ -1,8 +1,17 @@
+using System.IO;
+using System.Linq;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using OBSArrastre2026.App.Models.Import;
 using OBSArrastre2026.App.Models.Reports;
+using OBSArrastre2026.App.Data.Entities;
+using Xceed.Words.NET;
+using Xceed.Document.NET;
+using XColor = Xceed.Drawing.Color;
+using SkiaSharp;
 
 namespace OBSArrastre2026.App.Services;
 
@@ -11,6 +20,8 @@ public interface IMareaReportService
     Task<byte[]> GenerateValidationPdfAsync(MareaValidationReport report);
     Task<byte[]> GenerateControlProduccionPdfAsync(ControlProduccionReport report);
     Task<byte[]> GenerateMareaSummaryPdfAsync(MareaSummaryReport report);
+    Task<byte[]> GenerateMareaSummaryWordAsync(MareaSummaryReport report);
+    Task<byte[]> GenerateFullMareaReportWordAsync(Marea marea, List<Lance> lances, List<RegistroProduccion> produccion, MareaSummaryReport summary);
 }
 
 public class MareaReportService : IMareaReportService
@@ -29,7 +40,7 @@ public class MareaReportService : IMareaReportService
 
     public async Task<byte[]> GenerateMareaSummaryPdfAsync(MareaSummaryReport report)
     {
-        return await Task.Run(() => Document.Create(container =>
+        return await Task.Run(() => QuestPDF.Fluent.Document.Create(container =>
         {
             container.Page(page =>
             {
@@ -59,6 +70,87 @@ public class MareaReportService : IMareaReportService
                 ComposeFooter(page.Footer());
             });
         }).GeneratePdf());
+    }
+
+    public async Task<byte[]> GenerateMareaSummaryWordAsync(MareaSummaryReport report)
+    {
+        return await Task.Run(() =>
+        {
+            using var ms = new MemoryStream();
+            using var doc = DocX.Create(ms);
+
+            // Título
+            var title = doc.InsertParagraph("RESUMEN DE DATOS DE MAREA")
+                .Font("Times New Roman")
+                .FontSize(12)
+                .Bold();
+            title.Alignment = Alignment.center;
+            doc.InsertParagraph().SpacingAfter(10);
+
+            // Datos de cabecera
+            var pCab = doc.InsertParagraph()
+                .Font("Times New Roman")
+                .FontSize(12);
+            pCab.Append($"Buque: ").Font("Times New Roman");
+            pCab.Append(report.Barco).Font("Times New Roman");
+            pCab.Append($" (Código: {report.BuqueCodigo})").Font("Times New Roman");
+            pCab.SpacingAfter(2);
+            
+            doc.InsertParagraph($"Marea: {report.Marea}/{report.Anio}")
+                .Font("Times New Roman")
+                .FontSize(12)
+                .SpacingAfter(2);
+            doc.InsertParagraph($"Período: {report.FechaInicioMarea:dd/MM/yyyy} - {report.FechaFinMarea:dd/MM/yyyy}")
+                .Font("Times New Roman")
+                .FontSize(12)
+                .SpacingAfter(2);
+            doc.InsertParagraph($"Observador: {report.ObservadorApellido}, {report.ObservadorNombre} ({report.ObservadorCodigo})")
+                .Font("Times New Roman")
+                .FontSize(12)
+                .SpacingAfter(15);
+
+            // Resumen General (Narrativa)
+            doc.InsertParagraph("RESUMEN GENERAL")
+                .Font("Times New Roman")
+                .FontSize(12)
+                .Bold()
+                .Color(XColor.DarkBlue)
+                .SpacingAfter(10);
+            
+            var parrafos = MareaSummaryNarrativeBuilder.Build(report);
+            foreach (var p in parrafos)
+            {
+                var para = doc.InsertParagraph();
+                para.Alignment = Alignment.both;
+                para.Font("Times New Roman").FontSize(10); // Tamaño 10 para el resumen textual
+
+                foreach (var span in p.Spans)
+                {
+                    var formatted = para.Append(span.Text);
+                    formatted.Font("Times New Roman").FontSize(10);
+
+                    switch (span.Style)
+                    {
+                        case NarrativaSpanStyle.Bold:
+                            formatted.Bold();
+                            break;
+                        case NarrativaSpanStyle.Italic:
+                            formatted.Italic();
+                            break;
+                        case NarrativaSpanStyle.BoldItalic:
+                            formatted.Bold().Italic();
+                            break;
+                        case NarrativaSpanStyle.Underline:
+                            formatted.UnderlineStyle(UnderlineStyle.singleLine);
+                            break;
+                    }
+                }
+                para.SpacingAfter(8);
+            }
+
+            doc.Save();
+            return ms.ToArray();
+        });
     }
 
     private void ComposeMareaSummarySection(ColumnDescriptor col, MareaSummarySection section, List<MareaSummarySection>? allEtapas = null, MareaSummaryReport? fullReport = null)
@@ -316,7 +408,7 @@ public class MareaReportService : IMareaReportService
 
     public async Task<byte[]> GenerateValidationPdfAsync(MareaValidationReport report)
     {
-        return await Task.Run(() => Document.Create(container =>
+        return await Task.Run(() => QuestPDF.Fluent.Document.Create(container =>
         {
             container.Page(page =>
             {
@@ -336,7 +428,7 @@ public class MareaReportService : IMareaReportService
     public async Task<byte[]> GenerateControlProduccionPdfAsync(ControlProduccionReport report)
     {
 
-        return await Task.Run(() => Document.Create(container =>
+        return await Task.Run(() => QuestPDF.Fluent.Document.Create(container =>
         {
             // Primera parte: Balance de masa por Etapa (Landscape)
             container.Page(page =>
@@ -730,6 +822,626 @@ public class MareaReportService : IMareaReportService
                 }
             });
         });
+    }
+
+    public async Task<byte[]> GenerateFullMareaReportWordAsync(Marea marea, List<Lance> lances, List<RegistroProduccion> produccion, MareaSummaryReport summary)
+    {
+        return await Task.Run(async () =>
+        {
+            using var ms = new MemoryStream();
+            using (var doc = DocX.Create(ms))
+            {
+                // Título Principal
+                doc.InsertParagraph("INFORME DE MAREA")
+                    .Font("Times New Roman").FontSize(16).Bold().Alignment = Alignment.center;
+                doc.InsertParagraph().SpacingAfter(20);
+
+                // Cabecera
+                var pCab = doc.InsertParagraph().Font("Times New Roman").FontSize(12);
+                pCab.Append($"Buque: {marea.Buque?.Nombre ?? "Sin nombre"} (Código: {marea.BuqueCodigo})");
+                pCab.AppendLine($"Marea: {marea.NumeroInidep}/{marea.AnioInidep}");
+                pCab.AppendLine($"Fecha: {marea.FechaInicio:dd/MM/yyyy} al {marea.FechaFin:dd/MM/yyyy}");
+                pCab.AppendLine($"Observador: {marea.ObservadorApellido}, {marea.ObservadorNombre} ({marea.ObservadorCodigo})");
+                pCab.SpacingAfter(20);
+
+                // Narrativa
+                doc.InsertParagraph("Resumen").Font("Times New Roman").FontSize(12).Bold().SpacingAfter(10);
+                var parrafos = MareaSummaryNarrativeBuilder.Build(summary);
+                foreach (var p in parrafos)
+                {
+                    var para = doc.InsertParagraph();
+                    para.Alignment = Alignment.both;
+                    para.Font("Times New Roman").FontSize(10);
+                    foreach (var span in p.Spans)
+                    {
+                        var text = para.Append(span.Text);
+                        switch (span.Style)
+                        {
+                            case NarrativaSpanStyle.Bold: text.Bold(); break;
+                            case NarrativaSpanStyle.Italic: text.Italic(); break;
+                            case NarrativaSpanStyle.BoldItalic: text.Bold().Italic(); break;
+                            case NarrativaSpanStyle.Underline: text.UnderlineStyle(UnderlineStyle.singleLine); break;
+                        }
+                    }
+                }
+                doc.InsertParagraph().SpacingAfter(15);
+
+                // Secciones Manuales
+                doc.InsertParagraph("Descripción artes de pesca").Font("Times New Roman").FontSize(12).Bold().SpacingAfter(10);
+                doc.InsertParagraph("Denominación y tipo: Red de arrastre de fondo.").Font("Times New Roman").FontSize(10);
+                doc.InsertParagraph("Características generales:").Font("Times New Roman").FontSize(10);
+                doc.InsertParagraph().SpacingAfter(40);
+
+                doc.InsertParagraph("Metodología de captura, estimación y producción").Font("Times New Roman").FontSize(12).Bold().SpacingAfter(10);
+                doc.InsertParagraph().SpacingAfter(60);
+
+                // Tablas Globales
+                doc.InsertParagraph("Datos de captura y producción total de la marea").Font("Times New Roman").FontSize(12).Bold().SpacingAfter(10);
+                
+                doc.InsertParagraph("Captura por especie").FontSize(11).Bold();
+                InsertSpeciesTable(doc, lances);
+                
+                doc.InsertParagraph("Producción total").FontSize(11).Bold().SpacingBefore(10);
+                InsertProduccionTable(doc, produccion);
+                
+                doc.InsertParagraph().InsertPageBreakAfterSelf();
+
+                // Detalle por Etapas
+                var etapas = marea.Etapas.OrderBy(e => e.FechaZarpada).ToList();
+                bool multipleEtapas = etapas.Count > 1;
+
+                for (int i = 0; i < etapas.Count; i++)
+                {
+                    var etapa = etapas[i];
+                    var etapaLances = lances.Where(l => l.MareaEtapaId == etapa.ID).ToList();
+                    var etapaProduccion = produccion.Where(p => p.MareaEtapaId == etapa.ID).ToList();
+
+                    if (multipleEtapas)
+                    {
+                        doc.InsertParagraph($"VIAJE {i + 1}").Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
+                        doc.InsertParagraph().SpacingAfter(10);
+                    }
+
+                    doc.InsertParagraph("Detalle de lances").FontSize(11).Bold().SpacingBefore(10);
+                    foreach (var lance in etapaLances)
+                    {
+                        var table = doc.AddTable(2, 7);
+                        table.Alignment = Alignment.center;
+                        string[] headers = { "Lance", "Fecha", "Posición", "Inicio", "Fin", "Prof. I", "Prof. F" };
+                        for (int j = 0; j < 7; j++) { table.Rows[0].Cells[j].Paragraphs[0].Append(headers[j]).Bold(); table.Rows[0].Cells[j].FillColor = XColor.LightGray; }
+                        
+                        table.Rows[1].Cells[0].Paragraphs[0].Append(lance.NroLance.ToString());
+                        table.Rows[1].Cells[1].Paragraphs[0].Append(lance.Fecha);
+                        table.Rows[1].Cells[2].Paragraphs[0].Append($"{lance.LatitudInicioDecimal:F2} / {lance.LongitudInicioDecimal:F2}");
+                        table.Rows[1].Cells[3].Paragraphs[0].Append(lance.HoraInicio ?? "-");
+                        table.Rows[1].Cells[4].Paragraphs[0].Append(lance.HoraFinal ?? "-");
+                        table.Rows[1].Cells[5].Paragraphs[0].Append(lance.ProfundidadInicioM?.ToString() ?? "-");
+                        table.Rows[1].Cells[6].Paragraphs[0].Append(lance.ProfundidadFinalM?.ToString() ?? "-");
+                        doc.InsertTable(table);
+                    }
+
+                    doc.InsertParagraph("Captura por Área (Etapa)").FontSize(11).Bold().SpacingBefore(10);
+                    var areaTable = doc.AddTable(etapaLances.Count + 1, 3);
+                    areaTable.Alignment = Alignment.center;
+                    string[] aHeaders = { "Cuadrado Estadístico", "Latitud", "Longitud" };
+                    for (int j = 0; j < 3; j++) { areaTable.Rows[0].Cells[j].Paragraphs[0].Append(aHeaders[j]).Bold(); areaTable.Rows[0].Cells[j].FillColor = XColor.LightGray; }
+
+                    for (int j = 0; j < etapaLances.Count; j++)
+                    {
+                        var l = etapaLances[j];
+                        areaTable.Rows[j + 1].Cells[0].Paragraphs[0].Append(GetCuadricula(l));
+                        areaTable.Rows[j + 1].Cells[1].Paragraphs[0].Append(l.LatitudInicioDecimal?.ToString("F4") ?? "-");
+                        areaTable.Rows[j + 1].Cells[2].Paragraphs[0].Append(l.LongitudInicioDecimal?.ToString("F4") ?? "-");
+                    }
+                    doc.InsertTable(areaTable);
+
+                    if (etapaProduccion.Any())
+                    {
+                        doc.InsertParagraph("Producción (Etapa)").FontSize(11).Bold().SpacingBefore(10);
+                        InsertProduccionTable(doc, etapaProduccion);
+                    }
+
+                    // Mapa
+                    var lancesConCoord = etapaLances.Where(l => l.LatitudInicioDecimal.HasValue && l.LongitudInicioDecimal.HasValue).ToList();
+                    if (lancesConCoord.Any())
+                    {
+                        doc.InsertParagraph("Localización del área de pesca (Etapa)").Font("Times New Roman").FontSize(11).Bold().Alignment = Alignment.center;
+                        try
+                        {
+                            var lats = lancesConCoord.Select(l => l.LatitudInicioDecimal!.Value);
+                            var lons = lancesConCoord.Select(l => l.LongitudInicioDecimal!.Value);
+                            var mapBytes = await _mapRenderingService.RenderMapToBytesAsync(lats, lons);
+                            using var mapMs = new MemoryStream(mapBytes);
+                            var img = doc.AddImage(mapMs);
+                            var pic = img.CreatePicture();
+                            pic.Width = 450; pic.Height = 350;
+                            var pMap = doc.InsertParagraph();
+                            pMap.AppendPicture(pic);
+                            pMap.Alignment = Alignment.center;
+                        }
+                        catch { }
+                    }
+                    doc.InsertParagraph().InsertPageBreakAfterSelf();
+                }
+
+                // Frecuencias
+                doc.InsertParagraph("Distribución de frecuencias de longitudes").Font("Times New Roman").FontSize(12).Bold().SpacingAfter(10);
+                await InsertFrequenciesSectionAsync(doc, lances);
+
+                doc.Save();
+                return ms.ToArray();
+            }
+        });
+    }
+
+    private void InsertSpeciesTable(DocX doc, List<Lance> lances)
+    {
+        var itemsCaptura = lances.SelectMany(l => l.ItemsCaptura).ToList();
+        var summary = itemsCaptura
+            .GroupBy(i => i.EspecieID)
+            .Select(g => {
+                var esp = g.First().Especie;
+                var lancesEsp = g.Select(i => i.Lance).Where(l => l != null).Distinct().ToList();
+                double kilos = g.Sum(i => i.CapturaTotalKgCalculado);
+                double descarte = g.Sum(i => i.PesoDescarteCalculado);
+                double horas = lancesEsp.Sum(l => {
+                    if (DateTime.TryParse($"{l!.Fecha} {l.HoraInicio}", out var start) && 
+                        DateTime.TryParse($"{l.Fecha} {l.HoraFinal}", out var end))
+                    {
+                        if (end < start) end = end.AddDays(1);
+                        return (end - start).TotalHours;
+                    }
+                    return 0;
+                });
+
+                return new {
+                    Nombre = esp?.NombreCientifico ?? "Desconocida",
+                    Kilos = kilos,
+                    Descarte = descarte,
+                    DescartePct = kilos > 0 ? (descarte * 100.0 / kilos) : 0,
+                    Lances = lancesEsp.Count,
+                    Dias = lancesEsp.Select(l => l!.Fecha).Distinct().Count(),
+                    Horas = horas
+                };
+            })
+            .OrderByDescending(s => s.Kilos)
+            .ToList();
+
+        var table = doc.AddTable(summary.Count + 2, 7);
+        table.Alignment = Alignment.center;
+        table.Design = TableDesign.TableGrid;
+
+        // Headers
+        string[] headers = { "Especie", "Kilos", "Descarte", "Desc.%", "Lances", "Días", "Horas" };
+        for (int i = 0; i < headers.Length; i++)
+        {
+            table.Rows[0].Cells[i].Paragraphs[0].Append(headers[i]).Bold().Font("Times New Roman").FontSize(10);
+            table.Rows[0].Cells[i].FillColor = XColor.LightGray;
+        }
+
+        int rowIdx = 1;
+        foreach (var s in summary)
+        {
+            table.Rows[rowIdx].Cells[0].Paragraphs[0].Append(s.Nombre).Italic().Font("Times New Roman").FontSize(9);
+            table.Rows[rowIdx].Cells[1].Paragraphs[0].Append(s.Kilos.ToString("N1")).Font("Times New Roman").FontSize(9);
+            table.Rows[rowIdx].Cells[2].Paragraphs[0].Append(s.Descarte.ToString("N1")).Font("Times New Roman").FontSize(9);
+            table.Rows[rowIdx].Cells[3].Paragraphs[0].Append(s.DescartePct.ToString("N1")).Font("Times New Roman").FontSize(9);
+            table.Rows[rowIdx].Cells[4].Paragraphs[0].Append(s.Lances.ToString()).Font("Times New Roman").FontSize(9);
+            table.Rows[rowIdx].Cells[5].Paragraphs[0].Append(s.Dias.ToString()).Font("Times New Roman").FontSize(9);
+            table.Rows[rowIdx].Cells[6].Paragraphs[0].Append(s.Horas.ToString("N1")).Font("Times New Roman").FontSize(9);
+            rowIdx++;
+        }
+
+        // Totales
+        table.Rows[rowIdx].Cells[0].Paragraphs[0].Append("Totales").Bold().Font("Times New Roman").FontSize(9);
+        table.Rows[rowIdx].Cells[1].Paragraphs[0].Append(summary.Sum(s => s.Kilos).ToString("N1")).Bold().Font("Times New Roman").FontSize(9);
+        table.Rows[rowIdx].Cells[2].Paragraphs[0].Append(summary.Sum(s => s.Descarte).ToString("N1")).Bold().Font("Times New Roman").FontSize(9);
+        double totalK = summary.Sum(s => s.Kilos);
+        double totalD = summary.Sum(s => s.Descarte);
+        table.Rows[rowIdx].Cells[3].Paragraphs[0].Append(totalK > 0 ? (totalD * 100.0 / totalK).ToString("N1") : "0").Bold().Font("Times New Roman").FontSize(9);
+        table.Rows[rowIdx].Cells[4].Paragraphs[0].Append(lances.Count.ToString()).Bold().Font("Times New Roman").FontSize(9);
+        table.Rows[rowIdx].Cells[5].Paragraphs[0].Append(lances.Select(l => l.Fecha).Distinct().Count().ToString()).Bold().Font("Times New Roman").FontSize(9);
+
+        doc.InsertTable(table);
+    }
+
+    private void InsertAreaTable(DocX doc, List<Lance> lances)
+    {
+        var areaSummary = lances
+            .GroupBy(l => GetCuadricula(l))
+            .Select(g => {
+                double kilos = g.SelectMany(l => l.ItemsCaptura).Sum(i => i.CapturaTotalKgCalculado);
+                double descarte = g.SelectMany(l => l.ItemsCaptura).Sum(i => i.PesoDescarteCalculado);
+                double horas = g.Sum(l => {
+                    if (DateTime.TryParse($"{l!.Fecha} {l.HoraInicio}", out var start) && 
+                        DateTime.TryParse($"{l.Fecha} {l.HoraFinal}", out var end))
+                    {
+                        if (end < start) end = end.AddDays(1);
+                        return (end - start).TotalHours;
+                    }
+                    return 0;
+                });
+                return new {
+                    Area = g.Key,
+                    Kilos = kilos,
+                    Descarte = descarte,
+                    DescartePct = kilos > 0 ? (descarte * 100.0 / kilos) : 0,
+                    Lances = g.Count(),
+                    Dias = g.Select(l => l.Fecha).Distinct().Count(),
+                    Horas = horas
+                };
+            })
+            .OrderByDescending(a => a.Kilos)
+            .ToList();
+
+        var table = doc.AddTable(areaSummary.Count + 1, 7);
+        table.Alignment = Alignment.center;
+        table.Design = TableDesign.TableGrid;
+
+        string[] headers = { "Área", "Kilos", "Descarte", "Desc.%", "Lances", "Días", "Horas" };
+        for (int i = 0; i < headers.Length; i++)
+        {
+            table.Rows[0].Cells[i].Paragraphs[0].Append(headers[i]).Bold().Font("Times New Roman").FontSize(10);
+            table.Rows[0].Cells[i].FillColor = XColor.LightGray;
+        }
+
+        for (int i = 0; i < areaSummary.Count; i++)
+        {
+            var a = areaSummary[i];
+            table.Rows[i+1].Cells[0].Paragraphs[0].Append(a.Area).Font("Times New Roman").FontSize(9);
+            table.Rows[i+1].Cells[1].Paragraphs[0].Append(a.Kilos.ToString("N1")).Font("Times New Roman").FontSize(9);
+            table.Rows[i+1].Cells[2].Paragraphs[0].Append(a.Descarte.ToString("N1")).Font("Times New Roman").FontSize(9);
+            table.Rows[i+1].Cells[3].Paragraphs[0].Append(a.DescartePct.ToString("N1")).Font("Times New Roman").FontSize(9);
+            table.Rows[i+1].Cells[4].Paragraphs[0].Append(a.Lances.ToString()).Font("Times New Roman").FontSize(9);
+            table.Rows[i+1].Cells[5].Paragraphs[0].Append(a.Dias.ToString()).Font("Times New Roman").FontSize(9);
+            table.Rows[i+1].Cells[6].Paragraphs[0].Append(a.Horas.ToString("N1")).Font("Times New Roman").FontSize(9);
+        }
+        doc.InsertTable(table);
+    }
+
+    private void InsertProduccionTable(DocX doc, List<RegistroProduccion> produccion)
+    {
+        if (!produccion.Any())
+        {
+            doc.InsertParagraph("No se registraron datos de producción para esta etapa.").Font("Times New Roman").FontSize(10);
+            return;
+        }
+
+        var grouped = produccion
+            .GroupBy(p => new { p.EspecieId, p.IdProducto, p.Categoria })
+            .Select(g => new {
+                Especie = g.First().Especie?.NombreCientifico ?? "Desconocida",
+                Producto = g.First().Producto?.Descripcion ?? g.First().IdProducto ?? "S/D",
+                Categoria = g.Key.Categoria ?? "-",
+                Kilos = g.Sum(p => p.Kg ?? 0),
+                Factor = g.First().Factor ?? 1.0
+            })
+            .OrderByDescending(p => p.Kilos)
+            .ToList();
+
+        var table = doc.AddTable(grouped.Count + 1, 5);
+        table.Alignment = Alignment.center;
+        table.Design = TableDesign.TableGrid;
+
+        string[] headers = { "Especie", "Producto", "Categoría", "Kilos", "Factor" };
+        for (int i = 0; i < headers.Length; i++)
+        {
+            table.Rows[0].Cells[i].Paragraphs[0].Append(headers[i]).Bold().Font("Times New Roman").FontSize(10);
+            table.Rows[0].Cells[i].FillColor = XColor.LightGray;
+        }
+
+        for (int i = 0; i < grouped.Count; i++)
+        {
+            var p = grouped[i];
+            table.Rows[i+1].Cells[0].Paragraphs[0].Append(p.Especie).Italic().Font("Times New Roman").FontSize(9);
+            table.Rows[i+1].Cells[1].Paragraphs[0].Append(p.Producto).Font("Times New Roman").FontSize(9);
+            table.Rows[i+1].Cells[2].Paragraphs[0].Append(p.Categoria).Font("Times New Roman").FontSize(9);
+            table.Rows[i+1].Cells[3].Paragraphs[0].Append(p.Kilos.ToString("N1")).Font("Times New Roman").FontSize(9);
+            table.Rows[i+1].Cells[4].Paragraphs[0].Append(p.Factor.ToString("N2")).Font("Times New Roman").FontSize(9);
+        }
+        doc.InsertTable(table);
+    }
+
+    private async Task InsertFrequenciesSectionAsync(DocX doc, List<Lance> lances)
+    {
+        var muestras = lances.SelectMany(l => l.Muestras).ToList();
+        var grupos = muestras
+            .GroupBy(m => new { m.EspecieID, m.TipoMuestra })
+            .Where(g => g.Count() >= 1)
+            .OrderBy(g => g.First().Especie?.NombreCientifico)
+            .ToList();
+
+        foreach (var g in grupos)
+        {
+            var especie = g.First().Especie;
+            if (especie == null) continue;
+
+            string tipoStr = g.Key.TipoMuestra == 2 ? "Descarte" : "Captura";
+            doc.InsertParagraph($"Especie: {especie.NombreCientifico} ({tipoStr})")
+                .Font("Times New Roman")
+                .FontSize(11)
+                .Bold()
+                .Italic()
+                .SpacingAfter(5);
+
+            int cutoff = GetSpeciesCutoff(especie.CodigoInidep);
+            var frecuencias = g.SelectMany(m => m.FrecuenciasTallas).ToList();
+            
+            // Tabla de estadísticas
+            InsertStatsTable(doc, frecuencias, cutoff);
+            doc.InsertParagraph().SpacingAfter(10);
+
+            // Gráfico (si hay puntos)
+            try
+            {
+                var statsPoints = frecuencias
+                    .GroupBy(f => f.Talla)
+                    .Select(pts => new {
+                        Talla = pts.Key,
+                        Machos = pts.Sum(f => f.NroMachos),
+                        Hembras = pts.Sum(f => f.NroHembras),
+                        Indet = pts.Sum(f => f.NroIndeterminados),
+                        Total = pts.Sum(f => f.NroTotal)
+                    })
+                    .OrderBy(pts => pts.Talla)
+                    .ToList();
+
+                double totalN = statsPoints.Sum(p => (double)p.Total);
+                if (totalN > 0)
+                {
+                    var chartData = statsPoints.Select(p => (
+                        Talla: p.Talla, 
+                        Machos: (p.Machos * 100.0 / totalN), 
+                        Hembras: (p.Hembras * 100.0 / totalN), 
+                        Indet: (p.Indet * 100.0 / totalN), 
+                        Total: (p.Total * 100.0 / totalN)
+                    )).ToList();
+
+                    var chartBytes = RenderFrequencyChart(chartData, cutoff, especie.NombreCientifico, g.Key.TipoMuestra == 1);
+                    if (chartBytes.Length > 0)
+                    {
+                        using var chartMs = new MemoryStream(chartBytes);
+                        var chartImg = doc.AddImage(chartMs);
+                        var chartPic = chartImg.CreatePicture();
+                        chartPic.Width = 500;
+                        chartPic.Height = 300;
+                        
+                        var pChart = doc.InsertParagraph();
+                        pChart.AppendPicture(chartPic);
+                        pChart.Alignment = Alignment.center;
+                    }
+                }
+            }
+            catch { }
+            
+            doc.InsertParagraph().InsertPageBreakAfterSelf();
+        }
+    }
+
+    private byte[] RenderFrequencyChart(List<(double Talla, double Machos, double Hembras, double Indet, double Total)> dataPoints, int cutoff, string title, bool isCaptura)
+    {
+        int width = 900;
+        int height = 550;
+        float margin = 80;
+        float chartWidth = width - (margin * 2);
+        float chartHeight = height - (margin * 2) - 40;
+
+        using var surface = SKSurface.Create(new SKImageInfo(width, height));
+        var canvas = surface.Canvas;
+        canvas.Clear(SKColors.White);
+
+        if (!dataPoints.Any()) return Array.Empty<byte>();
+
+        double minX = Math.Floor(dataPoints.Min(p => p.Talla) / 5.0) * 5.0;
+        double maxX = Math.Ceiling(dataPoints.Max(p => p.Talla) / 5.0) * 5.0;
+        if (maxX - minX < 20) maxX = minX + 20;
+
+        bool hasMachos = dataPoints.Any(p => p.Machos > 0.01);
+        bool hasHembras = dataPoints.Any(p => p.Hembras > 0.01);
+        bool hasIndet = dataPoints.Any(p => p.Indet > 0.01);
+        bool hasTotal = dataPoints.Any(p => p.Total > 0.01);
+        bool plotTotal = !isCaptura || (!hasMachos && !hasHembras && !hasIndet);
+
+        double maxYValue = dataPoints.Max(p => {
+            double val = Math.Max(p.Machos, Math.Max(p.Hembras, p.Indet));
+            if (plotTotal) val = Math.Max(val, p.Total);
+            return val;
+        });
+        if (maxYValue <= 0) maxYValue = 10;
+        else maxYValue *= 1.15;
+
+        double targetStep = maxYValue / 5.0;
+        double magnitude = Math.Pow(10, Math.Floor(Math.Log10(targetStep)));
+        if (double.IsInfinity(magnitude) || magnitude == 0) magnitude = 1;
+        double residual = targetStep / magnitude;
+        double step;
+        if (residual < 1.5) step = 1;
+        else if (residual < 3.5) step = 2;
+        else if (residual < 7.5) step = 5;
+        else step = 10;
+        step *= magnitude;
+
+        double maxY = Math.Ceiling(maxYValue / step) * step;
+        if (maxY == 0) maxY = step;
+
+        var axisPaint = new SKPaint { Color = SKColors.Black, StrokeWidth = 1.5f, IsAntialias = true };
+        var gridPaint = new SKPaint { Color = SKColors.Gray, StrokeWidth = 0.5f, IsAntialias = true };
+        var textPaint = new SKPaint { Color = SKColors.Black, TextSize = 14, IsAntialias = true, Typeface = SKTypeface.FromFamilyName("Times New Roman") };
+        var labelCenterPaint = new SKPaint { Color = SKColors.Black, TextSize = 16, IsAntialias = true, FakeBoldText = true, Typeface = SKTypeface.FromFamilyName("Times New Roman"), TextAlign = SKTextAlign.Center };
+
+        for (double yVal = 0; yVal <= maxY + (step/10.0); yVal += step)
+        {
+            float yPos = height - margin - 40 - (float)((yVal / maxY) * chartHeight);
+            canvas.DrawLine(margin, yPos, width - margin, yPos, gridPaint);
+            string format = (step % 1 == 0) ? "0" : "0.0";
+            canvas.DrawText(yVal.ToString(format), margin - 10, yPos + 5, new SKPaint { Color = SKColors.Black, TextSize = 12, TextAlign = SKTextAlign.Right, IsAntialias = true });
+        }
+
+        double xInterval = 5;
+        for (double xVal = minX; xVal <= maxX; xVal += xInterval)
+        {
+            float xPos = margin + (float)(((xVal - minX) / (maxX - minX)) * chartWidth);
+            canvas.DrawText(xVal.ToString("0"), xPos, height - margin - 20, new SKPaint { Color = SKColors.Black, TextSize = 12, TextAlign = SKTextAlign.Center, IsAntialias = true });
+            canvas.DrawLine(xPos, height - margin - 40, xPos, height - margin - 35, axisPaint);
+        }
+
+        canvas.DrawLine(margin, height - margin - 40, width - margin, height - margin - 40, axisPaint);
+        canvas.DrawLine(margin, margin, margin, height - margin - 40, axisPaint);
+        canvas.DrawText("Talla (cm)", width / 2, height - margin + 15, labelCenterPaint);
+        
+        canvas.Save();
+        canvas.RotateDegrees(-90, 25, height / 2);
+        canvas.DrawText("Frecuencia relativa (%)", 25, height / 2, labelCenterPaint);
+        canvas.Restore();
+
+        void DrawSeries(Func<(double Talla, double Machos, double Hembras, double Indet, double Total), double> selector, SKColor color, float[] dashPattern = null, float strokeWidth = 2.5f)
+        {
+            var points = dataPoints.Select(p => new SKPoint(
+                margin + (float)(((p.Talla - minX) / (maxX - minX)) * chartWidth),
+                height - margin - 40 - (float)((selector(p) / maxY) * chartHeight)
+            )).ToArray();
+
+            if (points.Length < 2) return;
+            using var path = new SKPath();
+            path.MoveTo(points[0]);
+            for (int i = 1; i < points.Length; i++) path.LineTo(points[i]);
+
+            var paint = new SKPaint { Color = color, Style = SKPaintStyle.Stroke, StrokeWidth = strokeWidth, IsAntialias = true };
+            if (dashPattern != null) paint.PathEffect = SKPathEffect.CreateDash(dashPattern, 0);
+            canvas.DrawPath(path, paint);
+        }
+
+        if (plotTotal && hasTotal) DrawSeries(p => p.Total, SKColors.Black, null, 3.0f);
+        if (hasMachos) DrawSeries(p => p.Machos, SKColors.Black, null, 1.8f);
+        if (hasHembras) DrawSeries(p => p.Hembras, SKColors.Black, new float[] { 10, 5 }, 1.8f);
+        if (hasIndet) DrawSeries(p => p.Indet, SKColors.Black, new float[] { 2, 5 }, 1.8f);
+
+        if (cutoff > 0 && cutoff >= minX && cutoff <= maxX)
+        {
+            float xPos = margin + (float)(((cutoff - minX) / (maxX - minX)) * chartWidth);
+            canvas.DrawLine(xPos, margin, xPos, height - margin - 40, axisPaint);
+        }
+
+        using var image = surface.Snapshot();
+        using var pngData = image.Encode(SKEncodedImageFormat.Png, 100);
+        return pngData.ToArray();
+    }
+
+    private void InsertStatsTable(DocX doc, List<FrecuenciaTalla> frecuencias, int cutoff)
+    {
+        var statsTotal = CalculateStats(frecuencias, f => f.NroTotal, cutoff);
+        var statsMachos = CalculateStats(frecuencias, f => f.NroMachos, cutoff);
+        var statsHembras = CalculateStats(frecuencias, f => f.NroHembras, cutoff);
+        var statsIndet = CalculateStats(frecuencias, f => f.NroIndeterminados, cutoff);
+
+        // Ajustar porcentajes de sexo
+        if (statsTotal.SumN > 0)
+        {
+            statsMachos.Porcent = (statsMachos.SumN * 100.0 / statsTotal.SumN);
+            statsHembras.Porcent = (statsHembras.SumN * 100.0 / statsTotal.SumN);
+            statsIndet.Porcent = (statsIndet.SumN * 100.0 / statsTotal.SumN);
+            statsTotal.Porcent = 100;
+        }
+
+        var table = doc.AddTable(5, 8);
+        table.Alignment = Alignment.center;
+        table.Design = TableDesign.TableGrid;
+
+        string[] headers = { "Sexo", "Media", "Desv.St", "Porcent.", "Suma N", "Suma X", "Suma X2", cutoff > 0 ? $"%<{cutoff}" : "%<0" };
+        for (int i = 0; i < headers.Length; i++)
+        {
+            table.Rows[0].Cells[i].Paragraphs[0].Append(headers[i]).Bold().Font("Times New Roman").FontSize(9);
+            table.Rows[0].Cells[i].FillColor = XColor.LightGray;
+        }
+
+        void FillRow(int r, string label, StatsResult s, bool bold = false)
+        {
+            table.Rows[r].Cells[0].Paragraphs[0].Append(label).Font("Times New Roman").FontSize(9);
+            table.Rows[r].Cells[1].Paragraphs[0].Append(s.Media.ToString("N2")).Font("Times New Roman").FontSize(9);
+            table.Rows[r].Cells[2].Paragraphs[0].Append(s.DesvSt.ToString("N2")).Font("Times New Roman").FontSize(9);
+            table.Rows[r].Cells[3].Paragraphs[0].Append(s.Porcent.ToString("N1")).Font("Times New Roman").FontSize(9);
+            table.Rows[r].Cells[4].Paragraphs[0].Append(s.SumN.ToString("N0")).Font("Times New Roman").FontSize(9);
+            table.Rows[r].Cells[5].Paragraphs[0].Append(s.SumX.ToString("N0")).Font("Times New Roman").FontSize(9);
+            table.Rows[r].Cells[6].Paragraphs[0].Append(s.SumX2.ToString("N0")).Font("Times New Roman").FontSize(9);
+            table.Rows[r].Cells[7].Paragraphs[0].Append(s.PorcentLimit.ToString("N1")).Font("Times New Roman").FontSize(9);
+            if (bold) foreach(var cell in table.Rows[r].Cells) cell.Paragraphs[0].Bold();
+        }
+
+        FillRow(1, "Machos", statsMachos);
+        FillRow(2, "Hembras", statsHembras);
+        FillRow(3, "Indet.", statsIndet);
+        FillRow(4, "Total", statsTotal, true);
+
+        doc.InsertTable(table);
+    }
+
+    // --- Helpers de cálculo (Basados en ExcelReportService) ---
+    private class StatsResult
+    {
+        public double Media { get; set; }
+        public double DesvSt { get; set; }
+        public double Porcent { get; set; }
+        public double SumN { get; set; }
+        public double SumX { get; set; }
+        public double SumX2 { get; set; }
+        public double PorcentLimit { get; set; }
+    }
+
+    private StatsResult CalculateStats(List<FrecuenciaTalla> frecuencias, Func<FrecuenciaTalla, int> getCount, int cutoff)
+    {
+        var result = new StatsResult();
+        double sumN = frecuencias.Sum(f => (double)getCount(f));
+        if (sumN == 0) return result;
+
+        double sumX = frecuencias.Sum(f => f.Talla * getCount(f));
+        double media = sumX / sumN;
+        double sumDevSq = frecuencias.Sum(f => Math.Pow(f.Talla - media, 2) * getCount(f));
+        double desvSt = sumN > 1 ? Math.Sqrt(sumDevSq / (sumN - 1)) : 0;
+        double sumX2_PRG = sumX * (sumN > 1 ? sumX / (sumN - 1) : 0);
+        double sumNLimit = cutoff > 0 ? frecuencias.Where(f => f.Talla < cutoff).Sum(f => (double)getCount(f)) : 0;
+
+        result.SumN = sumN;
+        result.SumX = sumX;
+        result.SumX2 = sumX2_PRG;
+        result.Media = media;
+        result.DesvSt = desvSt;
+        result.PorcentLimit = (sumNLimit / sumN) * 100;
+        return result;
+    }
+
+    private string GetCuadricula(Lance lance)
+    {
+        if (!lance.LatitudInicioDecimal.HasValue || !lance.LongitudInicioDecimal.HasValue) 
+            return "S/D";
+
+        double lat = Math.Abs(lance.LatitudInicioDecimal.Value);
+        double lon = Math.Abs(lance.LongitudInicioDecimal.Value);
+
+        int cuad = ((int)Math.Truncate(lat) * 100) + (int)Math.Truncate(lon);
+        return cuad.ToString();
+    }
+
+    private int GetSpeciesCutoff(string? codigoInidep)
+    {
+        if (string.IsNullOrEmpty(codigoInidep)) return 0;
+        return codigoInidep switch {
+            "7210040101" => 35, // Merluza Hubbsi
+            "7210040201" => 59, // Merluza de Cola
+            "7226030101" => 70, // Abadejo
+            "7210030201" => 32, // Polaca
+            "7210040102" => 61, // Merluza Austral
+            "7210020101" => 40, // Salilota australis
+            "7218320101" => 82, // Merluza Negra
+            "7218350201" => 29, // Savorín
+            "7218160501" => 30, // Pescadilla común
+            "7204020101" => 9,  // Anchoíta
+            "7105010101" => 56, // Gatuzo
+            "7218250101" => 30, // Pez palo
+            "7218360101" => 24, // Caballa
+            "7109010105" => 78, // Raya
+            "5139440101" => 7,  // Centolla (70mm)
+            _ => 0
+        };
     }
 
     private static IContainer HeaderStyle(IContainer container) => container.DefaultTextStyle(x => x.SemiBold()).PaddingVertical(5).BorderBottom(1).BorderColor(Colors.Black);
