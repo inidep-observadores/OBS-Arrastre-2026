@@ -17,7 +17,7 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
 
         var marea = await dbContext.Mareas
             .Include(m => m.Buque)
-            .Include(m => m.Etapas)
+            .Include(m => m.Etapas).ThenInclude(e => e.EspecieObjetivo)
             .FirstOrDefaultAsync(m => m.ID == mareaId);
 
         if (marea == null) throw new Exception("Marea no encontrada");
@@ -71,7 +71,171 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
             }
         }
 
+        // 3. Datos para la narrativa textual
+        BuildNarrativaData(report, marea, lances, produccion);
+
         return report;
+    }
+
+    /// <summary>
+    /// Recolecta y consolida todos los datos necesarios para armar el resumen narrativo textual de la marea.
+    /// </summary>
+    private void BuildNarrativaData(
+        MareaSummaryReport report,
+        Data.Entities.Marea marea,
+        List<Lance> lances,
+        List<RegistroProduccion> produccion)
+    {
+        var sortedEtapas = marea.Etapas.OrderBy(e => e.FechaZarpada).ToList();
+
+        // -- Totales generales de la marea --
+        report.NarrativaCapturaTotal = lances.SelectMany(l => l.ItemsCaptura).Sum(i => i.CapturaTotalKgCalculado);
+        report.NarrativaDescarteTotal = lances.SelectMany(l => l.ItemsCaptura).Sum(i => i.PesoDescarteCalculado);
+        report.NarrativaTotalLances = lances.Count;
+        report.NarrativaTotalDiasPesca = lances.Select(l => DateTime.Parse(l.Fecha).Date).Distinct().Count();
+
+        // -- Narrativa por etapa --
+        for (int i = 0; i < sortedEtapas.Count; i++)
+        {
+            var etapa = sortedEtapas[i];
+            var lancesEtapa = lances.Where(l => l.MareaEtapaId == etapa.ID).ToList();
+
+            // Cuadrados estadísticos (ordenados, sin repetición)
+            var cuadradoGroups = lancesEtapa
+                .Where(l => l.LatitudInicioDecimal.HasValue && l.LongitudInicioDecimal.HasValue)
+                .GroupBy(l => GetCuadricula(l))
+                .Select(g => new
+                {
+                    Cuadrado = g.Key,
+                    Lances = g.Count(),
+                    CapturaKg = g.Sum(l => l.ItemsCaptura.Sum(ic => ic.CapturaTotalKgCalculado)),
+                    Dias = g.Select(l => DateTime.Parse(l.Fecha).Date).Distinct().Count()
+                })
+                .OrderByDescending(g => g.Lances)
+                .ThenByDescending(g => g.CapturaKg)
+                .ToList();
+
+            var dominante = cuadradoGroups.FirstOrDefault();
+            var cuadradosOrdenados = cuadradoGroups.Select(g => g.Cuadrado).OrderBy(c => c).ToList();
+
+            // Especie objetivo de la etapa
+            NarrativaEspecieObjetivo? espObj = null;
+            if (etapa.EspecieObjetivo != null)
+            {
+                var espId = etapa.EspecieObjetivoID;
+                var captEsp = lancesEtapa.SelectMany(l => l.ItemsCaptura).Where(ic => ic.EspecieID == espId).ToList();
+                espObj = new NarrativaEspecieObjetivo
+                {
+                    NombreVulgar = etapa.EspecieObjetivo.NombreVulgar ?? etapa.EspecieObjetivo.NombreCientifico ?? string.Empty,
+                    NombreCientifico = etapa.EspecieObjetivo.NombreCientifico ?? string.Empty,
+                    CapturaKg = captEsp.Sum(ic => ic.CapturaTotalKgCalculado),
+                    DescarteKg = captEsp.Sum(ic => ic.PesoDescarteCalculado)
+                };
+            }
+
+            // Producción de la etapa (para calcular el umbral del 20%)
+            var produccionEtapa = produccion.Where(p => p.MareaEtapaId == etapa.ID).ToList();
+            double prodTotalEtapa = produccionEtapa.Sum(p => p.Kg ?? 0);
+
+            // Códigos INIDEP relevantes para la regla de negocio narrativa
+            const string CodigoLangostino   = "5139030101";
+            const string CodigoMerluzaHubbsi = "7210040101";
+
+            bool objetivoEsLangostino = etapa.EspecieObjetivo?.CodigoInidep == CodigoLangostino;
+
+            // Especies secundarias: solo las que representan ≥20% de la producción de la etapa,
+            // más Merluza común (M. hubbsi) si la especie objetivo es Langostino.
+            var espSecundarias = lancesEtapa
+                .SelectMany(l => l.ItemsCaptura)
+                .Where(ic => ic.EspecieID != etapa.EspecieObjetivoID && ic.Especie != null)
+                .GroupBy(ic => ic.EspecieID)
+                .Select(g =>
+                {
+                    var esp = g.First().Especie!;
+                    double capt = g.Sum(ic => ic.CapturaTotalKgCalculado);
+                    double desc = g.Sum(ic => ic.PesoDescarteCalculado);
+                    double prodEsp = produccionEtapa.Where(p => p.EspecieId == esp.ID).Sum(p => p.Kg ?? 0);
+                    double pctProd = prodTotalEtapa > 0 ? prodEsp * 100.0 / prodTotalEtapa : 0;
+
+                    bool esMerluzaHubbsi = esp.CodigoInidep == CodigoMerluzaHubbsi;
+
+                    // Incluir si supera el umbral del 20% o si es Merluza común en marea de Langostino
+                    bool incluir = pctProd >= 20.0 || (objetivoEsLangostino && esMerluzaHubbsi);
+
+                    return new
+                    {
+                        Especie = new NarrativaEspecieSecundaria
+                        {
+                            NombreVulgar    = esp.NombreVulgar ?? esp.NombreCientifico ?? string.Empty,
+                            NombreCientifico = esp.NombreCientifico ?? string.Empty,
+                            CapturaKg  = capt,
+                            DescarteKg = desc
+                        },
+                        Incluir = incluir
+                    };
+                })
+                .Where(x => x.Incluir && x.Especie.CapturaKg > 0)
+                .Select(x => x.Especie)
+                .OrderByDescending(e => e.CapturaKg)
+                .ToList();
+
+            var narrativaEtapa = new NarrativaEtapa
+            {
+                Numero = i + 1,
+                FechaInicio = etapa.FechaZarpada,
+                FechaFin = etapa.FechaArribo ?? etapa.FechaZarpada,
+                TotalLances = lancesEtapa.Count,
+                DiasPesca = lancesEtapa.Select(l => DateTime.Parse(l.Fecha).Date).Distinct().Count(),
+                CapturaKg = lancesEtapa.SelectMany(l => l.ItemsCaptura).Sum(ic => ic.CapturaTotalKgCalculado),
+                DescarteKg = lancesEtapa.SelectMany(l => l.ItemsCaptura).Sum(ic => ic.PesoDescarteCalculado),
+                Cuadrados = cuadradosOrdenados,
+                CuadradoDominante = dominante?.Cuadrado,
+                CuadradoDominanteLances = dominante?.Lances ?? 0,
+                CuadradoDominanteCapturaKg = dominante?.CapturaKg ?? 0,
+                CuadradoDominanteDias = dominante?.Dias ?? 0,
+                EspecieObjetivo = espObj,
+                EspeciesSecundarias = espSecundarias
+            };
+
+            report.NarrativaEtapas.Add(narrativaEtapa);
+        }
+
+        // -- Especies objetivo únicas de toda la marea (para el párrafo introductorio) --
+        var especiesObjPorNombre = report.NarrativaEtapas
+            .Where(e => e.EspecieObjetivo != null)
+            .GroupBy(e => e.EspecieObjetivo!.NombreCientifico)
+            .Select(g =>
+            {
+                return new NarrativaEspecieObjetivo
+                {
+                    NombreVulgar = g.First().EspecieObjetivo!.NombreVulgar,
+                    NombreCientifico = g.Key,
+                    CapturaKg = g.Sum(e => e.EspecieObjetivo!.CapturaKg),
+                    DescarteKg = g.Sum(e => e.EspecieObjetivo!.DescarteKg)
+                };
+            })
+            .OrderByDescending(e => e.CapturaKg)
+            .ToList();
+        report.NarrativaEspeciesObjetivo = especiesObjPorNombre;
+
+        // -- Resumen de muestras por especie (párrafo de cierre) --
+        var muestrasAgrupadas = lances
+            .SelectMany(l => l.Muestras)
+            .Where(m => m.Especie != null)
+            .GroupBy(m => m.EspecieID)
+            .Select(g =>
+            {
+                var esp = g.First().Especie!;
+                return new NarrativaMuestraEspecie
+                {
+                    NombreVulgar = esp.NombreVulgar ?? esp.NombreCientifico ?? string.Empty,
+                    NombreCientifico = esp.NombreCientifico ?? string.Empty,
+                    TotalMuestras = g.Count()
+                };
+            })
+            .OrderByDescending(e => e.TotalMuestras)
+            .ToList();
+        report.NarrativaMuestras = muestrasAgrupadas;
     }
 
     private MareaSummarySection CreateSection(string titulo, List<Lance> lances, List<RegistroProduccion> produccion, ICollection<MareaEtapa> etapas)

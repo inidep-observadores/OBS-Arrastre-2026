@@ -43,7 +43,7 @@ public class MareaReportService : IMareaReportService
                 
                 page.Content().PaddingVertical(10).Column(col => 
                 {
-                    ComposeMareaSummarySection(col, report.ResumenGeneral, report.ResumenEtapas);
+                    ComposeMareaSummarySection(col, report.ResumenGeneral, report.ResumenEtapas, report);
 
                     if (report.ResumenEtapas.Any())
 
@@ -61,10 +61,50 @@ public class MareaReportService : IMareaReportService
         }).GeneratePdf());
     }
 
-    private void ComposeMareaSummarySection(ColumnDescriptor col, MareaSummarySection section, List<MareaSummarySection>? allEtapas = null)
+    private void ComposeMareaSummarySection(ColumnDescriptor col, MareaSummarySection section, List<MareaSummarySection>? allEtapas = null, MareaSummaryReport? fullReport = null)
     {
 
         col.Item().PaddingTop(10).Background(Colors.Grey.Lighten4).Padding(8).Text(section.Titulo).FontSize(12).SemiBold().FontColor(Colors.Blue.Darken3);
+
+        // Narrativa textual (sólo en el resumen general)
+        if (!section.EsEtapa && fullReport != null && fullReport.NarrativaEtapas.Any())
+        {
+            var parrafos = MareaSummaryNarrativeBuilder.Build(fullReport);
+            if (parrafos.Any())
+            {
+                col.Item().PaddingTop(12).PaddingBottom(8).Column(narrativaCol =>
+                {
+                    foreach (var parrafo in parrafos)
+                    {
+                        narrativaCol.Item().PaddingBottom(6).Text(text =>
+                        {
+                            text.Justify();
+                            text.DefaultTextStyle(x => x.FontSize(8).FontFamily(Fonts.Verdana));
+                            foreach (var span in parrafo.Spans)
+                            {
+                                var s = text.Span(span.Text);
+                                switch (span.Style)
+                                {
+                                    case NarrativaSpanStyle.Bold:
+                                        s.SemiBold();
+                                        break;
+                                    case NarrativaSpanStyle.Italic:
+                                        s.Italic();
+                                        break;
+                                    case NarrativaSpanStyle.BoldItalic:
+                                        s.SemiBold().Italic();
+                                        break;
+                                    case NarrativaSpanStyle.Underline:
+                                        s.Underline();
+                                        break;
+                                }
+                            }
+                        });
+                    }
+                });
+                col.Item().PaddingBottom(10).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+            }
+        }
 
         col.Item().PaddingVertical(10).Row(row =>
         {

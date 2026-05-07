@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 
+
 namespace OBSArrastre2026.App.Models.Reports;
 
 public class MareaSummarySpeciesItem
@@ -33,6 +34,62 @@ public class MareaSummaryAreaItem
     public double CapturaKg { get; set; }
     public int CantidadLances { get; set; }
     public int DiasPesca { get; set; }
+}
+
+/// <summary>Datos de la especie objetivo para la narrativa de una etapa.</summary>
+public class NarrativaEspecieObjetivo
+{
+    public string NombreVulgar { get; set; } = string.Empty;
+    public string NombreCientifico { get; set; } = string.Empty;
+    public double CapturaKg { get; set; }
+    public double DescarteKg { get; set; }
+    public double DescartePct => CapturaKg > 0 ? DescarteKg * 100.0 / CapturaKg : 0;
+    /// <summary>true cuando el descarte es 100% (no se retuvo nada).</summary>
+    public bool DescarteTotal => CapturaKg > 0 && DescarteKg >= CapturaKg;
+}
+
+/// <summary>Datos resumidos de una especie secundaria observada en la captura (para la narrativa).</summary>
+public class NarrativaEspecieSecundaria
+{
+    public string NombreVulgar { get; set; } = string.Empty;
+    public string NombreCientifico { get; set; } = string.Empty;
+    public double CapturaKg { get; set; }
+    public double DescarteKg { get; set; }
+    public double DescartePct => CapturaKg > 0 ? DescarteKg * 100.0 / CapturaKg : 0;
+    /// <summary>true cuando fue descartada completamente (sin retención).</summary>
+    public bool DescarteTotal => CapturaKg > 0 && Math.Abs(DescartePct - 100.0) < 0.01;
+}
+
+/// <summary>Resumen de muestras de una especie para el párrafo final de la narrativa.</summary>
+public class NarrativaMuestraEspecie
+{
+    public string NombreVulgar { get; set; } = string.Empty;
+    public string NombreCientifico { get; set; } = string.Empty;
+    public int TotalMuestras { get; set; }
+}
+
+/// <summary>Datos narrativos de una etapa individual.</summary>
+public class NarrativaEtapa
+{
+    public int Numero { get; set; }
+    public DateTime FechaInicio { get; set; }
+    public DateTime FechaFin { get; set; }
+    public int TotalLances { get; set; }
+    public int DiasPesca { get; set; }
+    public double CapturaKg { get; set; }
+    public double DescarteKg { get; set; }
+    public double DescartePct => CapturaKg > 0 ? DescarteKg * 100.0 / CapturaKg : 0;
+    /// <summary>Cuadrados estadísticos donde operó el buque.</summary>
+    public List<string> Cuadrados { get; set; } = new();
+    /// <summary>Cuadrado con más lances/operaciones.</summary>
+    public string? CuadradoDominante { get; set; }
+    public int CuadradoDominanteLances { get; set; }
+    public double CuadradoDominanteCapturaKg { get; set; }
+    public int CuadradoDominanteDias { get; set; }
+    /// <summary>Especie objetivo declarada en la etapa (puede diferir entre etapas).</summary>
+    public NarrativaEspecieObjetivo? EspecieObjetivo { get; set; }
+    /// <summary>Especies secundarias con captura relevante observadas en la etapa.</summary>
+    public List<NarrativaEspecieSecundaria> EspeciesSecundarias { get; set; } = new();
 }
 
 public class MareaSummarySection
@@ -78,6 +135,23 @@ public class MareaSummaryReport
     
     public MareaSummarySection ResumenGeneral { get; set; } = new();
     public List<MareaSummarySection> ResumenEtapas { get; set; } = new();
-    
+
+    // --- Datos para la narrativa textual ---
+    /// <summary>Datos narrativos detallados por etapa (en orden cronológico).</summary>
+    public List<NarrativaEtapa> NarrativaEtapas { get; set; } = new();
+    /// <summary>Resumen de muestras por especie (para el párrafo de cierre).</summary>
+    public List<NarrativaMuestraEspecie> NarrativaMuestras { get; set; } = new();
+    /// <summary>Captura total de la marea en kg.</summary>
+    public double NarrativaCapturaTotal { get; set; }
+    /// <summary>Descarte total de la marea en kg.</summary>
+    public double NarrativaDescarteTotal { get; set; }
+    public double NarrativaDescartePct => NarrativaCapturaTotal > 0 ? NarrativaDescarteTotal * 100.0 / NarrativaCapturaTotal : 0;
+    /// <summary>Total de lances de la marea.</summary>
+    public int NarrativaTotalLances { get; set; }
+    /// <summary>Total de días de pesca de la marea.</summary>
+    public int NarrativaTotalDiasPesca { get; set; }
+    /// <summary>Especies objetivo únicas presentes en toda la marea (deduplicadas por nombre).</summary>
+    public List<NarrativaEspecieObjetivo> NarrativaEspeciesObjetivo { get; set; } = new();
+
     public DateTime FechaGeneracion { get; set; } = DateTime.Now;
 }
