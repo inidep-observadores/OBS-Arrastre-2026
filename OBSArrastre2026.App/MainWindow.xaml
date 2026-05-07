@@ -365,7 +365,7 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="294" />
+            <ColumnDefinition Width="320" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
@@ -383,28 +383,12 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel>
-                    <Border Width="58"
-                            Height="58"
-                            Background="{DynamicResource AccentBrush}"
-                            CornerRadius="0"
-                            HorizontalAlignment="Left">
-                        <TextBlock HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   FontSize="23"
-                                   FontWeight="Bold"
-                                   Foreground="White"
-                                   Text="OA" />
-                    </Border>
                     <TextBlock Margin="0,18,0,0"
                                FontFamily="{DynamicResource DisplayFontFamily}"
                                FontSize="27"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource PrimaryTextBrush}"
                                Text="OBS Arrastre" />
-                    <TextBlock Margin="0,6,0,0"
-                               FontSize="13"
-                               Foreground="{DynamicResource SecondaryTextBrush}"
-                               Text="Módulos maestros en modo mockup" />
                 </StackPanel>
 
                 <ListBox Grid.Row="1"
@@ -466,17 +450,20 @@
                             Margin="0,0,0,12"
                             Padding="16"
                             Background="{DynamicResource SidebarSecondaryBackgroundBrush}">
-                        <StackPanel>
+                        <StackPanel HorizontalAlignment="Center">
                             <TextBlock FontSize="10"
                                        FontWeight="SemiBold"
                                        Foreground="{DynamicResource SecondaryTextBrush}"
-                                       Text="MAREA ACTIVA" />
+                                       Text="MAREA ACTIVA"
+                                       HorizontalAlignment="Center" />
                             
                             <Grid Margin="0,8,0,0" Visibility="{Binding ActiveMareaManager.ActiveMarea, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=invert}">
-                                <StackPanel>
+                                <StackPanel HorizontalAlignment="Center">
                                     <TextBlock FontSize="16"
                                                FontWeight="SemiBold"
-                                               Foreground="{DynamicResource PrimaryTextBrush}">
+                                               Foreground="{DynamicResource PrimaryTextBrush}"
+                                               HorizontalAlignment="Center"
+                                               TextAlignment="Center">
                                         <TextBlock.Text>
                                             <MultiBinding StringFormat="{}{0}/{1}">
                                                 <Binding Path="ActiveMareaManager.ActiveMarea.NumeroInidep" />
@@ -487,7 +474,9 @@
                                     <TextBlock Margin="0,4,0,0"
                                                FontSize="12"
                                                Foreground="{DynamicResource SecondaryTextBrush}"
-                                               Text="{Binding ActiveMareaManager.ActiveMarea.Buque.Nombre}" />
+                                               Text="{Binding ActiveMareaManager.ActiveMarea.Buque.Nombre}"
+                                               HorizontalAlignment="Center"
+                                               TextAlignment="Center" />
                                     
                                 </StackPanel>
                             </Grid>
@@ -497,6 +486,7 @@
                                        FontStyle="Italic"
                                        Foreground="{DynamicResource SecondaryTextBrush}"
                                        Text="Ninguna seleccionada"
+                                       HorizontalAlignment="Center"
                                        Visibility="{Binding ActiveMareaManager.ActiveMarea, Converter={StaticResource NullToVisibilityConverter}}" />
                         </StackPanel>
                     </Border>
