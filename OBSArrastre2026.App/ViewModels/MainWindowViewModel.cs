@@ -617,12 +617,14 @@ public class MainWindowViewModel : ObservableObject
             if (value?.Section == NavigationSection.ConfigurarUnidadDescarte)
             {
                 _ = OpenConfigurarUnidadDescarteAsync();
+                OnPropertyChanged(nameof(SelectedNavigationItem));
                 return;
             }
 
             if (value?.Section == NavigationSection.GenerarRecursosInforme)
             {
                 _ = OpenGenerarRecursosInformeAsync();
+                OnPropertyChanged(nameof(SelectedNavigationItem));
                 return;
             }
 
