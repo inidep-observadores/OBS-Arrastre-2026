@@ -944,14 +944,14 @@
                         <StackPanel>
                             <Label Content="Formato del informe" Style="{StaticResource FormLabelStyle}" />
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,24">
-                                <RadioButton Content="Tablas Excel (.xlsx)" 
-                                             IsChecked="{Binding ExportExcel}"
-                                             Style="{StaticResource {x:Type RadioButton}}" 
-                                             Margin="0,0,20,0"
-                                             Foreground="{DynamicResource PrimaryTextBrush}"/>
                                 <RadioButton Content="Informe Técnico Word (.docx)" 
                                              IsChecked="{Binding ExportWord}"
                                              Style="{StaticResource {x:Type RadioButton}}"
+                                             Margin="0,0,20,0"
+                                             Foreground="{DynamicResource PrimaryTextBrush}"/>
+                                <RadioButton Content="Tablas Excel (.xlsx)" 
+                                             IsChecked="{Binding ExportExcel}"
+                                             Style="{StaticResource {x:Type RadioButton}}" 
                                              Foreground="{DynamicResource PrimaryTextBrush}"/>
                             </StackPanel>
 

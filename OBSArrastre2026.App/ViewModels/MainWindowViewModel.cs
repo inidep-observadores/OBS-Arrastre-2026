@@ -348,7 +348,7 @@ public class MainWindowViewModel : ObservableObject
         }
 
         NavigationItems.Add(new NavigationItemViewModel(NavigationSection.Separator, "", "", ""));
-        NavigationItems.Add(new NavigationItemViewModel(NavigationSection.GenerarRecursosInforme, "Generar recursos informe", "Cartografía y archivos auxiliares", "📦", true));
+        NavigationItems.Add(new NavigationItemViewModel(NavigationSection.GenerarRecursosInforme, "Generar informe", "Cartografía y archivos auxiliares", "📦", true));
 
         _currentThemeMode = _themeService.CurrentMode;
         SelectedNavigationItem = NavigationItems.FirstOrDefault();

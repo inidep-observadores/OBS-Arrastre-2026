@@ -26,8 +26,8 @@ public class ExportarRecursosViewModel : ObservableObject
     private readonly List<Lance> _lances;
     private string _exportPath = string.Empty;
     private bool _isBusy;
-    private bool _exportExcel = true;
-    private bool _exportWord = false;
+    private bool _exportExcel = false;
+    private bool _exportWord = true;
 
     public bool ExportExcel
     {
