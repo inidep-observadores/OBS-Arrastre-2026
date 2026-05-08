@@ -201,22 +201,29 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
         }
 
         // -- Especies objetivo únicas de toda la marea (para el párrafo introductorio) --
-        var especiesObjPorNombre = report.NarrativaEtapas
-            .Where(e => e.EspecieObjetivo != null)
-            .GroupBy(e => e.EspecieObjetivo!.NombreCientifico)
-            .Select(g =>
+        // Regla: Aquellas que representen >= 20% de la producción total de la marea
+        double totalProdGlobal = produccion.Sum(p => p.Kg ?? 0);
+        var especiesObjetivoGlobal = produccion
+            .GroupBy(p => p.EspecieId)
+            .Select(g => new
             {
-                return new NarrativaEspecieObjetivo
-                {
-                    NombreVulgar = g.First().EspecieObjetivo!.NombreVulgar,
-                    NombreCientifico = g.Key,
-                    CapturaKg = g.Sum(e => e.EspecieObjetivo!.CapturaKg),
-                    DescarteKg = g.Sum(e => e.EspecieObjetivo!.DescarteKg)
-                };
+                EspecieId = g.Key,
+                ProdKg = g.Sum(p => p.Kg ?? 0)
             })
-            .OrderByDescending(e => e.CapturaKg)
+            .Where(g => totalProdGlobal > 0 && (g.ProdKg / totalProdGlobal) >= 0.2)
             .ToList();
-        report.NarrativaEspeciesObjetivo = especiesObjPorNombre;
+
+        report.NarrativaEspeciesObjetivo = especiesObjetivoGlobal.Select(eg => {
+            var itemsCaptura = lances.SelectMany(l => l.ItemsCaptura).Where(ic => ic.EspecieID == eg.EspecieId).ToList();
+            var esp = itemsCaptura.FirstOrDefault()?.Especie ?? produccion.FirstOrDefault(p => p.EspecieId == eg.EspecieId)?.Especie;
+            return new NarrativaEspecieObjetivo
+            {
+                NombreVulgar = esp?.NombreVulgar ?? esp?.NombreCientifico ?? "Desconocida",
+                NombreCientifico = esp?.NombreCientifico ?? "Desconocida",
+                CapturaKg = itemsCaptura.Sum(ic => ic.CapturaTotalKgCalculado),
+                DescarteKg = itemsCaptura.Sum(ic => ic.PesoDescarteCalculado)
+            };
+        }).OrderByDescending(e => e.CapturaKg).ToList();
 
         // -- Resumen de muestras por especie (párrafo de cierre) --
         var muestrasAgrupadas = lances

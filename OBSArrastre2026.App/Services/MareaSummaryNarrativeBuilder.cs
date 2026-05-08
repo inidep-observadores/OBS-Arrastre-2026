@@ -26,7 +26,22 @@ public static class MareaSummaryNarrativeBuilder
         if (!report.NarrativaEtapas.Any())
             return parrafos;
 
-        parrafos.Add(BuildParrafoGeneral(report));
+        // Párrafo 1: Viajes y fechas
+        parrafos.Add(BuildParrafoViajes(report));
+
+        // Párrafo 2: Captura total de marea
+        parrafos.Add(BuildParrafoResumenCaptura(report));
+
+        // Párrafo 3: Especies objetivo (Punto y aparte antes)
+        if (report.NarrativaEspeciesObjetivo.Any())
+        {
+            foreach (var p in BuildParrafosEspeciesObjetivo(report))
+            {
+                parrafos.Add(p);
+            }
+            // Agregamos un párrafo vacío para forzar el salto de línea antes de las etapas
+            parrafos.Add(new NarrativaParagraph(new List<NarrativaSpan>()));
+        }
 
         foreach (var etapa in report.NarrativaEtapas)
         {
@@ -41,21 +56,15 @@ public static class MareaSummaryNarrativeBuilder
         return parrafos;
     }
 
-    // -------------------------------------------------------------------------
-    // Párrafo 1: Resumen general de la marea
-    // -------------------------------------------------------------------------
-
-    private static NarrativaParagraph BuildParrafoGeneral(MareaSummaryReport report)
+    private static NarrativaParagraph BuildParrafoViajes(MareaSummaryReport report)
     {
         var sb = new NarrativaSpanBuilder();
         int nEtapas = report.NarrativaEtapas.Count;
 
-        // "El buque realizó N viaje(s)/etapa(s)..."
         sb.Normal("El buque realizó ");
         sb.Normal(Pluralizar(nEtapas, "un viaje", $"{nEtapas} viajes"));
         sb.Normal(", ");
 
-        // Fechas de cada etapa
         for (int i = 0; i < report.NarrativaEtapas.Count; i++)
         {
             var e = report.NarrativaEtapas[i];
@@ -66,32 +75,59 @@ public static class MareaSummaryNarrativeBuilder
 
             sb.Normal($"desde el {e.FechaInicio:dd/MM/yyyy} al {e.FechaFin:dd/MM/yyyy}");
         }
-        sb.Normal(". ");
-
-        // Captura total, descarte, lances, días
-        sb.Normal($"Captura total de marea: {report.NarrativaCapturaTotal:N3} kg, ");
-        sb.Normal(FormatDescartePct(report.NarrativaDescartePct));
-        sb.Normal($", {report.NarrativaTotalLances} {Pluralizar(report.NarrativaTotalLances, "lance", "lances")}");
-        sb.Normal($", {report.NarrativaTotalDiasPesca} {Pluralizar(report.NarrativaTotalDiasPesca, "día pesca", "días pesca")}. ");
-
-        // Especie(s) objetivo
-        if (report.NarrativaEspeciesObjetivo.Any())
-        {
-            sb.Normal(Pluralizar(report.NarrativaEspeciesObjetivo.Count, "Especie objetivo: ", "Especies objetivo: "));
-            for (int i = 0; i < report.NarrativaEspeciesObjetivo.Count; i++)
-            {
-                var eo = report.NarrativaEspeciesObjetivo[i];
-                if (i > 0) sb.Normal(i == report.NarrativaEspeciesObjetivo.Count - 1 ? " y " : ", ");
-                sb.Bold($"{eo.NombreVulgar} ");
-                sb.Italic($"({eo.NombreCientifico})");
-                sb.Normal($", {eo.CapturaKg:N3} kg de captura, ");
-                sb.Normal(FormatDescartePctBreve(eo.DescartePct));
-                sb.Normal(" de descarte");
-            }
-            sb.Normal(".");
-        }
+        sb.Normal(".");
 
         return new NarrativaParagraph(sb.ToSpans());
+    }
+
+    private static NarrativaParagraph BuildParrafoResumenCaptura(MareaSummaryReport report)
+    {
+        var sb = new NarrativaSpanBuilder();
+
+        // Captura total, descarte, lances, días
+        sb.Normal($"Captura total de marea: {report.NarrativaCapturaTotal:N0} kg, ");
+        sb.Normal(FormatDescartePct(report.NarrativaDescartePct));
+        sb.Normal($", {report.NarrativaTotalLances} {Pluralizar(report.NarrativaTotalLances, "lance", "lances")}");
+        sb.Normal($", {report.NarrativaTotalDiasPesca} {Pluralizar(report.NarrativaTotalDiasPesca, "día pesca", "días pesca")}.");
+
+        return new NarrativaParagraph(sb.ToSpans());
+    }
+
+    private static List<NarrativaParagraph> BuildParrafosEspeciesObjetivo(MareaSummaryReport report)
+    {
+        var result = new List<NarrativaParagraph>();
+        int count = report.NarrativaEspeciesObjetivo.Count;
+
+        if (count == 1)
+        {
+            // Caso 1 sola especie: En la misma línea
+            var sb = new NarrativaSpanBuilder();
+            var eo = report.NarrativaEspeciesObjetivo[0];
+            sb.Normal("Especie objetivo: ");
+            sb.Bold($"{eo.NombreVulgar} ");
+            sb.Italic($"({eo.NombreCientifico})");
+            sb.Normal($", {eo.CapturaKg:N0} kg de captura, {eo.DescartePct:N2}% de descarte.");
+            result.Add(new NarrativaParagraph(sb.ToSpans()));
+        }
+        else
+        {
+            // Caso múltiples: Título y luego una por línea
+            var sbTitle = new NarrativaSpanBuilder();
+            sbTitle.Normal("Especies objetivo:");
+            result.Add(new NarrativaParagraph(sbTitle.ToSpans()));
+
+            foreach (var eo in report.NarrativaEspeciesObjetivo)
+            {
+                var sbEo = new NarrativaSpanBuilder();
+                sbEo.Normal("    "); // Sangría
+                sbEo.Bold($"{eo.NombreVulgar} ");
+                sbEo.Italic($"({eo.NombreCientifico})");
+                sbEo.Normal($", {eo.CapturaKg:N0} kg de captura, {eo.DescartePct:N2}% de descarte.");
+                result.Add(new NarrativaParagraph(sbEo.ToSpans()));
+            }
+        }
+
+        return result;
     }
 
     // -------------------------------------------------------------------------
@@ -131,7 +167,7 @@ public static class MareaSummaryNarrativeBuilder
             if (etapa.CuadradoDominante != null && etapa.Cuadrados.Count > 1)
             {
                 sb.Normal($", siendo el de mayor cantidad de operaciones de pesca y captura el {etapa.CuadradoDominante} con ");
-                sb.Normal($"{etapa.CuadradoDominanteCapturaKg:N3} kg en {etapa.CuadradoDominanteLances} {Pluralizar(etapa.CuadradoDominanteLances, "lance", "lances")} ");
+                sb.Normal($"{etapa.CuadradoDominanteCapturaKg:N0} kg en {etapa.CuadradoDominanteLances} {Pluralizar(etapa.CuadradoDominanteLances, "lance", "lances")} ");
                 sb.Normal($"durante {etapa.CuadradoDominanteDias} {Pluralizar(etapa.CuadradoDominanteDias, "día", "días")}");
             }
             sb.Normal(". ");
@@ -139,7 +175,7 @@ public static class MareaSummaryNarrativeBuilder
 
         // Captura y descarte de la etapa
         sb.Normal($"La captura del {Pluralizar(totalEtapas > 1 ? 2 : 1, "viaje", "viaje")} fue de ");
-        sb.Normal($"{etapa.CapturaKg:N3} kg ");
+        sb.Normal($"{etapa.CapturaKg:N0} kg ");
 
         if (etapa.DescartePct >= 99.9)
         {
@@ -163,7 +199,7 @@ public static class MareaSummaryNarrativeBuilder
         {
             var eo = etapa.EspecieObjetivo;
             sb.Normal($"La captura de {eo.NombreVulgar} fue de ");
-            sb.Normal($"{eo.CapturaKg:N3} kg ");
+            sb.Normal($"{eo.CapturaKg:N0} kg ");
 
             if (eo.DescarteTotal)
             {
@@ -187,7 +223,7 @@ public static class MareaSummaryNarrativeBuilder
             {
                 sb.Normal($"Se observó una captura de {esp.NombreVulgar} ");
                 sb.Italic($"({esp.NombreCientifico})");
-                sb.Normal($" de {esp.CapturaKg:N3} kg ");
+                sb.Normal($" de {esp.CapturaKg:N0} kg ");
 
                 if (esp.DescarteTotal)
                 {

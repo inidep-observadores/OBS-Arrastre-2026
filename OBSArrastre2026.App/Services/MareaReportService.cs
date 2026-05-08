@@ -795,22 +795,53 @@ public class MareaReportService : IMareaReportService
                 // Título principal
                 doc.InsertParagraph("INFORME FINAL DE MAREA")
                     .Font("Times New Roman").FontSize(18).Bold().Alignment = Alignment.center;
-                doc.InsertParagraph($"{marea.ObservadorApellido}, {marea.ObservadorNombre}")
+                doc.InsertParagraph("{Autor del informe}")
                     .Font("Times New Roman").FontSize(16).Alignment = Alignment.center;
                 doc.InsertParagraph("Programa Adquisición de Información Biológico-Pesquera y Ambiental")
                     .Font("Times New Roman").FontSize(12).Alignment = Alignment.center;
-                doc.InsertParagraph().SpacingAfter(10);
+                doc.InsertParagraph().SpacingAfter(20);
 
                 // Cabecera
                 doc.InsertParagraph($"Marea: {marea.NumeroInidep}/{marea.AnioInidep}")
+                    .Font("Times New Roman").FontSize(14).Bold().SpacingAfter(12);
+
+                // Fechas de realización (listando etapas si las hay)
+                var pFechas = doc.InsertParagraph("Fechas de realización: ")
                     .Font("Times New Roman").FontSize(14).Bold();
-                doc.InsertParagraph($"Fechas de realización: {marea.FechaInicio:dd/MM/yyyy} al {marea.FechaFin:dd/MM/yyyy}")
-                    .Font("Times New Roman").FontSize(14).Bold();
-                doc.InsertParagraph($"Asistente Investigación Pesquera: {marea.ObservadorCodigo}")
-                    .Font("Times New Roman").FontSize(14).Bold();
-                doc.InsertParagraph($"Nombre del Buque: {marea.Buque?.Nombre ?? "Sin nombre"}. Eslora: — m. Potencia: — HP.")
-                    .Font("Times New Roman").FontSize(14).Bold();
-                doc.InsertParagraph("Tipo de buque:")
+
+                var etapasOrdenadas = marea.Etapas.OrderBy(e => e.FechaZarpada).ToList();
+                if (etapasOrdenadas.Any())
+                {
+                    for (int i = 0; i < etapasOrdenadas.Count; i++)
+                    {
+                        var e = etapasOrdenadas[i];
+                        if (i > 0) 
+                        {
+                            pFechas.Append(i == etapasOrdenadas.Count - 1 ? " y " : ", ")
+                                .Font("Times New Roman").FontSize(14).Bold();
+                        }
+                        
+                        if (i > 0 && i == etapasOrdenadas.Count - 1) 
+                        {
+                            pFechas.Append("desde el ").Font("Times New Roman").FontSize(14).Bold();
+                        }
+
+                        pFechas.Append($"{e.FechaZarpada:dd/MM/yyyy} al {e.FechaArribo:dd/MM/yyyy}")
+                            .Font("Times New Roman").FontSize(14).Bold();
+                    }
+                }
+                else
+                {
+                    pFechas.Append($"{marea.FechaInicio:dd/MM/yyyy} al {marea.FechaFin:dd/MM/yyyy}")
+                        .Font("Times New Roman").FontSize(14).Bold();
+                }
+                pFechas.SpacingAfter(12);
+
+                doc.InsertParagraph($"Asistente Investigación Pesquera: {marea.ObservadorCodigo:N0}")
+                    .Font("Times New Roman").FontSize(14).Bold().SpacingAfter(12);
+                doc.InsertParagraph($"Nombre del Buque: {marea.BuqueCodigo:N0}. Eslora: — m. Potencia: — HP.")
+                    .Font("Times New Roman").FontSize(14).Bold().SpacingAfter(12);
+                doc.InsertParagraph("Tipo de buque: ")
                     .Font("Times New Roman").FontSize(14).Bold().SpacingAfter(15);
 
                 // Resumen
@@ -977,24 +1008,26 @@ public class MareaReportService : IMareaReportService
         {
             table.Rows[rowIdx].Cells[0].Paragraphs[0].Append(s.Nombre).Italic().Font("Times New Roman").FontSize(12);
             void SetR(int col, string val) { var p = table.Rows[rowIdx].Cells[col].Paragraphs[0]; p.Append(val).Font("Times New Roman").FontSize(12); p.Alignment = Alignment.right; }
-            SetR(1, s.Kilos.ToString("N1"));
-            SetR(2, s.Descarte.ToString("N1"));
-            SetR(3, s.DescartePct.ToString("N1"));
+            SetR(1, FormatVal(s.Kilos));
+            SetR(2, FormatVal(s.Descarte));
+            SetR(3, FormatVal(s.DescartePct));
             SetR(4, s.Lances.ToString());
             SetR(5, s.Dias.ToString());
-            SetR(6, s.Horas.ToString("N1"));
+            SetR(6, FormatVal(s.Horas));
             rowIdx++;
         }
-
+ 
         // Totales
         double totalK = summary.Sum(s => s.Kilos);
         double totalD = summary.Sum(s => s.Descarte);
         table.Rows[rowIdx].Cells[0].Paragraphs[0].Append("Totales").Bold().Font("Times New Roman").FontSize(12);
         void SetT(int col, string val) { var p = table.Rows[rowIdx].Cells[col].Paragraphs[0]; p.Append(val).Bold().Font("Times New Roman").FontSize(12); p.Alignment = Alignment.right; }
-        SetT(1, totalK.ToString("N1"));
-        SetT(2, totalD.ToString("N1"));
-        SetT(3, totalK > 0 ? (totalD * 100.0 / totalK).ToString("N1") : "0");
+        SetT(1, FormatVal(totalK));
+        SetT(2, FormatVal(totalD));
+        SetT(3, totalK > 0 ? FormatVal(totalD * 100.0 / totalK) : "0");
         SetT(4, lances.Count.ToString());
+        SetT(5, lances.Select(l => l.Fecha).Distinct().Count().ToString());
+
         SetT(5, lances.Select(l => l.Fecha).Distinct().Count().ToString());
 
         doc.InsertTable(table);
@@ -1049,12 +1082,12 @@ public class MareaReportService : IMareaReportService
             var a = areaSummary[i];
             table.Rows[i+1].Cells[0].Paragraphs[0].Append(a.Area).Font("Times New Roman").FontSize(12);
             void SetR(int col, string val) { var p = table.Rows[i+1].Cells[col].Paragraphs[0]; p.Append(val).Font("Times New Roman").FontSize(12); p.Alignment = Alignment.right; }
-            SetR(1, a.Kilos.ToString("N1"));
-            SetR(2, a.Descarte.ToString("N1"));
-            SetR(3, a.DescartePct.ToString("N1"));
+            SetR(1, FormatVal(a.Kilos));
+            SetR(2, FormatVal(a.Descarte));
+            SetR(3, FormatVal(a.DescartePct));
             SetR(4, a.Lances.ToString());
             SetR(5, a.Dias.ToString());
-            SetR(6, a.Horas.ToString("N1"));
+            SetR(6, FormatVal(a.Horas));
         }
         doc.InsertTable(table);
     }
@@ -1101,8 +1134,8 @@ public class MareaReportService : IMareaReportService
             table.Rows[i+1].Cells[1].Paragraphs[0].Append(p.Producto).Font("Times New Roman").FontSize(12);
             table.Rows[i+1].Cells[2].Paragraphs[0].Append(p.Categoria).Font("Times New Roman").FontSize(12);
             void SetR(int col, string val) { var para = table.Rows[i+1].Cells[col].Paragraphs[0]; para.Append(val).Font("Times New Roman").FontSize(12); para.Alignment = Alignment.right; }
-            SetR(3, p.Kilos.ToString("N1"));
-            SetR(4, p.Factor.ToString("N2"));
+            SetR(3, FormatVal(p.Kilos));
+            SetR(4, FormatVal(p.Factor));
         }
         doc.InsertTable(table);
     }
@@ -1339,13 +1372,13 @@ public class MareaReportService : IMareaReportService
         {
             table.Rows[r].Cells[0].Paragraphs[0].Append(label).Font("Times New Roman").FontSize(12);
             void SetR(int col, string val) { var p = table.Rows[r].Cells[col].Paragraphs[0]; p.Append(val).Font("Times New Roman").FontSize(12); p.Alignment = Alignment.right; }
-            SetR(1, s.Media.ToString("N2"));
-            SetR(2, s.DesvSt.ToString("N2"));
-            SetR(3, s.Porcent.ToString("N1"));
+            SetR(1, FormatVal(s.Media));
+            SetR(2, FormatVal(s.DesvSt));
+            SetR(3, FormatVal(s.Porcent));
             SetR(4, s.SumN.ToString("N0"));
             SetR(5, s.SumX.ToString("N0"));
             SetR(6, s.SumX2.ToString("N0"));
-            SetR(7, s.PorcentLimit.ToString("N1"));
+            SetR(7, FormatVal(s.PorcentLimit));
             if (bold) foreach(var cell in table.Rows[r].Cells) cell.Paragraphs[0].Bold();
         }
 
@@ -1448,5 +1481,9 @@ public class MareaReportService : IMareaReportService
                 x.CurrentPageNumber();
             });
         });
+    }
+    private string FormatVal(double val)
+    {
+        return val % 1 == 0 ? val.ToString("N0") : val.ToString("N2");
     }
 }
