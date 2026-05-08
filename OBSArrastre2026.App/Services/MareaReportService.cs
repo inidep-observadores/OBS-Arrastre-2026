@@ -1145,7 +1145,7 @@ public class MareaReportService : IMareaReportService
         var muestras = lances.SelectMany(l => l.Muestras).ToList();
         var grupos = muestras
             .GroupBy(m => new { m.EspecieID, m.TipoMuestra })
-            .Where(g => g.Count() >= 1)
+            .Where(g => g.Count() >= 3)
             .OrderBy(g => g.First().Especie?.NombreCientifico)
             .ToList();
 
