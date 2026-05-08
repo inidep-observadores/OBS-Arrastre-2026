@@ -1292,7 +1292,8 @@ public class MareaReportService : IMareaReportService
 
         canvas.DrawLine(margin, height - margin - 40, width - margin, height - margin - 40, axisPaint);
         canvas.DrawLine(margin, margin, margin, height - margin - 40, axisPaint);
-        canvas.DrawText("Talla (cm)", width / 2, height - margin + 15, labelCenterPaint);
+        string xLabel = isLangostino ? "Talla (mm)" : "Talla (cm)";
+        canvas.DrawText(xLabel, width / 2, height - margin + 15, labelCenterPaint);
         
         canvas.Save();
         canvas.RotateDegrees(-90, 25, height / 2);
@@ -1301,25 +1302,72 @@ public class MareaReportService : IMareaReportService
 
         void DrawSeries(Func<(double Talla, double Machos, double Hembras, double Indet, double Total), double> selector, SKColor color, float[] dashPattern = null, float strokeWidth = 2.5f)
         {
-            var points = dataPoints.Select(p => new SKPoint(
+            var rawPoints = dataPoints.Select(p => new SKPoint(
                 margin + (float)(((p.Talla - minX) / (maxX - minX)) * chartWidth),
                 height - margin - 40 - (float)((selector(p) / maxY) * chartHeight)
-            )).ToArray();
+            )).ToList();
 
-            if (points.Length < 2) return;
+            if (rawPoints.Count < 2) return;
+
             using var path = new SKPath();
-            path.MoveTo(points[0]);
-            for (int i = 1; i < points.Length; i++) path.LineTo(points[i]);
+            path.MoveTo(rawPoints[0]);
 
-            var paint = new SKPaint { Color = color, Style = SKPaintStyle.Stroke, StrokeWidth = strokeWidth, IsAntialias = true };
+            // Smoothing algorithm (Catmull-Rom approximation)
+            for (int i = 0; i < rawPoints.Count - 1; i++)
+            {
+                var p0 = i == 0 ? rawPoints[i] : rawPoints[i - 1];
+                var p1 = rawPoints[i];
+                var p2 = rawPoints[i + 1];
+                var p3 = i == rawPoints.Count - 2 ? rawPoints[i + 1] : rawPoints[i + 2];
+
+                // Control points
+                var cp1 = new SKPoint(p1.X + (p2.X - p0.X) / 6, p1.Y + (p2.Y - p0.Y) / 6);
+                var cp2 = new SKPoint(p2.X - (p3.X - p1.X) / 6, p2.Y - (p3.Y - p1.Y) / 6);
+
+                path.CubicTo(cp1, cp2, p2);
+            }
+
+            var paint = new SKPaint { Color = color, Style = SKPaintStyle.Stroke, StrokeWidth = strokeWidth, IsAntialias = true, StrokeCap = SKStrokeCap.Round, StrokeJoin = SKStrokeJoin.Round };
             if (dashPattern != null) paint.PathEffect = SKPathEffect.CreateDash(dashPattern, 0);
             canvas.DrawPath(path, paint);
         }
 
+        // Draw Series
         if (plotTotal && hasTotal) DrawSeries(p => p.Total, SKColors.Black, null, 3.0f);
-        if (hasMachos) DrawSeries(p => p.Machos, SKColors.Black, null, 1.8f);
-        if (hasHembras) DrawSeries(p => p.Hembras, SKColors.Black, new float[] { 10, 5 }, 1.8f);
-        if (hasIndet) DrawSeries(p => p.Indet, SKColors.Black, new float[] { 2, 5 }, 1.8f);
+        if (hasHembras) DrawSeries(p => p.Hembras, SKColors.Black, null, 1.5f);
+        if (hasMachos) DrawSeries(p => p.Machos, SKColors.Black, new float[] { 10, 5, 2, 5 }, 1.5f);
+        if (hasIndet) DrawSeries(p => p.Indet, SKColors.Black, new float[] { 2, 5 }, 1.5f);
+
+        // Draw Legend
+        var legendItems = new List<(string Label, float[] Dash, float Width)>();
+        if (hasMachos) legendItems.Add(("machos", new float[] { 10, 5, 2, 5 }, 1.5f));
+        if (hasHembras) legendItems.Add(("hembras", null, 1.5f));
+        if (plotTotal && hasTotal) legendItems.Add(("totales", null, 3.0f));
+        if (hasIndet) legendItems.Add(("indet.", new float[] { 2, 5 }, 1.5f));
+
+        if (legendItems.Any())
+        {
+            float legendY = height - 30;
+            float itemWidth = 120;
+            float totalLegendWidth = legendItems.Count * itemWidth;
+            float startX = (width - totalLegendWidth) / 2;
+
+            var legendTextPaint = new SKPaint { Color = SKColors.Black, TextSize = 14, IsAntialias = true, Typeface = SKTypeface.FromFamilyName("Times New Roman") };
+            
+            for (int i = 0; i < legendItems.Count; i++)
+            {
+                var item = legendItems[i];
+                float itemX = startX + (i * itemWidth);
+                
+                // Sample line
+                var lPaint = new SKPaint { Color = SKColors.Black, Style = SKPaintStyle.Stroke, StrokeWidth = item.Width, IsAntialias = true };
+                if (item.Dash != null) lPaint.PathEffect = SKPathEffect.CreateDash(item.Dash, 0);
+                canvas.DrawLine(itemX, legendY - 5, itemX + 40, legendY - 5, lPaint);
+                
+                // Label
+                canvas.DrawText(item.Label, itemX + 45, legendY, legendTextPaint);
+            }
+        }
 
         if (cutoff > 0 && cutoff >= minX && cutoff <= maxX)
         {
