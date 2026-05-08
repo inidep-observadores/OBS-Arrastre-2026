@@ -11,6 +11,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using OBSArrastre2026.App.Data.Entities;
 using OBSArrastre2026.App.Services;
+using OBSArrastre2026.App.Models;
 using OBSArrastre2026.App.Models.Reports;
 
 namespace OBSArrastre2026.App.ViewModels;
@@ -75,6 +76,9 @@ public class ExportarRecursosViewModel : ObservableObject
     public ICommand CloseCommand { get; }
     public ICommand BrowseCommand { get; }
 
+    public Func<string, string, string?, MessageDialogType, Task>? ShowMessage { get; set; }
+    public Func<string, string, Task<bool>>? ShowConfirmation { get; set; }
+
     public TaskCompletionSource<bool> DialogResult { get; } = new();
 
     public ExportarRecursosViewModel(Marea marea, List<Lance> lances, 
@@ -132,9 +136,19 @@ public class ExportarRecursosViewModel : ObservableObject
 
             DialogResult.TrySetResult(true);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Error handling ignored as per request for now
+            IsBusy = false;
+            string message = "Ocurrió un error inesperado al generar el informe.";
+            
+            // Detectar si el archivo está en uso
+            if (ex is IOException && (ex.HResult & 0x0000FFFF) == 32)
+            {
+                message = "No se pudo guardar el informe porque el archivo ya está abierto por otra aplicación (ej: Excel o Word). Por favor, cierre el documento y vuelva a intentarlo.";
+            }
+
+            if (ShowMessage != null) 
+                await ShowMessage("Error de Exportación", message, ex.ToString(), MessageDialogType.Error);
         }
         finally
         {

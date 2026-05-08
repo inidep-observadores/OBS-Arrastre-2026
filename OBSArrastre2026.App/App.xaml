@@ -1019,7 +1019,7 @@
                                              Foreground="{DynamicResource AccentBrush}" 
                                              Background="{DynamicResource CardBorderBrush}" 
                                              BorderThickness="0"/>
-                                <TextBlock Text="Generando recursos..." 
+                                <TextBlock Text="Generando informe..." 
                                            Foreground="{DynamicResource PrimaryTextBrush}" 
                                            Margin="0,16,0,0" 
                                            HorizontalAlignment="Center" 
