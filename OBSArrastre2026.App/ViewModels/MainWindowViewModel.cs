@@ -617,22 +617,12 @@ public class MainWindowViewModel : ObservableObject
             if (value?.Section == NavigationSection.ConfigurarUnidadDescarte)
             {
                 _ = OpenConfigurarUnidadDescarteAsync();
-                
-                // Solución pragmática: volver a seleccionar Mareas para permitir re-clic
-                App.Current.Dispatcher.BeginInvoke(new Action(() => {
-                    SelectedNavigationItem = NavigationItems.FirstOrDefault(n => n.Section == NavigationSection.Mareas);
-                }));
                 return;
             }
 
             if (value?.Section == NavigationSection.GenerarRecursosInforme)
             {
                 _ = OpenGenerarRecursosInformeAsync();
-                
-                // Solución pragmática: volver a seleccionar Mareas para permitir re-clic
-                App.Current.Dispatcher.BeginInvoke(new Action(() => {
-                    SelectedNavigationItem = NavigationItems.FirstOrDefault(n => n.Section == NavigationSection.Mareas);
-                }));
                 return;
             }
 
