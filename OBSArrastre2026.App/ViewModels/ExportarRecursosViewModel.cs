@@ -192,25 +192,5 @@ public class ExportarRecursosViewModel : ObservableObject
 
         await File.WriteAllBytesAsync(filePath, docBytes);
 
-        // Preguntar si abrir
-        _ = Task.Run(() => {
-            System.Windows.Application.Current.Dispatcher.Invoke(() => {
-                var result = System.Windows.MessageBox.Show(
-                    "¿Desea abrir el archivo generado?", 
-                    "Archivo Guardado", 
-                    System.Windows.MessageBoxButton.YesNo, 
-                    System.Windows.MessageBoxImage.Question);
-                
-                if (result == System.Windows.MessageBoxResult.Yes)
-                {
-                    try
-                    {
-                        var p = new System.Diagnostics.Process { StartInfo = new System.Diagnostics.ProcessStartInfo(filePath) { UseShellExecute = true } };
-                        p.Start();
-                    }
-                    catch { }
-                }
-            });
-        });
     }
 }
