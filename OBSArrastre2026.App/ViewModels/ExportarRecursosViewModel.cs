@@ -108,10 +108,24 @@ public class ExportarRecursosViewModel : ObservableObject
 
     private void Browse()
     {
+        string? initialDir = null;
+        if (!string.IsNullOrEmpty(ExportPath))
+        {
+            if (Directory.Exists(ExportPath))
+            {
+                initialDir = ExportPath;
+            }
+            else
+            {
+                try { initialDir = Path.GetDirectoryName(ExportPath); } catch { }
+            }
+        }
+
         var dialog = new OpenFolderDialog
         {
             Title = "Seleccionar carpeta de exportación",
-            Multiselect = false
+            Multiselect = false,
+            InitialDirectory = Directory.Exists(initialDir) ? initialDir : null
         };
 
         if (dialog.ShowDialog() == true)

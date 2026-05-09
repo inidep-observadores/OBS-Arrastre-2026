@@ -393,7 +393,7 @@
                                FontSize="27"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource PrimaryTextBrush}"
-                               Text="OBS Arrastre" />
+                               Text="Control de mareas" />
                 </StackPanel>
 
                 <ListBox Grid.Row="1"

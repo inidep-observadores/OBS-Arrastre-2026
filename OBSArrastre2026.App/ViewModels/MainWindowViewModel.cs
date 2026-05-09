@@ -412,7 +412,7 @@ public class MainWindowViewModel : ObservableObject
 
     public IActiveMareaManager ActiveMareaManager => _activeMareaManager;
 
-    public string Title => "OBS Arrastre 2026";
+    public string Title => "Control de mareas";
 
     public ICommand DeleteRecordCommand { get; }
 

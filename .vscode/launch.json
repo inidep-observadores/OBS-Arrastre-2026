@@ -6,7 +6,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/OBSArrastre2026.App/bin/Debug/net10.0-windows/OBSArrastre2026.App.exe",
+            "program": "${workspaceFolder}/OBSArrastre2026.App/bin/Debug/net10.0-windows/ControlDeMareas.exe",
             "args": [],
             "cwd": "${workspaceFolder}/OBSArrastre2026.App",
             "console": "internalConsole"
@@ -16,7 +16,7 @@
             "type": "dotnet",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/OBSArrastre2026.App/bin/Debug/net10.0-windows/OBSArrastre2026.App.exe",
+            "program": "${workspaceFolder}/OBSArrastre2026.App/bin/Debug/net10.0-windows/ControlDeMareas.exe",
             "args": [],
             "cwd": "${workspaceFolder}/OBSArrastre2026.App",
             "console": "internalConsole"
@@ -26,7 +26,7 @@
             "type": "csharp",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/OBSArrastre2026.App/bin/Debug/net10.0-windows/OBSArrastre2026.App.exe",
+            "program": "${workspaceFolder}/OBSArrastre2026.App/bin/Debug/net10.0-windows/ControlDeMareas.exe",
             "args": [],
             "cwd": "${workspaceFolder}/OBSArrastre2026.App"
         }
