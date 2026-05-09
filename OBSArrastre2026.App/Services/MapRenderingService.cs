@@ -104,10 +104,11 @@ namespace OBSArrastre2026.App.Services
             double geoWidth = (lonMax - lonMin) * cosLat;
             double geoHeight = (latMax - latMin);
 
-            // Altura de referencia para el área de dibujo (plot)
-            // Usamos un valor que proporcione buena resolución en el informe
-            float targetPlotHeight = 800f; 
-            scale = (float)(targetPlotHeight / geoHeight);
+            // Ancho de referencia para el área de dibujo (plot)
+            // Al fijar el ancho, garantizamos que al insertarse en el informe (que escala por ancho)
+            // todos los elementos visuales (textos, puntos) mantengan el mismo tamaño físico.
+            float targetPlotWidth = 1000f; 
+            scale = (float)(targetPlotWidth / geoWidth);
 
             float plotW = (float)(geoWidth * scale);
             float plotH = (float)(geoHeight * scale);
@@ -135,8 +136,9 @@ namespace OBSArrastre2026.App.Services
             double lonSpan = Math.Max(Math.Abs(maxLon - minLon), 0.2);
 
             // Margen generoso alrededor de los puntos
-            double latMargin = Math.Max(latSpan * 0.4, 0.4);
-            double lonMargin = Math.Max(lonSpan * 0.4, 0.6);
+            // Margen ajustado al 5% para un mapa muy ceñido a los lances
+            double latMargin = Math.Max(latSpan * 0.05, 0.4);
+            double lonMargin = Math.Max(lonSpan * 0.05, 0.6);
 
             double west = minLon - lonMargin;
             double east = maxLon + lonMargin;
@@ -146,19 +148,20 @@ namespace OBSArrastre2026.App.Services
             // Forzar límites de la costa argentina si estamos muy cerca
             if (west > -68.0 && minLon < -60) west = -68.0;
 
-            double westAligned = Math.Floor(west);
-            double eastAligned = Math.Ceiling(east);
-            double southAligned = Math.Floor(south);
-            double northAligned = Math.Ceiling(north);
+            // Alineación a grados PARES hacia afuera para una estética limpia
+            double westAligned = Math.Floor(west / 2.0) * 2.0;
+            double eastAligned = Math.Ceiling(east / 2.0) * 2.0;
+            double southAligned = Math.Floor(south / 2.0) * 2.0;
+            double northAligned = Math.Ceiling(north / 2.0) * 2.0;
 
-            // Asegurar un tamaño mínimo de ventana (3 grados)
-            if (eastAligned - westAligned < 3) 
+            // Asegurar un tamaño mínimo de ventana (4 grados para mantener la alineación par)
+            if (eastAligned - westAligned < 4) 
             {
-                eastAligned = westAligned + 3;
+                eastAligned = westAligned + 4;
             }
-            if (northAligned - southAligned < 3) 
+            if (northAligned - southAligned < 4) 
             {
-                northAligned = southAligned + 3;
+                northAligned = southAligned + 4;
             }
 
             return (westAligned, eastAligned, southAligned, northAligned);
@@ -285,8 +288,8 @@ namespace OBSArrastre2026.App.Services
         private void DrawPort(SKCanvas canvas, double lon, double lat, string name, Func<double, double, SKPoint> project)
         {
             var p = project(lon, lat);
-            float radius = 15f;
-            using var paint = new SKPaint { Color = ColorPortCircle, StrokeWidth = 3f, Style = SKPaintStyle.Stroke, IsAntialias = true };
+            float radius = 10f;
+            using var paint = new SKPaint { Color = ColorPortCircle, StrokeWidth = 2f, Style = SKPaintStyle.Stroke, IsAntialias = true };
             canvas.DrawCircle(p, radius, paint);
 
             if (!string.IsNullOrEmpty(name))
@@ -294,7 +297,7 @@ namespace OBSArrastre2026.App.Services
                 using var textPaint = new SKPaint
                 {
                     Color = ColorAxis,
-                    TextSize = 28f,
+                    TextSize = 22f,
                     IsAntialias = true,
                     FakeBoldText = true,
                     Typeface = SKTypeface.FromFamilyName("Arial")
@@ -306,7 +309,7 @@ namespace OBSArrastre2026.App.Services
         private void DrawPoints(SKCanvas canvas, List<double> lats, List<double> lons, Func<double, double, SKPoint> project)
         {
             using var paint = new SKPaint { Color = ColorPoints, Style = SKPaintStyle.Fill, IsAntialias = true };
-            float radius = 12f;
+            float radius = 9f;
 
             for (int i = 0; i < lats.Count; i++)
             {
@@ -317,9 +320,9 @@ namespace OBSArrastre2026.App.Services
 
         private void DrawAxesAndScales(SKCanvas canvas, double lonMin, double lonMax, double latMin, double latMax, Func<double, double, SKPoint> project, SKRect plotRect)
         {
-            using var axisPaint = new SKPaint { Color = ColorAxis, StrokeWidth = 2.5f, Style = SKPaintStyle.Stroke };
-            using var tickPaint = new SKPaint { Color = ColorAxis, StrokeWidth = 2.0f, Style = SKPaintStyle.Stroke };
-            using var textPaint = new SKPaint { Color = ColorAxis, TextSize = 24f, IsAntialias = true, Typeface = SKTypeface.FromFamilyName("Arial") };
+            using var axisPaint = new SKPaint { Color = ColorAxis, StrokeWidth = 2.0f, Style = SKPaintStyle.Stroke };
+            using var tickPaint = new SKPaint { Color = ColorAxis, StrokeWidth = 1.5f, Style = SKPaintStyle.Stroke };
+            using var textPaint = new SKPaint { Color = ColorAxis, TextSize = 20f, IsAntialias = true, Typeface = SKTypeface.FromFamilyName("Arial") };
 
             // Marco principal
             canvas.DrawRect(plotRect, axisPaint);
@@ -330,8 +333,8 @@ namespace OBSArrastre2026.App.Services
                 // Mayor
                 var pBottom = project(lon, latMin);
                 var pTop = project(lon, latMax);
-                canvas.DrawLine(pBottom.X, pBottom.Y, pBottom.X, pBottom.Y + 20, tickPaint);
-                canvas.DrawLine(pTop.X, pTop.Y, pTop.X, pTop.Y - 20, tickPaint);
+                canvas.DrawLine(pBottom.X, pBottom.Y, pBottom.X, pBottom.Y + 15, tickPaint);
+                canvas.DrawLine(pTop.X, pTop.Y, pTop.X, pTop.Y - 15, tickPaint);
                 
                 string label = $"º{Math.Abs((int)Math.Round(lon))}";
                 canvas.DrawText(label, pBottom.X - 20, pBottom.Y + 50, textPaint);
@@ -342,9 +345,9 @@ namespace OBSArrastre2026.App.Services
                     double mVal = lon + (m / 6.0);
                     if (mVal > lonMax) break;
                     var pm = project(mVal, latMin);
-                    canvas.DrawLine(pm.X, pm.Y, pm.X, pm.Y + 10, tickPaint);
+                    canvas.DrawLine(pm.X, pm.Y, pm.X, pm.Y + 8, tickPaint);
                     var pmTop = project(mVal, latMax);
-                    canvas.DrawLine(pmTop.X, pmTop.Y, pmTop.X, pmTop.Y - 10, tickPaint);
+                    canvas.DrawLine(pmTop.X, pmTop.Y, pmTop.X, pmTop.Y - 8, tickPaint);
                 }
             }
 
@@ -353,8 +356,8 @@ namespace OBSArrastre2026.App.Services
             {
                 var pLeft = project(lonMin, lat);
                 var pRight = project(lonMax, lat);
-                canvas.DrawLine(pLeft.X, pLeft.Y, pLeft.X - 20, pLeft.Y, tickPaint);
-                canvas.DrawLine(pRight.X, pRight.Y, pRight.X + 20, pRight.Y, tickPaint);
+                canvas.DrawLine(pLeft.X, pLeft.Y, pLeft.X - 15, pLeft.Y, tickPaint);
+                canvas.DrawLine(pRight.X, pRight.Y, pRight.X + 15, pRight.Y, tickPaint);
 
                 string label = $"º{Math.Abs((int)Math.Round(lat))}";
                 canvas.DrawText(label, pLeft.X - 60, pLeft.Y + 10, textPaint);
@@ -365,9 +368,9 @@ namespace OBSArrastre2026.App.Services
                     double mVal = lat + (m / 6.0);
                     if (mVal > latMax) break;
                     var pm = project(lonMin, mVal);
-                    canvas.DrawLine(pm.X, pm.Y, pm.X - 10, pm.Y, tickPaint);
+                    canvas.DrawLine(pm.X, pm.Y, pm.X - 8, pm.Y, tickPaint);
                     var pmRight = project(lonMax, mVal);
-                    canvas.DrawLine(pmRight.X, pmRight.Y, pmRight.X + 10, pmRight.Y, tickPaint);
+                    canvas.DrawLine(pmRight.X, pmRight.Y, pmRight.X + 8, pmRight.Y, tickPaint);
                 }
             }
 
