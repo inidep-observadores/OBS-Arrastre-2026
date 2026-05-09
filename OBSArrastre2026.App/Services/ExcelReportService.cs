@@ -354,7 +354,21 @@ namespace OBSArrastre2026.App.Services
                 if (points.Length < 2) return;
                 using var path = new SKPath();
                 path.MoveTo(points[0]);
-                for (int i = 1; i < points.Length; i++) path.LineTo(points[i]);
+
+                // Smoothing algorithm (Catmull-Rom approximation)
+                for (int i = 0; i < points.Length - 1; i++)
+                {
+                    var p0 = i == 0 ? points[i] : points[i - 1];
+                    var p1 = points[i];
+                    var p2 = points[i + 1];
+                    var p3 = i == points.Length - 2 ? points[i + 1] : points[i + 2];
+
+                    // Control points
+                    var cp1 = new SKPoint(p1.X + (p2.X - p0.X) / 6, p1.Y + (p2.Y - p0.Y) / 6);
+                    var cp2 = new SKPoint(p2.X - (p3.X - p1.X) / 6, p2.Y - (p3.Y - p1.Y) / 6);
+
+                    path.CubicTo(cp1, cp2, p2);
+                }
 
                 var paint = new SKPaint { 
                     Color = color, 
@@ -377,8 +391,8 @@ namespace OBSArrastre2026.App.Services
             }
 
             if (hasMachos) DrawSeries(p => p.Machos, SKColors.Black, null, 2.0f);
-            if (hasHembras) DrawSeries(p => p.Hembras, SKColors.Black, new float[] { 8, 4 }, 2.0f);
-            if (hasIndet) DrawSeries(p => p.Indet, SKColors.Black, new float[] { 2, 4 }, 2.0f);
+            if (hasHembras) DrawSeries(p => p.Hembras, SKColors.Black, new float[] { 10, 5, 2, 5 }, 2.0f);
+            if (hasIndet) DrawSeries(p => p.Indet, SKColors.Black, new float[] { 2, 5 }, 2.0f);
 
             if (cutoff > 0 && cutoff >= minX && cutoff <= maxX)
             {
@@ -389,8 +403,8 @@ namespace OBSArrastre2026.App.Services
             float legendX = margin;
             float legendY = height - 15;
             if (hasMachos) { canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Black, StrokeWidth = 2.0f }); canvas.DrawText("Machos", legendX + 35, legendY, textPaint); legendX += 130; }
-            if (hasHembras) { canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Black, StrokeWidth = 2.0f, PathEffect = SKPathEffect.CreateDash(new float[] { 8, 4 }, 0) }); canvas.DrawText("Hembras", legendX + 35, legendY, textPaint); legendX += 130; }
-            if (hasIndet) { canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Black, StrokeWidth = 2.0f, PathEffect = SKPathEffect.CreateDash(new float[] { 2, 4 }, 0) }); canvas.DrawText("Indet.", legendX + 35, legendY, textPaint); legendX += 130; }
+            if (hasHembras) { canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Black, StrokeWidth = 2.0f, PathEffect = SKPathEffect.CreateDash(new float[] { 10, 5, 2, 5 }, 0) }); canvas.DrawText("Hembras", legendX + 35, legendY, textPaint); legendX += 130; }
+            if (hasIndet) { canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Black, StrokeWidth = 2.0f, PathEffect = SKPathEffect.CreateDash(new float[] { 2, 5 }, 0) }); canvas.DrawText("Indet.", legendX + 35, legendY, textPaint); legendX += 130; }
             
             if (plotTotal && hasTotal)
             {

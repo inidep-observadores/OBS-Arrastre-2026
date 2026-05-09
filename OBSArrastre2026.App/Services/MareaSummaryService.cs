@@ -230,7 +230,7 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
         // -- Resumen de muestras por especie (párrafo de cierre) --
         var muestrasAgrupadas = lances
             .SelectMany(l => l.Muestras)
-            .Where(m => m.Especie != null)
+            .Where(m => m.Especie != null && m.TipoMuestra == 1) // Solo muestras de talla estándar (excluye descarte)
             .GroupBy(m => m.EspecieID)
             .Select(g =>
             {

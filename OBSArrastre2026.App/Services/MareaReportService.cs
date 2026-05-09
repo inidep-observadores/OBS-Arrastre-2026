@@ -1148,6 +1148,7 @@ public class MareaReportService : IMareaReportService
             .GroupBy(m => new { m.EspecieID, m.TipoMuestra })
             .Where(g => g.Count() >= 3)
             .OrderBy(g => g.First().Especie?.NombreCientifico)
+            .ThenBy(g => g.Key.TipoMuestra)
             .ToList();
 
         for (int gi = 0; gi < grupos.Count; gi++)
@@ -1335,14 +1336,14 @@ public class MareaReportService : IMareaReportService
 
         // Draw Series
         if (plotTotal && hasTotal) DrawSeries(p => p.Total, SKColors.Black, null, 3.0f);
-        if (hasHembras) DrawSeries(p => p.Hembras, SKColors.Black, null, 1.5f);
-        if (hasMachos) DrawSeries(p => p.Machos, SKColors.Black, new float[] { 10, 5, 2, 5 }, 1.5f);
+        if (hasHembras) DrawSeries(p => p.Hembras, SKColors.Black, new float[] { 10, 5, 2, 5 }, 1.5f);
+        if (hasMachos) DrawSeries(p => p.Machos, SKColors.Black, null, 1.5f);
         if (hasIndet) DrawSeries(p => p.Indet, SKColors.Black, new float[] { 2, 5 }, 1.5f);
 
         // Draw Legend
         var legendItems = new List<(string Label, float[] Dash, float Width)>();
-        if (hasMachos) legendItems.Add(("machos", new float[] { 10, 5, 2, 5 }, 1.5f));
-        if (hasHembras) legendItems.Add(("hembras", null, 1.5f));
+        if (hasMachos) legendItems.Add(("machos", null, 1.5f));
+        if (hasHembras) legendItems.Add(("hembras", new float[] { 10, 5, 2, 5 }, 1.5f));
         if (plotTotal && hasTotal) legendItems.Add(("totales", null, 3.0f));
         if (hasIndet) legendItems.Add(("indet.", new float[] { 2, 5 }, 1.5f));
 
