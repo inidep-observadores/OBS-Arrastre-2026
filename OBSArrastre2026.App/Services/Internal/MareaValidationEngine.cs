@@ -884,6 +884,28 @@ public sealed class MareaValidationEngine
 
     private void ValidateSubSamples(MareaValidationReport report, List<LegacySubmuestra> submuestras, List<LegacyMuestra> muestras)
     {
+        // NUEVA VALIDACIÓN: Suma de pesos de ejemplares (S*) vs Peso total de muestra (M*)
+        var subPorMuestra = submuestras
+            .GroupBy(s => new { s.Lance, Especie = s.Especie?.Trim().ToUpper() });
+
+        foreach (var group in subPorMuestra)
+        {
+            var parent = muestras.FirstOrDefault(m => 
+                (int)m.Lance == (int)group.Key.Lance && 
+                m.Especie?.Trim().ToUpper() == group.Key.Especie);
+
+            if (parent != null && parent.PesoMues > 0)
+            {
+                double sumSubWeights = group.Sum(s => s.PesoTot);
+                // Tolerancia de 50 gramos para acumulado de redondeos en balanza/carga
+                if (sumSubWeights > parent.PesoMues + 0.05)
+                {
+                    report.AddIssue(ValidationLevel.Error, "Integridad", 
+                        $"Inconsistencia: La suma de pesos de los ejemplares ({sumSubWeights:F2} kg) excede el peso total de la muestra ({parent.PesoMues:F2} kg).", 
+                        $"Lance {group.Key.Lance} - Especie {group.Key.Especie}");
+                }
+            }
+        }
         // REQ-4.1.3: Verificar Números de Ejemplar Duplicados
         var subDuplicates = submuestras
             .GroupBy(s => new { s.Lance, s.Especie, s.NEjemplar })
