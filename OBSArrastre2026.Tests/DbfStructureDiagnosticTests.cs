@@ -10,7 +10,7 @@ namespace OBSArrastre2026.Tests;
 public class DbfStructureDiagnosticTests
 {
     private readonly ITestOutputHelper _output;
-    private const string ExamplesPath = @"d:\Desarrollo\_INIDEP\OBS\OBS-Arrastre-2026\ejemplos\dbf";
+    private const string ExamplesPath = @"d:\Desarrollo\_INIDEP\OBS\OBS-Arrastre-2026\ejemplos\Entrada";
     private const string OutputPath = @"C:\Users\danie\.gemini\antigravity\brain\e4cf11d5-e50b-4223-bc9e-deeb185ac626\dbf_structures.txt";
 
     public DbfStructureDiagnosticTests(ITestOutputHelper output)

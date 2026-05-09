@@ -48,6 +48,19 @@ public sealed class Lance
     public int SelectividadSiNo { get; set; } // 0 o 1
     public string? Comentarios { get; set; }
 
+    // Campos de Integridad 1:1 (Legacy DBF)
+    public double? Mus { get; set; }
+    public double? EstacionGral { get; set; }
+    public double? Estrato { get; set; }
+    public double? EdadLuna { get; set; }
+    public double? Luz { get; set; }
+    public double? TmpAHum { get; set; }
+    public double? TmpMarS { get; set; }
+    public double? ArteTipo { get; set; }
+    public double? ArteNro { get; set; }
+    public double? AreaBarrida { get; set; }
+    public double? MallaSobre { get; set; }
+
     // Navigation properties
     public ICollection<Muestra> Muestras { get; set; } = new List<Muestra>();
     public ICollection<ItemCaptura> ItemsCaptura { get; set; } = new List<ItemCaptura>();

@@ -10,6 +10,7 @@ public sealed class Muestra
     public string? EspecieID { get; set; }
     public Especie? Especie { get; set; }
 
+    public int NumeroOrden { get; set; }
     public string? Comentarios { get; set; }
 
     public int EjemplaresPorKg { get; set; }
@@ -21,6 +22,14 @@ public sealed class Muestra
     public int HayIndeterminados { get; set; }
     public double? PesoMuestra_PesoGramos { get; set; }
     public int TipoMuestra { get; set; } = 1; // 1=Estandar, 2=Descarte
+
+    // Campos de Integridad 1:1
+    public double? Fuente { get; set; }
+    public double? Tarte { get; set; }
+    public double? Area { get; set; }
+    public double? FactPond { get; set; }
+    public int? PrimTalla { get; set; }
+    public int? UltTalla { get; set; }
 
     // Navigation properties
     public ICollection<FrecuenciaTalla> FrecuenciasTallas { get; set; } = new List<FrecuenciaTalla>();

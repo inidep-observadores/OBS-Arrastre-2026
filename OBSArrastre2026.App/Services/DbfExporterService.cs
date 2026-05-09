@@ -161,8 +161,8 @@ public sealed class DbfExporterService : IDbfExporterService
                 row[idx++] = barco;
                 row[idx++] = (double)marea.NumeroInidep;
                 row[idx++] = (double)lance.NroLance;
-                row[idx++] = 0.0; // MUS
-                row[idx++] = 0.0; // ESTAC_GRAL
+                row[idx++] = (double?)lance.Mus;
+                row[idx++] = (double?)lance.EstacionGral;
                 row[idx++] = DateTime.Parse(lance.Fecha);
                 row[idx++] = LegacyDecoder.EncodeTime(ParseTime(lance.HoraInicio));
                 row[idx++] = LegacyDecoder.EncodeTime(ParseTime(lance.HoraFinal));
@@ -170,49 +170,37 @@ public sealed class DbfExporterService : IDbfExporterService
                 row[idx++] = LegacyDecoder.EncodeCoordinate(lance.LatitudFinalDecimal ?? 0);
                 row[idx++] = LegacyDecoder.EncodeCoordinate(lance.LongitudInicioDecimal ?? 0);
                 row[idx++] = LegacyDecoder.EncodeCoordinate(lance.LongitudFinalDecimal ?? 0);
-                row[idx++] = 0.0; // ESTRATO
-                row[idx++] = (double)(lance.RumboGrados ?? 0);
-                
-                // TIEMPO (min) - Calculado a partir de horas si es posible
-                double tiempoMin = 0;
-                if (!string.IsNullOrEmpty(lance.HoraInicio) && !string.IsNullOrEmpty(lance.HoraFinal))
-                {
-                    var inicio = ParseTime(lance.HoraInicio);
-                    var final = ParseTime(lance.HoraFinal);
-                    var diff = final - inicio;
-                    if (diff.TotalMinutes < 0) diff = diff.Add(TimeSpan.FromDays(1)); // Cruce de medianoche
-                    tiempoMin = Math.Min(99, diff.TotalMinutes);
-                }
-                row[idx++] = tiempoMin;
-
-                row[idx++] = (double)(lance.EstadoMarCodigo ?? 0);
-                row[idx++] = 0.0; // EDAD_LUNA
-                row[idx++] = 0.0; // LUZ
-                row[idx++] = (double)(lance.VientoDireccionGrados ?? 0);
-                row[idx++] = (double)(lance.VientoFuerzaBeaufort ?? 0);
-                row[idx++] = (double)(lance.ProfundidadInicioM ?? 0);
-                row[idx++] = (double)(lance.ProfundidadFinalM ?? 0);
-                row[idx++] = (double)(lance.TemperaturaAireC ?? 0);
-                row[idx++] = 0.0; // TMP_A_HUM
-                row[idx++] = (double)(lance.TemperaturaRedC ?? 0); // TMP_MAR_S
-                row[idx++] = 0.0; // TMP_MAR_F
-                row[idx++] = (double)(lance.PresionHpa ?? 0);
-                row[idx++] = (double)(lance.CapturaTotalKg ?? 0);
-                row[idx++] = (double)(lance.DescarteTotalKg ?? 0);
+                row[idx++] = (double?)lance.Estrato;
+                row[idx++] = (double?)lance.RumboGrados;
+                row[idx++] = (double?)lance.EstadoTiempoCodigo;
+                row[idx++] = (double?)lance.EstadoMarCodigo;
+                row[idx++] = (double?)lance.EdadLuna;
+                row[idx++] = (double?)lance.Luz;
+                row[idx++] = (double?)lance.VientoDireccionGrados;
+                row[idx++] = (double?)lance.VientoFuerzaBeaufort;
+                row[idx++] = (double?)lance.ProfundidadInicioM;
+                row[idx++] = (double?)lance.ProfundidadFinalM;
+                row[idx++] = (double?)lance.TemperaturaAireC;
+                row[idx++] = (double?)lance.TmpAHum;
+                row[idx++] = (double?)lance.TmpMarS;
+                row[idx++] = (double?)lance.TemperaturaRedC;
+                row[idx++] = (double?)lance.PresionHpa;
+                row[idx++] = (double?)lance.CapturaTotalKg;
+                row[idx++] = (double?)lance.DescarteTotalKg;
                 row[idx++] = lance.Comentarios ?? "";
-                row[idx++] = 0.0; // TARTE
-                row[idx++] = 0.0; // NARTE
-                row[idx++] = (double)(lance.VelocidadArrastreNudos ?? 0);
-                row[idx++] = 0.0; // AREA_BARR
-                row[idx++] = (double)(lance.CableFiladoM ?? 0);
-                row[idx++] = (double)(lance.DistanciaAlasM ?? 0);
-                row[idx++] = (double)(lance.AberturaVerticalM ?? 0);
-                row[idx++] = (double)(lance.MallaAlasMm ?? 0);
-                row[idx++] = (double)(lance.MallaCopoMm ?? 0);
-                row[idx++] = 0.0; // MALL_SOBRE
-                row[idx++] = (double)(lance.DistanciaPortonesM ?? 0);
+                row[idx++] = (double?)lance.ArteTipo;
+                row[idx++] = (double?)lance.ArteNro;
+                row[idx++] = (double?)lance.VelocidadArrastreNudos;
+                row[idx++] = (double?)lance.AreaBarrida;
+                row[idx++] = (double?)lance.CableFiladoM;
+                row[idx++] = (double?)lance.DistanciaAlasM;
+                row[idx++] = (double?)lance.AberturaVerticalM;
+                row[idx++] = (double?)lance.MallaAlasMm;
+                row[idx++] = (double?)lance.MallaCopoMm;
+                row[idx++] = (double?)lance.MallaSobre;
+                row[idx++] = (double?)lance.DistanciaPortonesM;
 
-                var items = lance.ItemsCaptura.OrderByDescending(i => i.DatoCaptura).Take(25).ToList();
+                var items = lance.ItemsCaptura.OrderBy(i => i.NumeroOrden).Take(25).ToList();
                 for (int i = 0; i < 25; i++)
                 {
                     if (i < items.Count)
@@ -262,7 +250,7 @@ public sealed class DbfExporterService : IDbfExporterService
 
         foreach (var etapa in marea.Etapas)
         {
-            foreach (var p in etapa.RegistrosProduccion.OrderBy(r => r.Fecha))
+            foreach (var p in etapa.RegistrosProduccion.OrderBy(r => r.NumeroOrden))
             {
                 var row = new object[fields.Count];
                 int idx = 0;
@@ -270,11 +258,11 @@ public sealed class DbfExporterService : IDbfExporterService
                 row[idx++] = (double)marea.NumeroInidep;
                 row[idx++] = DateTime.Parse(p.Fecha);
                 row[idx++] = p.Especie?.NombreVulgar ?? "";
-                row[idx++] = p.Producto?.Descripcion ?? "";
+                row[idx++] = p.Producto?.Codigo ?? "";
                 row[idx++] = p.Categoria ?? "";
-                row[idx++] = (double)(p.Operarios ?? 0);
-                row[idx++] = p.Factor ?? 0.0;
-                row[idx++] = p.Kg ?? 0.0;
+                row[idx++] = p.Operarios != null ? (double)p.Operarios : null;
+                row[idx++] = p.Factor;
+                row[idx++] = p.Kg;
 
                 writer.WriteRecord(row);
             }
@@ -288,12 +276,16 @@ public sealed class DbfExporterService : IDbfExporterService
         var encoding = Encoding.GetEncoding(850);
 
         string mPath = Path.Combine(path, $"M{suffix}.DBF");
+        string mdPath = Path.Combine(path, $"MD{suffix}.DBF");
         string sPath = Path.Combine(path, $"S{suffix}.DBF");
         string lPath = Path.Combine(path, $"L{suffix}.DBF");
         string xPath = Path.Combine(path, $"X{suffix}.DBF");
 
         using var mStream = File.Open(mPath, FileMode.Create, FileAccess.Write);
         var mWriter = new DBFWriter(mStream) { CharEncoding = encoding };
+
+        FileStream? mdStream = null;
+        DBFWriter? mdWriter = null;
 
         using var sStream = File.Open(sPath, FileMode.Create, FileAccess.Write);
         var sWriter = new DBFWriter(sStream) { CharEncoding = encoding };
@@ -322,6 +314,12 @@ public sealed class DbfExporterService : IDbfExporterService
         };
         for (int i = 1; i <= 90; i++) mFields.Add(new DBFField($"TALLA_{i}", NativeDbType.Numeric, 15, 0));
         mWriter.Fields = mFields.ToArray();
+
+        // Si hay muestras de descarte, prepararemos el mdWriter bajo demanda o lo inicializamos ya
+        // Para simplificar, lo inicializamos si el archivo MD existía o si hay muestras de tipo 2
+        mdStream = File.Open(mdPath, FileMode.Create, FileAccess.Write);
+        mdWriter = new DBFWriter(mdStream) { CharEncoding = encoding };
+        mdWriter.Fields = mFields.ToArray();
 
         var xFields = new List<DBFField>(mFields.GetRange(0, 14));
         for (int i = 91; i <= 150; i++) xFields.Add(new DBFField($"TALLA_{i}", NativeDbType.Numeric, 15, 0));
@@ -356,7 +354,7 @@ public sealed class DbfExporterService : IDbfExporterService
         {
             foreach (var lance in etapa.Lances.OrderBy(l => l.NroLance))
             {
-                foreach (var m in lance.Muestras)
+                foreach (var m in lance.Muestras.OrderBy(mu => mu.NumeroOrden))
                 {
                     var mRow = new object[mFields.Count];
                     int mIdx = 0;
@@ -365,28 +363,39 @@ public sealed class DbfExporterService : IDbfExporterService
                     mRow[mIdx++] = (double)marea.NumeroInidep;
                     mRow[mIdx++] = (double)lance.NroLance;
                     mRow[mIdx++] = m.Especie?.NombreVulgar ?? "";
-                    mRow[mIdx++] = double.TryParse(m.Especie?.CodigoInidep, out var c) ? c : 0.0;
-                    mRow[mIdx++] = 0.0; // FUENTE
-                    mRow[mIdx++] = 0.0; // TARTE
-                    mRow[mIdx++] = 0.0; // AREA
-                    mRow[mIdx++] = (double)m.FrecuenciasTallas.Select(f => f.Talla).DefaultIfEmpty(0).Min();
-                    mRow[mIdx++] = (double)m.FrecuenciasTallas.Select(f => f.Talla).DefaultIfEmpty(0).Max();
+                    mRow[mIdx++] = double.TryParse(m.Especie?.CodigoInidep, out var c) ? c : null;
+                    mRow[mIdx++] = m.Fuente;
+                    mRow[mIdx++] = m.Tarte;
+                    mRow[mIdx++] = m.Area;
+                    mRow[mIdx++] = (double?)m.PrimTalla;
+                    mRow[mIdx++] = (double?)m.UltTalla;
                     mRow[mIdx++] = (double)m.Intervalo;
                     mRow[mIdx++] = (m.PesoMuestra_PesoGramos ?? 0) / 1000.0;
-                    mRow[mIdx++] = 1.0; // FACT_POND
+                    mRow[mIdx++] = m.FactPond;
 
-                    var freqs = m.FrecuenciasTallas.OrderBy(f => f.Talla).ToList();
+                    int baseTalla = m.PrimTalla ?? (m.FrecuenciasTallas.Any() ? (int)m.FrecuenciasTallas.Min(f => f.Talla) : 0);
+                    int interval = (int)m.Intervalo;
+                    if (interval <= 0) interval = 1;
+
+                    var freqMap = m.FrecuenciasTallas.ToDictionary(f => (int)f.Talla, f => f);
                     for (int i = 0; i < 90; i++)
                     {
-                        if (i < freqs.Count)
+                        int currentTalla = baseTalla + (i * interval);
+                        if (freqMap.TryGetValue(currentTalla, out var ft))
                         {
-                            var f = freqs[i];
-                            mRow[mIdx++] = double.Parse(LegacyDecoder.EncodeTally((int)f.Talla, f.NroMachos, f.NroHembras, f.NroIndeterminados, f.NroTotal));
+                            mRow[mIdx++] = double.Parse(LegacyDecoder.EncodeTally((int)ft.Talla, ft.NroMachos, ft.NroHembras, ft.NroIndeterminados, ft.NroTotal));
                         }
-                        else mRow[mIdx++] = 0.0;
+                        else
+                        {
+                            mRow[mIdx++] = null;
+                        }
                     }
-                    mWriter.WriteRecord(mRow);
+                    if (m.TipoMuestra == 2 && mdWriter != null)
+                        mdWriter.WriteRecord(mRow);
+                    else
+                        mWriter.WriteRecord(mRow);
 
+                    var freqs = m.FrecuenciasTallas.OrderBy(f => f.Talla).ToList();
                     if (freqs.Count > 90)
                     {
                         if (xWriter == null)
@@ -405,12 +414,12 @@ public sealed class DbfExporterService : IDbfExporterService
                                 var f = freqs[i];
                                 xRow[xIdx++] = double.Parse(LegacyDecoder.EncodeTally((int)f.Talla, f.NroMachos, f.NroHembras, f.NroIndeterminados, f.NroTotal));
                             }
-                            else xRow[xIdx++] = 0.0;
+                            else xRow[xIdx++] = null;
                         }
                         xWriter.WriteRecord(xRow);
                     }
 
-                    foreach (var s in m.ItemsSubmuestras)
+                    foreach (var s in m.ItemsSubmuestras.OrderBy(x => x.NumeroOrden))
                     {
                         var sRow = new object[sFields.Count];
                         int sIdx = 0;
@@ -418,23 +427,23 @@ public sealed class DbfExporterService : IDbfExporterService
                         sRow[sIdx++] = (double)marea.NumeroInidep;
                         sRow[sIdx++] = (double)lance.NroLance;
                         sRow[sIdx++] = DateTime.Parse(lance.Fecha);
-                        sRow[sIdx++] = 0.0; // TARTE
-                        sRow[sIdx++] = 0.0; // FUENTE
-                        sRow[sIdx++] = 0.0; // AREA
+                        sRow[sIdx++] = s.Tarte;
+                        sRow[sIdx++] = s.Fuente;
+                        sRow[sIdx++] = s.Area;
                         sRow[sIdx++] = m.Especie?.NombreVulgar ?? "";
                         sRow[sIdx++] = (double)s.NroEjemplar;
-                        sRow[sIdx++] = (double)(s.LargoTotalMm ?? 0);
-                        sRow[sIdx++] = (double)(s.LargoEstandarMm ?? 0);
-                        sRow[sIdx++] = Math.Round((s.PesoTotalGramos ?? 0) / 10.0, 1);
-                        sRow[sIdx++] = 0.0; // PESO_VAC
-                        sRow[sIdx++] = (double)(s.Sexo ?? 0);
-                        sRow[sIdx++] = (double)(s.Estadio ?? 0);
-                        sRow[sIdx++] = 0.0; // PESO_GON
-                        sRow[sIdx++] = 0.0; // PESO_HIG
-                        sRow[sIdx++] = (double)(s.ReplecionGastrica ?? 0);
+                        sRow[sIdx++] = s.LargoTotalMm != null ? (double)s.LargoTotalMm : null;
+                        sRow[sIdx++] = s.LargoEstandarMm != null ? (double)s.LargoEstandarMm : null;
+                        sRow[sIdx++] = s.PesoTotalGramos != null ? Math.Round(s.PesoTotalGramos.Value / 10.0, 1) : null;
+                        sRow[sIdx++] = s.PesoVac;
+                        sRow[sIdx++] = s.Sexo != null ? (double)s.Sexo : null;
+                        sRow[sIdx++] = s.Estadio != null ? (double)s.Estadio : null;
+                        sRow[sIdx++] = s.PesoGon;
+                        sRow[sIdx++] = s.PesoHig;
+                        sRow[sIdx++] = s.ReplecionGastrica != null ? (double)s.ReplecionGastrica : null;
                         sRow[sIdx++] = s.Comentarios ?? "";
-                        sRow[sIdx++] = s.Edad ?? 0.0;
-                        sRow[sIdx++] = 0.0; // R_TOTAL
+                        sRow[sIdx++] = s.Edad;
+                        sRow[sIdx++] = s.RTotal;
                         sWriter.WriteRecord(sRow);
                     }
 
@@ -467,7 +476,7 @@ public sealed class DbfExporterService : IDbfExporterService
                                 var f = freqs[i];
                                 lRow[lIdx++] = LegacyDecoder.EncodeMatureTally(f.NroLangostinosMachoMaduros, f.NroLangostinosHembraMaduras, f.NroLangostinosHembraImpregnadas);
                             }
-                            else lRow[lIdx++] = 0.0;
+                            else lRow[lIdx++] = null;
                         }
                         lWriter.WriteRecord(lRow);
                     }
@@ -481,6 +490,8 @@ public sealed class DbfExporterService : IDbfExporterService
         lStream?.Dispose();
         xWriter?.Close();
         xStream?.Dispose();
+        mdWriter?.Close();
+        mdStream?.Dispose();
     }
 
     private TimeSpan ParseTime(string? time)

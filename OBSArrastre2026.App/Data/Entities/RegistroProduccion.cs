@@ -20,5 +20,6 @@ public sealed class RegistroProduccion
     public double? Factor { get; set; }
     public int? Operarios { get; set; }
     public double? Kg { get; set; }
+    public int NumeroOrden { get; set; }
     public string? Comentarios { get; set; }
 }

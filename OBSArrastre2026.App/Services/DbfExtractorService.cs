@@ -248,7 +248,20 @@ public sealed class DbfExtractorService : IDbfExtractorService
                 AberVert = GetDoubleNullable(reader, colMap, "ABER_VERT"),
                 DistAlas = GetDoubleNullable(reader, colMap, "DIST_ALAS"),
                 DistEPor = GetDoubleNullable(reader, colMap, "DIST_E_POR"),
-                Observac = GetString(reader, colMap, "OBSERVAC")
+                Observac = GetString(reader, colMap, "OBSERVAC"),
+
+                // Campos de Integridad
+                Mus = GetDoubleNullable(reader, colMap, "MUS"),
+                EstacGral = GetDoubleNullable(reader, colMap, "ESTAC_GRAL"),
+                Estrato = GetDoubleNullable(reader, colMap, "ESTRATO"),
+                EdadLuna = GetDoubleNullable(reader, colMap, "EDAD_LUNA"),
+                Luz = GetDoubleNullable(reader, colMap, "LUZ"),
+                TmpAHum = GetDoubleNullable(reader, colMap, "TMP_A_HUM"),
+                TmpMarS = GetDoubleNullable(reader, colMap, "TMP_MAR_S"),
+                Tarte = GetDoubleNullable(reader, colMap, "TARTE"),
+                Narte = GetDoubleNullable(reader, colMap, "NARTE"),
+                AreaBarr = GetDoubleNullable(reader, colMap, "AREA_BARR"),
+                MallSobre = GetDoubleNullable(reader, colMap, "MALL_SOBRE")
             };
 
             for (int i = 1; i <= 25; i++)
@@ -259,6 +272,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
                     string sCode = ((long)espCode).ToString();
                     c.Especies[sCode] = GetDouble(reader, colMap, $"KG_{i}");
                     c.DescartesPorEspecie[sCode] = GetDouble(reader, colMap, $"DESCAR_{i}");
+                    c.EspeciesOrder.Add(sCode);
                 }
             }
             list.Add(c);
@@ -274,17 +288,21 @@ public sealed class DbfExtractorService : IDbfExtractorService
         var options = GetOptions(dbfPath);
         using var reader = new DbfDataReader.DbfDataReader(dbfPath, options);
         var colMap = GetColumnMap(reader);
+        int order = 0;
 
         while (reader.Read())
         {
             var m = new LegacyMuestra
             {
+                NumeroOrden = ++order,
                 Barco = GetString(reader, colMap, "BARCO"),
                 Marea = GetDouble(reader, colMap, "MAREA"),
                 Lance = GetDouble(reader, colMap, "LANCE"),
                 Fecha = GetDateTime(reader, colMap, "FECHA") ?? DateTime.MinValue,
                 Especie = GetString(reader, colMap, "ESPECIE"),
                 CodEspec = ((long)GetDouble(reader, colMap, "COD_ESPEC")).ToString(),
+                Fuente = GetDouble(reader, colMap, "FUENTE"),
+                Tarte = GetDouble(reader, colMap, "TARTE"),
                 Area = GetDouble(reader, colMap, "AREA"),
                 PrimTalla = (int)GetDouble(reader, colMap, "PRIM_TALLA"),
                 UltTalla = (int)GetDouble(reader, colMap, "ULT_TALLA"),
@@ -325,22 +343,34 @@ public sealed class DbfExtractorService : IDbfExtractorService
         var options = GetOptions(dbfPath);
         using var reader = new DbfDataReader.DbfDataReader(dbfPath, options);
         var colMap = GetColumnMap(reader);
+        int order = 0;
 
         while (reader.Read())
         {
             list.Add(new LegacySubmuestra
             {
+                NumeroOrden = ++order,
                 Barco = GetString(reader, colMap, "BARCO"),
                 Marea = GetDouble(reader, colMap, "MAREA"),
                 Lance = GetDouble(reader, colMap, "LANCE"),
                 Fecha = GetDateTime(reader, colMap, "FECHA") ?? DateTime.MinValue,
+                Tarte = GetDouble(reader, colMap, "TARTE"),
+                Fuente = GetDouble(reader, colMap, "FUENTE"),
+                Area = GetDouble(reader, colMap, "AREA"),
                 Especie = GetString(reader, colMap, "ESPECIE"),
-                NEjemplar = (int)GetDouble(reader, colMap, "NEJEMPLAR"),
+                NEjemplar = (int)GetDouble(reader, colMap, "NRO_EJEMP"),
                 LargoTot = (int)GetDouble(reader, colMap, "LARGO_TOT"),
                 LargoSta = (int)GetDouble(reader, colMap, "LARGO_STA"),
                 PesoTot = GetDouble(reader, colMap, "PESO_TOT"),
+                PesoVac = GetDouble(reader, colMap, "PESO_VAC"),
                 Sexo = (int)GetDouble(reader, colMap, "SEXO"),
-                Estadio = (int)GetDouble(reader, colMap, "ESTADIO")
+                Estadio = (int)GetDouble(reader, colMap, "ESTADIO"),
+                PesoGon = GetDouble(reader, colMap, "PESO_GON"),
+                PesoHig = GetDouble(reader, colMap, "PESO_HIG"),
+                Replecion = (int)GetDouble(reader, colMap, "REPLECION"),
+                Comentario = GetString(reader, colMap, "COMENTARIO"),
+                Edad = GetDouble(reader, colMap, "EDAD"),
+                RTotal = GetDouble(reader, colMap, "R_TOTAL")
             });
         }
         return list;
@@ -421,11 +451,13 @@ public sealed class DbfExtractorService : IDbfExtractorService
         var options = GetOptions(dbfPath);
         using var reader = new DbfDataReader.DbfDataReader(dbfPath, options);
         var colMap = GetColumnMap(reader);
+        int order = 0;
 
         while (reader.Read())
         {
             list.Add(new LegacyProduccion
             {
+                NumeroOrden = ++order,
                 Barco = GetString(reader, colMap, "BARCO"),
                 Marea = GetDouble(reader, colMap, "MAREA"),
                 Fecha = GetDateTime(reader, colMap, "FECHA") ?? DateTime.MinValue,

@@ -367,20 +367,35 @@ public class MareaImportService : IMareaImportService
                 AberturaVerticalM = c.AberVert,
                 DistanciaAlasM = c.DistAlas,
                 DistanciaPortonesM = c.DistEPor,
-                Comentarios = c.Observac
+                Comentarios = c.Observac,
+
+                // Campos de Integridad 1:1
+                Mus = c.Mus,
+                EstacionGral = c.EstacGral,
+                Estrato = c.Estrato,
+                EdadLuna = c.EdadLuna,
+                Luz = c.Luz,
+                TmpAHum = c.TmpAHum,
+                TmpMarS = c.TmpMarS,
+                ArteTipo = c.Tarte,
+                ArteNro = c.Narte,
+                AreaBarrida = c.AreaBarr,
+                MallaSobre = c.MallSobre
             };
 
-            // Items de Captura (Especies por código o puente)
-            foreach (var kvp in c.Especies)
+            // Items de Captura (Especies preservando el orden original de las columnas)
+            int itemIndex = 1;
+            foreach (var sCode in c.EspeciesOrder)
             {
-                if (kvp.Value > 0 && especieByCodigoMap.TryGetValue(kvp.Key, out var especieId))
+                if (c.Especies.TryGetValue(sCode, out var val) && val > 0 && especieByCodigoMap.TryGetValue(sCode, out var especieId))
                 {
                     lance.ItemsCaptura.Add(new ItemCaptura
                     {
                         EspecieID = especieId,
-                        DatoCaptura = kvp.Value,
-                        DatoDescarte = c.DescartesPorEspecie.TryGetValue(kvp.Key, out var d) ? d : 0,
-                        TipoDatoDescarte = report.UnidadDescarte
+                        DatoCaptura = val,
+                        DatoDescarte = c.DescartesPorEspecie.TryGetValue(sCode, out var d) ? d : 0,
+                        TipoDatoDescarte = report.UnidadDescarte,
+                        NumeroOrden = itemIndex++
                     });
                 }
             }
@@ -421,7 +436,14 @@ public class MareaImportService : IMareaImportService
                         Origen = 1, // Muestreo de Captura
                         DiscriminaSexo = rm.Tallies.Any(t => t.Males > 0 || t.Females > 0) ? 1 : 0,
                         HayIndeterminados = rm.Tallies.Any(t => t.Indeterminate > 0) ? 1 : 0,
-                        TipoMuestra = rm.TipoMuestra
+                        TipoMuestra = rm.TipoMuestra,
+                        NumeroOrden = rm.NumeroOrden,
+                        Fuente = rm.Fuente,
+                        Tarte = rm.Tarte,
+                        Area = rm.Area,
+                        FactPond = rm.FactPond,
+                        PrimTalla = rm.PrimTalla,
+                        UltTalla = rm.UltTalla
                     };
 
                     int totalEjemplares = rm.Tallies.Sum(t => t.Total);
@@ -462,15 +484,30 @@ public class MareaImportService : IMareaImportService
             string speciesKey = rs.Especie.Trim().ToUpper().Normalize(NormalizationForm.FormC);
             if (muestraMap.TryGetValue($"{rs.Lance}_{speciesKey}", out var muestra))
             {
-                muestra.ItemsSubmuestras.Add(new ItemSubmuestra
+                var itemSub = new ItemSubmuestra
                 {
+                    MuestraID = muestra.ID,
                     NroEjemplar = rs.NEjemplar,
                     Sexo = rs.Sexo,
                     Estadio = rs.Estadio,
-                    PesoTotalGramos = rs.PesoTot * 1000,
+                    ReplecionGastrica = rs.Replecion,
+                    Edad = rs.Edad,
                     LargoTotalMm = rs.LargoTot,
-                    LargoEstandarMm = rs.LargoSta
-                });
+                    LargoEstandarMm = rs.LargoSta,
+                    PesoTotalGramos = (int)(rs.PesoTot * 10), // Guardar en gramos (DBF tiene decigramos?)
+                    Comentarios = rs.Comentario,
+                    
+                    // Campos de Integridad 1:1
+                    NumeroOrden = rs.NumeroOrden,
+                    Tarte = rs.Tarte,
+                    Fuente = rs.Fuente,
+                    Area = rs.Area,
+                    PesoVac = rs.PesoVac,
+                    PesoGon = rs.PesoGon,
+                    PesoHig = rs.PesoHig,
+                    RTotal = rs.RTotal
+                };
+                dbContext.ItemsSubmuestras.Add(itemSub);
             }
         }
 
@@ -586,6 +623,7 @@ public class MareaImportService : IMareaImportService
                         Factor = rp.Factor,
                         Operarios = rp.Operarios,
                         Kg = rp.Kilos,
+                        NumeroOrden = rp.NumeroOrden,
                         Comentarios = $"Importado: {rp.Especie}"
                     });
                 }

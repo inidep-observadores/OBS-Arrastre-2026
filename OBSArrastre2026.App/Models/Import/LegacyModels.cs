@@ -48,10 +48,24 @@ public class LegacyCaptura
     public double? DistAlas { get; set; }
     public double? DistEPor { get; set; }
     public string? Observac { get; set; }
+
+    // Campos de Integridad 1:1
+    public double? Mus { get; set; }
+    public double? EstacGral { get; set; }
+    public double? Estrato { get; set; }
+    public double? EdadLuna { get; set; }
+    public double? Luz { get; set; }
+    public double? TmpAHum { get; set; }
+    public double? TmpMarS { get; set; }
+    public double? Tarte { get; set; }
+    public double? Narte { get; set; }
+    public double? AreaBarr { get; set; }
+    public double? MallSobre { get; set; }
     
     // Especies (se manejan dinámicamente o por convención de nombres)
     public Dictionary<string, double> Especies { get; } = new(); // ID Especie -> KG
     public Dictionary<string, double> DescartesPorEspecie { get; } = new(); // ID Especie -> KG
+    public List<string> EspeciesOrder { get; } = new(); // Para preservar el orden de las columnas ESPECIE_1..25
 }
 
 /// <summary>
@@ -59,12 +73,15 @@ public class LegacyCaptura
 /// </summary>
 public class LegacyMuestra
 {
+    public int NumeroOrden { get; set; }
     public string Barco { get; set; } = string.Empty;
     public double Marea { get; set; }
     public double Lance { get; set; }
     public DateTime Fecha { get; set; }
     public string Especie { get; set; } = string.Empty;
     public string CodEspec { get; set; } = string.Empty;
+    public double Fuente { get; set; }
+    public double Tarte { get; set; }
     public double Area { get; set; }
     public int PrimTalla { get; set; }
     public int UltTalla { get; set; }
@@ -82,18 +99,28 @@ public class LegacyMuestra
 /// </summary>
 public class LegacySubmuestra
 {
+    public int NumeroOrden { get; set; }
     public string Barco { get; set; } = string.Empty;
     public double Marea { get; set; }
     public double Lance { get; set; }
     public DateTime Fecha { get; set; }
-    public string Especie { get; set; } = string.Empty;
+    public double Tarte { get; set; }
+    public double Fuente { get; set; }
     public double Area { get; set; }
+    public string Especie { get; set; } = string.Empty;
     public int NEjemplar { get; set; }
     public int LargoTot { get; set; }
     public int LargoSta { get; set; }
     public double PesoTot { get; set; }
+    public double PesoVac { get; set; }
     public int Sexo { get; set; }
     public int Estadio { get; set; }
+    public double PesoGon { get; set; }
+    public double PesoHig { get; set; }
+    public int Replecion { get; set; }
+    public string Comentario { get; set; } = string.Empty;
+    public double Edad { get; set; }
+    public double RTotal { get; set; }
 }
 
 /// <summary>
@@ -143,6 +170,7 @@ public class LegacyTracking
 /// </summary>
 public class LegacyProduccion
 {
+    public int NumeroOrden { get; set; }
     public string Barco { get; set; } = string.Empty;
     public double Marea { get; set; }
     public DateTime Fecha { get; set; }

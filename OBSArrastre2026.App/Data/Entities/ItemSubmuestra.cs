@@ -19,6 +19,16 @@ public sealed class ItemSubmuestra
 
     public string? Comentarios { get; set; }
 
+    // Campos de Integridad 1:1
+    public int NumeroOrden { get; set; }
+    public double? Tarte { get; set; }
+    public double? Fuente { get; set; }
+    public double? Area { get; set; }
+    public double? PesoVac { get; set; }
+    public double? PesoGon { get; set; }
+    public double? PesoHig { get; set; }
+    public double? RTotal { get; set; }
+
     // Navigation properties
     public ICollection<ItemContenidoGastrico> ContenidosGastricos { get; set; } = new List<ItemContenidoGastrico>();
 }
