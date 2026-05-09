@@ -451,8 +451,17 @@ public sealed class MareaValidationEngine
             }
 
             // REQ-5.3: Coherencia Temporal
-            if (c.HoraInic > c.HoraFinal)
-                report.AddIssue(ValidationLevel.Warning, "Tiempo", "Hora de inicio es posterior a hora de fin", ctx);
+            var timeStart = LegacyDecoder.DecodeTime(c.HoraInic);
+            var timeEnd = LegacyDecoder.DecodeTime(c.HoraFinal);
+            
+            // Si el fin es menor que el inicio, asumimos cruce de medianoche (lance nocturno)
+            bool cruceMedianoche = timeEnd < timeStart;
+            var duration = cruceMedianoche ? (timeEnd.Add(TimeSpan.FromDays(1)) - timeStart) : (timeEnd - timeStart);
+
+            if (duration.TotalMinutes == 0)
+                report.AddIssue(ValidationLevel.Warning, "Tiempo", "Hora de inicio y fin son idénticas", ctx);
+            else if (duration.TotalHours > 12)
+                report.AddIssue(ValidationLevel.Warning, "Tiempo", $"Duración de lance inusualmente larga: {duration.TotalHours:F1} horas", ctx);
 
             // Nueva Validación: Coherencia con Tracking (Posición y Velocidad)
             ValidateLanceTrackingConsistency(report, c, tracking);
