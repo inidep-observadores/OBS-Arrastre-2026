@@ -218,14 +218,20 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
             _mareaService,
             SelectedBuque?.Nombre ?? "Sin Nombre",
             mareaFull.Etapas,
-            async files => 
+            async (files, mareaId) => 
             {
                 ShowCustomDialog?.Invoke(null); // Cerrar diálogos
+
+                // Si la importación fue exitosa y tenemos ID, la activamos automáticamente
+                if (files != null && !string.IsNullOrEmpty(mareaId))
+                {
+                    await _activeMareaManager.SetActiveMareaAsync(mareaId);
+                }
                 
                 // Siempre refrescamos los detalles (por si se crearon etapas o cambió el buque)
                 await RefreshDetailsAsync();
 
-                // Si la marea que estamos editando es la activa, refrescamos el gestor global
+                // Si la marea que estamos editando es la activa (o acaba de ser activada), refrescamos el gestor global
                 if (_mareaId == _activeMareaManager.ActiveMareaId)
                 {
                     await _activeMareaManager.RefreshAsync();

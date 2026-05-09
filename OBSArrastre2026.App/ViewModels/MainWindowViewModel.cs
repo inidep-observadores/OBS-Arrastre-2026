@@ -1900,7 +1900,7 @@ public class MainWindowViewModel : ObservableObject
             _mareaService,
             "Sin Nombre",
             [],
-            async files => 
+            async (files, mareaId) => 
             {
                 ActiveDialog = null;
                 
@@ -1908,7 +1908,13 @@ public class MainWindowViewModel : ObservableObject
                 await LoadMareasAsync();
                 await LoadFilterDataAsync();
                 
-                // Si la importación pudo haber afectado a la marea activa, refrescamos todo
+                // Si la importación fue exitosa y tenemos ID, la activamos automáticamente
+                if (files != null && !string.IsNullOrEmpty(mareaId))
+                {
+                    await _activeMareaManager.SetActiveMareaAsync(mareaId);
+                }
+
+                // Si hay una marea activa (que puede ser la recién activada), refrescamos todo
                 if (!string.IsNullOrEmpty(_activeMareaManager.ActiveMareaId))
                 {
                     await _activeMareaManager.RefreshAsync();

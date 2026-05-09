@@ -22,7 +22,7 @@ public sealed class DbfFileItem : ObservableObject
 
 public sealed partial class ImportDbfViewModel : ObservableObject
 {
-    private readonly Action<IEnumerable<string>?> _onFinished;
+    private readonly Action<IEnumerable<string>?, string?> _onFinished;
     private readonly IMareaImportService _importService;
     private readonly IJsonImportService _jsonImportService;
     private readonly IMareaService _mareaService;
@@ -44,7 +44,7 @@ public sealed partial class ImportDbfViewModel : ObservableObject
         IMareaService mareaService,
         string barco,
         IEnumerable<MareaEtapa> etapas,
-        Action<IEnumerable<string>?> onFinished)
+        Action<IEnumerable<string>?, string?> onFinished)
     {
         _mareaId = mareaId;
         _mareaNum = mareaNum;
@@ -60,7 +60,7 @@ public sealed partial class ImportDbfViewModel : ObservableObject
 
         AddFilesCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(AddFiles, () => !IsBusy && (!IsMareaInputVisible || (MareaNum > 0 && Anio > 2000)));
         AcceptCommand = new AsyncRelayCommand(AcceptAsync, () => !IsBusy && SelectedFiles.Count > 0);
-        CancelCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(() => _onFinished(null), () => !IsBusy);
+        CancelCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(() => _onFinished(null, null), () => !IsBusy);
     }
 
     public bool IsBusy
@@ -251,7 +251,7 @@ public sealed partial class ImportDbfViewModel : ObservableObject
             {
                 TryOpenAuditReport(basePath);
                 if (ShowMessage != null) await ShowMessage("Errores de Validación", "Se detectaron errores graves que impiden la importación. Se ha abierto el reporte PDF con el detalle.", null, MessageDialogType.Error);
-                _onFinished(null);
+                _onFinished(null, null);
                 return;
             }
 
@@ -282,13 +282,13 @@ public sealed partial class ImportDbfViewModel : ObservableObject
                 TryOpenAuditReport(basePath);
             }
 
-            _onFinished(SelectedFiles.Select(f => f.FullPath));
+            _onFinished(SelectedFiles.Select(f => f.FullPath), _mareaId);
         }
         catch (Exception ex)
         {
             IsBusy = false;
             if (ShowMessage != null) await ShowMessage("Error de Importación", $"Ocurrió un error inesperado: {ex.Message}", ex.ToString(), MessageDialogType.Error);
-            _onFinished(null);
+            _onFinished(null, null);
         }
         finally
         {
