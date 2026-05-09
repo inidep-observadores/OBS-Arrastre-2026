@@ -22,15 +22,17 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
 
         if (marea == null) throw new Exception("Marea no encontrada");
 
+        var meta = MareaMetadataHelper.GetMetadata(marea);
+
         var report = new MareaSummaryReport
         {
             Barco = marea.Buque?.Nombre ?? "Sin Buque",
             Marea = marea.NumeroInidep.ToString(),
             Anio = marea.AnioInidep,
-            BuqueCodigo = marea.BuqueCodigo,
-            ObservadorNombre = marea.ObservadorNombre,
-            ObservadorApellido = marea.ObservadorApellido,
-            ObservadorCodigo = marea.ObservadorCodigo,
+            BuqueCodigo = meta.BuqueCodigo,
+            ObservadorNombre = meta.ObservadorNombre,
+            ObservadorApellido = meta.ObservadorApellido,
+            ObservadorCodigo = meta.ObservadorCodigo,
             FechaInicioMarea = marea.FechaInicio,
             FechaFinMarea = marea.FechaFin
         };

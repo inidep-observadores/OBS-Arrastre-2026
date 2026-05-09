@@ -225,14 +225,15 @@ public class MareaValidationService : IMareaValidationService
                 lp => (A: lp.ParamA, B: lp.ParamB)
             );
 
+        var meta = MareaMetadataHelper.GetMetadata(marea);
         var report = _validator.ValidateMarea(
             marea.Buque?.Nombre ?? "",
             marea.AnioInidep,
             marea.NumeroInidep,
-            marea.BuqueCodigo,
-            marea.ObservadorNombre,
-            marea.ObservadorApellido,
-            marea.ObservadorCodigo,
+            meta.BuqueCodigo,
+            meta.ObservadorNombre,
+            meta.ObservadorApellido,
+            meta.ObservadorCodigo,
             etapasFechas,
             capturas,
             muestrasList,

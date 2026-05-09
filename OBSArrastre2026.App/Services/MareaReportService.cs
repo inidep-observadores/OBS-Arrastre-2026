@@ -837,9 +837,10 @@ public class MareaReportService : IMareaReportService
                 }
                 pFechas.SpacingAfter(12);
 
-                doc.InsertParagraph($"Asistente Investigación Pesquera: {marea.ObservadorCodigo:N0}")
+                var meta = MareaMetadataHelper.GetMetadata(marea);
+                doc.InsertParagraph($"Asistente Investigación Pesquera: {meta.ObservadorCodigo:N0}")
                     .Font("Times New Roman").FontSize(14).Bold().SpacingAfter(12);
-                doc.InsertParagraph($"Nombre del Buque: {marea.BuqueCodigo:N0}. Eslora: — m. Potencia: — HP.")
+                doc.InsertParagraph($"Nombre del Buque: {meta.BuqueCodigo:N0}. Eslora: — m. Potencia: — HP.")
                     .Font("Times New Roman").FontSize(14).Bold().SpacingAfter(12);
                 doc.InsertParagraph("Tipo de buque: ")
                     .Font("Times New Roman").FontSize(14).Bold().SpacingAfter(15);

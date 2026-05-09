@@ -1946,15 +1946,16 @@ public class MainWindowViewModel : ObservableObject
         {
             await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
             
+            var meta = MareaMetadataHelper.GetMetadata(_activeMareaManager.ActiveMarea);
             var report = new ControlProduccionReport
             {
                 Barco = _activeMareaManager.ActiveMarea.Buque?.Nombre ?? "S/D",
                 Marea = _activeMareaManager.ActiveMarea.NumeroInidep.ToString(),
                 Anio = _activeMareaManager.ActiveMarea.AnioInidep,
-                BuqueCodigo = _activeMareaManager.ActiveMarea.BuqueCodigo,
-                ObservadorNombre = _activeMareaManager.ActiveMarea.ObservadorNombre,
-                ObservadorApellido = _activeMareaManager.ActiveMarea.ObservadorApellido,
-                ObservadorCodigo = _activeMareaManager.ActiveMarea.ObservadorCodigo,
+                BuqueCodigo = meta.BuqueCodigo,
+                ObservadorNombre = meta.ObservadorNombre,
+                ObservadorApellido = meta.ObservadorApellido,
+                ObservadorCodigo = meta.ObservadorCodigo,
                 FechaInicioMarea = _activeMareaManager.ActiveMarea.FechaInicio,
                 FechaFinMarea = _activeMareaManager.ActiveMarea.FechaFin
             };

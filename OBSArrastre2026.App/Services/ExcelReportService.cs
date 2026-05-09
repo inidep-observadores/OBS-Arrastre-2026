@@ -64,7 +64,9 @@ namespace OBSArrastre2026.App.Services
 
             worksheet.Row(1).InsertRowsAbove(3);
             
-            var buqueInfo = marea.BuqueCodigo.HasValue ? $"{marea.Buque?.Nombre} ({marea.BuqueCodigo})" : marea.Buque?.Nombre;
+            var meta = MareaMetadataHelper.GetMetadata(marea);
+            
+            var buqueInfo = meta.BuqueCodigo.HasValue ? $"{marea.Buque?.Nombre} ({meta.BuqueCodigo})" : marea.Buque?.Nombre;
             var mareaInfo = $"{buqueInfo} - Marea {marea.NumeroInidep}/{marea.AnioInidep}";
             
             var cellMarea = worksheet.Cell(1, 1);
@@ -74,9 +76,9 @@ namespace OBSArrastre2026.App.Services
             worksheet.Range(1, 1, 1, lastColumn).Merge();
 
             var obsInfo = "Observador: ";
-            if (!string.IsNullOrEmpty(marea.ObservadorApellido)) obsInfo += marea.ObservadorApellido;
-            if (!string.IsNullOrEmpty(marea.ObservadorNombre)) obsInfo += (string.IsNullOrEmpty(marea.ObservadorApellido) ? "" : ", ") + marea.ObservadorNombre;
-            if (marea.ObservadorCodigo.HasValue) obsInfo += $" ({marea.ObservadorCodigo})";
+            if (!string.IsNullOrEmpty(meta.ObservadorApellido)) obsInfo += meta.ObservadorApellido;
+            if (!string.IsNullOrEmpty(meta.ObservadorNombre)) obsInfo += (string.IsNullOrEmpty(meta.ObservadorApellido) ? "" : ", ") + meta.ObservadorNombre;
+            if (meta.ObservadorCodigo.HasValue) obsInfo += $" ({meta.ObservadorCodigo})";
             
             var cellObs = worksheet.Cell(2, 1);
             cellObs.Value = obsInfo;

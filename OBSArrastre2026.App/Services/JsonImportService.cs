@@ -245,10 +245,7 @@ public sealed class JsonImportService : IJsonImportService
                     Comentarios = mareaDto.Comentarios,
                     FechaInicio = mareaDto.FechaInicio,
                     FechaFin = mareaDto.FechaFin,
-                    BuqueCodigo = mareaDto.BuqueCodigo,
-                    ObservadorNombre = mareaDto.ObservadorNombre,
-                    ObservadorApellido = mareaDto.ObservadorApellido,
-                    ObservadorCodigo = mareaDto.ObservadorCodigo
+                    Metadata = MareaMetadataHelper.UpdateFromLegacyFields(null, mareaDto.BuqueCodigo, mareaDto.ObservadorNombre, mareaDto.ObservadorApellido, mareaDto.ObservadorCodigo)
                 };
 
                 foreach (var eDto in mareaDto.Etapas)
@@ -303,10 +300,7 @@ public sealed class JsonImportService : IJsonImportService
         marea.Comentarios = dto.Comentarios;
         marea.FechaInicio = dto.FechaInicio;
         marea.FechaFin = dto.FechaFin;
-        marea.BuqueCodigo = dto.BuqueCodigo;
-        marea.ObservadorNombre = dto.ObservadorNombre;
-        marea.ObservadorApellido = dto.ObservadorApellido;
-        marea.ObservadorCodigo = dto.ObservadorCodigo;
+        marea.Metadata = MareaMetadataHelper.UpdateFromLegacyFields(marea.Metadata, dto.BuqueCodigo, dto.ObservadorNombre, dto.ObservadorApellido, dto.ObservadorCodigo);
 
         // Reemplazar etapas (Borrado físico seguido de inserción)
         context.MareaEtapas.RemoveRange(marea.Etapas);

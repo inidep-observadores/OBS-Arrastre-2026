@@ -26,6 +26,7 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
     private string? _comentarios;
     private BuqueListItemViewModel? _selectedBuque;
     private bool _isLoading;
+    private string? _metadata;
 
     public MareaEditViewModel(
         Action onClose, 
@@ -270,6 +271,7 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
                     FechaInicio = marea.FechaInicio;
                     FechaFin = marea.FechaFin;
                     SelectedBuque = Buques.FirstOrDefault(b => b.ID == marea.BuqueID);
+                    _metadata = marea.Metadata;
 
                     Etapas.Clear();
                     foreach (var etapa in marea.Etapas.OrderBy(e => e.FechaZarpada))
@@ -341,7 +343,8 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
                     Comentarios = Comentarios,
                     FechaInicio = FechaInicio,
                     FechaFin = FechaFin,
-                    BuqueID = SelectedBuque?.ID
+                    BuqueID = SelectedBuque?.ID,
+                    Metadata = _metadata
                 };
 
                 // Añadir etapas desde los ViewModels
