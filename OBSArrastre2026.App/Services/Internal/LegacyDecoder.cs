@@ -131,9 +131,9 @@ public static class LegacyDecoder
     /// </summary>
     public static string EncodeTally(int size, int m, int h, int i, int t)
     {
-        // El formato es [Talla(2)][M(3)][H(3)][I(3)][T(3)] = 14 dígitos
-        // Aseguramos que los valores no excedan los límites de los bloques
-        string sSize = Math.Min(size, 99).ToString("D2");
+        // El formato es [Talla(2 o 3)][M(3)][H(3)][I(3)][T(3)]
+        // Talla puede ser de 2 o 3 dígitos (ej. 100 -> 15 dígitos totales)
+        string sSize = size.ToString();
         string sM = Math.Min(m, 999).ToString("D3");
         string sH = Math.Min(h, 999).ToString("D3");
         string sI = Math.Min(i, 999).ToString("D3");

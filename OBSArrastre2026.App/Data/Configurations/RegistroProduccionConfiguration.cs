@@ -21,6 +21,8 @@ public sealed class RegistroProduccionConfiguration : IEntityTypeConfiguration<R
         builder.Property(x => x.Factor).HasColumnName("factor_conversion");
         builder.Property(x => x.Operarios).HasColumnName("operarios");
         builder.Property(x => x.Kg).HasColumnName("kg");
+        builder.Property(x => x.NumeroOrden).HasColumnName("NumeroOrden").IsRequired();
+        builder.Property(x => x.EspecieOriginal).HasColumnName("EspecieOriginal");
         builder.Property(x => x.Comentarios).HasColumnName("comentarios");
 
         builder.HasOne(x => x.MareaEtapa)

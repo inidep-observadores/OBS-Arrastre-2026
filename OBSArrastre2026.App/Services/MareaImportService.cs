@@ -387,11 +387,14 @@ public class MareaImportService : IMareaImportService
             int itemIndex = 1;
             foreach (var sCode in c.EspeciesOrder)
             {
-                if (c.Especies.TryGetValue(sCode, out var val) && val > 0 && especieByCodigoMap.TryGetValue(sCode, out var especieId))
+                if (c.Especies.TryGetValue(sCode, out var val) && val > 0)
                 {
+                    especieByCodigoMap.TryGetValue(sCode, out var especieId);
+                    
                     lance.ItemsCaptura.Add(new ItemCaptura
                     {
                         EspecieID = especieId,
+                        EspecieOriginal = sCode,
                         DatoCaptura = val,
                         DatoDescarte = c.DescartesPorEspecie.TryGetValue(sCode, out var d) ? d : 0,
                         TipoDatoDescarte = report.UnidadDescarte,
@@ -428,7 +431,6 @@ public class MareaImportService : IMareaImportService
                     {
                         Lance = lance,
                         EspecieID = especieId,
-                        PesoMuestra_PesoGramos = rm.PesoMues * 1000,
                         Intervalo = rm.Intervalo,
                         // Inferir Flags
                         UnidadMedidaTalla = 1, // CM por defecto en archivos M*
@@ -438,12 +440,14 @@ public class MareaImportService : IMareaImportService
                         HayIndeterminados = rm.Tallies.Any(t => t.Indeterminate > 0) ? 1 : 0,
                         TipoMuestra = rm.TipoMuestra,
                         NumeroOrden = rm.NumeroOrden,
+                        EspecieOriginal = rm.Especie,
                         Fuente = rm.Fuente,
                         Tarte = rm.Tarte,
                         Area = rm.Area,
                         FactPond = rm.FactPond,
                         PrimTalla = rm.PrimTalla,
-                        UltTalla = rm.UltTalla
+                        UltTalla = rm.UltTalla,
+                        PesoMuestra_PesoGramos = rm.PesoMues * 1000.0
                     };
 
                     int totalEjemplares = rm.Tallies.Sum(t => t.Total);
@@ -494,7 +498,7 @@ public class MareaImportService : IMareaImportService
                     Edad = rs.Edad,
                     LargoTotalMm = rs.LargoTot,
                     LargoEstandarMm = rs.LargoSta,
-                    PesoTotalGramos = (int)(rs.PesoTot * 10), // Guardar en gramos (DBF tiene decigramos?)
+                    PesoTotalGramos = rs.PesoTot, // Guardar en gramos directamente
                     Comentarios = rs.Comentario,
                     
                     // Campos de Integridad 1:1
@@ -505,7 +509,8 @@ public class MareaImportService : IMareaImportService
                     PesoVac = rs.PesoVac,
                     PesoGon = rs.PesoGon,
                     PesoHig = rs.PesoHig,
-                    RTotal = rs.RTotal
+                    RTotal = rs.RTotal,
+                    EspecieOriginal = rs.Especie
                 };
                 dbContext.ItemsSubmuestras.Add(itemSub);
             }
@@ -620,6 +625,7 @@ public class MareaImportService : IMareaImportService
                         IdProducto = productGuid,
                         Categoria = rp.Categoria,
                         EspecieId = speciesId,
+                        EspecieOriginal = rp.Especie,
                         Factor = rp.Factor,
                         Operarios = rp.Operarios,
                         Kg = rp.Kilos,

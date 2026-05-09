@@ -80,14 +80,14 @@ public class LegacyMuestra
     public DateTime Fecha { get; set; }
     public string Especie { get; set; } = string.Empty;
     public string CodEspec { get; set; } = string.Empty;
-    public double Fuente { get; set; }
-    public double Tarte { get; set; }
-    public double Area { get; set; }
-    public int PrimTalla { get; set; }
-    public int UltTalla { get; set; }
-    public int Intervalo { get; set; }
+    public double? Fuente { get; set; }
+    public double? Tarte { get; set; }
+    public double? Area { get; set; }
+    public int? PrimTalla { get; set; }
+    public int? UltTalla { get; set; }
+    public double? Intervalo { get; set; }
     public double PesoMues { get; set; }
-    public double FactPond { get; set; }
+    public double? FactPond { get; set; }
     public int TipoMuestra { get; set; } = 1; // 1 = Estandar, 2 = Descarte
     
     // Tallas empaquetadas o decodificadas
@@ -104,9 +104,9 @@ public class LegacySubmuestra
     public double Marea { get; set; }
     public double Lance { get; set; }
     public DateTime Fecha { get; set; }
-    public double Tarte { get; set; }
-    public double Fuente { get; set; }
-    public double Area { get; set; }
+    public double? Tarte { get; set; }
+    public double? Fuente { get; set; }
+    public double? Area { get; set; }
     public string Especie { get; set; } = string.Empty;
     public int NEjemplar { get; set; }
     public int LargoTot { get; set; }
@@ -177,7 +177,7 @@ public class LegacyProduccion
     public string Especie { get; set; } = string.Empty;
     public string Producto { get; set; } = string.Empty;
     public string Categoria { get; set; } = string.Empty;
-    public int Operarios { get; set; }
+    public int? Operarios { get; set; }
     public double Factor { get; set; }
     public double Kilos { get; set; }
 }

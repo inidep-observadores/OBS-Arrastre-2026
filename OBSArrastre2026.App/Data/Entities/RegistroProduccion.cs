@@ -15,6 +15,7 @@ public sealed class RegistroProduccion
     public string? Categoria { get; set; }
     
     public string? EspecieId { get; set; }
+    public string? EspecieOriginal { get; set; }
     public Especie? Especie { get; set; }
 
     public double? Factor { get; set; }

@@ -21,6 +21,7 @@ public sealed class ItemSubmuestra
 
     // Campos de Integridad 1:1
     public int NumeroOrden { get; set; }
+    public string? EspecieOriginal { get; set; }
     public double? Tarte { get; set; }
     public double? Fuente { get; set; }
     public double? Area { get; set; }

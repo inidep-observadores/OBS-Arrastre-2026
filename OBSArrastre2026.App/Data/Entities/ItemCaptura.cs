@@ -11,6 +11,7 @@ public sealed class ItemCaptura
     public Lance? Lance { get; set; }
 
     public string? EspecieID { get; set; }
+    public string? EspecieOriginal { get; set; }
     public Especie? Especie { get; set; }
 
     public int NumeroOrden { get; set; }

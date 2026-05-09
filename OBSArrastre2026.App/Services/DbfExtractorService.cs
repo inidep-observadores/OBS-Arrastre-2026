@@ -25,11 +25,11 @@ public sealed class DbfExtractorService : IDbfExtractorService
     {
         try
         {
-            if (!File.Exists(dbfPath)) return Encoding.GetEncoding(1252);
-
+            if (!File.Exists(dbfPath)) return Encoding.GetEncoding(437);
+            
             using (var stream = File.OpenRead(dbfPath))
             {
-                if (stream.Length < 30) return Encoding.GetEncoding(1252);
+                if (stream.Length < 30) return Encoding.GetEncoding(437);
 
                 stream.Position = 29;
                 int cpByte = stream.ReadByte();
@@ -59,7 +59,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
                     0xC9 => Encoding.GetEncoding(1251), // Windows Russian
                     0xCA => Encoding.GetEncoding(1254), // Windows Turkish
                     0xCB => Encoding.GetEncoding(1253), // Windows Greek
-                    _ => Encoding.GetEncoding(1252) // Default conservador
+                    _ => Encoding.GetEncoding(437) // Default legacy (DOS)
                 };
             }
         }
@@ -301,14 +301,14 @@ public sealed class DbfExtractorService : IDbfExtractorService
                 Fecha = GetDateTime(reader, colMap, "FECHA") ?? DateTime.MinValue,
                 Especie = GetString(reader, colMap, "ESPECIE"),
                 CodEspec = ((long)GetDouble(reader, colMap, "COD_ESPEC")).ToString(),
-                Fuente = GetDouble(reader, colMap, "FUENTE"),
-                Tarte = GetDouble(reader, colMap, "TARTE"),
-                Area = GetDouble(reader, colMap, "AREA"),
-                PrimTalla = (int)GetDouble(reader, colMap, "PRIM_TALLA"),
-                UltTalla = (int)GetDouble(reader, colMap, "ULT_TALLA"),
-                Intervalo = (int)GetDouble(reader, colMap, "INTERVALO"),
+                Fuente = GetDoubleNullable(reader, colMap, "FUENTE"),
+                Tarte = GetDoubleNullable(reader, colMap, "TARTE"),
+                Area = GetDoubleNullable(reader, colMap, "AREA"),
+                PrimTalla = (int?)GetDoubleNullable(reader, colMap, "PRIM_TALLA"),
+                UltTalla = (int?)GetDoubleNullable(reader, colMap, "ULT_TALLA"),
+                Intervalo = GetDoubleNullable(reader, colMap, "INTERVALO"),
                 PesoMues = GetDouble(reader, colMap, "PESO_MUES"),
-                FactPond = GetDouble(reader, colMap, "FACT_POND")
+                FactPond = GetDoubleNullable(reader, colMap, "FACT_POND")
             };
 
             for (int i = 1; i <= 90; i++)
@@ -354,9 +354,9 @@ public sealed class DbfExtractorService : IDbfExtractorService
                 Marea = GetDouble(reader, colMap, "MAREA"),
                 Lance = GetDouble(reader, colMap, "LANCE"),
                 Fecha = GetDateTime(reader, colMap, "FECHA") ?? DateTime.MinValue,
-                Tarte = GetDouble(reader, colMap, "TARTE"),
-                Fuente = GetDouble(reader, colMap, "FUENTE"),
-                Area = GetDouble(reader, colMap, "AREA"),
+                Tarte = GetDoubleNullable(reader, colMap, "TARTE"),
+                Fuente = GetDoubleNullable(reader, colMap, "FUENTE"),
+                Area = GetDoubleNullable(reader, colMap, "AREA"),
                 Especie = GetString(reader, colMap, "ESPECIE"),
                 NEjemplar = (int)GetDouble(reader, colMap, "NRO_EJEMP"),
                 LargoTot = (int)GetDouble(reader, colMap, "LARGO_TOT"),
@@ -464,7 +464,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
                 Especie = GetString(reader, colMap, "ESPECIE"),
                 Producto = GetString(reader, colMap, "PRODUCTO"),
                 Categoria = GetString(reader, colMap, "CATEGORIA"),
-                Operarios = (int)GetDouble(reader, colMap, "OPERARIOS"),
+                Operarios = (int?)GetDoubleNullable(reader, colMap, "OPERARIOS"),
                 Factor = GetDouble(reader, colMap, "FACTOR"),
                 Kilos = GetDouble(reader, colMap, "KILOS")
             });

@@ -143,6 +143,21 @@ public class IntegrityAuditTests
             if (pMarea == null) throw new Exception("Import failed, marea not found in DB");
 
             await exporter.ExportMareaToDbfAsync(pMarea, SalidaPath);
+
+            // Diagnóstico DB
+            var samples = await db.Muestras.ToListAsync();
+            Console.WriteLine($"[DB DEBUG] Muestras en DB: {samples.Count}");
+            foreach(var s in samples.Take(2)) Console.WriteLine($"[DB DEBUG] Muestra: {s.EspecieOriginal} | Fuente: {s.Fuente}");
+            
+            var prods = await db.RegistrosProduccion.ToListAsync();
+            Console.WriteLine($"[DB DEBUG] Producciones en DB: {prods.Count}");
+            foreach(var p in prods.Take(2)) 
+            {
+                string hex = p.EspecieOriginal != null ? string.Join(" ", Encoding.GetEncoding(437).GetBytes(p.EspecieOriginal).Select(b => b.ToString("X2"))) : "NULL";
+                Console.WriteLine($"[DB DEBUG] Produccion: '{p.EspecieOriginal}' (Hex CP437: {hex}) | Kg: {p.Kg}");
+            }
+
+            await exporter.ExportMareaToDbfAsync(pMarea, SalidaPath);
         }
 
         // 5. Audit
@@ -183,8 +198,8 @@ public class IntegrityAuditTests
         using var streamA = File.OpenRead(fileA);
         using var streamB = File.OpenRead(fileB);
 
-        var readerA = new DBFReader(streamA) { CharEncoding = Encoding.GetEncoding(850) };
-        var readerB = new DBFReader(streamB) { CharEncoding = Encoding.GetEncoding(850) };
+        var readerA = new DBFReader(streamA) { CharEncoding = Encoding.GetEncoding(437) };
+        var readerB = new DBFReader(streamB) { CharEncoding = Encoding.GetEncoding(437) };
 
         bool match = true;
 
@@ -218,7 +233,9 @@ public class IntegrityAuditTests
 
                 if (!AreValuesEqual(valA, valB))
                 {
-                    _output.WriteLine($"[FAIL] Value mismatch in {Path.GetFileName(fileA)} at Row {r}, Field {readerA.Fields[f].Name}: Entrada='{valA}' vs Salida='{valB}'");
+                    string hexA = valA is string sa ? string.Join(" ", Encoding.GetEncoding(437).GetBytes(sa).Select(b => b.ToString("X2"))) : "N/A";
+                    string hexB = valB is string sb ? string.Join(" ", Encoding.GetEncoding(437).GetBytes(sb).Select(b => b.ToString("X2"))) : "N/A";
+                    _output.WriteLine($"[FAIL] Value mismatch in {Path.GetFileName(fileA)} at Row {r}, Field {readerA.Fields[f].Name}: Entrada='{valA}' (Hex: {hexA}) vs Salida='{valB}' (Hex: {hexB})");
                     errors++;
                     if (errors > 5) {
                         _output.WriteLine("... too many errors, aborting file comparison.");

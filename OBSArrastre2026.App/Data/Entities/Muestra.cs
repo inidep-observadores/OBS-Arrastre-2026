@@ -11,10 +11,11 @@ public sealed class Muestra
     public Especie? Especie { get; set; }
 
     public int NumeroOrden { get; set; }
+    public string? EspecieOriginal { get; set; }
     public string? Comentarios { get; set; }
 
     public int EjemplaresPorKg { get; set; }
-    public double Intervalo { get; set; }
+    public double? Intervalo { get; set; }
     public int UnidadMedidaTalla { get; set; }
     public int ModoMedicionTalla { get; set; }
     public int Origen { get; set; }

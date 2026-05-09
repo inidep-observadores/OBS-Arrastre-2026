@@ -93,7 +93,7 @@ public sealed class DbfExporterService : IDbfExporterService
     private async Task ExportCapturasAsync(Marea marea, string barco, string suffix, string path)
     {
         string fileName = Path.Combine(path, $"C{suffix}.DBF");
-        var encoding = Encoding.GetEncoding(850);
+        var encoding = Encoding.GetEncoding(437);
 
         using var stream = File.Open(fileName, FileMode.Create, FileAccess.Write);
         var writer = new DBFWriter(stream) { CharEncoding = encoding };
@@ -206,9 +206,9 @@ public sealed class DbfExporterService : IDbfExporterService
                     if (i < items.Count)
                     {
                         var item = items[i];
-                        row[idx++] = double.TryParse(item.Especie?.CodigoInidep, out double spCode) ? spCode : 0.0;
-                        row[idx++] = item.CapturaTotalKgCalculado;
-                        row[idx++] = item.PesoDescarteCalculado;
+                        row[idx++] = double.TryParse(item.Especie?.CodigoInidep ?? item.EspecieOriginal, out double spCode) ? spCode : null;
+                        row[idx++] = item.DatoCaptura;
+                        row[idx++] = item.DatoDescarte;
                     }
                     else
                     {
@@ -228,7 +228,7 @@ public sealed class DbfExporterService : IDbfExporterService
     private async Task ExportProduccionAsync(Marea marea, string barco, string suffix, string path)
     {
         string fileName = Path.Combine(path, $"P{suffix}.DBF");
-        var encoding = Encoding.GetEncoding(850);
+        var encoding = Encoding.GetEncoding(437);
 
         using var stream = File.Open(fileName, FileMode.Create, FileAccess.Write);
         var writer = new DBFWriter(stream) { CharEncoding = encoding };
@@ -257,12 +257,12 @@ public sealed class DbfExporterService : IDbfExporterService
                 row[idx++] = barco;
                 row[idx++] = (double)marea.NumeroInidep;
                 row[idx++] = DateTime.Parse(p.Fecha);
-                row[idx++] = p.Especie?.NombreVulgar ?? "";
+                row[idx++] = p.EspecieOriginal ?? p.Especie?.NombreVulgar ?? "";
                 row[idx++] = p.Producto?.Codigo ?? "";
                 row[idx++] = p.Categoria ?? "";
-                row[idx++] = p.Operarios != null ? (double)p.Operarios : null;
-                row[idx++] = p.Factor;
-                row[idx++] = p.Kg;
+                row[idx++] = p.Operarios != null ? (double)p.Operarios : DBNull.Value;
+                row[idx++] = p.Factor != null ? (double)p.Factor : DBNull.Value;
+                row[idx++] = p.Kg != null ? (double)p.Kg : DBNull.Value;
 
                 writer.WriteRecord(row);
             }
@@ -273,7 +273,7 @@ public sealed class DbfExporterService : IDbfExporterService
 
     private async Task ExportMuestrasYSasyn(Marea marea, string barco, string suffix, string path, IProgress<double>? progress = null)
     {
-        var encoding = Encoding.GetEncoding(850);
+        var encoding = Encoding.GetEncoding(437);
 
         string mPath = Path.Combine(path, $"M{suffix}.DBF");
         string mdPath = Path.Combine(path, $"MD{suffix}.DBF");
@@ -350,137 +350,148 @@ public sealed class DbfExporterService : IDbfExporterService
         };
         sWriter.Fields = sFields.ToArray();
 
-        foreach (var etapa in marea.Etapas)
+        var todasMuestras = marea.Etapas
+            .SelectMany(e => e.Lances)
+            .SelectMany(l => l.Muestras)
+            .OrderBy(m => m.NumeroOrden)
+            .ToList();
+
+        foreach (var m in todasMuestras)
         {
-            foreach (var lance in etapa.Lances.OrderBy(l => l.NroLance))
+            var lance = m.Lance;
+            if (lance == null) continue;
+
+            var mRow = new object[mFields.Count];
+            int mIdx = 0;
+            mRow[mIdx++] = barco;
+            mRow[mIdx++] = DateTime.Parse(lance.Fecha);
+            mRow[mIdx++] = (double)marea.NumeroInidep;
+            mRow[mIdx++] = (double)lance.NroLance;
+            mRow[mIdx++] = m.EspecieOriginal ?? m.Especie?.NombreVulgar ?? "";
+            mRow[mIdx++] = double.TryParse(m.Especie?.CodigoInidep ?? m.EspecieOriginal, out var c) ? c : null;
+            mRow[mIdx++] = (object)m.Fuente ?? DBNull.Value;
+            mRow[mIdx++] = (object)m.Tarte ?? DBNull.Value;
+            mRow[mIdx++] = (object)m.Area ?? DBNull.Value;
+            mRow[mIdx++] = m.PrimTalla != null ? (double)m.PrimTalla : DBNull.Value;
+            mRow[mIdx++] = m.UltTalla != null ? (double)m.UltTalla : DBNull.Value;
+            mRow[mIdx++] = (object)m.Intervalo ?? DBNull.Value;
+            mRow[mIdx++] = (m.PesoMuestra_PesoGramos ?? 0) / 1000.0; // Kg
+            mRow[mIdx++] = (object)m.FactPond ?? DBNull.Value;
+
+            int baseTalla = m.PrimTalla ?? (m.FrecuenciasTallas.Any() ? (int)m.FrecuenciasTallas.Min(f => f.Talla) : 0);
+            int interval = (int)m.Intervalo;
+            if (interval <= 0) interval = 1;
+
+            var freqMap = m.FrecuenciasTallas.ToDictionary(f => (int)f.Talla, f => f);
+            int prim = m.PrimTalla ?? baseTalla;
+            int ult = m.UltTalla ?? (m.FrecuenciasTallas.Any() ? (int)m.FrecuenciasTallas.Max(f => f.Talla) : prim);
+
+            for (int i = 0; i < 90; i++)
             {
-                foreach (var m in lance.Muestras.OrderBy(mu => mu.NumeroOrden))
+                int currentTalla = baseTalla + (i * interval);
+                if (freqMap.TryGetValue(currentTalla, out var ft))
                 {
-                    var mRow = new object[mFields.Count];
-                    int mIdx = 0;
-                    mRow[mIdx++] = barco;
-                    mRow[mIdx++] = DateTime.Parse(lance.Fecha);
-                    mRow[mIdx++] = (double)marea.NumeroInidep;
-                    mRow[mIdx++] = (double)lance.NroLance;
-                    mRow[mIdx++] = m.Especie?.NombreVulgar ?? "";
-                    mRow[mIdx++] = double.TryParse(m.Especie?.CodigoInidep, out var c) ? c : null;
-                    mRow[mIdx++] = m.Fuente;
-                    mRow[mIdx++] = m.Tarte;
-                    mRow[mIdx++] = m.Area;
-                    mRow[mIdx++] = (double?)m.PrimTalla;
-                    mRow[mIdx++] = (double?)m.UltTalla;
-                    mRow[mIdx++] = (double)m.Intervalo;
-                    mRow[mIdx++] = (m.PesoMuestra_PesoGramos ?? 0) / 1000.0;
-                    mRow[mIdx++] = m.FactPond;
-
-                    int baseTalla = m.PrimTalla ?? (m.FrecuenciasTallas.Any() ? (int)m.FrecuenciasTallas.Min(f => f.Talla) : 0);
-                    int interval = (int)m.Intervalo;
-                    if (interval <= 0) interval = 1;
-
-                    var freqMap = m.FrecuenciasTallas.ToDictionary(f => (int)f.Talla, f => f);
-                    for (int i = 0; i < 90; i++)
-                    {
-                        int currentTalla = baseTalla + (i * interval);
-                        if (freqMap.TryGetValue(currentTalla, out var ft))
-                        {
-                            mRow[mIdx++] = double.Parse(LegacyDecoder.EncodeTally((int)ft.Talla, ft.NroMachos, ft.NroHembras, ft.NroIndeterminados, ft.NroTotal));
-                        }
-                        else
-                        {
-                            mRow[mIdx++] = null;
-                        }
-                    }
-                    if (m.TipoMuestra == 2 && mdWriter != null)
-                        mdWriter.WriteRecord(mRow);
-                    else
-                        mWriter.WriteRecord(mRow);
-
-                    var freqs = m.FrecuenciasTallas.OrderBy(f => f.Talla).ToList();
-                    if (freqs.Count > 90)
-                    {
-                        if (xWriter == null)
-                        {
-                            xStream = File.Open(xPath, FileMode.Create, FileAccess.Write);
-                            xWriter = new DBFWriter(xStream) { CharEncoding = encoding };
-                            xWriter.Fields = xFields.ToArray();
-                        }
-                        var xRow = new object[xFields.Count];
-                        Array.Copy(mRow, xRow, 14);
-                        int xIdx = 14;
-                        for (int i = 90; i < 150; i++)
-                        {
-                            if (i < freqs.Count)
-                            {
-                                var f = freqs[i];
-                                xRow[xIdx++] = double.Parse(LegacyDecoder.EncodeTally((int)f.Talla, f.NroMachos, f.NroHembras, f.NroIndeterminados, f.NroTotal));
-                            }
-                            else xRow[xIdx++] = null;
-                        }
-                        xWriter.WriteRecord(xRow);
-                    }
-
-                    foreach (var s in m.ItemsSubmuestras.OrderBy(x => x.NumeroOrden))
-                    {
-                        var sRow = new object[sFields.Count];
-                        int sIdx = 0;
-                        sRow[sIdx++] = barco;
-                        sRow[sIdx++] = (double)marea.NumeroInidep;
-                        sRow[sIdx++] = (double)lance.NroLance;
-                        sRow[sIdx++] = DateTime.Parse(lance.Fecha);
-                        sRow[sIdx++] = s.Tarte;
-                        sRow[sIdx++] = s.Fuente;
-                        sRow[sIdx++] = s.Area;
-                        sRow[sIdx++] = m.Especie?.NombreVulgar ?? "";
-                        sRow[sIdx++] = (double)s.NroEjemplar;
-                        sRow[sIdx++] = s.LargoTotalMm != null ? (double)s.LargoTotalMm : null;
-                        sRow[sIdx++] = s.LargoEstandarMm != null ? (double)s.LargoEstandarMm : null;
-                        sRow[sIdx++] = s.PesoTotalGramos != null ? Math.Round(s.PesoTotalGramos.Value / 10.0, 1) : null;
-                        sRow[sIdx++] = s.PesoVac;
-                        sRow[sIdx++] = s.Sexo != null ? (double)s.Sexo : null;
-                        sRow[sIdx++] = s.Estadio != null ? (double)s.Estadio : null;
-                        sRow[sIdx++] = s.PesoGon;
-                        sRow[sIdx++] = s.PesoHig;
-                        sRow[sIdx++] = s.ReplecionGastrica != null ? (double)s.ReplecionGastrica : null;
-                        sRow[sIdx++] = s.Comentarios ?? "";
-                        sRow[sIdx++] = s.Edad;
-                        sRow[sIdx++] = s.RTotal;
-                        sWriter.WriteRecord(sRow);
-                    }
-
-                    if (m.Especie?.CodigoInidep == "5139030101") // Langostino
-                    {
-                        if (lWriter == null)
-                        {
-                            lStream = File.Open(lPath, FileMode.Create, FileAccess.Write);
-                            lWriter = new DBFWriter(lStream) { CharEncoding = encoding };
-                            var lFields = new List<DBFField>
-                            {
-                                new DBFField("BARCO", NativeDbType.Char, 20),
-                                new DBFField("MAREA", NativeDbType.Numeric, 3, 0),
-                                new DBFField("LANCE", NativeDbType.Numeric, 3, 0),
-                                new DBFField("FECHA", NativeDbType.Date)
-                            };
-                            for (int i = 1; i <= 70; i++) lFields.Add(new DBFField($"TALLA_{i}", NativeDbType.Numeric, 9, 0));
-                            lWriter.Fields = lFields.ToArray();
-                        }
-                        var lRow = new object[lWriter.Fields.Length];
-                        int lIdx = 0;
-                        lRow[lIdx++] = barco;
-                        lRow[lIdx++] = (double)marea.NumeroInidep;
-                        lRow[lIdx++] = (double)lance.NroLance;
-                        lRow[lIdx++] = DateTime.Parse(lance.Fecha);
-                        for (int i = 0; i < 70; i++)
-                        {
-                            if (i < freqs.Count)
-                            {
-                                var f = freqs[i];
-                                lRow[lIdx++] = LegacyDecoder.EncodeMatureTally(f.NroLangostinosMachoMaduros, f.NroLangostinosHembraMaduras, f.NroLangostinosHembraImpregnadas);
-                            }
-                            else lRow[lIdx++] = null;
-                        }
-                        lWriter.WriteRecord(lRow);
-                    }
+                    mRow[mIdx++] = double.Parse(LegacyDecoder.EncodeTally((int)ft.Talla, ft.NroMachos, ft.NroHembras, ft.NroIndeterminados, ft.NroTotal));
                 }
+                else if (currentTalla >= prim && currentTalla <= ult)
+                {
+                    // Rellenar con ceros empaquetados si está en el rango original
+                    mRow[mIdx++] = double.Parse(LegacyDecoder.EncodeTally(currentTalla, 0, 0, 0, 0));
+                }
+                else
+                {
+                    mRow[mIdx++] = null;
+                }
+            }
+            if (m.TipoMuestra == 2 && mdWriter != null)
+                mdWriter.WriteRecord(mRow);
+            else
+                mWriter.WriteRecord(mRow);
+
+            var freqs = m.FrecuenciasTallas.OrderBy(f => f.Talla).ToList();
+            if (freqs.Count > 90)
+            {
+                if (xWriter == null)
+                {
+                    xStream = File.Open(xPath, FileMode.Create, FileAccess.Write);
+                    xWriter = new DBFWriter(xStream) { CharEncoding = encoding };
+                    xWriter.Fields = xFields.ToArray();
+                }
+                var xRow = new object[xFields.Count];
+                Array.Copy(mRow, xRow, 14);
+                int xIdx = 14;
+                for (int i = 90; i < 150; i++)
+                {
+                    if (i < freqs.Count)
+                    {
+                        var f = freqs[i];
+                        xRow[xIdx++] = double.Parse(LegacyDecoder.EncodeTally((int)f.Talla, f.NroMachos, f.NroHembras, f.NroIndeterminados, f.NroTotal));
+                    }
+                    else xRow[xIdx++] = null;
+                }
+                xWriter.WriteRecord(xRow);
+            }
+
+            foreach (var s in m.ItemsSubmuestras.OrderBy(x => x.NumeroOrden))
+            {
+                var sRow = new object[sFields.Count];
+                int sIdx = 0;
+                sRow[sIdx++] = barco;
+                sRow[sIdx++] = (double)marea.NumeroInidep;
+                sRow[sIdx++] = (double)lance.NroLance;
+                sRow[sIdx++] = DateTime.Parse(lance.Fecha);
+                sRow[sIdx++] = (object)s.Tarte ?? DBNull.Value;
+                sRow[sIdx++] = (object)s.Fuente ?? DBNull.Value;
+                sRow[sIdx++] = (object)s.Area ?? DBNull.Value;
+                sRow[sIdx++] = s.EspecieOriginal ?? m.Especie?.NombreVulgar ?? "";
+                sRow[sIdx++] = (double)s.NroEjemplar;
+                sRow[sIdx++] = s.LargoTotalMm != null ? (double)s.LargoTotalMm : null;
+                sRow[sIdx++] = s.LargoEstandarMm != null ? (double)s.LargoEstandarMm : null;
+                sRow[sIdx++] = s.PesoTotalGramos != null ? Math.Round(s.PesoTotalGramos.Value, 1) : null;
+                sRow[sIdx++] = s.PesoVac != null ? (double)s.PesoVac : DBNull.Value;
+                sRow[sIdx++] = s.Sexo != null ? (double)s.Sexo : DBNull.Value;
+                sRow[sIdx++] = s.Estadio != null ? (double)s.Estadio : DBNull.Value;
+                sRow[sIdx++] = s.PesoGon != null ? (double)s.PesoGon : DBNull.Value;
+                sRow[sIdx++] = s.PesoHig != null ? (double)s.PesoHig : DBNull.Value;
+                sRow[sIdx++] = s.ReplecionGastrica != null ? (double)s.ReplecionGastrica : DBNull.Value;
+                sRow[sIdx++] = s.Comentarios ?? "";
+                sRow[sIdx++] = s.Edad;
+                sRow[sIdx++] = s.RTotal;
+                sWriter.WriteRecord(sRow);
+            }
+
+            if (m.Especie?.CodigoInidep == "5139030101") // Langostino
+            {
+                if (lWriter == null)
+                {
+                    lStream = File.Open(lPath, FileMode.Create, FileAccess.Write);
+                    lWriter = new DBFWriter(lStream) { CharEncoding = encoding };
+                    var lFields = new List<DBFField>
+                    {
+                        new DBFField("BARCO", NativeDbType.Char, 20),
+                        new DBFField("MAREA", NativeDbType.Numeric, 3, 0),
+                        new DBFField("LANCE", NativeDbType.Numeric, 3, 0),
+                        new DBFField("FECHA", NativeDbType.Date)
+                    };
+                    for (int i = 1; i <= 70; i++) lFields.Add(new DBFField($"TALLA_{i}", NativeDbType.Numeric, 9, 0));
+                    lWriter.Fields = lFields.ToArray();
+                }
+                var lRow = new object[lWriter.Fields.Length];
+                int lIdx = 0;
+                lRow[lIdx++] = barco;
+                lRow[lIdx++] = (double)marea.NumeroInidep;
+                lRow[lIdx++] = (double)lance.NroLance;
+                lRow[lIdx++] = DateTime.Parse(lance.Fecha);
+                for (int i = 0; i < 70; i++)
+                {
+                    if (i < freqs.Count)
+                    {
+                        var f = freqs[i];
+                        lRow[lIdx++] = LegacyDecoder.EncodeMatureTally(f.NroLangostinosMachoMaduros, f.NroLangostinosHembraMaduras, f.NroLangostinosHembraImpregnadas);
+                    }
+                    else lRow[lIdx++] = null;
+                }
+                lWriter.WriteRecord(lRow);
             }
         }
 

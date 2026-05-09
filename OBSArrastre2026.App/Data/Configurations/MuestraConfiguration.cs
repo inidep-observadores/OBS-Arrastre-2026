@@ -24,6 +24,14 @@ public sealed class MuestraConfiguration : IEntityTypeConfiguration<Muestra>
         builder.Property(x => x.DiscriminaSexo).HasColumnName("DiscriminaSexo").IsRequired();
         builder.Property(x => x.HayIndeterminados).HasColumnName("HayIndeterminados").IsRequired();
         builder.Property(x => x.PesoMuestra_PesoGramos).HasColumnName("PesoMuestra_PesoGramos");
+        builder.Property(x => x.NumeroOrden).HasColumnName("NumeroOrden").IsRequired();
+        builder.Property(x => x.EspecieOriginal).HasColumnName("EspecieOriginal");
+        builder.Property(x => x.Fuente).HasColumnName("Fuente");
+        builder.Property(x => x.Tarte).HasColumnName("Tarte");
+        builder.Property(x => x.Area).HasColumnName("Area");
+        builder.Property(x => x.FactPond).HasColumnName("FactPond");
+        builder.Property(x => x.PrimTalla).HasColumnName("PrimTalla");
+        builder.Property(x => x.UltTalla).HasColumnName("UltTalla");
 
         builder.HasOne(x => x.Lance)
             .WithMany(l => l.Muestras)
