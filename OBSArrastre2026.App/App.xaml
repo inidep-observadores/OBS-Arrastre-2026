@@ -1243,6 +1243,117 @@
             <Setter Property="Margin" Value="12,0,0,0" />
         </Style>
 
+        <!-- Diálogo de Exportación DBF -->
+        <DataTemplate DataType="{x:Type vm:ExportarDbfViewModel}">
+            <Border Width="500" 
+                    Background="{DynamicResource CardBackgroundBrush}"
+                    BorderBrush="{DynamicResource CardBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="16"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="40" ShadowDepth="10" Opacity="0.15" Color="Black"/>
+                </Border.Effect>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="24,20" CornerRadius="16,16,0,0">
+                        <StackPanel>
+                            <TextBlock Text="EXPORTAR DATOS A DBF" 
+                                       FontSize="11" FontWeight="Bold" 
+                                       Foreground="{DynamicResource AccentBrush}" />
+                            <TextBlock Text="Formato Legado INIDEP" 
+                                       FontSize="18" FontWeight="SemiBold" 
+                                       Foreground="{DynamicResource PrimaryTextBrush}"
+                                       Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="1" Padding="24,30">
+                        <StackPanel>
+                            <TextBlock Text="Se generarán los archivos C, P, T, M, S, L y X compatibles con los sistemas Clipper del INIDEP. Los archivos se codificarán en CP850." 
+                                        Foreground="{DynamicResource SecondaryTextBrush}" 
+                                        TextWrapping="Wrap"
+                                        FontSize="13"
+                                        LineHeight="20"
+                                        Margin="0,0,0,24"/>
+                            
+                            <Label Content="Carpeta de destino" Style="{StaticResource FormLabelStyle}" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding ExportPath}" 
+                                         Style="{StaticResource PremiumTextBoxStyle}" 
+                                         IsReadOnly="True"
+                                         Tag="Seleccione una carpeta..."
+                                         Height="40" />
+                                <Button Grid.Column="1" 
+                                        Command="{Binding BrowseCommand}"
+                                        Content="Examinar..." 
+                                        Style="{StaticResource ThemeButtonStyle}"
+                                        Margin="8,0,0,0"
+                                        Padding="12,0" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="2" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="24,20" CornerRadius="0,0,16,16">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button Content="CERRAR" 
+                                    Command="{Binding CloseCommand}"
+                                    Style="{StaticResource ThemeButtonStyle}"
+                                    Height="44"
+                                    Margin="0,0,8,0"/>
+                            <Button Grid.Column="1"
+                                    Content="EXPORTAR" 
+                                    Command="{Binding AcceptCommand}"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Height="44"
+                                    Margin="8,0,0,0"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Overlay de carga -->
+                    <Border Grid.RowSpan="3" Background="#AA000000" CornerRadius="16"
+                            Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Border Background="{DynamicResource CardBackgroundBrush}" 
+                                Padding="32,24" 
+                                CornerRadius="12" 
+                                VerticalAlignment="Center" 
+                                HorizontalAlignment="Center">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="30" Opacity="0.3" ShadowDepth="0" Color="Black"/>
+                            </Border.Effect>
+                            <StackPanel>
+                                <ProgressBar IsIndeterminate="True" Width="220" Height="4" 
+                                             Foreground="{DynamicResource AccentBrush}" 
+                                             Background="{DynamicResource CardBorderBrush}" 
+                                             BorderThickness="0"/>
+                                <TextBlock Text="Exportando datos a DBF..." 
+                                           Foreground="{DynamicResource PrimaryTextBrush}" 
+                                           Margin="0,16,0,0" 
+                                           HorizontalAlignment="Center" 
+                                           FontWeight="SemiBold"
+                                           FontSize="14"/>
+                            </StackPanel>
+                        </Border>
+                    </Border>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
     </Application.Resources>
 
 </Application>

@@ -11,5 +11,6 @@ public enum NavigationSection
     ReemplazoEspecie,
     ConfigurarUnidadDescarte,
     Separator,
-    GenerarRecursosInforme
+    GenerarRecursosInforme,
+    ExportarDbf
 }

@@ -72,6 +72,7 @@ public partial class App : Application
                 services.AddSingleton<IMapRenderingService, MapRenderingService>();
                 services.AddSingleton<IExcelReportService, ExcelReportService>();
                 services.AddSingleton<IMareaSummaryService, MareaSummaryService>();
+                services.AddSingleton<IDbfExporterService, DbfExporterService>();
 
                 // Validación y ViewModels
                 services.AddValidatorsFromAssemblyContaining<App>();

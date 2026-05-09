@@ -31,6 +31,20 @@ public static class LegacyDecoder
     }
 
     /// <summary>
+    /// Codifica coordenadas decimales al formato DD.mmd (Grados.MinutosDécimas).
+    /// </summary>
+    public static double EncodeCoordinate(double decimalDegrees)
+    {
+        double val = Math.Abs(decimalDegrees);
+        int degrees = (int)Math.Truncate(val);
+        double minutesPart = (val - degrees) * 60.0;
+        
+        // Formato DD.mmd -> Grados + (Minutos / 100)
+        // Ejemplo: 40.735 -> 40 grados, 44.1 minutos -> 40.441
+        return degrees + (Math.Round(minutesPart, 1) / 100.0);
+    }
+
+    /// <summary>
     /// Decodifica horas en formato HH.mm (Horas.Minutos).
     /// </summary>
     public static TimeSpan DecodeTime(double? value)
@@ -46,6 +60,14 @@ public static class LegacyDecoder
         if (minutes >= 60) minutes = 59;
 
         return new TimeSpan(hours, minutes, 0);
+    }
+
+    /// <summary>
+    /// Codifica un TimeSpan al formato HH.mm (Horas.Minutos).
+    /// </summary>
+    public static double EncodeTime(TimeSpan time)
+    {
+        return time.Hours + (time.Minutes / 100.0);
     }
 
     /// <summary>
@@ -105,6 +127,22 @@ public static class LegacyDecoder
     }
 
     /// <summary>
+    /// Empaqueta un conteo biológico en una cadena de 14 dígitos [Talla(2)][M(3)][H(3)][I(3)][T(3)].
+    /// </summary>
+    public static string EncodeTally(int size, int m, int h, int i, int t)
+    {
+        // El formato es [Talla(2)][M(3)][H(3)][I(3)][T(3)] = 14 dígitos
+        // Aseguramos que los valores no excedan los límites de los bloques
+        string sSize = Math.Min(size, 99).ToString("D2");
+        string sM = Math.Min(m, 999).ToString("D3");
+        string sH = Math.Min(h, 999).ToString("D3");
+        string sI = Math.Min(i, 999).ToString("D3");
+        string sT = Math.Min(t, 999).ToString("D3");
+
+        return $"{sSize}{sM}{sH}{sI}{sT}";
+    }
+
+    /// <summary>
     /// Fusiona una muestra base (M*) con su extensión (X*).
     /// </summary>
     public static void MergeExtendedMuestras(LegacyMuestra baseMuestra, LegacyMuestra extension)
@@ -156,5 +194,15 @@ public static class LegacyDecoder
         {
             return (0, 0, 0);
         }
+    }
+
+    /// <summary>
+    /// Codifica el formato de 9 dígitos (MMMHHHIII) usado en los archivos L*.
+    /// </summary>
+    public static double EncodeMatureTally(int mm, int hm, int hi)
+    {
+        // MMMHHHIII
+        string s = $"{Math.Min(mm, 999):D3}{Math.Min(hm, 999):D3}{Math.Min(hi, 999):D3}";
+        return double.Parse(s);
     }
 }

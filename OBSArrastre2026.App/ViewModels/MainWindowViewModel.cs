@@ -43,6 +43,7 @@ public class MainWindowViewModel : ObservableObject
     private readonly IMapRenderingService _mapRenderingService;
     private readonly IExcelReportService _excelReportService;
     private readonly IMareaSummaryService _mareaSummaryService;
+    private readonly IDbfExporterService _dbfExporterService;
     private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
     private NavigationItemViewModel? _selectedNavigationItem;
     private string _pageTitle = string.Empty;
@@ -289,6 +290,7 @@ public class MainWindowViewModel : ObservableObject
         IExcelReportService excelReportService,
         IMareaSummaryService mareaSummaryService,
         IUserSettingsService userSettingsService,
+        IDbfExporterService dbfExporterService,
         IDbContextFactory<AppDbContext> dbContextFactory)
     {
         _mockShellDataService = mockShellDataService;
@@ -314,6 +316,7 @@ public class MainWindowViewModel : ObservableObject
         _excelReportService = excelReportService;
         _mareaSummaryService = mareaSummaryService;
         _userSettingsService = userSettingsService;
+        _dbfExporterService = dbfExporterService;
 
         SearchPlaceholder = "Buscar...";
         SetSystemThemeCommand = new RelayCommand(() => ApplyTheme(AppThemeMode.System));
@@ -349,6 +352,7 @@ public class MainWindowViewModel : ObservableObject
 
         NavigationItems.Add(new NavigationItemViewModel(NavigationSection.Separator, "", "", ""));
         NavigationItems.Add(new NavigationItemViewModel(NavigationSection.GenerarRecursosInforme, "Generar informe", "Cartografía y archivos auxiliares", "📦", true));
+        NavigationItems.Add(new NavigationItemViewModel(NavigationSection.ExportarDbf, "Exportar DBF", "Archivos legados INIDEP", "💾", true));
 
         _currentThemeMode = _themeService.CurrentMode;
         SelectedNavigationItem = NavigationItems.FirstOrDefault();
@@ -623,6 +627,12 @@ public class MainWindowViewModel : ObservableObject
             if (value?.Section == NavigationSection.GenerarRecursosInforme)
             {
                 _ = OpenGenerarRecursosInformeAsync();
+                return;
+            }
+
+            if (value?.Section == NavigationSection.ExportarDbf)
+            {
+                _ = OpenExportarDbfAsync();
                 return;
             }
 
@@ -963,6 +973,44 @@ public class MainWindowViewModel : ObservableObject
         if (result)
         {
             bool openFolder = await ShowConfirmationAsync("Exportación completada", "¿Desea abrir la carpeta donde se generaron los archivos?");
+            if (openFolder)
+            {
+                try
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = viewModel.ExportPath,
+                        UseShellExecute = true,
+                        Verb = "open"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    ShowMessage("Error", $"No se pudo abrir la carpeta: {ex.Message}", null, MessageDialogType.Error);
+                }
+            }
+        }
+    }
+
+    private async Task OpenExportarDbfAsync()
+    {
+        var activeMarea = _activeMareaManager.ActiveMarea;
+        if (activeMarea == null)
+        {
+            ShowMessage("Sin marea activa", "Debe seleccionar una marea activa para realizar esta acción.", null, MessageDialogType.Warning);
+            return;
+        }
+
+        var viewModel = new ExportarDbfViewModel(activeMarea, _dbfExporterService);
+        viewModel.ShowMessage = (title, msg, details, type) => { ShowMessage(title, msg, details, type); return Task.CompletedTask; };
+        ActiveDialog = viewModel;
+
+        bool result = await viewModel.DialogResult.Task;
+        ActiveDialog = null;
+
+        if (result)
+        {
+            bool openFolder = await ShowConfirmationAsync("Exportación completada", "Se han generado los archivos DBF con éxito. ¿Desea abrir la carpeta de destino?");
             if (openFolder)
             {
                 try
