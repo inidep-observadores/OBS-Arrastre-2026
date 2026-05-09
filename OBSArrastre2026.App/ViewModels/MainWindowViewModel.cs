@@ -353,8 +353,6 @@ public class MainWindowViewModel : ObservableObject
         }
 
         NavigationItems.Add(new NavigationItemViewModel(NavigationSection.Separator, "", "", ""));
-        NavigationItems.Add(new NavigationItemViewModel(NavigationSection.GenerarRecursosInforme, "Generar informe", "Cartografía y archivos auxiliares", "📦", true));
-        NavigationItems.Add(new NavigationItemViewModel(NavigationSection.ExportarDbf, "Exportar DBF", "Archivos legados INIDEP", "💾", true));
         NavigationItems.Add(new NavigationItemViewModel(NavigationSection.Procesos, "Procesos", "Lanzador de procesos", "⚡", true));
 
         _procesosVM = new ProcesosViewModel(
@@ -624,24 +622,6 @@ public class MainWindowViewModel : ObservableObject
         {
             if (value != null && !value.IsEnabled)
             {
-                return;
-            }
-
-            if (value?.Section == NavigationSection.ConfigurarUnidadDescarte)
-            {
-                _ = OpenConfigurarUnidadDescarteAsync();
-                return;
-            }
-
-            if (value?.Section == NavigationSection.GenerarRecursosInforme)
-            {
-                _ = OpenGenerarRecursosInformeAsync();
-                return;
-            }
-
-            if (value?.Section == NavigationSection.ExportarDbf)
-            {
-                _ = OpenExportarDbfAsync();
                 return;
             }
 
