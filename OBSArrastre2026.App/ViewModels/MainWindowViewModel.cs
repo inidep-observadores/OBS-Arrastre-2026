@@ -1960,6 +1960,34 @@ public class MainWindowViewModel : ObservableObject
             };
 
             var etapasOrdenadas = _activeMareaManager.ActiveMarea.Etapas.OrderBy(e => e.FechaZarpada).ToList();
+            
+            // Calcular rayas comunes para toda la marea (consistente con la UI)
+            var todasEtapaIds = etapasOrdenadas.Select(e => e.ID).ToList();
+            var todasProduccion = await dbContext.RegistrosProduccion
+                .Include(rp => rp.Especie)
+                .Where(rp => todasEtapaIds.Contains(rp.MareaEtapaId))
+                .ToListAsync();
+            var todosLances = await dbContext.Lances
+                .Include(l => l.ItemsCaptura)
+                    .ThenInclude(ic => ic.Especie)
+                .Where(l => todasEtapaIds.Contains(l.MareaEtapaId))
+                .ToListAsync();
+
+            var rayaIdsEnMareaProd = todasProduccion
+                .Where(p => IsRaya(p.Especie))
+                .Select(p => p.EspecieId!)
+                .Distinct()
+                .ToHashSet();
+
+            var rayaIdsEnMareaCatch = todosLances
+                .SelectMany(l => l.ItemsCaptura)
+                .Where(c => IsRaya(c.Especie))
+                .Select(c => c.EspecieID!)
+                .Distinct()
+                .ToHashSet();
+
+            var commonRayaIdsMarea = rayaIdsEnMareaProd.Intersect(rayaIdsEnMareaCatch).ToHashSet();
+
             for (int i = 0; i < etapasOrdenadas.Count; i++)
             {
                 var etapa = etapasOrdenadas[i];
@@ -1993,29 +2021,35 @@ public class MainWindowViewModel : ObservableObject
 
                 // 3. Balance de masa (Items) para la etapa
                 var prodSummary = etapaProduccion
-                    .GroupBy(p => p.Especie?.FullDisplayName ?? p.Comentarios?.Replace("Importado: ", "") ?? "Desconocida")
+                    .GroupBy(p => (IsRaya(p.Especie) && !IsGenericRaya(p.Especie) && !commonRayaIdsMarea.Contains(p.EspecieId!)) 
+                        ? RayaGenericVirtualId 
+                        : (p.EspecieId ?? p.Especie?.FullDisplayName ?? p.Comentarios?.Replace("Importado: ", "") ?? "Desconocida"))
                     .ToDictionary(g => g.Key, g => new {
+                        EspecieNombre = g.Key == RayaGenericVirtualId ? "Rayas (Rajidae - Otras/Genérico)" : (g.First().Especie?.FullDisplayName ?? g.First().Comentarios?.Replace("Importado: ", "") ?? "Desconocida"),
                         ProduccionTotal = g.Sum(p => p.Kg ?? 0),
                         CapturaReconstruida = g.Sum(p => (p.Kg ?? 0) * (p.Factor ?? 1.0))
                     });
 
                 var catchSummary = etapaLances.SelectMany(l => l.ItemsCaptura)
-                    .GroupBy(c => c.Especie?.FullDisplayName ?? "Desconocida")
+                    .GroupBy(c => (IsRaya(c.Especie) && !IsGenericRaya(c.Especie) && !commonRayaIdsMarea.Contains(c.EspecieID!)) 
+                        ? RayaGenericVirtualId 
+                        : (c.EspecieID ?? c.Especie?.FullDisplayName ?? "Desconocida"))
                     .ToDictionary(g => g.Key, g => new {
+                        EspecieNombre = g.Key == RayaGenericVirtualId ? "Rayas (Rajidae - Otras/Genérico)" : (g.First().Especie?.FullDisplayName ?? "Desconocida"),
                         CapturaBruta = g.Sum(c => c.CapturaTotalKgCalculado),
                         DescarteKg = g.Sum(c => c.PesoDescarteCalculado),
                         CapturaRetenida = g.Sum(c => c.CapturaTotalKgCalculado - c.PesoDescarteCalculado)
                     });
 
-                var allSpecies = prodSummary.Keys.Union(catchSummary.Keys).ToList();
-                foreach (var sp in allSpecies)
+                var allSpeciesKeys = prodSummary.Keys.Union(catchSummary.Keys).ToList();
+                foreach (var key in allSpeciesKeys)
                 {
-                    prodSummary.TryGetValue(sp, out var pData);
-                    catchSummary.TryGetValue(sp, out var cData);
+                    prodSummary.TryGetValue(key, out var pData);
+                    catchSummary.TryGetValue(key, out var cData);
 
                     var itemVm = new ControlProduccionListItemViewModel
                     {
-                        Especie = sp,
+                        Especie = pData?.EspecieNombre ?? cData?.EspecieNombre ?? "Desconocida",
                         ProduccionTotal = pData?.ProduccionTotal ?? 0,
                         CapturaReconstruida = pData?.CapturaReconstruida ?? 0,
                         CapturaBruta = cData?.CapturaBruta ?? 0,
@@ -2045,9 +2079,17 @@ public class MainWindowViewModel : ObservableObject
                     .Select(x => x.Key)
                     .ToList();
 
-                foreach (var sp in predominantInEtapa)
+                foreach (var key in predominantInEtapa)
                 {
-                    var spLances = etapaLances.Where(l => l.ItemsCaptura.Any(ic => (ic.Especie?.FullDisplayName ?? "Desconocida") == sp)).ToList();
+                    prodSummary.TryGetValue(key, out var pData);
+                    var spName = pData?.EspecieNombre ?? "Desconocida";
+                    var spLances = etapaLances.Where(l => l.ItemsCaptura.Any(ic => 
+                    {
+                        bool isRaya = IsRaya(ic.Especie);
+                        bool isGeneric = isRaya && !IsGenericRaya(ic.Especie) && !commonRayaIdsMarea.Contains(ic.EspecieID!);
+                        string icKey = isGeneric ? RayaGenericVirtualId : (ic.EspecieID ?? ic.Especie?.FullDisplayName ?? "Desconocida");
+                        return icKey == key;
+                    })).ToList();
                     var groupedByArea = spLances
                         .GroupBy(l => $"{(int)Math.Abs(l.LatitudInicioDecimal ?? 0)}{(int)Math.Abs(l.LongitudInicioDecimal ?? 0)}")
                         .Select(g => 
@@ -2064,10 +2106,22 @@ public class MainWindowViewModel : ObservableObject
 
                             return new ControlProduccionAreaSummary
                             {
-                                Especie = sp,
+                                Especie = spName,
                                 Area = g.Key,
-                                CapturaKg = g.Sum(l => l.ItemsCaptura.Where(ic => (ic.Especie?.FullDisplayName ?? "Desconocida") == sp).Sum(ic => ic.CapturaTotalKgCalculado)),
-                                DescarteKg = g.Sum(l => l.ItemsCaptura.Where(ic => (ic.Especie?.FullDisplayName ?? "Desconocida") == sp).Sum(ic => ic.PesoDescarteCalculado)),
+                                CapturaKg = g.Sum(l => l.ItemsCaptura.Where(ic => 
+                                {
+                                    bool isR = IsRaya(ic.Especie);
+                                    bool isG = isR && !IsGenericRaya(ic.Especie) && !commonRayaIdsMarea.Contains(ic.EspecieID!);
+                                    string icK = isG ? RayaGenericVirtualId : (ic.EspecieID ?? ic.Especie?.FullDisplayName ?? "Desconocida");
+                                    return icK == key;
+                                }).Sum(ic => ic.CapturaTotalKgCalculado)),
+                                DescarteKg = g.Sum(l => l.ItemsCaptura.Where(ic => 
+                                {
+                                    bool isR = IsRaya(ic.Especie);
+                                    bool isG = isR && !IsGenericRaya(ic.Especie) && !commonRayaIdsMarea.Contains(ic.EspecieID!);
+                                    string icK = isG ? RayaGenericVirtualId : (ic.EspecieID ?? ic.Especie?.FullDisplayName ?? "Desconocida");
+                                    return icK == key;
+                                }).Sum(ic => ic.PesoDescarteCalculado)),
                                 TotalHoras = totalHoras,
                                 CantidadLances = g.Count(),
                                 DiasPesca = g.Select(l => l.Fecha).Distinct().Count()

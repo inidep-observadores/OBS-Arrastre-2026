@@ -1510,8 +1510,7 @@ public class MareaReportService : IMareaReportService
             "7105010101" => 56, // Gatuzo
             "7218250101" => 30, // Pez palo
             "7218360101" => 24, // Caballa
-            "7109010105" => 78, // Raya
-            "5139440101" => 7,  // Centolla (70mm)
+            "5139440101" => 11,  // Centolla (110mm)
             _ => 0
         };
     }
