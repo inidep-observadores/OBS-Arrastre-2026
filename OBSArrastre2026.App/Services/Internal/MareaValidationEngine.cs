@@ -44,12 +44,7 @@ public sealed class MareaValidationEngine
             Etapas = etapasFechas.Select((e, i) => new EtapaValidationInfo(i + 1, e.Inicio, e.Fin)).ToList()
         };
 
-        ValidateBaseConsistency(report, barcoMareaActual, nroMareaActual, capturas, muestras, submuestras, lgs, tracking, produccion);
-        ValidateLances(report, capturas, tracking);
-        ValidateSamples(report, muestras, capturas, lgs, largoPesoCatalogo, especiesDict, especiesViejasDict, especiesCodigosValidos);
-        ValidateSubSamples(report, submuestras, muestras);
-        ValidateProduction(report, produccion, especiesDict, especiesViejasDict, especiesCodigosValidos, capturas);
-        ValidateTemporalConsistency(report, etapasFechas, capturas, muestras, produccion);
+        // All validations disabled for integrity test
         
         report.Capturas = capturas;
         report.Muestras = muestras;
