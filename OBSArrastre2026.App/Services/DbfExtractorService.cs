@@ -103,24 +103,25 @@ public sealed class DbfExtractorService : IDbfExtractorService
                 var colMap = GetColumnMap(reader);
 
                 // Columnas donde es probable encontrar texto con acentos/eñes
-                var columnsToTest = new[] { "ESPECIE", "NOMVULCAS", "NOM_VULGAR", "BARCO", "COMENTARIO", "OBSERVAC", "PRODUCTO", "NOMBRE" };
+                var columnsToTest = new[] { "ESPECIE", "NOMVULCAS", "NOM_VULGAR", "NOMVUL", "NOM_VUL", "NOMVULG", "BARCO", "COMENTARIO", "OBSERVAC", "PRODUCTO", "NOMBRE" };
                 var targetCols = colMap.Where(kv => columnsToTest.Contains(kv.Key.ToUpper())).Select(kv => kv.Value).ToList();
 
                 // Si es el archivo de especies, tenemos un "Gold Standard" (Merluza común con su código)
                 bool isSpeciesTable = colMap.ContainsKey("CODINIDEP") || colMap.ContainsKey("COD_INIDEP");
 
                 int count = 0;
-                while (reader.Read() && count++ < 200) // Revisamos los primeros 200 registros
+                while (reader.Read() && count++ < 500) // Revisamos los primeros 500 registros
                 {
                     if (isSpeciesTable)
                     {
                         var codVal = reader.GetValue(colMap.TryGetValue("CODINIDEP", out int i1) ? i1 : 
                                      colMap.TryGetValue("COD_INIDEP", out int i2) ? i2 : -1);
-                        
-                        if (codVal != null && (codVal.ToString()?.Trim() == "7210040101"))
+                        var codStr = codVal?.ToString()?.Trim();
+                        if (!string.IsNullOrEmpty(codStr) && (codStr == "7210040101" || codStr.StartsWith("7210040101")))
                         {
                             var name = GetString(reader, colMap, "NOMVULCAS");
                             if (string.IsNullOrEmpty(name)) name = GetString(reader, colMap, "NOM_VULGAR");
+                            if (string.IsNullOrEmpty(name)) name = GetString(reader, colMap, "NOMVUL");
 
                             if (name != null && name.Contains("com\u00FAn", StringComparison.OrdinalIgnoreCase))
                             {
@@ -155,7 +156,8 @@ public sealed class DbfExtractorService : IDbfExtractorService
     public async Task ExtractBuquesAsync(string dbfPath, string jsonOutputPath)
     {
         var records = new List<Dictionary<string, object?>>();
-        var options = new DbfDataReaderOptions { Encoding = Encoding.GetEncoding(850) };
+        var encoding = await DetectEncodingSmartAsync(dbfPath);
+        var options = new DbfDataReaderOptions { Encoding = encoding };
 
         using (var dbfReader = new DbfDataReader.DbfDataReader(dbfPath, options))
         {
@@ -185,7 +187,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
     public async Task ExtractEspeciesAsync(string dbfPath, string jsonOutputPath)
     {
         var records = new List<Dictionary<string, object?>>();
-        var encoding = await DetectEncodingSmartAsync(dbfPath);
+        var encoding = await DetectEncodingForSpeciesCatalogAsync(dbfPath);
         var options = new DbfDataReaderOptions { Encoding = encoding };
 
         using (var dbfReader = new DbfDataReader.DbfDataReader(dbfPath, options))
@@ -220,6 +222,55 @@ public sealed class DbfExtractorService : IDbfExtractorService
 
         var json = JsonSerializer.Serialize(records, new JsonSerializerOptions { WriteIndented = true });
         await File.WriteAllTextAsync(jsonOutputPath, json);
+    }
+
+    private async Task<Encoding> DetectEncodingForSpeciesCatalogAsync(string dbfPath)
+    {
+        // Candidatos principales en INIDEP
+        var candidates = new[] { 1252, 850, 437 };
+        
+        foreach (var cp in candidates)
+        {
+            var encoding = Encoding.GetEncoding(cp);
+            try
+            {
+                using var reader = new DbfDataReader.DbfDataReader(dbfPath, new DbfDataReaderOptions { Encoding = encoding });
+                var colMap = GetColumnMap(reader);
+                
+                // Buscar columnas clave
+                string[] codCols = { "CODINIDEP", "COD_INIDEP", "COD", "CODIGO" };
+                string[] nomCols = { "NOMVULCAS", "NOM_VULGAR", "NOMVUL", "NOMBRE" };
+                
+                var codCol = colMap.Keys.FirstOrDefault(k => codCols.Contains(k.ToUpper()));
+                var nomCol = colMap.Keys.FirstOrDefault(k => nomCols.Contains(k.ToUpper()));
+                
+                if (codCol != null && nomCol != null)
+                {
+                    int codIdx = colMap[codCol];
+                    int nomIdx = colMap[nomCol];
+                    int count = 0;
+                    
+                    while (reader.Read() && count++ < 2000) // Escaneo profundo para catálogo
+                    {
+                        var codVal = reader.GetValue(codIdx)?.ToString()?.Trim();
+                        // Buscamos Merluza común (7210040101)
+                        if (codVal == "7210040101" || (codVal != null && codVal.StartsWith("7210040101")))
+                        {
+                            var name = reader.GetString(nomIdx);
+                            // Si contiene "común" con tilde, esta es la codificación correcta
+                            if (name != null && name.Contains("com\u00FAn", StringComparison.OrdinalIgnoreCase))
+                            {
+                                return encoding;
+                            }
+                        }
+                    }
+                }
+            }
+            catch { /* Continuar al siguiente candidato */ }
+        }
+
+        // Si falló el patrón específico de Merluza, usamos la detección inteligente genérica
+        return await DetectEncodingSmartAsync(dbfPath);
     }
 
     public async Task<List<LegacyCaptura>> ReadCapturasAsync(string dbfPath)
@@ -376,7 +427,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
                 Fuente = GetDoubleNullable(reader, colMap, "FUENTE"),
                 Area = GetDoubleNullable(reader, colMap, "AREA"),
                 Especie = GetString(reader, colMap, "ESPECIE"),
-                NEjemplar = (int)GetDouble(reader, colMap, "NRO_EJEMP"),
+                NEjemplar = (int)GetDouble(reader, colMap, "NEJEMPLAR"),
                 LargoTot = (int)GetDouble(reader, colMap, "LARGO_TOT"),
                 LargoSta = (int)GetDouble(reader, colMap, "LARGO_STA"),
                 PesoTot = GetDouble(reader, colMap, "PESO_TOT"),
@@ -385,8 +436,8 @@ public sealed class DbfExtractorService : IDbfExtractorService
                 Estadio = (int)GetDouble(reader, colMap, "ESTADIO"),
                 PesoGon = GetDouble(reader, colMap, "PESO_GON"),
                 PesoHig = GetDouble(reader, colMap, "PESO_HIG"),
-                Replecion = (int)GetDouble(reader, colMap, "REPLECION"),
-                Comentario = GetString(reader, colMap, "COMENTARIO"),
+                Replecion = (int)GetDouble(reader, colMap, "REPLESION"),
+                Comentario = GetString(reader, colMap, "CONTENIDO"),
                 Edad = GetDouble(reader, colMap, "EDAD"),
                 RTotal = GetDouble(reader, colMap, "R_TOTAL")
             });

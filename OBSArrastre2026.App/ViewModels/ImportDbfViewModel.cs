@@ -8,6 +8,7 @@ using Microsoft.Win32;
 using OBSArrastre2026.App.Services;
 using OBSArrastre2026.App.Data.Entities;
 using OBSArrastre2026.App.Models;
+using OBSArrastre2026.App.Models.Import;
 
 namespace OBSArrastre2026.App.ViewModels;
 
@@ -248,19 +249,8 @@ public sealed partial class ImportDbfViewModel : ObservableObject
 
             if (report.HasFatalErrors)
             {
-                // Abrir PDF de auditoría
-                string safeBarco = (_barco ?? "S-D").Replace("/", "-").Replace("\\", "-");
-                string reportPath = Path.Combine(basePath, "reportes", $"Audit_{safeBarco}_{_mareaNum}_{_anio}.pdf");
-                
-                if (File.Exists(reportPath))
-                {
-                    Process.Start(new ProcessStartInfo(reportPath) { UseShellExecute = true });
-                    if (ShowMessage != null) await ShowMessage("Errores de Validación", "Se detectaron errores graves que impiden la importación. Se ha abierto el reporte PDF con el detalle.", null, MessageDialogType.Error);
-                }
-                else
-                {
-                    if (ShowMessage != null) await ShowMessage("Errores de Validación", "Se detectaron errores graves, pero no se pudo localizar el archivo de reporte.", null, MessageDialogType.Error);
-                }
+                TryOpenAuditReport(basePath);
+                if (ShowMessage != null) await ShowMessage("Errores de Validación", "Se detectaron errores graves que impiden la importación. Se ha abierto el reporte PDF con el detalle.", null, MessageDialogType.Error);
                 _onFinished(null);
                 return;
             }
@@ -286,6 +276,12 @@ public sealed partial class ImportDbfViewModel : ObservableObject
             await _importService.ImportAsync(_mareaId, report);
 
             IsBusy = false;
+            
+            if (report.Issues.Any())
+            {
+                TryOpenAuditReport(basePath);
+            }
+
             _onFinished(SelectedFiles.Select(f => f.FullPath));
         }
         catch (Exception ex)
@@ -297,6 +293,21 @@ public sealed partial class ImportDbfViewModel : ObservableObject
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    private void TryOpenAuditReport(string basePath)
+    {
+        string safeBarco = (_barco ?? "S-D").Replace("/", "-").Replace("\\", "-");
+        string reportPath = Path.Combine(basePath, "reportes", $"Audit_{safeBarco}_{_mareaNum}_{_anio}.pdf");
+        
+        if (File.Exists(reportPath))
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo(reportPath) { UseShellExecute = true });
+            }
+            catch { /* Ignorar errores al abrir el proceso */ }
         }
     }
 
