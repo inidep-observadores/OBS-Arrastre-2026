@@ -23,4 +23,5 @@ public sealed class RegistroProduccion
     public double? Kg { get; set; }
     public int NumeroOrden { get; set; }
     public string? Comentarios { get; set; }
+    public string? Metadata { get; set; }
 }

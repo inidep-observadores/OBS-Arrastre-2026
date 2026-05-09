@@ -250,7 +250,7 @@ public sealed partial class ImportDbfViewModel : ObservableObject
             {
                 // Abrir PDF de auditoría
                 string safeBarco = (_barco ?? "S-D").Replace("/", "-").Replace("\\", "-");
-                string reportPath = Path.Combine(basePath, "Reports", $"Audit_{safeBarco}_{_mareaNum}_{_anio}.pdf");
+                string reportPath = Path.Combine(basePath, "reportes", $"Audit_{safeBarco}_{_mareaNum}_{_anio}.pdf");
                 
                 if (File.Exists(reportPath))
                 {

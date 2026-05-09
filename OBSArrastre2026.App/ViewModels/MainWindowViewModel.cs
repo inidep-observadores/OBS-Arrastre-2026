@@ -2099,12 +2099,25 @@ public class MainWindowViewModel : ObservableObject
             }
 
             var pdfBytes = await _reportService.GenerateControlProduccionPdfAsync(report);
-            string tempPath = Path.Combine(Path.GetTempPath(), $"Control_Produccion_{report.Barco}_{report.Marea}_{report.Anio}.pdf");
-            await File.WriteAllBytesAsync(tempPath, pdfBytes);
+            string fileName = $"Control_Produccion_{report.Barco}_{report.Marea}_{report.Anio}.pdf";
+            string importFolder = MareaMetadataHelper.GetImportFolder(_activeMareaManager.ActiveMarea.Metadata);
+            string savePath;
+
+            if (!string.IsNullOrEmpty(importFolder))
+            {
+                savePath = Path.Combine(importFolder, "reportes", fileName);
+                Directory.CreateDirectory(Path.GetDirectoryName(savePath)!);
+            }
+            else
+            {
+                savePath = Path.Combine(Path.GetTempPath(), fileName);
+            }
+
+            await File.WriteAllBytesAsync(savePath, pdfBytes);
 
             Process.Start(new ProcessStartInfo
             {
-                FileName = tempPath,
+                FileName = savePath,
                 UseShellExecute = true
             });
         }

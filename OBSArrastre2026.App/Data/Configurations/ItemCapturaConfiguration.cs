@@ -21,6 +21,7 @@ public sealed class ItemCapturaConfiguration : IEntityTypeConfiguration<ItemCapt
         builder.Property(x => x.TipoDatoDescarte).HasColumnName("TipoDatoDescarte").IsRequired();
         builder.Property(x => x.DatoDescarte).HasColumnName("DatoDescarte").IsRequired();
         builder.Property(x => x.EspecieOriginal).HasColumnName("EspecieOriginal");
+        builder.Property(x => x.Metadata).HasColumnName("Metadata");
 
         builder.HasOne(x => x.Lance)
             .WithMany(l => l.ItemsCaptura)

@@ -19,6 +19,7 @@ public sealed class ItemCaptura
     public double DatoCaptura { get; set; }
     public TipoDatoDescarte TipoDatoDescarte { get; set; }
     public double DatoDescarte { get; set; }
+    public string? Metadata { get; set; }
 
     [NotMapped]
     public double CapturaTotalKgCalculado

@@ -27,6 +27,7 @@ public sealed class MareaConfiguration : IEntityTypeConfiguration<Marea>
         builder.Property(x => x.ObservadorNombre).HasColumnName("ObservadorNombre");
         builder.Property(x => x.ObservadorApellido).HasColumnName("ObservadorApellido");
         builder.Property(x => x.ObservadorCodigo).HasColumnName("ObservadorCodigo");
+        builder.Property(x => x.Metadata).HasColumnName("Metadata");
 
         builder.HasOne(x => x.Buque)
             .WithMany(b => b.Mareas)

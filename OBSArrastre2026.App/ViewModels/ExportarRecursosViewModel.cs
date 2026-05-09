@@ -97,6 +97,13 @@ public class ExportarRecursosViewModel : ObservableObject
         AcceptCommand = new AsyncRelayCommand(ExecuteExportAsync, () => CanAccept);
         CloseCommand = new RelayCommand(() => DialogResult.TrySetResult(false), () => !IsBusy);
         BrowseCommand = new RelayCommand(Browse, () => !IsBusy);
+
+        // Carpeta por defecto basada en metadata
+        string importFolder = MareaMetadataHelper.GetImportFolder(_marea.Metadata);
+        if (!string.IsNullOrEmpty(importFolder))
+        {
+            ExportPath = Path.Combine(importFolder, "informe");
+        }
     }
 
     private void Browse()

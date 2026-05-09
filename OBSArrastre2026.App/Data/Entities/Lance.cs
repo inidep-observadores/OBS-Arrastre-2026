@@ -47,6 +47,7 @@ public sealed class Lance
 
     public int SelectividadSiNo { get; set; } // 0 o 1
     public string? Comentarios { get; set; }
+    public string? Metadata { get; set; }
 
     // Campos de Integridad 1:1 (Legacy DBF)
     public double? Mus { get; set; }

@@ -21,6 +21,7 @@ public record EtapaValidationInfo(int Numero, DateTime? FechaInicio, DateTime? F
 
 public class MareaValidationReport
 {
+    public string? ImportPath { get; set; }
     public string Barco { get; set; } = string.Empty;
     public string Marea { get; set; } = string.Empty;
     public int Año { get; set; }

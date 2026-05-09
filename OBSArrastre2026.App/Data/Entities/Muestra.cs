@@ -23,6 +23,7 @@ public sealed class Muestra
     public int HayIndeterminados { get; set; }
     public double? PesoMuestra_PesoGramos { get; set; }
     public int TipoMuestra { get; set; } = 1; // 1=Estandar, 2=Descarte
+    public string? Metadata { get; set; }
 
     // Campos de Integridad 1:1
     public double? Fuente { get; set; }

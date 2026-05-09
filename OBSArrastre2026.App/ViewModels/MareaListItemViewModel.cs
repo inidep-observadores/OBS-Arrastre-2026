@@ -86,12 +86,25 @@ public sealed class MareaListItemViewModel : ObservableObject
             });
 
             StatusText = "Abriendo reporte...";
-            string tempPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"Resumen_Marea_{Marea.Buque?.Nombre ?? "Marea"}_{Marea.NumeroInidep}_{Marea.AnioInidep}.pdf");
-            await System.IO.File.WriteAllBytesAsync(tempPath, pdfBytes);
+            string fileName = $"Resumen_Marea_{Marea.Buque?.Nombre ?? "Marea"}_{Marea.NumeroInidep}_{Marea.AnioInidep}.pdf";
+            string importFolder = MareaMetadataHelper.GetImportFolder(Marea.Metadata);
+            string savePath;
+
+            if (!string.IsNullOrEmpty(importFolder))
+            {
+                savePath = System.IO.Path.Combine(importFolder, "reportes", fileName);
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(savePath)!);
+            }
+            else
+            {
+                savePath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), fileName);
+            }
+
+            await System.IO.File.WriteAllBytesAsync(savePath, pdfBytes);
 
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
             {
-                FileName = tempPath,
+                FileName = savePath,
                 UseShellExecute = true
             });
         }
@@ -134,14 +147,27 @@ public sealed class MareaListItemViewModel : ObservableObject
                 return new { Bytes = pdfBytes, Report = report };
             });
 
-            StatusText = "Guardando archivo temporal...";
-            string tempPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"Reporte_Validacion_{Marea.Buque?.Nombre ?? "Marea"}_{Marea.NumeroInidep}_{Marea.AnioInidep}.pdf");
-            await System.IO.File.WriteAllBytesAsync(tempPath, pdfResult.Bytes);
+            StatusText = "Guardando reporte...";
+            string fileName = $"Reporte_Validacion_{Marea.Buque?.Nombre ?? "Marea"}_{Marea.NumeroInidep}_{Marea.AnioInidep}.pdf";
+            string importFolder = MareaMetadataHelper.GetImportFolder(Marea.Metadata);
+            string savePath;
+
+            if (!string.IsNullOrEmpty(importFolder))
+            {
+                savePath = System.IO.Path.Combine(importFolder, "reportes", fileName);
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(savePath)!);
+            }
+            else
+            {
+                savePath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), fileName);
+            }
+
+            await System.IO.File.WriteAllBytesAsync(savePath, pdfResult.Bytes);
 
             StatusText = "Abriendo reporte...";
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
             {
-                FileName = tempPath,
+                FileName = savePath,
                 UseShellExecute = true
             });
 

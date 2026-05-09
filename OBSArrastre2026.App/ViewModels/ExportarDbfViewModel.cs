@@ -79,8 +79,16 @@ public class ExportarDbfViewModel : ObservableObject
         CloseCommand = new RelayCommand(() => DialogResult.TrySetResult(false), () => !IsBusy);
         BrowseCommand = new RelayCommand(Browse, () => !IsBusy);
 
-        // Carpeta por defecto: Documentos
-        ExportPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "INIDEP_Export");
+        // Carpeta por defecto basada en metadata o Documentos
+        string importFolder = MareaMetadataHelper.GetImportFolder(_marea.Metadata);
+        if (!string.IsNullOrEmpty(importFolder))
+        {
+            ExportPath = Path.Combine(importFolder, "corregido");
+        }
+        else
+        {
+            ExportPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "INIDEP_Export");
+        }
     }
 
     private void Browse()

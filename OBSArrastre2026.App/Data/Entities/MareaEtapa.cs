@@ -14,6 +14,7 @@ public sealed class MareaEtapa
     public string? NombreOficialPesca { get; set; }
     public int? AnioMareaBuque { get; set; }
     public int? NumeroMareaBuque { get; set; }
+    public string? Metadata { get; set; }
 
     // Navigation properties
     public ICollection<RegistroProduccion> RegistrosProduccion { get; set; } = new List<RegistroProduccion>();

@@ -11,4 +11,5 @@ public sealed class FrecuenciaTallaEstadio
     public string? EstadiosHembras { get; set; }
     public string? EstadiosMachos { get; set; }
     public int NroIndeterminados { get; set; }
+    public string? Metadata { get; set; }
 }

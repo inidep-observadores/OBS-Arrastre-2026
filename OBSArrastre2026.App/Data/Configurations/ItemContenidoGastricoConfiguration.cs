@@ -18,6 +18,7 @@ public sealed class ItemContenidoGastricoConfiguration : IEntityTypeConfiguratio
         builder.Property(x => x.Porcentaje).HasColumnName("Porcentaje").IsRequired();
         builder.Property(x => x.CantPiezas).HasColumnName("CantPiezas").IsRequired();
         builder.Property(x => x.Comentarios).HasColumnName("Comentarios");
+        builder.Property(x => x.Metadata).HasColumnName("Metadata");
 
         builder.HasOne(x => x.ItemSubmuestra)
             .WithMany(s => s.ContenidosGastricos)

@@ -270,11 +270,12 @@ public class MareaImportService : IMareaImportService
             especiesCodigosValidos, 
             largoPesoCatalogo);
         report.ArchivosProcesados = archivosEncontrados;
+        report.ImportPath = basePath;
 
         // 6. Generar Reporte PDF
         var pdfBytes = await _reporter.GenerateValidationPdfAsync(report);
         string safeBarco = barco.Replace("/", "-").Replace("\\", "-");
-        string reportPath = Path.Combine(basePath, "Reports", $"Audit_{safeBarco}_{mareaNum}_{anio}.pdf");
+        string reportPath = Path.Combine(basePath, "reportes", $"Audit_{safeBarco}_{mareaNum}_{anio}.pdf");
         Directory.CreateDirectory(Path.GetDirectoryName(reportPath)!);
         await File.WriteAllBytesAsync(reportPath, pdfBytes);
 
@@ -290,6 +291,12 @@ public class MareaImportService : IMareaImportService
             .FirstOrDefaultAsync(m => m.ID == mareaId);
 
         if (marea == null) throw new InvalidOperationException("Marea no encontrada");
+
+        // Guardar carpeta de importación en metadata
+        if (!string.IsNullOrEmpty(report.ImportPath))
+        {
+            marea.Metadata = MareaMetadataHelper.SetImportFolder(marea.Metadata, report.ImportPath);
+        }
 
         // Cargar catálogo de especies con múltiples índices para resolución flexible
         var especiesCatalogo = await dbContext.Especies.ToListAsync();

@@ -18,6 +18,7 @@ public sealed class ItemSubmuestra
     public double? PesoTotalGramos { get; set; }
 
     public string? Comentarios { get; set; }
+    public string? Metadata { get; set; }
 
     // Campos de Integridad 1:1
     public int NumeroOrden { get; set; }

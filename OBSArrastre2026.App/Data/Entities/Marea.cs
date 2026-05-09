@@ -13,6 +13,7 @@ public sealed class Marea
     public string? ObservadorNombre { get; set; }
     public string? ObservadorApellido { get; set; }
     public int? ObservadorCodigo { get; set; }
+    public string? Metadata { get; set; }
     public Buque? Buque { get; set; }
 
     public ICollection<MareaEtapa> Etapas { get; set; } = new List<MareaEtapa>();

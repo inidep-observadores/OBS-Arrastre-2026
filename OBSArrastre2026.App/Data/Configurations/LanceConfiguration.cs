@@ -49,6 +49,8 @@ public sealed class LanceConfiguration : IEntityTypeConfiguration<Lance>
         builder.Property(x => x.DistanciaPortonesM).HasColumnName("distancia_portones_m");
 
         builder.Property(x => x.SelectividadSiNo).HasColumnName("selectividad_si_no");
+        builder.Property(x => x.Comentarios).HasColumnName("comentarios");
+        builder.Property(x => x.Metadata).HasColumnName("Metadata");
 
         builder.HasOne(x => x.MareaEtapa)
             .WithMany(e => e.Lances)

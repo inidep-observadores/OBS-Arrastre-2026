@@ -23,6 +23,7 @@ public sealed class ItemSubmuestraConfiguration : IEntityTypeConfiguration<ItemS
         builder.Property(x => x.LargoEstandarMm).HasColumnName("LargoEstandarMm");
         builder.Property(x => x.PesoTotalGramos).HasColumnName("PesoTotalGramos");
         builder.Property(x => x.Comentarios).HasColumnName("Comentarios");
+        builder.Property(x => x.Metadata).HasColumnName("Metadata");
 
         builder.HasOne(x => x.Muestra)
             .WithMany(m => m.ItemsSubmuestras)

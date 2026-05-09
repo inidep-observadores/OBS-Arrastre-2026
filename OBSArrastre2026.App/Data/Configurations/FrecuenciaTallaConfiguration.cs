@@ -19,9 +19,11 @@ public sealed class FrecuenciaTallaConfiguration : IEntityTypeConfiguration<Frec
         builder.Property(x => x.NroHembras).HasColumnName("NroHembras").IsRequired();
         builder.Property(x => x.NroIndeterminados).HasColumnName("NroIndeterminados").IsRequired();
 
+        builder.Property(x => x.NroTotal).HasColumnName("NroTotal").IsRequired();
         builder.Property(x => x.NroLangostinosMachoMaduros).HasColumnName("NroLangostinosMachoMaduros").IsRequired();
         builder.Property(x => x.NroLangostinosHembraMaduras).HasColumnName("NroLangostinosHembraMaduras").IsRequired();
         builder.Property(x => x.NroLangostinosHembraImpregnadas).HasColumnName("NroLangostinosHembraImpregnadas").IsRequired();
+        builder.Property(x => x.Metadata).HasColumnName("Metadata");
 
         builder.HasOne(x => x.Muestra)
             .WithMany(m => m.FrecuenciasTallas)
