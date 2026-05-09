@@ -44,6 +44,10 @@
             <views:ReemplazoEspecieView />
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type vm:ProcesosViewModel}">
+            <views:ProcesosView />
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:MareaListItemViewModel}">
             <!-- ... -->
             <Border Style="{StaticResource TableRowStyle}" Cursor="Hand">
@@ -680,6 +684,20 @@
                                             <Setter Property="Visibility" Value="Collapsed" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ReemplazoEspecie}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ContentControl.Style>
+                                </ContentControl>
+
+                                <!-- Vista de Lanzador de Procesos -->
+                                <ContentControl Content="{Binding ProcesosVM}" Grid.RowSpan="4" Panel.ZIndex="10">
+                                    <ContentControl.Style>
+                                        <Style TargetType="ContentControl">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Procesos}">
                                                     <Setter Property="Visibility" Value="Visible" />
                                                 </DataTrigger>
                                             </Style.Triggers>

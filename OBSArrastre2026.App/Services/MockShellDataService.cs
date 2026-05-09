@@ -21,7 +21,8 @@ public sealed class MockShellDataService : IMockShellDataService
         new(NavigationSection.Produccion, "Produccion", "Registros diarios de proceso", "◫", true),
         new(NavigationSection.ControlProduccion, "Control Capt./Prod.", "Balance de masa diario por especie", "⚖", true),
         new(NavigationSection.ReemplazoEspecie, "Reemplazar especie", "Reidentificación masiva en la marea", "⇄", true),
-        new(NavigationSection.ConfigurarUnidadDescarte, "Cambiar unidad descarte", "Configurar Kilos/Porcentaje global", "⚙", true)
+        new(NavigationSection.ConfigurarUnidadDescarte, "Cambiar unidad descarte", "Configurar Kilos/Porcentaje global", "⚙", true),
+        new(NavigationSection.Procesos, "Procesos", "Lanzador de procesos", "⚡", true)
     ];
 
     public ListSectionContent GetListSection(NavigationSection section) => section switch

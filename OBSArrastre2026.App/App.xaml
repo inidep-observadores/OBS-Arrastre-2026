@@ -1277,7 +1277,7 @@
 
                     <Border Grid.Row="1" Padding="24,30">
                         <StackPanel>
-                            <TextBlock Text="Se generarán los archivos C, P, T, M, S, L y X compatibles con los sistemas Clipper del INIDEP. Los archivos se codificarán en CP850." 
+                            <TextBlock Text="Se generarán los archivos C, M, MD, S, P, L y X compatibles con el programa OBS del INIDEP. Los archivos se codificarán en CP850." 
                                         Foreground="{DynamicResource SecondaryTextBrush}" 
                                         TextWrapping="Wrap"
                                         FontSize="13"

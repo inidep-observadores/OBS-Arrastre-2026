@@ -12,5 +12,6 @@ public enum NavigationSection
     ConfigurarUnidadDescarte,
     Separator,
     GenerarRecursosInforme,
-    ExportarDbf
+    ExportarDbf,
+    Procesos
 }

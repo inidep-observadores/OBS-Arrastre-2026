@@ -54,6 +54,7 @@ public class MainWindowViewModel : ObservableObject
     private AppThemeMode _currentThemeMode;
     private object? _currentEditViewModel;
     private object? _activeDialog;
+    private ProcesosViewModel? _procesosVM;
     
     private const string RayaGenericVirtualId = "RAYA_GENERICA_GRUPO";
     private HashSet<string> _commonRayaIds = new();
@@ -354,6 +355,13 @@ public class MainWindowViewModel : ObservableObject
         NavigationItems.Add(new NavigationItemViewModel(NavigationSection.Separator, "", "", ""));
         NavigationItems.Add(new NavigationItemViewModel(NavigationSection.GenerarRecursosInforme, "Generar informe", "Cartografía y archivos auxiliares", "📦", true));
         NavigationItems.Add(new NavigationItemViewModel(NavigationSection.ExportarDbf, "Exportar DBF", "Archivos legados INIDEP", "💾", true));
+        NavigationItems.Add(new NavigationItemViewModel(NavigationSection.Procesos, "Procesos", "Lanzador de procesos", "⚡", true));
+
+        _procesosVM = new ProcesosViewModel(
+            new AsyncRelayCommand(OpenGenerarRecursosInformeAsync),
+            new AsyncRelayCommand(OpenExportarDbfAsync),
+            new AsyncRelayCommand(OpenConfigurarUnidadDescarteAsync)
+        );
 
         _currentThemeMode = _themeService.CurrentMode;
         SelectedNavigationItem = NavigationItems.FirstOrDefault();
@@ -815,6 +823,12 @@ public class MainWindowViewModel : ObservableObject
         private set => SetProperty(ref _activeDialog, value);
     }
 
+    public ProcesosViewModel? ProcesosVM
+    {
+        get => _procesosVM;
+        private set => SetProperty(ref _procesosVM, value);
+    }
+
     public int CurrentTrackPointIndex
     {
         get => _currentTrackPointIndex;
@@ -1233,6 +1247,16 @@ public class MainWindowViewModel : ObservableObject
             PageEyebrow = "Herramientas de marea";
             PageTitle = "Reemplazar especie";
             PageDescription = "Permite reidentificar especies de forma masiva en todos los registros de la marea activa.";
+            PrimaryActionLabel = "";
+
+            return;
+        }
+
+        if (section == NavigationSection.Procesos)
+        {
+            PageEyebrow = "Centro de control";
+            PageTitle = "Procesos";
+            PageDescription = "Panel centralizado para la ejecución de tareas de exportación y configuración masiva.";
             PrimaryActionLabel = "";
 
             return;
