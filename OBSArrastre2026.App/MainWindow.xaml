@@ -15,6 +15,7 @@
         MinWidth="1180"
         MinHeight="760"
         WindowStartupLocation="CenterScreen"
+        Icon="assets/icons/app_icon.ico"
         WindowState="Maximized"
         Background="{DynamicResource ShellBackgroundBrush}"
         FontFamily="{DynamicResource TextFontFamily}">
