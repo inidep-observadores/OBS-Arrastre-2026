@@ -11,6 +11,9 @@ public class MareaMetadata
 
     [JsonPropertyName("import_errors")]
     public List<string> ImportErrors { get; set; } = new();
+
+    [JsonPropertyName("encoding_codepage")]
+    public int? EncodingCodePage { get; set; }
 }
 
 public static class MareaMetadataHelper

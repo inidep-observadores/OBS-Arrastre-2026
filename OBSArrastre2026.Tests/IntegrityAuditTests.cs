@@ -183,7 +183,7 @@ public class IntegrityAuditTests
                 continue;
             }
 
-            if (CompareDbf(entradaFile, salidaFile))
+            if (await CompareDbf(entradaFile, salidaFile))
             {
                 passedFiles++;
             }
@@ -193,13 +193,17 @@ public class IntegrityAuditTests
         Assert.Equal(totalFiles, passedFiles);
     }
 
-    private bool CompareDbf(string fileA, string fileB)
+    private async Task<bool> CompareDbf(string fileA, string fileB)
     {
+        var extractor = new DbfExtractorService();
+        var encA = await extractor.DetectEncodingSmartAsync(fileA);
+        var encB = await extractor.DetectEncodingSmartAsync(fileB);
+
         using var streamA = File.OpenRead(fileA);
         using var streamB = File.OpenRead(fileB);
 
-        var readerA = new DBFReader(streamA) { CharEncoding = Encoding.GetEncoding(437) };
-        var readerB = new DBFReader(streamB) { CharEncoding = Encoding.GetEncoding(437) };
+        var readerA = new DBFReader(streamA) { CharEncoding = Encoding.GetEncoding(encA.CodePage) };
+        var readerB = new DBFReader(streamB) { CharEncoding = Encoding.GetEncoding(encB.CodePage) };
 
         bool match = true;
 
@@ -233,8 +237,8 @@ public class IntegrityAuditTests
 
                 if (!AreValuesEqual(valA, valB))
                 {
-                    string hexA = valA is string sa ? string.Join(" ", Encoding.GetEncoding(437).GetBytes(sa).Select(b => b.ToString("X2"))) : "N/A";
-                    string hexB = valB is string sb ? string.Join(" ", Encoding.GetEncoding(437).GetBytes(sb).Select(b => b.ToString("X2"))) : "N/A";
+                    string hexA = valA is string sa ? string.Join(" ", Encoding.GetEncoding(encA.CodePage).GetBytes(sa).Select(b => b.ToString("X2"))) : "N/A";
+                    string hexB = valB is string sb ? string.Join(" ", Encoding.GetEncoding(encB.CodePage).GetBytes(sb).Select(b => b.ToString("X2"))) : "N/A";
                     _output.WriteLine($"[FAIL] Value mismatch in {Path.GetFileName(fileA)} at Row {r}, Field {readerA.Fields[f].Name}: Entrada='{valA}' (Hex: {hexA}) vs Salida='{valB}' (Hex: {hexB})");
                     errors++;
                     if (errors > 5) {

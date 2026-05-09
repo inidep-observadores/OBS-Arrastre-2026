@@ -12,4 +12,5 @@ public interface IDbfExtractorService
     Task<List<LegacyLg>> ReadLgAsync(string dbfPath);
     Task<List<LegacyTracking>> ReadTrackingAsync(string dbfPath);
     Task<List<LegacyProduccion>> ReadProduccionAsync(string dbfPath);
+    Task<System.Text.Encoding> DetectEncodingSmartAsync(string dbfPath);
 }

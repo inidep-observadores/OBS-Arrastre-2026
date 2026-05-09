@@ -15,10 +15,29 @@ public sealed class DbfExtractorService : IDbfExtractorService
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
     }
 
-    private DbfDataReaderOptions GetOptions(string dbfPath)
+    private async Task<DbfDataReaderOptions> GetOptionsAsync(string dbfPath)
     {
-        var encoding = DetectEncoding(dbfPath);
+        var encoding = await DetectEncodingSmartAsync(dbfPath);
         return new DbfDataReaderOptions { Encoding = encoding };
+    }
+
+    public async Task<Encoding> DetectEncodingSmartAsync(string dbfPath)
+    {
+        try
+        {
+            if (!File.Exists(dbfPath)) return Encoding.GetEncoding(1252);
+
+            // 1. Intentar detectar por contenido (Heurística)
+            var heuristicEncoding = await FindCorrectEncodingByHeuristicAsync(dbfPath);
+            if (heuristicEncoding != null) return heuristicEncoding;
+
+            // 2. Si no hay evidencia clara en el contenido, usar el header
+            return DetectEncoding(dbfPath);
+        }
+        catch
+        {
+            return Encoding.GetEncoding(1252);
+        }
     }
 
     private Encoding DetectEncoding(string dbfPath)
@@ -69,18 +88,11 @@ public sealed class DbfExtractorService : IDbfExtractorService
         }
     }
 
-    private async Task<Encoding> FindCorrectSpeciesEncoding(string dbfPath)
+    private async Task<Encoding?> FindCorrectEncodingByHeuristicAsync(string dbfPath)
     {
-        // Candidatos en orden de prioridad
+        // Candidatos en orden de prioridad para el entorno INIDEP
         var candidateCPs = new List<int> { 1252, 850, 437 };
         
-        // Intentar primero la detectada por el header si no está en la lista
-        var headerEncoding = DetectEncoding(dbfPath);
-        if (!candidateCPs.Contains(headerEncoding.CodePage))
-        {
-            candidateCPs.Insert(0, headerEncoding.CodePage);
-        }
-
         foreach (var cp in candidateCPs)
         {
             try
@@ -90,48 +102,54 @@ public sealed class DbfExtractorService : IDbfExtractorService
                 using var reader = new DbfDataReader.DbfDataReader(dbfPath, options);
                 var colMap = GetColumnMap(reader);
 
+                // Columnas donde es probable encontrar texto con acentos/eñes
+                var columnsToTest = new[] { "ESPECIE", "NOMVULCAS", "NOM_VULGAR", "BARCO", "COMENTARIO", "OBSERVAC", "PRODUCTO", "NOMBRE" };
+                var targetCols = colMap.Where(kv => columnsToTest.Contains(kv.Key.ToUpper())).Select(kv => kv.Value).ToList();
+
+                // Si es el archivo de especies, tenemos un "Gold Standard" (Merluza común con su código)
+                bool isSpeciesTable = colMap.ContainsKey("CODINIDEP") || colMap.ContainsKey("COD_INIDEP");
+
                 int count = 0;
-                while (reader.Read() && count++ < 5000) // Ampliamos búsqueda a 5000 registros
+                while (reader.Read() && count++ < 200) // Revisamos los primeros 200 registros
                 {
-                    var val = reader.GetValue(colMap.TryGetValue("CODINIDEP", out int i1) ? i1 : 
-                             colMap.TryGetValue("COD_INIDEP", out int i2) ? i2 :
-                             colMap.TryGetValue("COD", out int i3) ? i3 : -1);
-
-                    if (val == null) continue;
-                    
-                    // Comparación robusta (soporta decimal, double, string)
-                    bool isMatch = false;
-                    try 
+                    if (isSpeciesTable)
                     {
-                        if (val is double d) isMatch = Math.Abs(d - 7210040101.0) < 0.1;
-                        else if (val is decimal dec) isMatch = dec == 7210040101m;
-                        else isMatch = val.ToString()?.Trim() == "7210040101";
-                    } catch { }
-
-                    if (isMatch)
-                    {
-                        var name = GetString(reader, colMap, "NOMVULCAS");
-                        if (string.IsNullOrEmpty(name)) name = GetString(reader, colMap, "NOM_VULGAR");
-
-                        // Condición crítica: "común" con acento correctamente decodificado (\u00FA = ú)
-                        if (name != null && name.Contains("com\u00FAn", StringComparison.OrdinalIgnoreCase))
+                        var codVal = reader.GetValue(colMap.TryGetValue("CODINIDEP", out int i1) ? i1 : 
+                                     colMap.TryGetValue("COD_INIDEP", out int i2) ? i2 : -1);
+                        
+                        if (codVal != null && (codVal.ToString()?.Trim() == "7210040101"))
                         {
-                            System.Diagnostics.Debug.WriteLine($"Heurística DBF: Codificación {cp} seleccionada (Merluza com\u00FAn detectada)");
+                            var name = GetString(reader, colMap, "NOMVULCAS");
+                            if (string.IsNullOrEmpty(name)) name = GetString(reader, colMap, "NOM_VULGAR");
+
+                            if (name != null && name.Contains("com\u00FAn", StringComparison.OrdinalIgnoreCase))
+                            {
+                                return encoding;
+                            }
+                        }
+                    }
+
+                    // Heurística general para cualquier archivo: buscar palabras comunes con acentos
+                    foreach (var colIdx in targetCols)
+                    {
+                        var val = reader.GetValue(colIdx)?.ToString();
+                        if (string.IsNullOrEmpty(val)) continue;
+
+                        // Patrones comunes: común, tiburón, español, bártola, marea, producción
+                        if (val.Contains("com\u00FAn", StringComparison.OrdinalIgnoreCase) || 
+                            val.Contains("tibur\u00F3n", StringComparison.OrdinalIgnoreCase) ||
+                            val.Contains("espa\u00F1ol", StringComparison.OrdinalIgnoreCase) ||
+                            val.Contains("producci\u00F3n", StringComparison.OrdinalIgnoreCase))
+                        {
                             return encoding;
                         }
-                        
-                        // Si encontramos el código pero el nombre está mal, probamos con el siguiente CP
-                        break; 
                     }
                 }
             }
-            catch 
-            {
-                // Ignorar errores de lectura y probar siguiente candidato
-            }
+            catch { }
         }
 
-        return headerEncoding; // Fallback a la detección original si falla la heurística
+        return null; // No hay evidencia clara de acentos
     }
 
     public async Task ExtractBuquesAsync(string dbfPath, string jsonOutputPath)
@@ -167,7 +185,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
     public async Task ExtractEspeciesAsync(string dbfPath, string jsonOutputPath)
     {
         var records = new List<Dictionary<string, object?>>();
-        var encoding = await FindCorrectSpeciesEncoding(dbfPath);
+        var encoding = await DetectEncodingSmartAsync(dbfPath);
         var options = new DbfDataReaderOptions { Encoding = encoding };
 
         using (var dbfReader = new DbfDataReader.DbfDataReader(dbfPath, options))
@@ -209,7 +227,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
         var list = new List<LegacyCaptura>();
         if (!File.Exists(dbfPath)) return list;
 
-        var options = GetOptions(dbfPath);
+        var options = await GetOptionsAsync(dbfPath);
         using var reader = new DbfDataReader.DbfDataReader(dbfPath, options);
         var colMap = GetColumnMap(reader);
 
@@ -285,7 +303,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
         var list = new List<LegacyMuestra>();
         if (!File.Exists(dbfPath)) return list;
 
-        var options = GetOptions(dbfPath);
+        var options = await GetOptionsAsync(dbfPath);
         using var reader = new DbfDataReader.DbfDataReader(dbfPath, options);
         var colMap = GetColumnMap(reader);
         int order = 0;
@@ -340,7 +358,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
         var list = new List<LegacySubmuestra>();
         if (!File.Exists(dbfPath)) return list;
 
-        var options = GetOptions(dbfPath);
+        var options = await GetOptionsAsync(dbfPath);
         using var reader = new DbfDataReader.DbfDataReader(dbfPath, options);
         var colMap = GetColumnMap(reader);
         int order = 0;
@@ -381,7 +399,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
         var list = new List<LegacyLg>();
         if (!File.Exists(dbfPath)) return list;
 
-        var options = GetOptions(dbfPath);
+        var options = await GetOptionsAsync(dbfPath);
         using var reader = new DbfDataReader.DbfDataReader(dbfPath, options);
         var colMap = GetColumnMap(reader);
 
@@ -414,7 +432,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
         var list = new List<LegacyTracking>();
         if (!File.Exists(dbfPath)) return list;
 
-        var options = GetOptions(dbfPath);
+        var options = await GetOptionsAsync(dbfPath);
         using var reader = new DbfDataReader.DbfDataReader(dbfPath, options);
         var colMap = GetColumnMap(reader);
 
@@ -448,7 +466,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
         var list = new List<LegacyProduccion>();
         if (!File.Exists(dbfPath)) return list;
 
-        var options = GetOptions(dbfPath);
+        var options = await GetOptionsAsync(dbfPath);
         using var reader = new DbfDataReader.DbfDataReader(dbfPath, options);
         var colMap = GetColumnMap(reader);
         int order = 0;

@@ -5,6 +5,7 @@ using OBSArrastre2026.App.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 using System.IO;
 using System.Text;
+using System.Text.Json;
 
 namespace OBSArrastre2026.App.Services;
 
@@ -91,6 +92,22 @@ public class MareaImportService : IMareaImportService
         if (mPath == null) report.AddIssue(ValidationLevel.Fatal, "Sistema", $"El archivo de MUESTRA obligatorio no se encuentra (esperado M*{suffix})");
         if (sPath == null) report.AddIssue(ValidationLevel.Warning, "Sistema", $"El archivo de SUBMUESTRA no se encuentra (esperado S*{suffix})");
         if (pPath == null) report.AddIssue(ValidationLevel.Fatal, "Sistema", $"El archivo de PRODUCCIÓN obligatorio no se encuentra (esperado P*{suffix})");
+        
+        // 1.5 Guardar metadatos (carpeta de importación y encoding detectado)
+        var meta = MareaMetadataHelper.GetMetadata(marea.Metadata);
+        meta.ImportFolder = basePath;
+        if (pPath != null)
+        {
+            var detectedEnc = await _extractor.DetectEncodingSmartAsync(pPath);
+            meta.EncodingCodePage = detectedEnc.CodePage;
+        }
+        else if (cPath != null)
+        {
+             var detectedEnc = await _extractor.DetectEncodingSmartAsync(cPath);
+             meta.EncodingCodePage = detectedEnc.CodePage;
+        }
+        marea.Metadata = JsonSerializer.Serialize(meta);
+        report.MareaMetadata = marea.Metadata;
 
         // 2. Extraer datos (si los paths fueron resueltos)
         var capturas = cPath != null ? await _extractor.ReadCapturasAsync(cPath) ?? new() : new();
@@ -292,7 +309,13 @@ public class MareaImportService : IMareaImportService
 
         if (marea == null) throw new InvalidOperationException("Marea no encontrada");
 
-        // Guardar carpeta de importación en metadata
+        // Restaurar metadatos capturados durante la validación (encoding, etc.)
+        if (!string.IsNullOrEmpty(report.MareaMetadata))
+        {
+            marea.Metadata = report.MareaMetadata;
+        }
+
+        // Asegurar carpeta de importación en metadata si se pasó explícitamente
         if (!string.IsNullOrEmpty(report.ImportPath))
         {
             marea.Metadata = MareaMetadataHelper.SetImportFolder(marea.Metadata, report.ImportPath);

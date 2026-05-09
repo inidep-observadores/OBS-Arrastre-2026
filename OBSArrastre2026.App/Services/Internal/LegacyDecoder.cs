@@ -117,7 +117,7 @@ public static class LegacyDecoder
             int i = int.Parse(s.Substring(sizePartLen + (blockSize * 2), blockSize));
             int t = int.Parse(s.Substring(sizePartLen + (blockSize * 3), blockSize));
 
-            int calculatedTotal = t; // Preservamos el valor original del DBF para NroTotal
+            int calculatedTotal = (m + h + i) > 0 ? (m + h + i) : t;
             return new DecodedTally(size, m, h, i, calculatedTotal);
         }
         catch
