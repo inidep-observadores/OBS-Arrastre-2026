@@ -125,6 +125,12 @@ public class ExportarRecursosViewModel : ObservableObject
         IsBusy = true;
         try
         {
+            // Asegurar que la carpeta de destino existe
+            if (!string.IsNullOrWhiteSpace(ExportPath))
+            {
+                Directory.CreateDirectory(ExportPath);
+            }
+
             if (ExportExcel)
             {
                 var etapas = _marea.Etapas.OrderBy(e => e.FechaZarpada).ToList();
