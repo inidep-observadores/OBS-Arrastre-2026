@@ -138,6 +138,20 @@ public class MainWindowViewModel : ObservableObject
     private DateTime? _mareasFilterFechaDesde;
     private DateTime? _mareasFilterFechaHasta;
     private string _mareasSearchText = string.Empty;
+
+    // Filtros de Control Producción
+    private bool _controlSoloConDiferencias;
+    public bool ControlSoloConDiferencias
+    {
+        get => _controlSoloConDiferencias;
+        set
+        {
+            if (SetProperty(ref _controlSoloConDiferencias, value))
+            {
+                RecordsView.Refresh();
+            }
+        }
+    }
     
     // Filtros de Lances
     private bool _showTrackLine = true;
@@ -1215,6 +1229,12 @@ public class MainWindowViewModel : ObservableObject
             return;
         }
 
+        // Limpiar filtro al cambiar a otras secciones
+        if (RecordsView != null)
+        {
+            RecordsView.Filter = null;
+        }
+
         if (section == NavigationSection.ReemplazoEspecie)
         {
             ReemplazoEspecieVM ??= new ReemplazoEspecieViewModel(_dbContextFactory, _activeMareaManager)
@@ -2190,6 +2210,16 @@ public class MainWindowViewModel : ObservableObject
     {
         try
         {
+            RecordsView.Filter = item => 
+            {
+                if (!_controlSoloConDiferencias) return true;
+                if (item is ControlProduccionListItemViewModel cpItem)
+                {
+                    // Se ocultan las filas donde la diferencia es 0 (o despreciable)
+                    return Math.Abs(cpItem.DiferenciaPorcentaje) > 0.0001;
+                }
+                return true;
+            };
             var activeMarea = _activeMareaManager.ActiveMarea;
             if (activeMarea == null)
             {

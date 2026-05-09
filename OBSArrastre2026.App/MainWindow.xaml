@@ -896,6 +896,29 @@
                                     </StackPanel>
                                 </Grid>
                             </Border>
+                            
+                            <!-- Barra de Filtros Control Produccion -->
+                            <Border Grid.Row="1" 
+                                    Padding="16,12"
+                                    Margin="0,0,0,16">
+                                <Border.Style>
+                                    <Style TargetType="Border" BasedOn="{StaticResource SurfaceBorderStyle}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <StackPanel Orientation="Horizontal">
+                                    <CheckBox Content="Mostrar únicamente ítems con diferencias" 
+                                              IsChecked="{Binding ControlSoloConDiferencias}"
+                                              VerticalAlignment="Center"
+                                              FontWeight="SemiBold"
+                                              Foreground="{DynamicResource PrimaryTextBrush}" />
+                                </StackPanel>
+                            </Border>
 
                             <Border Grid.Row="2"
                                     Margin="0,6,0,4"
