@@ -18,6 +18,8 @@ public class ExportarDbfViewModel : ObservableObject
     private readonly Marea _marea;
     private string _exportPath = string.Empty;
     private bool _isBusy;
+    private double _progressValue;
+    private DbfExportSummary? _exportSummary;
 
     public string ExportPath
     {
@@ -45,6 +47,18 @@ public class ExportarDbfViewModel : ObservableObject
                 (BrowseCommand as IRelayCommand)?.NotifyCanExecuteChanged();
             }
         }
+    }
+
+    public double ProgressValue
+    {
+        get => _progressValue;
+        set => SetProperty(ref _progressValue, value);
+    }
+
+    public DbfExportSummary? ExportSummary
+    {
+        get => _exportSummary;
+        set => SetProperty(ref _exportSummary, value);
     }
 
     public bool CanAccept => !string.IsNullOrWhiteSpace(ExportPath) && !IsBusy;
@@ -88,7 +102,8 @@ public class ExportarDbfViewModel : ObservableObject
         IsBusy = true;
         try
         {
-            await _exporterService.ExportMareaToDbfAsync(_marea, ExportPath);
+            var progress = new Progress<double>(v => ProgressValue = v);
+            ExportSummary = await _exporterService.ExportMareaToDbfAsync(_marea, ExportPath, progress);
             DialogResult.TrySetResult(true);
         }
         catch (Exception ex)

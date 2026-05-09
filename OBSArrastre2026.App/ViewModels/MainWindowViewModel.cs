@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Text;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using System.Windows.Input;
@@ -1010,7 +1011,23 @@ public class MainWindowViewModel : ObservableObject
 
         if (result)
         {
-            bool openFolder = await ShowConfirmationAsync("Exportación completada", "Se han generado los archivos DBF con éxito. ¿Desea abrir la carpeta de destino?");
+            var summary = viewModel.ExportSummary;
+            var timeDetails = new StringBuilder();
+            timeDetails.AppendLine("Se han generado los archivos DBF con éxito.");
+            timeDetails.AppendLine();
+            timeDetails.AppendLine($"Tiempo Total: {summary?.TotalTime.TotalSeconds:F2}s");
+            timeDetails.AppendLine("-----------------------------------");
+            if (summary?.StageTimings != null)
+            {
+                foreach (var stage in summary.StageTimings)
+                {
+                    timeDetails.AppendLine($"{stage.Key}: {stage.Value.TotalSeconds:F2}s");
+                }
+            }
+            timeDetails.AppendLine();
+            timeDetails.AppendLine("¿Desea abrir la carpeta de destino?");
+
+            bool openFolder = await ShowConfirmationAsync("Exportación completada", timeDetails.ToString());
             if (openFolder)
             {
                 try

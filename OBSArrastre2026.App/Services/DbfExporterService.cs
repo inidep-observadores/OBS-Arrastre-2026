@@ -1,9 +1,11 @@
 using System.IO;
 using System.Text;
+using System.Diagnostics;
 using DotNetDBF;
 using Microsoft.EntityFrameworkCore;
 using OBSArrastre2026.App.Data;
 using OBSArrastre2026.App.Data.Entities;
+using OBSArrastre2026.App.Models;
 using OBSArrastre2026.App.Services.Internal;
 
 namespace OBSArrastre2026.App.Services;
@@ -19,14 +21,20 @@ public sealed class DbfExporterService : IDbfExporterService
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
     }
 
-    public async Task ExportMareaToDbfAsync(Marea marea, string outputPath)
+    public async Task<DbfExportSummary> ExportMareaToDbfAsync(Marea marea, string outputPath, IProgress<double>? progress = null)
     {
+        var totalSw = Stopwatch.StartNew();
+        var summary = new DbfExportSummary();
+
+        progress?.Report(5);
         if (!Directory.Exists(outputPath)) Directory.CreateDirectory(outputPath);
 
         using var dbContext = await _dbContextFactory.CreateDbContextAsync();
 
-        // Recargar marea con todos los datos necesarios
+        // Recargar marea con todos los datos necesarios (Auditamos el tiempo de DB)
+        var swDb = Stopwatch.StartNew();
         var fullMarea = await dbContext.Mareas
+            .AsSplitQuery()
             .Include(m => m.Buque)
             .Include(m => m.Etapas)
                 .ThenInclude(e => e.Lances)
@@ -52,22 +60,34 @@ public sealed class DbfExporterService : IDbfExporterService
                     .ThenInclude(p => p.Especie)
             .FirstOrDefaultAsync(m => m.ID == marea.ID);
 
-        if (fullMarea == null) return;
+        summary.StageTimings["Carga Base de Datos"] = swDb.Elapsed;
 
-        // Tracking points
-        var tracking = await dbContext.TrackingPoints
-            .Where(t => t.MareaID == marea.ID)
-            .OrderBy(t => t.FechaHora)
-            .ToListAsync();
+        if (fullMarea == null) return summary;
+
 
         string mareaSuffix = $"{fullMarea.NumeroInidep}{fullMarea.AnioInidep % 100:D2}";
         string barcoNombre = fullMarea.Buque?.Nombre ?? "S/D";
 
         // Exportar cada archivo
+        progress?.Report(10);
+        var sw = Stopwatch.StartNew();
         await ExportCapturasAsync(fullMarea, barcoNombre, mareaSuffix, outputPath);
+        summary.StageTimings["Capturas (C)"] = sw.Elapsed;
+
+        progress?.Report(30);
+        sw.Restart();
         await ExportProduccionAsync(fullMarea, barcoNombre, mareaSuffix, outputPath);
-        await ExportTrackingAsync(fullMarea, mareaSuffix, outputPath, tracking);
-        await ExportMuestrasYSasyn(fullMarea, barcoNombre, mareaSuffix, outputPath);
+        summary.StageTimings["Producción (P)"] = sw.Elapsed;
+
+
+        progress?.Report(70);
+        sw.Restart();
+        await ExportMuestrasYSasyn(fullMarea, barcoNombre, mareaSuffix, outputPath, progress);
+        summary.StageTimings["Muestras y Submuestras (M,S,L,X)"] = sw.Elapsed;
+
+        progress?.Report(100);
+        
+        return summary with { TotalTime = totalSw.Elapsed };
     }
 
     private async Task ExportCapturasAsync(Marea marea, string barco, string suffix, string path)
@@ -169,8 +189,8 @@ public sealed class DbfExporterService : IDbfExporterService
                         if (double.TryParse(item.Especie?.CodigoInidep, out double spCode))
                         {
                             row[idx++] = spCode;
-                            row[idx++] = item.DatoCaptura;
-                            row[idx++] = item.DatoDescarte;
+                            row[idx++] = item.CapturaTotalKgCalculado;
+                            row[idx++] = item.PesoDescarteCalculado;
                         }
                         else
                         {
@@ -187,7 +207,7 @@ public sealed class DbfExporterService : IDbfExporterService
                     }
                 }
 
-                writer.AddRecord(row);
+                writer.WriteRecord(row);
             }
         }
 
@@ -233,58 +253,15 @@ public sealed class DbfExporterService : IDbfExporterService
                 row[idx++] = p.Factor ?? 0.0;
                 row[idx++] = p.Kg ?? 0.0;
 
-                writer.AddRecord(row);
+                writer.WriteRecord(row);
             }
         }
 
         writer.Close();
     }
 
-    private async Task ExportTrackingAsync(Marea marea, string suffix, string path, List<MareaTracking> tracking)
-    {
-        string fileName = Path.Combine(path, $"T{suffix}.DBF");
-        var encoding = Encoding.GetEncoding(850);
 
-        using var stream = File.Open(fileName, FileMode.Create, FileAccess.Write);
-        var writer = new DBFWriter(stream) { CharEncoding = encoding };
-
-        var fields = new List<DBFField>
-        {
-            new DBFField("BUQUE", NativeDbType.Char, 30),
-            new DBFField("MATRICULA", NativeDbType.Char, 10),
-            new DBFField("FECHA", NativeDbType.Char, 25), // Formato string en legacy tracking
-            new DBFField("LATITUD", NativeDbType.Numeric, 10, 5),
-            new DBFField("LONGITUD", NativeDbType.Numeric, 10, 5),
-            new DBFField("VELOCIDAD", NativeDbType.Numeric, 10, 2),
-            new DBFField("RUMBO", NativeDbType.Numeric, 10, 2)
-        };
-
-        writer.Fields = fields.ToArray();
-
-        string buqueNombre = marea.Buque?.Nombre ?? "";
-        string matricula = marea.Buque?.Matricula.ToString() ?? "";
-
-        foreach (var t in tracking)
-        {
-            var row = new object[fields.Count];
-            int idx = 0;
-            row[idx++] = buqueNombre;
-            row[idx++] = matricula;
-            // La fecha en el DBF de tracking legacy suele estar en un formato string específico
-            // o se espera UTC+3 para el sistema central.
-            row[idx++] = t.FechaHora.ToString("yyyy-MM-dd HH:mm:ss");
-            row[idx++] = t.Latitud;
-            row[idx++] = t.Longitud;
-            row[idx++] = t.Velocidad;
-            row[idx++] = t.Rumbo;
-
-            writer.AddRecord(row);
-        }
-
-        writer.Close();
-    }
-
-    private async Task ExportMuestrasYSasyn(Marea marea, string barco, string suffix, string path)
+    private async Task ExportMuestrasYSasyn(Marea marea, string barco, string suffix, string path, IProgress<double>? progress = null)
     {
         var encoding = Encoding.GetEncoding(850);
 
@@ -379,7 +356,7 @@ public sealed class DbfExporterService : IDbfExporterService
                             mRow[mIdx++] = "0";
                         }
                     }
-                    mWriter.AddRecord(mRow);
+                    mWriter.WriteRecord(mRow);
 
                     // Exportar extensiones X si hay más de 90 tallas
                     if (freqs.Count > 90)
@@ -406,7 +383,7 @@ public sealed class DbfExporterService : IDbfExporterService
                                 xRow[xIdx++] = "0";
                             }
                         }
-                        xWriter.AddRecord(xRow);
+                        xWriter.WriteRecord(xRow);
                     }
 
                     // Exportar Submuestras S
@@ -425,7 +402,7 @@ public sealed class DbfExporterService : IDbfExporterService
                         sRow[sIdx++] = s.PesoTotalGramos / 1000.0;
                         sRow[sIdx++] = (double)(s.Sexo ?? 0);
                         sRow[sIdx++] = (double)(s.Estadio ?? 0);
-                        sWriter.AddRecord(sRow);
+                        sWriter.WriteRecord(sRow);
                     }
 
                     // Exportar Langostinos L
@@ -467,7 +444,7 @@ public sealed class DbfExporterService : IDbfExporterService
                                 lRow[lIdx++] = 0.0;
                             }
                         }
-                        lWriter.AddRecord(lRow);
+                        lWriter.WriteRecord(lRow);
                     }
                 }
             }

@@ -30,6 +30,7 @@ public class ControlProduccionRayaTests
     private readonly IMapRenderingService _mapRenderingService;
     private readonly IExcelReportService _excelReportService;
     private readonly IMareaSummaryService _mareaSummaryService;
+    private readonly IDbfExporterService _dbfExporterService;
 
     public ControlProduccionRayaTests()
     {
@@ -60,6 +61,7 @@ public class ControlProduccionRayaTests
         _mapRenderingService = Substitute.For<IMapRenderingService>();
         _excelReportService = Substitute.For<IExcelReportService>();
         _mareaSummaryService = Substitute.For<IMareaSummaryService>();
+        _dbfExporterService = Substitute.For<IDbfExporterService>();
     }
 
     [Fact]
@@ -216,6 +218,7 @@ public class ControlProduccionRayaTests
             _excelReportService,
             _mareaSummaryService,
             _userSettingsService,
+            _dbfExporterService,
             _dbContextFactory);
     }
 }
@@ -245,8 +248,9 @@ public class TestMainWindowViewModel : MainWindowViewModel
         IExcelReportService excelReportService,
         IMareaSummaryService mareaSummaryService,
         IUserSettingsService userSettingsService,
+        IDbfExporterService dbfExporterService,
         IDbContextFactory<AppDbContext> dbContextFactory) 
-        : base(mockShellDataService, themeService, mareaService, buqueService, lanceService, muestraService, activeMareaManager, mareaEditFactory, lanceEditFactory, muestraEditFactory, submuestraEditFactory, submuestraService, produccionService, produccionEditFactory, validationService, mareaReportService, jsonImportService, mareaImportService, mapRenderingService, excelReportService, mareaSummaryService, userSettingsService, dbContextFactory)
+        : base(mockShellDataService, themeService, mareaService, buqueService, lanceService, muestraService, activeMareaManager, mareaEditFactory, lanceEditFactory, muestraEditFactory, submuestraEditFactory, submuestraService, produccionService, produccionEditFactory, validationService, mareaReportService, jsonImportService, mareaImportService, mapRenderingService, excelReportService, mareaSummaryService, userSettingsService, dbfExporterService, dbContextFactory)
     {
     }
 

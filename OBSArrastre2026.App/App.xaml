@@ -1337,7 +1337,7 @@
                                 <DropShadowEffect BlurRadius="30" Opacity="0.3" ShadowDepth="0" Color="Black"/>
                             </Border.Effect>
                             <StackPanel>
-                                <ProgressBar IsIndeterminate="True" Width="220" Height="4" 
+                                <ProgressBar Minimum="0" Maximum="100" Value="{Binding ProgressValue}" Width="220" Height="4" 
                                              Foreground="{DynamicResource AccentBrush}" 
                                              Background="{DynamicResource CardBorderBrush}" 
                                              BorderThickness="0"/>
