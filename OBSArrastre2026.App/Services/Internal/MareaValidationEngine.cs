@@ -275,11 +275,15 @@ public sealed class MareaValidationEngine
         List<LegacyProduccion> produccion)
     {
         var bActual = barcoActual.Trim().ToUpper();
+        if (bActual.Length > 20) bActual = bActual.Substring(0, 20);
 
         // 1. CAPTURAS
         foreach (var c in capturas)
         {
-            if (c.Barco.Trim().ToUpper() != bActual)
+            var bDbf = c.Barco.Trim().ToUpper();
+            if (bDbf.Length > 20) bDbf = bDbf.Substring(0, 20);
+
+            if (bDbf != bActual)
                 report.AddIssue(ValidationLevel.Fatal, "Consistencia", $"Barco en captura ({c.Barco}) no coincide con marea activa ({barcoActual})", $"Lance {c.Lance}");
             
             if ((int)c.Marea != mareaActual)
@@ -300,7 +304,10 @@ public sealed class MareaValidationEngine
         // 2. MUESTRAS
         foreach (var m in muestras)
         {
-            if (m.Barco.Trim().ToUpper() != bActual)
+            var bDbf = m.Barco.Trim().ToUpper();
+            if (bDbf.Length > 20) bDbf = bDbf.Substring(0, 20);
+
+            if (bDbf != bActual)
                 report.AddIssue(ValidationLevel.Fatal, "Consistencia", $"Barco en muestra ({m.Barco}) no coincide con marea activa ({barcoActual})", $"Lance {m.Lance}");
             
             if ((int)m.Marea != mareaActual)
@@ -321,7 +328,10 @@ public sealed class MareaValidationEngine
         // 3. SUBMUES
         foreach (var s in submuestras)
         {
-            if (s.Barco.Trim().ToUpper() != bActual)
+            var bDbf = s.Barco.Trim().ToUpper();
+            if (bDbf.Length > 20) bDbf = bDbf.Substring(0, 20);
+
+            if (bDbf != bActual)
                 report.AddIssue(ValidationLevel.Fatal, "Consistencia", $"Barco en submuestra ({s.Barco}) no coincide con marea activa ({barcoActual})", $"Lance {s.Lance} Ej {s.NEjemplar}");
 
             if ((int)s.Marea != mareaActual)
@@ -342,7 +352,10 @@ public sealed class MareaValidationEngine
         // 4. LG
         foreach (var l in lgs)
         {
-            if (l.Barco.Trim().ToUpper() != bActual)
+            var bDbf = l.Barco.Trim().ToUpper();
+            if (bDbf.Length > 20) bDbf = bDbf.Substring(0, 20);
+
+            if (bDbf != bActual)
                 report.AddIssue(ValidationLevel.Fatal, "Consistencia", $"Barco en archivo LG ({l.Barco}) no coincide con marea activa ({barcoActual})", $"Lance {l.Lance}");
 
             if ((int)l.Marea != mareaActual)
@@ -363,14 +376,20 @@ public sealed class MareaValidationEngine
         // 5. SEGUIMIENTO (T*) - Aquí el campo es "Buque"
         foreach (var t in tracking)
         {
-            if (t.Buque.Trim().ToUpper() != bActual)
+            var bDbf = t.Buque.Trim().ToUpper();
+            if (bDbf.Length > 20) bDbf = bDbf.Substring(0, 20);
+
+            if (bDbf != bActual)
                 report.AddIssue(ValidationLevel.Fatal, "Consistencia", $"Barco en seguimiento satelital ({t.Buque}) no coincide con marea activa ({barcoActual})", "Seguimiento T*");
         }
 
         // 6. PRODUCCIÓN (P*)
         foreach (var p in produccion)
         {
-            if (p.Barco.Trim().ToUpper() != bActual)
+            var bDbf = p.Barco.Trim().ToUpper();
+            if (bDbf.Length > 20) bDbf = bDbf.Substring(0, 20);
+
+            if (bDbf != bActual)
                 report.AddIssue(ValidationLevel.Fatal, "Consistencia", $"Barco en producción ({p.Barco}) no coincide con marea activa ({barcoActual})", $"Fecha {p.Fecha:dd/MM/yyyy}");
 
             if ((int)p.Marea != mareaActual)
