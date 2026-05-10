@@ -31,6 +31,7 @@ public class ControlProduccionRayaTests
     private readonly IExcelReportService _excelReportService;
     private readonly IMareaSummaryService _mareaSummaryService;
     private readonly IDbfExporterService _dbfExporterService;
+    private readonly ConfiguracionViewModel _configuracionViewModel;
 
     public ControlProduccionRayaTests()
     {
@@ -62,6 +63,7 @@ public class ControlProduccionRayaTests
         _excelReportService = Substitute.For<IExcelReportService>();
         _mareaSummaryService = Substitute.For<IMareaSummaryService>();
         _dbfExporterService = Substitute.For<IDbfExporterService>();
+        _configuracionViewModel = new ConfiguracionViewModel(_themeService, _userSettingsService);
     }
 
     [Fact]
@@ -219,7 +221,8 @@ public class ControlProduccionRayaTests
             _mareaSummaryService,
             _userSettingsService,
             _dbfExporterService,
-            _dbContextFactory);
+            _dbContextFactory,
+            _configuracionViewModel);
     }
 }
 
@@ -249,8 +252,9 @@ public class TestMainWindowViewModel : MainWindowViewModel
         IMareaSummaryService mareaSummaryService,
         IUserSettingsService userSettingsService,
         IDbfExporterService dbfExporterService,
-        IDbContextFactory<AppDbContext> dbContextFactory) 
-        : base(mockShellDataService, themeService, mareaService, buqueService, lanceService, muestraService, activeMareaManager, mareaEditFactory, lanceEditFactory, muestraEditFactory, submuestraEditFactory, submuestraService, produccionService, produccionEditFactory, validationService, mareaReportService, jsonImportService, mareaImportService, mapRenderingService, excelReportService, mareaSummaryService, userSettingsService, dbfExporterService, dbContextFactory)
+        IDbContextFactory<AppDbContext> dbContextFactory,
+        ConfiguracionViewModel configuracionViewModel) 
+        : base(mockShellDataService, themeService, mareaService, buqueService, lanceService, muestraService, activeMareaManager, mareaEditFactory, lanceEditFactory, muestraEditFactory, submuestraEditFactory, submuestraService, produccionService, produccionEditFactory, validationService, mareaReportService, jsonImportService, mareaImportService, mapRenderingService, excelReportService, mareaSummaryService, userSettingsService, dbfExporterService, dbContextFactory, configuracionViewModel)
     {
     }
 

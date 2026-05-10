@@ -22,20 +22,23 @@ public interface IMareaReportService
     Task<byte[]> GenerateMareaSummaryPdfAsync(MareaSummaryReport report);
     Task<byte[]> GenerateMareaSummaryWordAsync(MareaSummaryReport report);
     Task<byte[]> GenerateFullMareaReportWordAsync(Marea marea, List<Lance> lances, List<RegistroProduccion> produccion, MareaSummaryReport summary);
+    Task<byte[]> GenerateMareaReportTemplateAsync(Marea marea, List<Lance> lances, List<RegistroProduccion> produccion, MareaSummaryReport summary);
 }
 
 public class MareaReportService : IMareaReportService
 {
     private readonly IMapRenderingService _mapRenderingService;
+    private readonly IUserSettingsService _userSettingsService;
 
     static MareaReportService()
     {
         QuestPDF.Settings.License = LicenseType.Community;
     }
 
-    public MareaReportService(IMapRenderingService mapRenderingService)
+    public MareaReportService(IMapRenderingService mapRenderingService, IUserSettingsService userSettingsService)
     {
         _mapRenderingService = mapRenderingService;
+        _userSettingsService = userSettingsService;
     }
 
     public async Task<byte[]> GenerateMareaSummaryPdfAsync(MareaSummaryReport report)
@@ -801,11 +804,11 @@ public class MareaReportService : IMareaReportService
                     .Font("Times New Roman").FontSize(12).Alignment = Alignment.center;
                 doc.InsertParagraph().SpacingAfter(20);
 
-                // Cabecera
+                // Cabecera manual
                 doc.InsertParagraph($"Marea: {marea.NumeroInidep}/{marea.AnioInidep}")
                     .Font("Times New Roman").FontSize(14).Bold().SpacingAfter(12);
 
-                // Fechas de realización (listando etapas si las hay)
+                // Fechas de realización
                 var pFechas = doc.InsertParagraph("Fechas de realización: ")
                     .Font("Times New Roman").FontSize(14).Bold();
 
@@ -845,77 +848,136 @@ public class MareaReportService : IMareaReportService
                 doc.InsertParagraph("Tipo de buque: ")
                     .Font("Times New Roman").FontSize(14).Bold().SpacingAfter(15);
 
-                // Resumen
-                doc.InsertParagraph("Resumen").Font("Times New Roman").FontSize(14).Bold().SpacingAfter(6);
-                var parrafos = MareaSummaryNarrativeBuilder.Build(summary);
-                foreach (var p in parrafos)
+                await PopulateMareaReportContentAsync(doc, marea, lances, produccion, summary);
+
+                doc.Save();
+                return ms.ToArray();
+            }
+        });
+    }
+
+    public async Task<byte[]> GenerateMareaReportTemplateAsync(Marea marea, List<Lance> lances, List<RegistroProduccion> produccion, MareaSummaryReport summary)
+    {
+        return await Task.Run(async () =>
+        {
+            var templatePath = Path.Combine(AppContext.BaseDirectory, "Resources", "Templates", "Portada_informe.docx");
+            
+            if (!File.Exists(templatePath))
+            {
+                return await GenerateFullMareaReportWordAsync(marea, lances, produccion, summary);
+            }
+
+            using var ms = new MemoryStream();
+            using (var doc = DocX.Load(templatePath))
+            {
+                // 1. Reemplazo de marcadores en la Portada
+                var settings = _userSettingsService.GetSettings();
+                string revisor = $"{settings.RevisorApellido}, {settings.RevisorNombre}".Trim(' ', ',');
+                if (string.IsNullOrWhiteSpace(revisor)) revisor = "{Revisor no configurado}";
+
+                doc.ReplaceText("ApellidoNombreRevisor", revisor);
+                doc.ReplaceText("AñoMarea", marea.AnioInidep.ToString());
+                doc.ReplaceText("NroMarea", marea.NumeroInidep.ToString("00"));
+
+                // 2. Reemplazo en Pies de Página
+                foreach (var footer in doc.Footers.Odd)
                 {
-                    var para = doc.InsertParagraph();
-                    para.Alignment = Alignment.both;
-                    para.Font("Times New Roman").FontSize(10);
-                    foreach (var span in p.Spans)
-                    {
-                        var text = para.Append(span.Text);
-                        text.Font("Times New Roman").FontSize(10);
-                        switch (span.Style)
-                        {
-                            case NarrativaSpanStyle.Bold: text.Bold(); break;
-                            case NarrativaSpanStyle.Italic: text.Italic(); break;
-                            case NarrativaSpanStyle.BoldItalic: text.Bold().Italic(); break;
-                            case NarrativaSpanStyle.Underline: text.UnderlineStyle(UnderlineStyle.singleLine); break;
-                        }
-                    }
-                    para.SpacingAfter(4);
+                    footer.ReplaceText("AñoMareaPie", marea.AnioInidep.ToString());
+                    footer.ReplaceText("NroMareaPie", marea.NumeroInidep.ToString("00"));
                 }
-                doc.InsertParagraph("No se realizó la tarea de registrar la captura incidental de aves y mamíferos marinos.")
-                    .Font("Times New Roman").FontSize(10);
-                doc.InsertParagraph("Aleteo de tiburones: No realizó.")
-                    .Font("Times New Roman").FontSize(10);
-                doc.InsertParagraph("Habitabilidad del buque: Buena")
-                    .Font("Times New Roman").FontSize(10).SpacingAfter(10);
-
-                // Palabras clave
-                doc.InsertParagraph("Palabras Clave").Font("Times New Roman").FontSize(12).Bold().SpacingAfter(4);
-                doc.InsertParagraph("[Palabras clave]").Font("Times New Roman").FontSize(12).SpacingAfter(15);
-
-                // Descripción artes de pesca
-                doc.InsertParagraph("Descripción artes de pesca").Font("Times New Roman").FontSize(14).Bold().SpacingAfter(6);
-                doc.InsertParagraph("Denominación y tipo: Red de arrastre de fondo.").Font("Times New Roman").FontSize(12).Italic();
-                doc.InsertParagraph("Características generales:").Font("Times New Roman").FontSize(12).Italic().SpacingAfter(40);
-
-                // Metodología
-                doc.InsertParagraph("Metodología de captura, estimación y producción").Font("Times New Roman").FontSize(14).Bold().SpacingAfter(6);
-                doc.InsertParagraph().SpacingAfter(60);
-
-                // Resultados
-                doc.InsertParagraph("Resultados obtenidos").Font("Times New Roman").FontSize(14).Bold().SpacingAfter(10);
-
-                var etapas = marea.Etapas.OrderBy(e => e.FechaZarpada).ToList();
-                bool multipleEtapas = etapas.Count > 1;
-
-                for (int i = 0; i < etapas.Count; i++)
+                foreach (var footer in doc.Footers.Even)
                 {
-                    var etapa = etapas[i];
-                    var etapaLances = lances.Where(l => l.MareaEtapaId == etapa.ID).ToList();
-                    var etapaProduccion = produccion.Where(p => p.MareaEtapaId == etapa.ID).ToList();
+                    footer.ReplaceText("AñoMareaPie", marea.AnioInidep.ToString());
+                    footer.ReplaceText("NroMareaPie", marea.NumeroInidep.ToString("00"));
+                }
+                foreach (var footer in doc.Footers.First)
+                {
+                    footer.ReplaceText("AñoMareaPie", marea.AnioInidep.ToString());
+                    footer.ReplaceText("NroMareaPie", marea.NumeroInidep.ToString("00"));
+                }
 
-                    if (multipleEtapas)
-                    {
-                        doc.InsertParagraph($"VIAJE {i + 1}").Font("Times New Roman").FontSize(16).Bold().Alignment = Alignment.center;
-                        doc.InsertParagraph().SpacingAfter(10);
-                    }
+                // 3. Volcado de contenido técnico
+                await PopulateMareaReportContentAsync(doc, marea, lances, produccion, summary);
 
-                    // Tablas de datos
-                    doc.InsertParagraph("Datos de captura, esfuerzo y producción").Font("Times New Roman").FontSize(12).Bold().SpacingAfter(6);
+                doc.SaveAs(ms);
+                return ms.ToArray();
+            }
+        });
+    }
 
-                    doc.InsertParagraph("Captura por especie").Font("Times New Roman").FontSize(12).Italic().SpacingBefore(6);
-                    InsertSpeciesTable(doc, etapaLances);
+    private async Task PopulateMareaReportContentAsync(DocX doc, Marea marea, List<Lance> lances, List<RegistroProduccion> produccion, MareaSummaryReport summary)
+    {
+        // Resumen
+        doc.InsertParagraph("Resumen").Font("Times New Roman").FontSize(14).Bold().SpacingAfter(6);
+        var parrafos = MareaSummaryNarrativeBuilder.Build(summary);
+        foreach (var p in parrafos)
+        {
+            var para = doc.InsertParagraph();
+            para.Alignment = Alignment.both;
+            para.Font("Times New Roman").FontSize(10);
+            foreach (var span in p.Spans)
+            {
+                var text = para.Append(span.Text);
+                text.Font("Times New Roman").FontSize(10);
+                switch (span.Style)
+                {
+                    case NarrativaSpanStyle.Bold: text.Bold(); break;
+                    case NarrativaSpanStyle.Italic: text.Italic(); break;
+                    case NarrativaSpanStyle.BoldItalic: text.Bold().Italic(); break;
+                    case NarrativaSpanStyle.Underline: text.UnderlineStyle(UnderlineStyle.singleLine); break;
+                }
+            }
+            para.SpacingAfter(4);
+        }
+        doc.InsertParagraph("No se realizó la tarea de registrar la captura incidental de aves y mamíferos marinos.")
+            .Font("Times New Roman").FontSize(10);
+        doc.InsertParagraph("Aleteo de tiburones: No realizó.")
+            .Font("Times New Roman").FontSize(10);
+        doc.InsertParagraph("Habitabilidad del buque: Buena")
+            .Font("Times New Roman").FontSize(10).SpacingAfter(10);
 
-                    doc.InsertParagraph("Captura por área").Font("Times New Roman").FontSize(12).Italic().SpacingBefore(10);
-                    InsertAreaTable(doc, etapaLances);
+        // Palabras clave
+        doc.InsertParagraph("Palabras Clave").Font("Times New Roman").FontSize(12).Bold().SpacingAfter(4);
+        doc.InsertParagraph("[Palabras clave]").Font("Times New Roman").FontSize(12).SpacingAfter(15);
 
-                    doc.InsertParagraph("Producción").Font("Times New Roman").FontSize(12).Italic().SpacingBefore(10);
-                    InsertProduccionTable(doc, etapaProduccion);
+        // Descripción artes de pesca
+        doc.InsertParagraph("Descripción artes de pesca").Font("Times New Roman").FontSize(14).Bold().SpacingAfter(6);
+        doc.InsertParagraph("Denominación y tipo: Red de arrastre de fondo.").Font("Times New Roman").FontSize(12).Italic();
+        doc.InsertParagraph("Características generales:").Font("Times New Roman").FontSize(12).Italic().SpacingAfter(40);
+
+        // Metodología
+        doc.InsertParagraph("Metodología de captura, estimación y producción").Font("Times New Roman").FontSize(14).Bold().SpacingAfter(6);
+        doc.InsertParagraph().SpacingAfter(60);
+
+        // Resultados
+        doc.InsertParagraph("Resultados obtenidos").Font("Times New Roman").FontSize(14).Bold().SpacingAfter(10);
+
+        var etapas = marea.Etapas.OrderBy(e => e.FechaZarpada).ToList();
+        bool multipleEtapas = etapas.Count > 1;
+
+        for (int i = 0; i < etapas.Count; i++)
+        {
+            var etapa = etapas[i];
+            var etapaLances = lances.Where(l => l.MareaEtapaId == etapa.ID).ToList();
+            var etapaProduccion = produccion.Where(p => p.MareaEtapaId == etapa.ID).ToList();
+
+            if (multipleEtapas)
+            {
+                doc.InsertParagraph($"VIAJE {i + 1}").Font("Times New Roman").FontSize(16).Bold().Alignment = Alignment.center;
+                doc.InsertParagraph().SpacingAfter(10);
+            }
+
+            // Tablas de datos
+            doc.InsertParagraph("Datos de captura, esfuerzo y producción").Font("Times New Roman").FontSize(12).Bold().SpacingAfter(6);
+
+            doc.InsertParagraph("Captura por especie").Font("Times New Roman").FontSize(12).Italic().SpacingBefore(6);
+            InsertSpeciesTable(doc, etapaLances);
+
+            doc.InsertParagraph("Captura por área").Font("Times New Roman").FontSize(12).Italic().SpacingBefore(10);
+            InsertAreaTable(doc, etapaLances);
+
+            doc.InsertParagraph("Producción").Font("Times New Roman").FontSize(12).Italic().SpacingBefore(10);
+            InsertProduccionTable(doc, etapaProduccion);
 
                     // Mapa
                     var lancesConCoord = etapaLances.Where(l => l.LatitudInicioDecimal.HasValue && l.LongitudInicioDecimal.HasValue).ToList();

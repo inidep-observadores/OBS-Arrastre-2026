@@ -13,5 +13,6 @@ public enum NavigationSection
     Separator,
     GenerarRecursosInforme,
     ExportarDbf,
-    Procesos
+    Procesos,
+    Configuracion
 }

@@ -134,6 +134,7 @@ public partial class App : Application
                         return new ProduccionEditViewModel(onClose, validator, produccionService, productoService, activeMareaManager, registroId);
                     });
 
+                services.AddSingleton<ConfiguracionViewModel>();
                 services.AddSingleton<MainWindowViewModel>();
                 services.AddSingleton<MainWindow>();
             })
