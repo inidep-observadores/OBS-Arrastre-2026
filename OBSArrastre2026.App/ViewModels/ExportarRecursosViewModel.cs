@@ -23,12 +23,14 @@ public class ExportarRecursosViewModel : ObservableObject
     private readonly IExcelReportService _excelService;
     private readonly IMareaReportService _reportService;
     private readonly IMareaSummaryService _summaryService;
+    private readonly IUserSettingsService _userSettingsService;
     private readonly Marea _marea;
     private readonly List<Lance> _lances;
     private string _exportPath = string.Empty;
     private bool _isBusy;
     private bool _exportExcel = false;
     private bool _exportWord = true;
+    private bool _exportTemplateWord = false;
 
     public bool ExportExcel
     {
@@ -40,6 +42,12 @@ public class ExportarRecursosViewModel : ObservableObject
     {
         get => _exportWord;
         set => SetProperty(ref _exportWord, value);
+    }
+
+    public bool ExportTemplateWord
+    {
+        get => _exportTemplateWord;
+        set => SetProperty(ref _exportTemplateWord, value);
     }
 
     public string ExportPath
@@ -84,7 +92,7 @@ public class ExportarRecursosViewModel : ObservableObject
     public ExportarRecursosViewModel(Marea marea, List<Lance> lances, 
         ILanceService lanceService, IMapRenderingService mapService, 
         IExcelReportService excelService, IMareaReportService reportService,
-        IMareaSummaryService summaryService)
+        IMareaSummaryService summaryService, IUserSettingsService userSettingsService)
     {
         _marea = marea;
         _lances = lances;
@@ -93,6 +101,7 @@ public class ExportarRecursosViewModel : ObservableObject
         _excelService = excelService;
         _reportService = reportService;
         _summaryService = summaryService;
+        _userSettingsService = userSettingsService;
 
         AcceptCommand = new AsyncRelayCommand(ExecuteExportAsync, () => CanAccept);
         CloseCommand = new RelayCommand(() => DialogResult.TrySetResult(false), () => !IsBusy);
@@ -158,7 +167,11 @@ public class ExportarRecursosViewModel : ObservableObject
             }
             else if (ExportWord)
             {
-                await ExportFullWordAsync(ExportPath);
+                await ExportFullWordAsync(ExportPath, useTemplate: false);
+            }
+            else if (ExportTemplateWord)
+            {
+                await ExportFullWordAsync(ExportPath, useTemplate: true);
             }
 
             DialogResult.TrySetResult(true);
@@ -213,7 +226,7 @@ public class ExportarRecursosViewModel : ObservableObject
         await _excelService.GenerateTablasExcelAsync(_marea, etapaLances, etapaProduccion, excelPath, mapBytes);
     }
 
-    private async Task ExportFullWordAsync(string targetFolder)
+    private async Task ExportFullWordAsync(string targetFolder, bool useTemplate)
     {
         var allProduccion = new List<RegistroProduccion>();
         var etapas = _marea.Etapas.OrderBy(e => e.FechaZarpada).ToList();
@@ -224,11 +237,31 @@ public class ExportarRecursosViewModel : ObservableObject
         }
 
         var summary = await _summaryService.GetMareaSummaryAsync(_marea.ID);
-        var docBytes = await _reportService.GenerateFullMareaReportWordAsync(_marea, _lances, allProduccion, summary);
+        
+        byte[] docBytes;
+        if (useTemplate)
+        {
+            docBytes = await _reportService.GenerateMareaReportTemplateAsync(_marea, _lances, allProduccion, summary);
+        }
+        else
+        {
+            docBytes = await _reportService.GenerateFullMareaReportWordAsync(_marea, _lances, allProduccion, summary);
+        }
 
-        string aa = (_marea.AnioInidep % 100).ToString("00");
-        string nn = _marea.NumeroInidep.ToString("00");
-        string fileName = $"Informe_Marea_{nn}{aa}.docx";
+        // Estructura: Inf_MAR_DIOYT_{AñoActual}_{ApellidoRevisor}{1InicialNombreRevisor}_{AñoMarea}_{NroMarea}_{CodigoBuque}
+        var settings = _userSettingsService.GetSettings();
+        string añoActual = DateTime.Now.Year.ToString();
+        
+        string apellido = (settings.RevisorApellido ?? "S_A").Replace(" ", "_");
+        string inicialNombre = !string.IsNullOrEmpty(settings.RevisorNombre) ? settings.RevisorNombre[0].ToString().ToUpper() : "";
+        
+        string añoMarea = _marea.AnioInidep.ToString();
+        string nroMarea = _marea.NumeroInidep.ToString("00");
+        
+        var meta = MareaMetadataHelper.GetMetadata(_marea);
+        string codigoBuque = meta.BuqueCodigo?.ToString() ?? "0";
+
+        string fileName = $"Inf_MAR_DIOYT_{añoActual}_{apellido}{inicialNombre}_{añoMarea}_{nroMarea}_{codigoBuque}.docx";
         string filePath = Path.Combine(targetFolder, fileName);
 
         await File.WriteAllBytesAsync(filePath, docBytes);

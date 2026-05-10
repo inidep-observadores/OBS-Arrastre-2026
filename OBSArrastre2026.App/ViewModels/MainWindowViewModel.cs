@@ -983,7 +983,7 @@ public class MainWindowViewModel : ObservableObject
         }
 
         var lances = await _lanceService.GetLancesAsync(mareaId: activeMarea.ID);
-        var viewModel = new ExportarRecursosViewModel(activeMarea, lances.ToList(), _lanceService, _mapRenderingService, _excelReportService, _reportService, _mareaSummaryService);
+        var viewModel = new ExportarRecursosViewModel(activeMarea, lances.ToList(), _lanceService, _mapRenderingService, _excelReportService, _reportService, _mareaSummaryService, _userSettingsService);
         viewModel.ShowMessage = (title, msg, details, type) => { ShowMessage(title, msg, details, type); return Task.CompletedTask; };
         viewModel.ShowConfirmation = (title, msg) => ShowConfirmationAsync(title, msg);
         ActiveDialog = viewModel;
