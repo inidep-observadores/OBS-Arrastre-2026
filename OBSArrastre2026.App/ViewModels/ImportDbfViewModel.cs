@@ -9,6 +9,7 @@ using OBSArrastre2026.App.Services;
 using OBSArrastre2026.App.Data.Entities;
 using OBSArrastre2026.App.Models;
 using OBSArrastre2026.App.Models.Import;
+using System.IO.Compression;
 
 namespace OBSArrastre2026.App.ViewModels;
 
@@ -20,7 +21,7 @@ public sealed class DbfFileItem : ObservableObject
     public string DateDisplay { get; init; } = string.Empty;
 }
 
-public sealed partial class ImportDbfViewModel : ObservableObject
+public sealed partial class ImportDbfViewModel : ObservableObject, IDisposable
 {
     private readonly Action<IEnumerable<string>?, string?> _onFinished;
     private readonly IMareaImportService _importService;
@@ -34,6 +35,8 @@ public sealed partial class ImportDbfViewModel : ObservableObject
     private IEnumerable<MareaEtapa> _etapas;
     private bool _isBusy;
     private bool _isMareaInputVisible;
+    private string? _originalZipFolder;
+    private readonly List<string> _filesExtractedFromZip = new();
 
     public ImportDbfViewModel(
         string? mareaId,
@@ -129,7 +132,7 @@ public sealed partial class ImportDbfViewModel : ObservableObject
         OnPropertyChanged(nameof(PatternNote));
     }
 
-    public string PatternNote => $"Patrón esperado: *{_pattern}*.dbf / M{_pattern}.json";
+    public string PatternNote => $"Patrón esperado: *{_pattern}*.dbf / M{_pattern}.json / Marea_{_pattern}.zip";
     
     public ObservableCollection<DbfFileItem> SelectedFiles { get; } = [];
 
@@ -145,8 +148,8 @@ public sealed partial class ImportDbfViewModel : ObservableObject
         var dialog = new OpenFileDialog
         {
             Multiselect = true,
-            Filter = $"Archivos de Marea (*{_pattern}*.dbf; M{_pattern}.json)|*{_pattern}*.dbf;M{_pattern}.json|Todos los archivos (*.*)|*.*",
-            Title = "Seleccionar Archivos de Marea (DBF y/o JSON)"
+            Filter = $"Archivos de Marea (*{_pattern}*.dbf; M{_pattern}.json; Marea_{_pattern}.zip)|*{_pattern}*.dbf;M{_pattern}.json;Marea_{_pattern}.zip|Todos los archivos (*.*)|*.*",
+            Title = "Seleccionar Archivos de Marea (DBF, JSON o ZIP)"
         };
 
         if (dialog.ShowDialog() == true)
@@ -154,6 +157,12 @@ public sealed partial class ImportDbfViewModel : ObservableObject
             foreach (var filePath in dialog.FileNames)
             {
                 var fileName = Path.GetFileName(filePath);
+
+                if (fileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                {
+                    ProcessZipFile(filePath);
+                    continue;
+                }
                 
                 if (!fileName.Contains(_pattern, StringComparison.OrdinalIgnoreCase))
                 {
@@ -173,6 +182,74 @@ public sealed partial class ImportDbfViewModel : ObservableObject
                 });
             }
             (AcceptCommand as IRelayCommand)?.NotifyCanExecuteChanged();
+        }
+    }
+
+    private void ProcessZipFile(string zipPath)
+    {
+        try
+        {
+            _originalZipFolder = Path.GetDirectoryName(zipPath);
+            if (string.IsNullOrEmpty(_originalZipFolder)) return;
+
+            using (var archive = ZipFile.OpenRead(zipPath))
+            {
+                _filesExtractedFromZip.Clear();
+
+                // Extraer el contenido del ZIP directamente en la carpeta original
+                foreach (var entry in archive.Entries)
+                {
+                    var targetPath = Path.Combine(_originalZipFolder, entry.Name);
+                    entry.ExtractToFile(targetPath, true);
+                    _filesExtractedFromZip.Add(targetPath);
+                }
+
+                var tFileEntry = archive.Entries.FirstOrDefault(e => e.Name.StartsWith("T", StringComparison.OrdinalIgnoreCase) && e.Name.EndsWith(".dbf", StringComparison.OrdinalIgnoreCase) && e.Name.Contains(_pattern));
+                var jsonEntry = archive.Entries.FirstOrDefault(e => e.Name.Equals($"M{_pattern}.json", StringComparison.OrdinalIgnoreCase));
+
+                if (tFileEntry == null)
+                {
+                    ShowMessage?.Invoke("ZIP Inválido", $"No se encontró el archivo de datos (T{_pattern}.dbf) dentro del ZIP.", null, MessageDialogType.Error);
+                    return;
+                }
+
+                // IMPORTANTE: NO limpiamos SelectedFiles por si el usuario eligió otros DBFs.
+                // Pero sí removemos cualquier "T" o "JSON" previo para que la UI apunte a los recién extraídos.
+                var existingT = SelectedFiles.FirstOrDefault(f => f.Name.StartsWith("T", StringComparison.OrdinalIgnoreCase));
+                if (existingT != null) SelectedFiles.Remove(existingT);
+                
+                var existingJson = SelectedFiles.FirstOrDefault(f => f.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase));
+                if (existingJson != null) SelectedFiles.Remove(existingJson);
+
+                // Agregar los archivos extraídos a la UI
+                var tPath = Path.Combine(_originalZipFolder, tFileEntry.Name);
+                var tInfo = new FileInfo(tPath);
+                SelectedFiles.Add(new DbfFileItem
+                {
+                    Name = tFileEntry.Name,
+                    FullPath = tPath,
+                    SizeDisplay = FormatSize(tInfo.Length),
+                    DateDisplay = tInfo.LastWriteTime.ToString("dd/MM/yyyy HH:mm")
+                });
+
+                if (jsonEntry != null)
+                {
+                    var jPath = Path.Combine(_originalZipFolder, jsonEntry.Name);
+                    var jInfo = new FileInfo(jPath);
+                    SelectedFiles.Add(new DbfFileItem
+                    {
+                        Name = jsonEntry.Name,
+                        FullPath = jPath,
+                        SizeDisplay = FormatSize(jInfo.Length),
+                        DateDisplay = jInfo.LastWriteTime.ToString("dd/MM/yyyy HH:mm")
+                    });
+                }
+            }
+            (AcceptCommand as IRelayCommand)?.NotifyCanExecuteChanged();
+        }
+        catch (Exception ex)
+        {
+            ShowMessage?.Invoke("Error ZIP", $"Error al procesar el archivo ZIP: {ex.Message}", null, MessageDialogType.Error);
         }
     }
 
@@ -316,5 +393,19 @@ public sealed partial class ImportDbfViewModel : ObservableObject
         if (bytes >= 1024 * 1024)
             return $"{(double)bytes / (1024 * 1024):F2} MB";
         return $"{(double)bytes / 1024:F2} KB";
+    }
+
+    public void Dispose()
+    {
+        // 1. Limpiar archivos extraídos del ZIP
+        foreach (var file in _filesExtractedFromZip)
+        {
+            try
+            {
+                if (File.Exists(file)) File.Delete(file);
+            }
+            catch { /* Ignorar si está bloqueado */ }
+        }
+
     }
 }

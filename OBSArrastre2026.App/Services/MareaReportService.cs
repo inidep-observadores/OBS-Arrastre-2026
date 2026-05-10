@@ -945,7 +945,7 @@ public class MareaReportService : IMareaReportService
             }
             para.SpacingAfter(4);
         }
-        doc.InsertParagraph("No se realizó la tarea de registrar la captura incidental de aves y mamíferos marinos.")
+        doc.InsertParagraph("Registro de captura incidental de aves y mamíferos marinos: {Especificar}")
             .Font("Times New Roman").FontSize(10);
         doc.InsertParagraph("Aleteo de tiburones: {Especificar}")
             .Font("Times New Roman").FontSize(10);

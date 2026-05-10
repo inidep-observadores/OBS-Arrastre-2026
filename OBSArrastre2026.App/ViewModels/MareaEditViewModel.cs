@@ -209,7 +209,8 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
         }
 
         // 4. Abrir diálogo de selección
-        var importVm = new ImportDbfViewModel(
+        ImportDbfViewModel? importVm = null;
+        importVm = new ImportDbfViewModel(
             _mareaId,
             NumeroInidep, 
             AnioInidep, 
@@ -221,6 +222,7 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
             async (files, mareaId) => 
             {
                 ShowCustomDialog?.Invoke(null); // Cerrar diálogos
+                importVm?.Dispose(); // Limpiar archivos temporales si los hubiera
 
                 // Si la importación fue exitosa y tenemos ID, la activamos automáticamente
                 if (files != null && !string.IsNullOrEmpty(mareaId))

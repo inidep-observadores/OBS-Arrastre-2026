@@ -29,8 +29,7 @@ public class ExportarRecursosViewModel : ObservableObject
     private string _exportPath = string.Empty;
     private bool _isBusy;
     private bool _exportExcel = false;
-    private bool _exportWord = true;
-    private bool _exportTemplateWord = false;
+    private bool _exportTemplateWord = true;
 
     public bool ExportExcel
     {
@@ -38,11 +37,6 @@ public class ExportarRecursosViewModel : ObservableObject
         set => SetProperty(ref _exportExcel, value);
     }
 
-    public bool ExportWord
-    {
-        get => _exportWord;
-        set => SetProperty(ref _exportWord, value);
-    }
 
     public bool ExportTemplateWord
     {
@@ -164,10 +158,6 @@ public class ExportarRecursosViewModel : ObservableObject
                     string prefix = multipleEtapas ? $"Etapa{i + 1}-" : "";
                     await ExportEtapaAsync(etapas[i], ExportPath, prefix);
                 }
-            }
-            else if (ExportWord)
-            {
-                await ExportFullWordAsync(ExportPath, useTemplate: false);
             }
             else if (ExportTemplateWord)
             {

@@ -930,10 +930,10 @@
 
                     <Border Grid.Row="0" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="24,20" CornerRadius="16,16,0,0">
                         <StackPanel>
-                            <TextBlock Text="GENERAR RECURSOS INFORME" 
+                            <TextBlock Text="GENERAR INFORME" 
                                        FontSize="11" FontWeight="Bold" 
                                        Foreground="{DynamicResource AccentBrush}" />
-                            <TextBlock Text="Exportación Masiva de Recursos" 
+                            <TextBlock Text="Exportación de informe de marea" 
                                        FontSize="18" FontWeight="SemiBold" 
                                        Foreground="{DynamicResource PrimaryTextBrush}"
                                        Margin="0,4,0,0" />
@@ -944,12 +944,7 @@
                         <StackPanel>
                             <Label Content="Formato del informe" Style="{StaticResource FormLabelStyle}" />
                             <StackPanel Orientation="Vertical" Margin="0,0,0,24">
-                                <RadioButton Content="Informe Técnico Word (.docx)" 
-                                             IsChecked="{Binding ExportWord}"
-                                             Style="{StaticResource {x:Type RadioButton}}"
-                                             Margin="0,0,0,8"
-                                             Foreground="{DynamicResource PrimaryTextBrush}"/>
-                                <RadioButton Content="Generar Informe de Marea (Plantilla)" 
+                                <RadioButton Content="Generar Informe de Marea" 
                                               IsChecked="{Binding ExportTemplateWord}"
                                               Style="{StaticResource {x:Type RadioButton}}"
                                               Margin="0,0,0,8"
