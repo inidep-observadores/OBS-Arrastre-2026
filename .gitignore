@@ -18,3 +18,7 @@ scratch/
 .codex/
 .gemini/
 ejemplos/
+
+# Instalador
+setup/publish/
+setup/*.exe
