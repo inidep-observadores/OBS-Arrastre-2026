@@ -15,7 +15,7 @@ namespace OBSArrastre2026.App.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.5");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.7");
 
             modelBuilder.Entity("OBSArrastre2026.App.Data.Entities.AuditoriaMareaLote", b =>
                 {
@@ -183,11 +183,107 @@ namespace OBSArrastre2026.App.Migrations
                     b.ToTable("especies", (string)null);
                 });
 
+            modelBuilder.Entity("OBSArrastre2026.App.Data.Entities.EspecieLargoPeso", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("ID");
+
+                    b.Property<string>("EspecieId")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("EspecieID");
+
+                    b.Property<string>("Observaciones")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("Observaciones");
+
+                    b.Property<double>("ParamA")
+                        .HasColumnType("REAL")
+                        .HasColumnName("ParamA");
+
+                    b.Property<double>("ParamB")
+                        .HasColumnType("REAL")
+                        .HasColumnName("ParamB");
+
+                    b.Property<int>("Sexo")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("Sexo");
+
+                    b.Property<string>("TipoMedida")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("TEXT")
+                        .HasColumnName("TipoMedida");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EspecieId", "Sexo")
+                        .HasDatabaseName("ix_especies_largo_peso_especie_sexo");
+
+                    b.ToTable("especies_largo_peso", (string)null);
+                });
+
+            modelBuilder.Entity("OBSArrastre2026.App.Data.Entities.EspecieVieja", b =>
+                {
+                    b.Property<string>("ID")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("ID");
+
+                    b.Property<string>("CodigoInidep")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("CodigoInidep");
+
+                    b.Property<string>("DocumentoInformativo")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("DocumentoInformativo");
+
+                    b.Property<string>("Especifico")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("Especifico");
+
+                    b.Property<string>("Familia")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("Familia");
+
+                    b.Property<int>("Frecuente")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("Frecuente");
+
+                    b.Property<string>("Genero")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("Genero");
+
+                    b.Property<string>("NombreCientifico")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("NombreCientifico");
+
+                    b.Property<string>("NombreVulgar")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("NombreVulgar");
+
+                    b.Property<string>("Orden")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("Orden");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("CodigoInidep")
+                        .IsUnique()
+                        .HasDatabaseName("ix_especies_viejas_codigo_inidep");
+
+                    b.ToTable("especies_viejas", (string)null);
+                });
+
             modelBuilder.Entity("OBSArrastre2026.App.Data.Entities.FrecuenciaTalla", b =>
                 {
                     b.Property<string>("ID")
                         .HasColumnType("TEXT")
                         .HasColumnName("ID");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("Metadata");
 
                     b.Property<string>("MuestraID")
                         .HasColumnType("TEXT")
@@ -217,6 +313,10 @@ namespace OBSArrastre2026.App.Migrations
                         .HasColumnType("INTEGER")
                         .HasColumnName("NroMachos");
 
+                    b.Property<int>("NroTotal")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("NroTotal");
+
                     b.Property<double>("Talla")
                         .HasColumnType("REAL")
                         .HasColumnName("Talla");
@@ -242,6 +342,10 @@ namespace OBSArrastre2026.App.Migrations
                     b.Property<string>("EstadiosMachos")
                         .HasColumnType("TEXT")
                         .HasColumnName("EstadiosMachos");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("Metadata");
 
                     b.Property<string>("MuestraID")
                         .HasColumnType("TEXT")
@@ -281,9 +385,17 @@ namespace OBSArrastre2026.App.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("EspecieID");
 
+                    b.Property<string>("EspecieOriginal")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("EspecieOriginal");
+
                     b.Property<string>("LanceID")
                         .HasColumnType("TEXT")
                         .HasColumnName("LanceID");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("Metadata");
 
                     b.Property<int>("NumeroOrden")
                         .HasColumnType("INTEGER")
@@ -330,6 +442,10 @@ namespace OBSArrastre2026.App.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("ItemSubmuestraID");
 
+                    b.Property<string>("Metadata")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("Metadata");
+
                     b.Property<double>("Porcentaje")
                         .HasColumnType("REAL")
                         .HasColumnName("Porcentaje");
@@ -348,6 +464,9 @@ namespace OBSArrastre2026.App.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("ID");
 
+                    b.Property<double?>("Area")
+                        .HasColumnType("REAL");
+
                     b.Property<string>("Comentarios")
                         .HasColumnType("TEXT")
                         .HasColumnName("Comentarios");
@@ -356,9 +475,15 @@ namespace OBSArrastre2026.App.Migrations
                         .HasColumnType("REAL")
                         .HasColumnName("Edad");
 
+                    b.Property<string>("EspecieOriginal")
+                        .HasColumnType("TEXT");
+
                     b.Property<int?>("Estadio")
                         .HasColumnType("INTEGER")
                         .HasColumnName("Estadio");
+
+                    b.Property<double?>("Fuente")
+                        .HasColumnType("REAL");
 
                     b.Property<int?>("LargoEstandarMm")
                         .HasColumnType("INTEGER")
@@ -368,6 +493,10 @@ namespace OBSArrastre2026.App.Migrations
                         .HasColumnType("INTEGER")
                         .HasColumnName("LargoTotalMm");
 
+                    b.Property<string>("Metadata")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("Metadata");
+
                     b.Property<string>("MuestraID")
                         .HasColumnType("TEXT")
                         .HasColumnName("MuestraID");
@@ -376,9 +505,24 @@ namespace OBSArrastre2026.App.Migrations
                         .HasColumnType("INTEGER")
                         .HasColumnName("NroEjemplar");
 
+                    b.Property<int>("NumeroOrden")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double?>("PesoGon")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("PesoHig")
+                        .HasColumnType("REAL");
+
                     b.Property<double?>("PesoTotalGramos")
                         .HasColumnType("REAL")
                         .HasColumnName("PesoTotalGramos");
+
+                    b.Property<double?>("PesoVac")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("RTotal")
+                        .HasColumnType("REAL");
 
                     b.Property<int?>("ReplecionGastrica")
                         .HasColumnType("INTEGER")
@@ -387,6 +531,9 @@ namespace OBSArrastre2026.App.Migrations
                     b.Property<int?>("Sexo")
                         .HasColumnType("INTEGER")
                         .HasColumnName("Sexo");
+
+                    b.Property<double?>("Tarte")
+                        .HasColumnType("REAL");
 
                     b.HasKey("ID");
 
@@ -412,6 +559,15 @@ namespace OBSArrastre2026.App.Migrations
                         .HasColumnType("REAL")
                         .HasColumnName("abertura_vertical_m");
 
+                    b.Property<double?>("AreaBarrida")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("ArteNro")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("ArteTipo")
+                        .HasColumnType("REAL");
+
                     b.Property<int?>("CableFiladoM")
                         .HasColumnType("INTEGER")
                         .HasColumnName("cable_filado_m");
@@ -420,9 +576,27 @@ namespace OBSArrastre2026.App.Migrations
                         .HasColumnType("REAL")
                         .HasColumnName("captura_total_kg");
 
+                    b.Property<string>("Comentarios")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("comentarios");
+
+                    b.Property<double?>("DescarteTotalKg")
+                        .HasColumnType("REAL")
+                        .HasColumnName("descarte_total_kg");
+
                     b.Property<double?>("DistanciaAlasM")
                         .HasColumnType("REAL")
                         .HasColumnName("distancia_alas_m");
+
+                    b.Property<double?>("DistanciaPortonesM")
+                        .HasColumnType("REAL")
+                        .HasColumnName("distancia_portones_m");
+
+                    b.Property<double?>("EdadLuna")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("EstacionGral")
+                        .HasColumnType("REAL");
 
                     b.Property<int?>("EstadoMarCodigo")
                         .HasColumnType("INTEGER")
@@ -431,6 +605,9 @@ namespace OBSArrastre2026.App.Migrations
                     b.Property<int?>("EstadoTiempoCodigo")
                         .HasColumnType("INTEGER")
                         .HasColumnName("estado_tiempo_codigo");
+
+                    b.Property<double?>("Estrato")
+                        .HasColumnType("REAL");
 
                     b.Property<string>("Fecha")
                         .IsRequired()
@@ -461,6 +638,9 @@ namespace OBSArrastre2026.App.Migrations
                         .HasColumnType("REAL")
                         .HasColumnName("longitud_inicio_decimal");
 
+                    b.Property<double?>("Luz")
+                        .HasColumnType("REAL");
+
                     b.Property<int?>("MallaAlasMm")
                         .HasColumnType("INTEGER")
                         .HasColumnName("malla_alas_mm");
@@ -469,10 +649,20 @@ namespace OBSArrastre2026.App.Migrations
                         .HasColumnType("INTEGER")
                         .HasColumnName("malla_copo_mm");
 
+                    b.Property<double?>("MallaSobre")
+                        .HasColumnType("REAL");
+
                     b.Property<string>("MareaEtapaId")
                         .IsRequired()
                         .HasColumnType("TEXT")
                         .HasColumnName("marea_etapa_id");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("Metadata");
+
+                    b.Property<double?>("Mus")
+                        .HasColumnType("REAL");
 
                     b.Property<int>("NroLance")
                         .HasColumnType("INTEGER")
@@ -481,10 +671,6 @@ namespace OBSArrastre2026.App.Migrations
                     b.Property<int?>("PresionHpa")
                         .HasColumnType("INTEGER")
                         .HasColumnName("presion_hpa");
-
-                    b.Property<int?>("ProfundidadArteM")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("profundidad_arte_m");
 
                     b.Property<int?>("ProfundidadFinalM")
                         .HasColumnType("INTEGER")
@@ -509,6 +695,12 @@ namespace OBSArrastre2026.App.Migrations
                     b.Property<double?>("TemperaturaRedC")
                         .HasColumnType("REAL")
                         .HasColumnName("temperatura_red_c");
+
+                    b.Property<double?>("TmpAHum")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("TmpMarS")
+                        .HasColumnType("REAL");
 
                     b.Property<double?>("VelocidadArrastreNudos")
                         .HasColumnType("REAL")
@@ -547,8 +739,7 @@ namespace OBSArrastre2026.App.Migrations
                         .HasColumnName("AnioInidep");
 
                     b.Property<string>("BuqueID")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("BuqueID");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Comentarios")
                         .HasColumnType("TEXT")
@@ -561,6 +752,10 @@ namespace OBSArrastre2026.App.Migrations
                     b.Property<DateTime>("FechaInicio")
                         .HasColumnType("TEXT")
                         .HasColumnName("FechaInicio");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("Metadata");
 
                     b.Property<int>("NumeroInidep")
                         .HasColumnType("INTEGER")
@@ -600,6 +795,10 @@ namespace OBSArrastre2026.App.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("MareaID");
 
+                    b.Property<string>("Metadata")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("Metadata");
+
                     b.Property<string>("NombreCapitan")
                         .HasColumnType("TEXT")
                         .HasColumnName("NombreCapitan");
@@ -627,11 +826,50 @@ namespace OBSArrastre2026.App.Migrations
                     b.ToTable("marea_etapas", (string)null);
                 });
 
+            modelBuilder.Entity("OBSArrastre2026.App.Data.Entities.MareaTracking", b =>
+                {
+                    b.Property<string>("ID")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("FechaHora")
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("Latitud")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("Longitud")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("MareaID")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Matricula")
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("Rumbo")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("Velocidad")
+                        .HasColumnType("REAL");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("MareaID");
+
+                    b.ToTable("TrackingPoints");
+                });
+
             modelBuilder.Entity("OBSArrastre2026.App.Data.Entities.Muestra", b =>
                 {
                     b.Property<string>("ID")
                         .HasColumnType("TEXT")
                         .HasColumnName("ID");
+
+                    b.Property<double?>("Area")
+                        .HasColumnType("REAL")
+                        .HasColumnName("Area");
 
                     b.Property<string>("Comentarios")
                         .HasColumnType("TEXT")
@@ -649,6 +887,18 @@ namespace OBSArrastre2026.App.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("EspecieID");
 
+                    b.Property<string>("EspecieOriginal")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("EspecieOriginal");
+
+                    b.Property<double?>("FactPond")
+                        .HasColumnType("REAL")
+                        .HasColumnName("FactPond");
+
+                    b.Property<double?>("Fuente")
+                        .HasColumnType("REAL")
+                        .HasColumnName("Fuente");
+
                     b.Property<int>("HayIndeterminados")
                         .HasColumnType("INTEGER")
                         .HasColumnName("HayIndeterminados");
@@ -661,9 +911,17 @@ namespace OBSArrastre2026.App.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("LanceID");
 
+                    b.Property<string>("Metadata")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("Metadata");
+
                     b.Property<int>("ModoMedicionTalla")
                         .HasColumnType("INTEGER")
                         .HasColumnName("ModoMedicionTalla");
+
+                    b.Property<int>("NumeroOrden")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("NumeroOrden");
 
                     b.Property<int>("Origen")
                         .HasColumnType("INTEGER")
@@ -672,6 +930,24 @@ namespace OBSArrastre2026.App.Migrations
                     b.Property<double?>("PesoMuestra_PesoGramos")
                         .HasColumnType("REAL")
                         .HasColumnName("PesoMuestra_PesoGramos");
+
+                    b.Property<int?>("PrimTalla")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("PrimTalla");
+
+                    b.Property<double?>("Tarte")
+                        .HasColumnType("REAL")
+                        .HasColumnName("Tarte");
+
+                    b.Property<int>("TipoMuestra")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(1)
+                        .HasColumnName("TipoMuestra");
+
+                    b.Property<int?>("UltTalla")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("UltTalla");
 
                     b.Property<int>("UnidadMedidaTalla")
                         .HasColumnType("INTEGER")
@@ -693,11 +969,6 @@ namespace OBSArrastre2026.App.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("TEXT")
                         .HasColumnName("id");
-
-                    b.Property<string>("Categoria")
-                        .IsRequired()
-                        .HasColumnType("TEXT")
-                        .HasColumnName("categoria");
 
                     b.Property<string>("Codigo")
                         .IsRequired()
@@ -734,6 +1005,18 @@ namespace OBSArrastre2026.App.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("comentarios");
 
+                    b.Property<string>("EspecieId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("especie_id");
+
+                    b.Property<string>("EspecieOriginal")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("EspecieOriginal");
+
+                    b.Property<double?>("Factor")
+                        .HasColumnType("REAL")
+                        .HasColumnName("factor_conversion");
+
                     b.Property<string>("Fecha")
                         .IsRequired()
                         .HasColumnType("TEXT")
@@ -753,7 +1036,21 @@ namespace OBSArrastre2026.App.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("marea_etapa_id");
 
+                    b.Property<string>("Metadata")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("Metadata");
+
+                    b.Property<int>("NumeroOrden")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("NumeroOrden");
+
+                    b.Property<int?>("Operarios")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("operarios");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("EspecieId");
 
                     b.HasIndex("Fecha")
                         .HasDatabaseName("idx_registros_produccion_fecha");
@@ -764,8 +1061,8 @@ namespace OBSArrastre2026.App.Migrations
                     b.HasIndex("MareaEtapaId")
                         .HasDatabaseName("idx_registros_produccion_marea_etapa_id");
 
-                    b.HasIndex("MareaEtapaId", "Fecha", "IdProducto")
-                        .IsUnique();
+                    b.HasIndex("MareaEtapaId", "Fecha", "IdProducto", "Categoria")
+                        .HasDatabaseName("idx_registros_produccion_unico_logico");
 
                     b.ToTable("registros_produccion", (string)null);
                 });
@@ -792,6 +1089,17 @@ namespace OBSArrastre2026.App.Migrations
                         .HasConstraintName("fk_auditoria_mareas_registros_lotes_lote_id");
 
                     b.Navigation("Lote");
+                });
+
+            modelBuilder.Entity("OBSArrastre2026.App.Data.Entities.EspecieLargoPeso", b =>
+                {
+                    b.HasOne("OBSArrastre2026.App.Data.Entities.Especie", "Especie")
+                        .WithMany()
+                        .HasForeignKey("EspecieId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Especie");
                 });
 
             modelBuilder.Entity("OBSArrastre2026.App.Data.Entities.FrecuenciaTalla", b =>
@@ -898,6 +1206,17 @@ namespace OBSArrastre2026.App.Migrations
                     b.Navigation("Marea");
                 });
 
+            modelBuilder.Entity("OBSArrastre2026.App.Data.Entities.MareaTracking", b =>
+                {
+                    b.HasOne("OBSArrastre2026.App.Data.Entities.Marea", "Marea")
+                        .WithMany()
+                        .HasForeignKey("MareaID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Marea");
+                });
+
             modelBuilder.Entity("OBSArrastre2026.App.Data.Entities.Muestra", b =>
                 {
                     b.HasOne("OBSArrastre2026.App.Data.Entities.Especie", "Especie")
@@ -919,6 +1238,11 @@ namespace OBSArrastre2026.App.Migrations
 
             modelBuilder.Entity("OBSArrastre2026.App.Data.Entities.RegistroProduccion", b =>
                 {
+                    b.HasOne("OBSArrastre2026.App.Data.Entities.Especie", "Especie")
+                        .WithMany()
+                        .HasForeignKey("EspecieId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("OBSArrastre2026.App.Data.Entities.Producto", "Producto")
                         .WithMany("RegistrosProduccion")
                         .HasForeignKey("IdProducto")
@@ -930,6 +1254,8 @@ namespace OBSArrastre2026.App.Migrations
                         .HasForeignKey("MareaEtapaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Especie");
 
                     b.Navigation("MareaEtapa");
 

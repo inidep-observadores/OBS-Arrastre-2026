@@ -43,9 +43,12 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
     private int? _cableFilado;
     private double? _aberturaVertical;
     private double? _distanciaAlas;
-    private int? _profundidadArte;
+    private double? _distanciaPortones;
+    private int? _estadoTiempo;
+    private int? _estadoMar;
     private bool _selectividad;
     private string? _comentarios;
+    private CatchItemViewModel? _selectedCatchItem;
 
     public LanceEditViewModel(
         Action onClose,
@@ -75,11 +78,17 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
         set => SetProperty(ref _isLoading, value);
     }
 
-    public string Title => _lanceId == null ? "Nuevo Lance" : $"Editando Lance N° {_nroLance}";
+    public string Title
+    {
+        get
+        {
+            return $"Lance N° {NroLance} del {Fecha:dd/MM/yyyy} a las {HoraInicio ?? "--:--" }";
+        }
+    }
 
-    public int NroLance { get => _nroLance; set => SetProperty(ref _nroLance, value); }
-    public DateTime Fecha { get => _fecha; set => SetProperty(ref _fecha, value); }
-    public string? HoraInicio { get => _horaInicio; set => SetProperty(ref _horaInicio, value); }
+    public int NroLance { get => _nroLance; set { if (SetProperty(ref _nroLance, value)) OnPropertyChanged(nameof(Title)); } }
+    public DateTime Fecha { get => _fecha; set { if (SetProperty(ref _fecha, value)) OnPropertyChanged(nameof(Title)); } }
+    public string? HoraInicio { get => _horaInicio; set { if (SetProperty(ref _horaInicio, value)) OnPropertyChanged(nameof(Title)); } }
     public string? HoraFinal { get => _horaFinal; set => SetProperty(ref _horaFinal, value); }
     
     public double? LatitudInicioDecimal { get => _latitudInicio; set => SetProperty(ref _latitudInicio, value); }
@@ -97,7 +106,18 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
     public double? TemperaturaRedC { get => _tempRed; set => SetProperty(ref _tempRed, value); }
 
     public int? PresionHpa { get => _presionHpa; set => SetProperty(ref _presionHpa, value); }
-    public double? CapturaTotalKg { get => _capturaTotalKg; set => SetProperty(ref _capturaTotalKg, value); }
+    public double? CapturaTotalKg 
+    { 
+        get => _capturaTotalKg; 
+        set 
+        { 
+            if (SetProperty(ref _capturaTotalKg, value))
+            {
+                NotificarCambioPesosEnItems();
+            }
+        } 
+    }
+
     public double? VelocidadArrastreNudos { get => _velocidadArrastre; set => SetProperty(ref _velocidadArrastre, value); }
     public int? RumboGrados { get => _rumbo; set => SetProperty(ref _rumbo, value); }
 
@@ -106,14 +126,32 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
     public int? CableFiladoM { get => _cableFilado; set => SetProperty(ref _cableFilado, value); }
     public double? AberturaVerticalM { get => _aberturaVertical; set => SetProperty(ref _aberturaVertical, value); }
     public double? DistanciaAlasM { get => _distanciaAlas; set => SetProperty(ref _distanciaAlas, value); }
-    public int? ProfundidadArteM { get => _profundidadArte; set => SetProperty(ref _profundidadArte, value); }
+    public double? DistanciaPortonesM { get => _distanciaPortones; set => SetProperty(ref _distanciaPortones, value); }
+    public int? EstadoTiempoCodigo { get => _estadoTiempo; set => SetProperty(ref _estadoTiempo, value); }
+    public int? EstadoMarCodigo { get => _estadoMar; set => SetProperty(ref _estadoMar, value); }
 
     public bool Selectividad { get => _selectividad; set => SetProperty(ref _selectividad, value); }
     public string? Comentarios { get => _comentarios; set => SetProperty(ref _comentarios, value); }
 
+    public CatchItemViewModel? SelectedCatchItem
+    {
+        get => _selectedCatchItem;
+        set
+        {
+            if (SetProperty(ref _selectedCatchItem, value))
+            {
+                OnPropertyChanged(nameof(HasSelectedCatchItem));
+            }
+        }
+    }
+
+    public bool HasSelectedCatchItem => SelectedCatchItem != null;
+
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
     public ICommand AddCatchItemCommand { get; }
+
+    public IEnumerable<Especie> AllEspecies => _allEspecies;
 
     public Action<object?>? ShowCustomDialog { get; set; }
     public Func<string, string, Task<bool>>? ShowConfirmation { get; set; }
@@ -141,6 +179,8 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
                     LongitudFinalDecimal = lance.LongitudFinalDecimal;
                     ProfundidadInicioM = lance.ProfundidadInicioM;
                     ProfundidadFinalM = lance.ProfundidadFinalM;
+                    EstadoTiempoCodigo = lance.EstadoTiempoCodigo;
+                    EstadoMarCodigo = lance.EstadoMarCodigo;
                     VientoDireccionGrados = lance.VientoDireccionGrados;
                     VientoFuerzaBeaufort = lance.VientoFuerzaBeaufort;
                     TemperaturaAireC = lance.TemperaturaAireC;
@@ -154,16 +194,20 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
                     CableFiladoM = lance.CableFiladoM;
                     AberturaVerticalM = lance.AberturaVerticalM;
                     DistanciaAlasM = lance.DistanciaAlasM;
-                    ProfundidadArteM = lance.ProfundidadArteM;
+                    DistanciaPortonesM = lance.DistanciaPortonesM;
                     Selectividad = lance.SelectividadSiNo == 1;
+                    Comentarios = lance.Comentarios;
 
                     ItemsCaptura.Clear();
                     foreach (var item in lance.ItemsCaptura.OrderBy(i => i.NumeroOrden))
                     {
                         var vm = new CatchItemViewModel(item, _allEspecies);
                         vm.RequestDeletion = HandleCatchItemDeletion;
+                        vm.NotifyParentOfWeightChange = NotificarCambioPesosEnItems;
                         ItemsCaptura.Add(vm);
+
                     }
+                    SincronizarOrden();
                 }
             }
         }
@@ -175,8 +219,6 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
 
     private void AddCatchItem()
     {
-        foreach (var item in ItemsCaptura) item.IsExpanded = false;
-
         var newItem = new ItemCaptura
         {
             NumeroOrden = ItemsCaptura.Count + 1,
@@ -185,16 +227,37 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
         };
         var vm = new CatchItemViewModel(newItem, _allEspecies)
         {
-            IsExpanded = true,
-            RequestDeletion = HandleCatchItemDeletion
+            RequestDeletion = HandleCatchItemDeletion,
+            NotifyParentOfWeightChange = NotificarCambioPesosEnItems
         };
+
         ItemsCaptura.Add(vm);
+        SelectedCatchItem = vm;
+        SincronizarOrden();
     }
 
     private void HandleCatchItemDeletion(CatchItemViewModel vm)
     {
         ItemsCaptura.Remove(vm);
+        SincronizarOrden();
     }
+
+    private void SincronizarOrden()
+    {
+        for (int i = 0; i < ItemsCaptura.Count; i++)
+        {
+            ItemsCaptura[i].NumeroOrden = i + 1;
+        }
+    }
+
+    private void NotificarCambioPesosEnItems()
+    {
+        foreach (var item in ItemsCaptura)
+        {
+            item.NotifyCalculatedWeightsChanged();
+        }
+    }
+
 
     private async Task SaveAsync()
     {
@@ -217,6 +280,8 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
                     LongitudFinalDecimal = LongitudFinalDecimal,
                     ProfundidadInicioM = ProfundidadInicioM,
                     ProfundidadFinalM = ProfundidadFinalM,
+                    EstadoTiempoCodigo = EstadoTiempoCodigo,
+                    EstadoMarCodigo = EstadoMarCodigo,
                     VientoDireccionGrados = VientoDireccionGrados,
                     VientoFuerzaBeaufort = VientoFuerzaBeaufort,
                     TemperaturaAireC = TemperaturaAireC,
@@ -230,8 +295,9 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
                     CableFiladoM = CableFiladoM,
                     AberturaVerticalM = AberturaVerticalM,
                     DistanciaAlasM = DistanciaAlasM,
-                    ProfundidadArteM = ProfundidadArteM,
-                    SelectividadSiNo = Selectividad ? 1 : 0
+                    DistanciaPortonesM = DistanciaPortonesM,
+                    SelectividadSiNo = Selectividad ? 1 : 0,
+                    Comentarios = Comentarios
                 };
 
                 foreach (var itemVm in ItemsCaptura)

@@ -22,7 +22,7 @@ public sealed class MareaConfiguration : IEntityTypeConfiguration<Marea>
         builder.Property(x => x.FechaInicio).HasColumnName("FechaInicio").IsRequired();
         builder.Property(x => x.FechaFin).HasColumnName("FechaFin");
 
-        builder.Property(x => x.BuqueID).HasColumnName("BuqueID");
+        builder.Property(x => x.Metadata).HasColumnName("Metadata");
 
         builder.HasOne(x => x.Buque)
             .WithMany(b => b.Mareas)

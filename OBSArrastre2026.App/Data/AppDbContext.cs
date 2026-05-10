@@ -8,6 +8,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 {
     public DbSet<Buque> Buques => Set<Buque>();
     public DbSet<Especie> Especies => Set<Especie>();
+    public DbSet<EspecieVieja> EspeciesViejas => Set<EspecieVieja>();
     public DbSet<Producto> Productos => Set<Producto>();
     public DbSet<Marea> Mareas => Set<Marea>();
     public DbSet<MareaEtapa> MareaEtapas => Set<MareaEtapa>();
@@ -21,6 +22,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<ItemContenidoGastrico> ContenidosGastricos => Set<ItemContenidoGastrico>();
     public DbSet<AuditoriaMareaLote> AuditoriaMareaLotes => Set<AuditoriaMareaLote>();
     public DbSet<AuditoriaMareaRegistro> AuditoriaMareaRegistros => Set<AuditoriaMareaRegistro>();
+    public DbSet<MareaTracking> TrackingPoints => Set<MareaTracking>();
+    public DbSet<EspecieLargoPeso> EspeciesLargoPeso => Set<EspecieLargoPeso>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

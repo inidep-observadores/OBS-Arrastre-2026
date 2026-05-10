@@ -7,6 +7,8 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using OBSArrastre2026.App.Services;
 using OBSArrastre2026.App.Data.Entities;
+using OBSArrastre2026.App.Models;
+using OBSArrastre2026.App.Models.Import;
 
 namespace OBSArrastre2026.App.ViewModels;
 
@@ -20,37 +22,45 @@ public sealed class DbfFileItem : ObservableObject
 
 public sealed partial class ImportDbfViewModel : ObservableObject
 {
-    private readonly Action<IEnumerable<string>?> _onFinished;
+    private readonly Action<IEnumerable<string>?, string?> _onFinished;
     private readonly IMareaImportService _importService;
-    private readonly int _mareaNum;
-    private readonly int _anio;
-    private readonly string _pattern;
-    private readonly string _barco;
-    private readonly string _mareaId;
-    private readonly IEnumerable<MareaEtapa> _etapas;
+    private readonly IJsonImportService _jsonImportService;
+    private readonly IMareaService _mareaService;
+    private int _mareaNum;
+    private int _anio;
+    private string _pattern = string.Empty;
+    private string _barco;
+    private string? _mareaId;
+    private IEnumerable<MareaEtapa> _etapas;
     private bool _isBusy;
+    private bool _isMareaInputVisible;
 
     public ImportDbfViewModel(
-        string mareaId,
+        string? mareaId,
         int mareaNum, 
         int anio, 
         IMareaImportService importService,
+        IJsonImportService jsonImportService,
+        IMareaService mareaService,
         string barco,
         IEnumerable<MareaEtapa> etapas,
-        Action<IEnumerable<string>?> onFinished)
+        Action<IEnumerable<string>?, string?> onFinished)
     {
         _mareaId = mareaId;
         _mareaNum = mareaNum;
         _anio = anio;
         _importService = importService;
+        _jsonImportService = jsonImportService;
+        _mareaService = mareaService;
         _barco = barco;
         _etapas = etapas;
         _onFinished = onFinished;
-        _pattern = $"{mareaNum}{anio % 100:D2}";
+        _isMareaInputVisible = string.IsNullOrEmpty(mareaId);
+        UpdatePattern();
 
-        AddFilesCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(AddFiles, () => !IsBusy);
+        AddFilesCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(AddFiles, () => !IsBusy && (!IsMareaInputVisible || (MareaNum > 0 && Anio > 2000)));
         AcceptCommand = new AsyncRelayCommand(AcceptAsync, () => !IsBusy && SelectedFiles.Count > 0);
-        CancelCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(() => _onFinished(null), () => !IsBusy);
+        CancelCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(() => _onFinished(null, null), () => !IsBusy);
     }
 
     public bool IsBusy
@@ -74,7 +84,52 @@ public sealed partial class ImportDbfViewModel : ObservableObject
         set => SetProperty(ref _busyMessage, value);
     }
 
-    public string PatternNote => $"Patrón esperado: *{_pattern}*.dbf";
+    public int MareaNum
+    {
+        get => _mareaNum;
+        set 
+        {
+            if (SetProperty(ref _mareaNum, value))
+            {
+                UpdatePattern();
+                (AddFilesCommand as IRelayCommand)?.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    public int Anio
+    {
+        get => _anio;
+        set 
+        {
+            if (SetProperty(ref _anio, value))
+            {
+                UpdatePattern();
+                (AddFilesCommand as IRelayCommand)?.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    public bool IsMareaInputVisible
+    {
+        get => _isMareaInputVisible;
+        set => SetProperty(ref _isMareaInputVisible, value);
+    }
+
+    private TipoDatoDescarte _selectedTipoDatoDescarte = TipoDatoDescarte.Kilogramos;
+    public TipoDatoDescarte SelectedTipoDatoDescarte
+    {
+        get => _selectedTipoDatoDescarte;
+        set => SetProperty(ref _selectedTipoDatoDescarte, value);
+    }
+
+    private void UpdatePattern()
+    {
+        _pattern = $"{_mareaNum}{_anio % 100:D2}";
+        OnPropertyChanged(nameof(PatternNote));
+    }
+
+    public string PatternNote => $"Patrón esperado: *{_pattern}*.dbf / M{_pattern}.json";
     
     public ObservableCollection<DbfFileItem> SelectedFiles { get; } = [];
 
@@ -82,7 +137,7 @@ public sealed partial class ImportDbfViewModel : ObservableObject
     public ICommand AcceptCommand { get; }
     public ICommand CancelCommand { get; }
 
-    public Action<string, string, string?, MessageDialogType>? ShowMessage { get; set; }
+    public Func<string, string, string?, MessageDialogType, Task>? ShowMessage { get; set; }
     public Func<string, string, Task<bool>>? ShowConfirmation { get; set; }
 
     private void AddFiles()
@@ -90,8 +145,8 @@ public sealed partial class ImportDbfViewModel : ObservableObject
         var dialog = new OpenFileDialog
         {
             Multiselect = true,
-            Filter = $"Archivos de Marea (*{_pattern}*.dbf)|*{_pattern}*.dbf|Todos los archivos (*.*)|*.*",
-            Title = "Seleccionar Archivos DBF de Marea"
+            Filter = $"Archivos de Marea (*{_pattern}*.dbf; M{_pattern}.json)|*{_pattern}*.dbf;M{_pattern}.json|Todos los archivos (*.*)|*.*",
+            Title = "Seleccionar Archivos de Marea (DBF y/o JSON)"
         };
 
         if (dialog.ShowDialog() == true)
@@ -114,7 +169,7 @@ public sealed partial class ImportDbfViewModel : ObservableObject
                     Name = fileName,
                     FullPath = filePath,
                     SizeDisplay = FormatSize(info.Length),
-                    DateDisplay = info.LastWriteTime.ToString("g")
+                    DateDisplay = info.LastWriteTime.ToString("dd/MM/yyyy HH:mm")
                 });
             }
             (AcceptCommand as IRelayCommand)?.NotifyCanExecuteChanged();
@@ -125,30 +180,78 @@ public sealed partial class ImportDbfViewModel : ObservableObject
     {
         if (SelectedFiles.Count == 0) return;
 
-        BusyMessage = "Validando integridad de archivos...";
         IsBusy = true;
         try
         {
+            // 0. Si no hay ID de marea, intentar buscar una existente o crear una nueva
+            if (string.IsNullOrEmpty(_mareaId))
+            {
+                BusyMessage = "Verificando si la marea ya existe...";
+                var existing = await _mareaService.FindMareaAsync(_mareaNum, _anio);
+                if (existing != null)
+                {
+                    _mareaId = existing.ID;
+                    _etapas = existing.Etapas;
+                    _barco = existing.Buque?.Nombre ?? _barco;
+                }
+                else
+                {
+                    BusyMessage = "Creando nueva marea...";
+                    var marea = new Marea
+                    {
+                        ID = Guid.NewGuid().ToString(),
+                        NumeroInidep = _mareaNum,
+                        AnioInidep = _anio,
+                        FechaInicio = DateTime.Today
+                    };
+                    await _mareaService.SaveMareaAsync(marea);
+                    _mareaId = marea.ID;
+                }
+            }
+
+            BusyMessage = "Validando integridad de archivos...";
+            // 0. Verificar si hay archivo JSON para metadatos
+            var jsonFile = SelectedFiles.FirstOrDefault(f => f.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase));
+            if (jsonFile != null)
+            {
+                BusyMessage = "Importando metadatos de marea desde JSON...";
+                bool confirmMetadata = await (ShowConfirmation?.Invoke(
+                    "Importar Metadatos", 
+                    "Se ha detectado un archivo JSON de metadatos. ¿Deseas actualizar el Buque, Fechas y Etapas de la marea con la información del JSON?") ?? Task.FromResult(false));
+                
+                if (confirmMetadata)
+                {
+                    await _jsonImportService.UpdateMareaMetadataAsync(_mareaId, jsonFile.FullPath);
+                }
+            }
+
+            // Recargar etapas actualizadas (por si el JSON las cambió) para la validación de DBFs
+            var mareaUpdated = await _mareaService.GetMareaAsync(_mareaId);
+            var currentEtapas = mareaUpdated?.Etapas ?? _etapas;
+
+            // Sincronizamos los datos locales con lo que hay en DB (especialmente si el JSON los cambió)
+            if (mareaUpdated != null)
+            {
+                _barco = mareaUpdated.Buque?.Nombre ?? _barco;
+                _mareaNum = mareaUpdated.NumeroInidep;
+                _anio = mareaUpdated.AnioInidep;
+                OnPropertyChanged(nameof(MareaNum));
+                OnPropertyChanged(nameof(Anio));
+            }
+
             // La carpeta base es la del primer archivo seleccionado
             string basePath = Path.GetDirectoryName(SelectedFiles[0].FullPath) ?? string.Empty;
 
             // 1. Validar (Incluyendo validación de etapas)
-            var report = await _importService.ProcessMareaImportAsync(basePath, _barco, _mareaNum, _anio, _etapas);
+            BusyMessage = "Validando integridad de archivos DBF...";
+            var report = await _importService.ProcessMareaImportAsync(basePath, mareaUpdated!);
+            report.UnidadDescarte = SelectedTipoDatoDescarte;
 
             if (report.HasFatalErrors)
             {
-                // Abrir PDF de auditoría
-                string reportPath = Path.Combine(basePath, "Reports", $"Audit_{_barco}_{_mareaNum}_{_anio}.pdf");
-                
-                if (File.Exists(reportPath))
-                {
-                    Process.Start(new ProcessStartInfo(reportPath) { UseShellExecute = true });
-                    ShowMessage?.Invoke("Errores de Validación", "Se detectaron errores graves que impiden la importación. Se ha abierto el reporte PDF con el detalle.", null, MessageDialogType.Error);
-                }
-                else
-                {
-                    ShowMessage?.Invoke("Errores de Validación", "Se detectaron errores graves, pero no se pudo localizar el archivo de reporte.", null, MessageDialogType.Error);
-                }
+                TryOpenAuditReport(basePath);
+                if (ShowMessage != null) await ShowMessage("Errores de Validación", "Se detectaron errores graves que impiden la importación. Se ha abierto el reporte PDF con el detalle.", null, MessageDialogType.Error);
+                _onFinished(null, null);
                 return;
             }
 
@@ -173,16 +276,38 @@ public sealed partial class ImportDbfViewModel : ObservableObject
             await _importService.ImportAsync(_mareaId, report);
 
             IsBusy = false;
-            _onFinished(SelectedFiles.Select(f => f.FullPath));
+            
+            if (report.Issues.Any())
+            {
+                TryOpenAuditReport(basePath);
+            }
+
+            _onFinished(SelectedFiles.Select(f => f.FullPath), _mareaId);
         }
         catch (Exception ex)
         {
             IsBusy = false;
-            ShowMessage?.Invoke("Error de Importación", $"Ocurrió un error inesperado: {ex.Message}", ex.ToString(), MessageDialogType.Error);
+            if (ShowMessage != null) await ShowMessage("Error de Importación", $"Ocurrió un error inesperado: {ex.Message}", ex.ToString(), MessageDialogType.Error);
+            _onFinished(null, null);
         }
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    private void TryOpenAuditReport(string basePath)
+    {
+        string safeBarco = (_barco ?? "S-D").Replace("/", "-").Replace("\\", "-");
+        string reportPath = Path.Combine(basePath, "reportes", $"Audit_{safeBarco}_{_mareaNum}_{_anio}.pdf");
+        
+        if (File.Exists(reportPath))
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo(reportPath) { UseShellExecute = true });
+            }
+            catch { /* Ignorar errores al abrir el proceso */ }
         }
     }
 

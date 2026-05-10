@@ -1,0 +1,102 @@
+<UserControl x:Class="OBSArrastre2026.App.Controls.SpeciesSelectorPremium"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:OBSArrastre2026.App.Controls"
+             xmlns:entities="clr-namespace:OBSArrastre2026.App.Data.Entities"
+             mc:Ignorable="d" 
+             d:DesignHeight="70" d:DesignWidth="300">
+    <Grid>
+        <StackPanel>
+            <TextBlock x:Name="LabelText" 
+                       Text="Especie" 
+                       Style="{DynamicResource LabelStyle}" 
+                       Margin="0,0,0,6" />
+            
+            <Grid>
+                <ComboBox x:Name="SpeciesCombo"
+                          Style="{DynamicResource PremiumComboBoxStyle}"
+                          IsEditable="True"
+                          IsTextSearchEnabled="False"
+                          StaysOpenOnEdit="True"
+                          TextSearch.TextPath="FullDisplayName"
+                          SelectedValuePath="ID">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate DataType="{x:Type entities:Especie}">
+                            <TextBlock VerticalAlignment="Center">
+                                <Run Text="{Binding NombreVulgar, Mode=OneWay}" FontWeight="Medium" />
+                                <Run Text="{Binding NombreCientifico, StringFormat=' ({0})', Mode=OneWay}" 
+                                     FontStyle="Italic" 
+                                     FontSize="11"
+                                     Foreground="{DynamicResource SecondaryTextBrush}" />
+                            </TextBlock>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                    
+                    <ComboBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel />
+                        </ItemsPanelTemplate>
+                    </ComboBox.ItemsPanel>
+                </ComboBox>
+
+                <TextBlock IsHitTestVisible="False"
+                           Text="{Binding Watermark, RelativeSource={RelativeSource AncestorType=local:SpeciesSelectorPremium}}"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Left"
+                           Margin="14,0,0,0"
+                           Foreground="{DynamicResource SecondaryTextBrush}"
+                           Opacity="0.5"
+                           Visibility="Collapsed">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Text, ElementName=SpeciesCombo}" Value="">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <!-- Botón de Limpieza -->
+                <Button x:Name="BtnClear"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Margin="0,0,32,0"
+                        Width="20" Height="20"
+                        Content="✕"
+                        FontSize="10"
+                        Cursor="Hand"
+                        Click="BtnClear_Click"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Foreground="{DynamicResource SecondaryTextBrush}">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Visibility" Value="Visible" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedItem, ElementName=SpeciesCombo}" Value="{x:Null}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+            </Grid>
+        </StackPanel>
+    </Grid>
+</UserControl>

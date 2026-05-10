@@ -11,4 +11,5 @@ public sealed class ItemContenidoGastrico
     public double Porcentaje { get; set; }
     public int CantPiezas { get; set; }
     public string? Comentarios { get; set; }
+    public string? Metadata { get; set; }
 }

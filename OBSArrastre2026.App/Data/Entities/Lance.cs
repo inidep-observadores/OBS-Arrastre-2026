@@ -1,4 +1,8 @@
+using System.ComponentModel.DataAnnotations.Schema;
+using OBSArrastre2026.App.Models;
+
 namespace OBSArrastre2026.App.Data.Entities;
+
 
 public sealed class Lance
 {
@@ -30,6 +34,7 @@ public sealed class Lance
     public int? PresionHpa { get; set; }
 
     public double? CapturaTotalKg { get; set; }
+    public double? DescarteTotalKg { get; set; }
     public double? VelocidadArrastreNudos { get; set; }
     public int? RumboGrados { get; set; }
 
@@ -38,11 +43,37 @@ public sealed class Lance
     public int? CableFiladoM { get; set; }
     public double? AberturaVerticalM { get; set; }
     public double? DistanciaAlasM { get; set; }
-    public int? ProfundidadArteM { get; set; }
+    public double? DistanciaPortonesM { get; set; }
 
     public int SelectividadSiNo { get; set; } // 0 o 1
+    public string? Comentarios { get; set; }
+    public string? Metadata { get; set; }
+
+    // Campos de Integridad 1:1 (Legacy DBF)
+    public double? Mus { get; set; }
+    public double? EstacionGral { get; set; }
+    public double? Estrato { get; set; }
+    public double? EdadLuna { get; set; }
+    public double? Luz { get; set; }
+    public double? TmpAHum { get; set; }
+    public double? TmpMarS { get; set; }
+    public double? ArteTipo { get; set; }
+    public double? ArteNro { get; set; }
+    public double? AreaBarrida { get; set; }
+    public double? MallaSobre { get; set; }
 
     // Navigation properties
     public ICollection<Muestra> Muestras { get; set; } = new List<Muestra>();
     public ICollection<ItemCaptura> ItemsCaptura { get; set; } = new List<ItemCaptura>();
+
+    [NotMapped]
+    public double SumaPesoMuestras => ItemsCaptura
+        .Where(i => i.TipoDatoCaptura == TipoDatoCaptura.Muestra)
+        .Sum(i => i.DatoCaptura);
+
+    [NotMapped]
+    public double SumaPesoCapturadoNoMuestreado => ItemsCaptura
+        .Where(i => i.TipoDatoCaptura != TipoDatoCaptura.Muestra)
+        .Sum(i => i.CapturaTotalKgCalculado);
 }
+

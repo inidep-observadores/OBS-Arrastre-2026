@@ -29,6 +29,16 @@ public partial class CoordinatePickerPremium : UserControl
         set => SetValue(IsLatitudeProperty, value);
     }
 
+    public static readonly DependencyProperty EsCompactoProperty =
+        DependencyProperty.Register(nameof(EsCompacto), typeof(bool), typeof(CoordinatePickerPremium),
+            new PropertyMetadata(false));
+
+    public bool EsCompacto
+    {
+        get => (bool)GetValue(EsCompactoProperty);
+        set => SetValue(EsCompactoProperty, value);
+    }
+
     private bool _isUpdating;
 
     public CoordinatePickerPremium()

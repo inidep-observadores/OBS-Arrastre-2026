@@ -9,9 +9,21 @@ public sealed class LanceListItemViewModel(Lance lance)
 
     public int NroLance => Lance.NroLance;
     
-    public string FechaDisplay => Lance.Fecha;
+    public string FechaDisplay
+    {
+        get
+        {
+            if (DateTime.TryParse(Lance.Fecha, out var date))
+            {
+                return date.ToString("dd/MM/yyyy");
+            }
+            return Lance.Fecha;
+        }
+    }
     
     public string HoraInicio => Lance.HoraInicio ?? "-";
+    
+    public string HoraFin => Lance.HoraFinal ?? "-";
     
     public string LatitudDisplay => FormatCoordinate(Lance.LatitudInicioDecimal, true);
     
@@ -33,7 +45,7 @@ public sealed class LanceListItemViewModel(Lance lance)
             ? (value.Value >= 0 ? "N" : "S") 
             : (value.Value >= 0 ? "E" : "O");
             
-        // Formato GGº MM,M C (C= cuadrante N,S,E,O)
-        return $"{degrees}º {minutes:00.1}' {quadrant}".Replace('.', ',');
+        // Formato GGº MM,M' C (C= cuadrante N,S,E,O)
+        return $"{degrees}º {minutes:00.0}' {quadrant}".Replace('.', ',');
     }
 }

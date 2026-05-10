@@ -26,6 +26,12 @@ public sealed class LanceService(IDbContextFactory<AppDbContext> dbContextFactor
             .Include(x => x.MareaEtapa)
                 .ThenInclude(e => e.Marea)
                     .ThenInclude(m => m.Buque)
+            .Include(x => x.ItemsCaptura)
+                .ThenInclude(i => i.Especie)
+            .Include(x => x.Muestras)
+                .ThenInclude(m => m.FrecuenciasTallas)
+            .Include(x => x.Muestras)
+                .ThenInclude(m => m.Especie)
             .AsNoTracking();
 
         if (!string.IsNullOrEmpty(mareaEtapaId))
@@ -123,6 +129,18 @@ public sealed class LanceService(IDbContextFactory<AppDbContext> dbContextFactor
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task DeleteLanceAsync(string id, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        
+        var lance = await dbContext.Lances.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (lance != null)
+        {
+            dbContext.Lances.Remove(lance);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+    }
+
     public async Task<IReadOnlyList<Especie>> GetEspeciesAsync(CancellationToken cancellationToken = default)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -130,6 +148,19 @@ public sealed class LanceService(IDbContextFactory<AppDbContext> dbContextFactor
             .AsNoTracking()
             .OrderByDescending(e => e.Frecuente)
             .ThenBy(e => e.NombreVulgar)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<RegistroProduccion>> GetProduccionAsync(string mareaEtapaId, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        return await dbContext.RegistrosProduccion
+            .Include(x => x.Producto)
+            .Include(x => x.Especie)
+            .Where(x => x.MareaEtapaId == mareaEtapaId)
+            .OrderBy(x => x.Fecha)
+            .ThenBy(x => x.Especie!.NombreVulgar)
+            .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
 }

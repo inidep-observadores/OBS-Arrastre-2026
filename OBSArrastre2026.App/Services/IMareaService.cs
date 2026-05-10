@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using OBSArrastre2026.App.Data.Entities;
+using OBSArrastre2026.App.Models;
 
 namespace OBSArrastre2026.App.Services;
 
@@ -22,4 +23,7 @@ public interface IMareaService
 
     Task<bool> HasExistingDataAsync(string mareaId, CancellationToken cancellationToken = default);
     Task ClearMareaDataAsync(string mareaId, CancellationToken cancellationToken = default);
+    Task DeleteMareaAsync(string id, CancellationToken cancellationToken = default);
+    Task<Marea?> FindMareaAsync(int numero, int anio, CancellationToken cancellationToken = default);
+    Task SetTipoDatoDescarteMasivoAsync(string mareaId, TipoDatoDescarte tipo, CancellationToken cancellationToken = default);
 }

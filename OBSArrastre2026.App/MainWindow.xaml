@@ -7,6 +7,7 @@
         xmlns:vm="clr-namespace:OBSArrastre2026.App.ViewModels"
         xmlns:controls="clr-namespace:OBSArrastre2026.App.Controls"
         xmlns:models="clr-namespace:OBSArrastre2026.App.Models"
+        xmlns:gmap="clr-namespace:GMap.NET.WindowsPresentation;assembly=GMap.NET.WindowsPresentation"
         mc:Ignorable="d"
         Title="{Binding Title}"
         Width="1460"
@@ -14,6 +15,7 @@
         MinWidth="1180"
         MinHeight="760"
         WindowStartupLocation="CenterScreen"
+        Icon="assets/icons/app_icon.ico"
         WindowState="Maximized"
         Background="{DynamicResource ShellBackgroundBrush}"
         FontFamily="{DynamicResource TextFontFamily}">
@@ -26,8 +28,28 @@
             <views:LanceEditView />
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type vm:MuestraEditViewModel}">
+            <views:MuestraEditView />
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:SubmuestraEditViewModel}">
+            <views:SubmuestraEditView />
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:ProduccionEditViewModel}">
+            <views:ProduccionEditView />
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:ReemplazoEspecieViewModel}">
+            <views:ReemplazoEspecieView />
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:ProcesosViewModel}">
+            <views:ProcesosView />
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:MareaListItemViewModel}">
-            <!-- ... contenido existente mapeado a Marea ... -->
+            <!-- ... -->
             <Border Style="{StaticResource TableRowStyle}" Cursor="Hand">
                 <Border.InputBindings>
                     <MouseBinding MouseAction="LeftDoubleClick" 
@@ -36,13 +58,15 @@
                 </Border.InputBindings>
                 <Grid>
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.0*" />
+                        <ColumnDefinition Width="1.8*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.8*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.2*" />
-                        <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.2*" />
-                        <ColumnDefinition Width="0.9*" />
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="0.5*" />
+                        <ColumnDefinition Width="0.5*" />
                     </Grid.ColumnDefinitions>
                     <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Text="{Binding CodigoDisplay}" />
                     <TextBlock Grid.Column="1" Style="{StaticResource BodySecondaryStyle}" Text="{Binding BuqueNombre}" />
@@ -74,23 +98,77 @@
                         </TextBlock>
                     </Border>
                     
-                    <!-- Botón para Establecer como Activa -->
-                    <Button Grid.Column="6" 
-                            Command="{Binding SetActiveCommand}"
-                            ToolTip="Establecer como marea activa"
-                            Margin="8,0,0,0">
-                        <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource ThemeButtonStyle}">
-                                <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                        <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                        <TextBlock Text="★" FontSize="18" VerticalAlignment="Center" />
-                    </Button>
+                    <StackPanel Grid.Column="6" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="8,0,0,0">
+                        <!-- Botón para Establecer como Activa -->
+                        <Button Command="{Binding SetActiveCommand}"
+                                ToolTip="Establecer como marea activa">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource ThemeButtonStyle}">
+                                    <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                            <Setter Property="Foreground" Value="{DynamicResource WarningForegroundBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <TextBlock Text="★" FontSize="18" VerticalAlignment="Center" />
+                        </Button>
+
+                        <Button Command="{Binding GenerateSummaryCommand}"
+                                ToolTip="Generar Resumen de Marea (PDF)"
+                                Margin="8,0,0,0">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource ThemeButtonStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsValidating}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <TextBlock Text="📄" FontSize="16" VerticalAlignment="Center" Foreground="{DynamicResource AccentBrush}"/>
+                        </Button>
+
+                        <Grid Margin="8,0,0,0">
+                            <Button Command="{Binding ValidateCommand}"
+                                    ToolTip="Validar datos y generar PDF">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource ThemeButtonStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsValidating}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <TextBlock Text="✓" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Foreground="{DynamicResource AccentBrush}"/>
+                            </Button>
+
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsValidating}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                                <ProgressBar IsIndeterminate="True" Width="16" Height="16" Margin="0,0,5,0" />
+                                <TextBlock Text="{Binding StatusText}" FontSize="10" FontStyle="Italic" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Button Command="{Binding DataContext.DeleteRecordCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="{Binding}"
+                                ToolTip="Eliminar marea y todos sus datos"
+                                Style="{StaticResource ThemeButtonStyle}"
+                                Margin="8,0,0,0">
+                            <TextBlock Text="🗑" FontSize="16" Foreground="{DynamicResource DangerForegroundBrush}" VerticalAlignment="Center" />
+                        </Button>
+                    </StackPanel>
                 </Grid>
             </Border>
         </DataTemplate>
@@ -104,19 +182,187 @@
                 </Border.InputBindings>
                 <Grid>
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.0*" />
+                        <ColumnDefinition Width="1.8*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.8*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.2*" />
-                        <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.2*" />
-                        <ColumnDefinition Width="0.9*" />
+                        <ColumnDefinition Width="0.5*" />
+                        <ColumnDefinition Width="0.5*" />
                     </Grid.ColumnDefinitions>
                     <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Text="{Binding NroLance}" />
                     <TextBlock Grid.Column="1" Style="{StaticResource BodySecondaryStyle}" Text="{Binding FechaDisplay}" />
                     <TextBlock Grid.Column="2" Style="{StaticResource BodySecondaryStyle}" Text="{Binding LatitudDisplay}" />
                     <TextBlock Grid.Column="3" Style="{StaticResource BodySecondaryStyle}" Text="{Binding LongitudDisplay}" />
                     <TextBlock Grid.Column="4" Style="{StaticResource BodySecondaryStyle}" Text="{Binding CapturaTotal, StringFormat={}{0} kg}" />
-                    <TextBlock Grid.Column="5" Style="{StaticResource BodySecondaryStyle}" Text="{Binding HoraInicio}" />
+                    <TextBlock Grid.Column="5" Style="{StaticResource BodySecondaryStyle}" Text="{Binding HoraInicio}" HorizontalAlignment="Center" />
+                    <TextBlock Grid.Column="6" Style="{StaticResource BodySecondaryStyle}" Text="{Binding HoraFin}" HorizontalAlignment="Center" />
+                    
+                    <Button Grid.Column="8"
+                            Command="{Binding DataContext.DeleteRecordCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            CommandParameter="{Binding}"
+                            ToolTip="Eliminar lance y sus muestras"
+                            Style="{StaticResource ThemeButtonStyle}"
+                            Margin="8,0,0,0">
+                        <TextBlock Text="🗑" FontSize="16" Foreground="{DynamicResource DangerForegroundBrush}" VerticalAlignment="Center" />
+                    </Button>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:MuestraListItemViewModel}">
+            <Border Style="{StaticResource TableRowStyle}" Cursor="Hand">
+                <Border.InputBindings>
+                    <MouseBinding MouseAction="LeftDoubleClick" 
+                                  Command="{Binding DataContext.EditMuestraCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  CommandParameter="{Binding}"/>
+                </Border.InputBindings>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.0*" />
+                        <ColumnDefinition Width="1.8*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.8*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="0.5*" />
+                        <ColumnDefinition Width="0.5*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Text="{Binding LanceNro}" />
+                    <TextBlock Grid.Column="1" Style="{StaticResource BodySecondaryStyle}" Text="{Binding LanceFecha}" />
+                    <TextBlock Grid.Column="2" Style="{StaticResource BodySecondaryStyle}" Text="{Binding LanceHora}" />
+                    <TextBlock Grid.Column="3" Style="{StaticResource BodySecondaryStyle}" Text="{Binding EspecieDisplay}" />
+                    <TextBlock Grid.Column="4" Style="{StaticResource BodySecondaryStyle}" Text="{Binding PesoDisplay}" />
+
+                    <Button Grid.Column="8"
+                            Command="{Binding DataContext.DeleteRecordCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            CommandParameter="{Binding}"
+                            ToolTip="Eliminar muestra y submuestras"
+                            Style="{StaticResource ThemeButtonStyle}"
+                            Margin="8,0,0,0">
+                        <TextBlock Text="🗑" FontSize="16" Foreground="{DynamicResource DangerForegroundBrush}" VerticalAlignment="Center" />
+                    </Button>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:ProduccionListItemViewModel}">
+            <Border Style="{StaticResource TableRowStyle}" Cursor="Hand" Padding="18,8">
+                <Border.InputBindings>
+                    <MouseBinding MouseAction="LeftDoubleClick" 
+                                   Command="{Binding DataContext.OpenSelectedRecordEditCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                </Border.InputBindings>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.0*" />
+                        <ColumnDefinition Width="1.8*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.8*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="0.5*" />
+                        <ColumnDefinition Width="0.5*" />
+                    </Grid.ColumnDefinitions>
+                    
+                    <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Text="{Binding FechaDisplay}" />
+                    <TextBlock Grid.Column="1" Style="{StaticResource BodySecondaryStyle}" Text="{Binding EspecieDisplay}" />
+                    <TextBlock Grid.Column="2" Style="{StaticResource BodySecondaryStyle}" Text="{Binding ProductoCodigo}" />
+                    <TextBlock Grid.Column="3" Style="{StaticResource BodySecondaryStyle}" Text="{Binding Categoria}" />
+                    <TextBlock Grid.Column="4" Style="{StaticResource BodySecondaryStyle}" HorizontalAlignment="Right" Text="{Binding Factor, StringFormat=\{0:F2\}}" />
+                    <TextBlock Grid.Column="5" Style="{StaticResource BodySecondaryStyle}" HorizontalAlignment="Right" Text="{Binding Kg, StringFormat=\{0:F2\}}" />
+
+                    <Button Grid.Column="8"
+                            Command="{Binding DataContext.DeleteRecordCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            CommandParameter="{Binding}"
+                            ToolTip="Eliminar registro de producción"
+                            Style="{StaticResource ThemeButtonStyle}"
+                            Margin="8,0,0,0">
+                        <TextBlock Text="🗑" FontSize="16" Foreground="{DynamicResource DangerForegroundBrush}" VerticalAlignment="Center" />
+                    </Button>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:ControlProduccionListItemViewModel}">
+            <Border Style="{StaticResource TableRowStyle}" Cursor="Hand">
+                <Border.InputBindings>
+                    <MouseBinding MouseAction="LeftDoubleClick" 
+                                  Command="{Binding DataContext.NavigateToControlProduccionDetailCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  CommandParameter="{Binding}" />
+                </Border.InputBindings>
+                
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.0*" />
+                        <ColumnDefinition Width="1.8*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.8*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="0.5*" />
+                        <ColumnDefinition Width="0.5*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Columna 1: Fecha (Detalle) o Especie (Resumen) -->
+                    <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Text" Value="{Binding FechaDisplay}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsSummaryView}" Value="True">
+                                        <Setter Property="Text" Value="{Binding Especie}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+
+                    <!-- Columna 2: Prod. Total -->
+                    <TextBlock Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" 
+                               Foreground="{DynamicResource PrimaryTextBrush}" Text="{Binding ProduccionTotalDisplay}" />
+
+                    <!-- Columna 3: Capt. Recon. -->
+                    <TextBlock Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right" 
+                               Foreground="{DynamicResource SecondaryTextBrush}" Text="{Binding CapturaReconstruidaDisplay}" />
+
+                    <!-- Columna 4: Captura -->
+                    <TextBlock Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Right" 
+                               Foreground="{DynamicResource SecondaryTextBrush}" Text="{Binding CapturaBrutaDisplay}" />
+
+                    <!-- Columna 5: Descarte -->
+                    <TextBlock Grid.Column="4" VerticalAlignment="Center" HorizontalAlignment="Right" 
+                               Foreground="{DynamicResource SecondaryTextBrush}" Text="{Binding DescarteKgDisplay}" />
+
+                    <!-- Columna 6: Capt. Retenida -->
+                    <TextBlock Grid.Column="5" VerticalAlignment="Center" HorizontalAlignment="Right" 
+                               Foreground="{DynamicResource SecondaryTextBrush}" Text="{Binding CapturaRetenidaDisplay}" />
+
+                    <!-- Columna 7: Dif. Kg -->
+                    <TextBlock Grid.Column="6" VerticalAlignment="Center" HorizontalAlignment="Right" 
+                               Foreground="{DynamicResource SecondaryTextBrush}" Text="{Binding DiferenciaKgDisplay}" />
+
+                    <!-- Columna 8: Dif. % -->
+                    <TextBlock Grid.Column="7" VerticalAlignment="Center" HorizontalAlignment="Right" FontWeight="SemiBold">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Text" Value="{Binding DiferenciaPorcentajeDisplay}" />
+                                <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasDiferenciaSignificativa}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    
+                    <!-- Columna 9: Vacía/Padding -->
+                    <TextBlock Grid.Column="8" Text="" />
                 </Grid>
             </Border>
         </DataTemplate>
@@ -124,7 +370,7 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="294" />
+            <ColumnDefinition Width="360" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
@@ -142,28 +388,12 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel>
-                    <Border Width="58"
-                            Height="58"
-                            Background="{DynamicResource AccentBrush}"
-                            CornerRadius="0"
-                            HorizontalAlignment="Left">
-                        <TextBlock HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   FontSize="23"
-                                   FontWeight="Bold"
-                                   Foreground="White"
-                                   Text="OA" />
-                    </Border>
                     <TextBlock Margin="0,18,0,0"
                                FontFamily="{DynamicResource DisplayFontFamily}"
                                FontSize="27"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource PrimaryTextBrush}"
-                               Text="OBS Arrastre" />
-                    <TextBlock Margin="0,6,0,0"
-                               FontSize="13"
-                               Foreground="{DynamicResource SecondaryTextBrush}"
-                               Text="Dashboard y modulos maestros en modo mockup" />
+                               Text="Control de mareas" />
                 </StackPanel>
 
                 <ListBox Grid.Row="1"
@@ -175,11 +405,18 @@
                          ItemContainerStyle="{StaticResource SidebarItemStyle}">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Grid x:Name="RootGrid" Background="Transparent">
+                            <Grid x:Name="RootGrid" Background="Transparent" MinHeight="36">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="28" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
+
+                                <Rectangle x:Name="SeparatorLine" 
+                                           Grid.ColumnSpan="2" 
+                                           Height="1" 
+                                           Fill="{DynamicResource SidebarBorderBrush}" 
+                                           Margin="0,12" 
+                                           Visibility="Collapsed" />
 
                                 <TextBlock x:Name="IconText"
                                            HorizontalAlignment="Center"
@@ -197,6 +434,12 @@
                                            Text="{Binding Title}" />
                             </Grid>
                             <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding Section}" Value="{x:Static models:NavigationSection.Separator}">
+                                    <Setter TargetName="IconText" Property="Visibility" Value="Collapsed" />
+                                    <Setter TargetName="TitleText" Property="Visibility" Value="Collapsed" />
+                                    <Setter TargetName="SeparatorLine" Property="Visibility" Value="Visible" />
+                                    <Setter TargetName="RootGrid" Property="MinHeight" Value="25" />
+                                </DataTrigger>
                                 <DataTrigger Binding="{Binding IsEnabled}" Value="False">
                                     <Setter TargetName="RootGrid" Property="Opacity" Value="0.3" />
                                     <Setter TargetName="IconText" Property="Foreground" Value="Gray" />
@@ -212,17 +455,20 @@
                             Margin="0,0,0,12"
                             Padding="16"
                             Background="{DynamicResource SidebarSecondaryBackgroundBrush}">
-                        <StackPanel>
+                        <StackPanel HorizontalAlignment="Center">
                             <TextBlock FontSize="10"
                                        FontWeight="SemiBold"
                                        Foreground="{DynamicResource SecondaryTextBrush}"
-                                       Text="MAREA ACTIVA" />
+                                       Text="MAREA ACTIVA"
+                                       HorizontalAlignment="Center" />
                             
                             <Grid Margin="0,8,0,0" Visibility="{Binding ActiveMareaManager.ActiveMarea, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=invert}">
-                                <StackPanel>
+                                <StackPanel HorizontalAlignment="Center">
                                     <TextBlock FontSize="16"
                                                FontWeight="SemiBold"
-                                               Foreground="{DynamicResource PrimaryTextBrush}">
+                                               Foreground="{DynamicResource PrimaryTextBrush}"
+                                               HorizontalAlignment="Center"
+                                               TextAlignment="Center">
                                         <TextBlock.Text>
                                             <MultiBinding StringFormat="{}{0}/{1}">
                                                 <Binding Path="ActiveMareaManager.ActiveMarea.NumeroInidep" />
@@ -233,15 +479,10 @@
                                     <TextBlock Margin="0,4,0,0"
                                                FontSize="12"
                                                Foreground="{DynamicResource SecondaryTextBrush}"
-                                               Text="{Binding ActiveMareaManager.ActiveMarea.Buque.Nombre}" />
+                                               Text="{Binding ActiveMareaManager.ActiveMarea.Buque.Nombre}"
+                                               HorizontalAlignment="Center"
+                                               TextAlignment="Center" />
                                     
-                                    <Button Command="{Binding ClearActiveMareaCommand}"
-                                            Style="{StaticResource ThemeButtonStyle}"
-                                            HorizontalAlignment="Left"
-                                            Margin="-8,8,0,0"
-                                            Padding="8,4">
-                                        <TextBlock Text="Limpiar" FontSize="11" Foreground="{DynamicResource DangerBrush}" />
-                                    </Button>
                                 </StackPanel>
                             </Grid>
 
@@ -250,25 +491,11 @@
                                        FontStyle="Italic"
                                        Foreground="{DynamicResource SecondaryTextBrush}"
                                        Text="Ninguna seleccionada"
+                                       HorizontalAlignment="Center"
                                        Visibility="{Binding ActiveMareaManager.ActiveMarea, Converter={StaticResource NullToVisibilityConverter}}" />
                         </StackPanel>
                     </Border>
                     
-                    <Border Style="{StaticResource SurfaceBorderStyle}"
-                            Padding="16"
-                            Background="{DynamicResource SidebarSecondaryBackgroundBrush}">
-                        <StackPanel>
-                            <TextBlock FontSize="10"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource SecondaryTextBrush}"
-                                       Text="ESTADO DEL SISTEMA" />
-                            <TextBlock Margin="0,6,0,0"
-                                       FontSize="16"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource PrimaryTextBrush}"
-                                       Text="Premium v2026" />
-                        </StackPanel>
-                    </Border>
                 </StackPanel>
             </Grid>
         </Border>
@@ -286,11 +513,21 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel>
-                    <TextBlock FontSize="13"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource AccentBrush}"
-                               Text="{Binding PageEyebrow}" />
+                <StackPanel Orientation="Horizontal">
+                    <Button Command="{Binding BackControlProduccionCommand}"
+                            Visibility="{Binding IsControlProduccionDetailVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            Style="{StaticResource ThemeButtonStyle}"
+                            Width="44" Height="44"
+                            Margin="0,0,16,0"
+                            VerticalAlignment="Bottom"
+                            ToolTip="Volver a lista de especies">
+                        <TextBlock Text="←" FontSize="28" FontWeight="Bold" Margin="0,0,0,2" />
+                    </Button>
+                    <StackPanel>
+                        <TextBlock FontSize="13"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AccentBrush}"
+                                   Text="{Binding PageEyebrow}" />
                     <TextBlock Margin="0,6,0,0"
                                FontFamily="{DynamicResource DisplayFontFamily}"
                                FontSize="36"
@@ -301,6 +538,31 @@
                                FontSize="14"
                                Foreground="{DynamicResource SecondaryTextBrush}"
                                Text="{Binding PageDescription}" />
+                </StackPanel>
+                
+                <Button Command="{Binding ExportControlProduccionPdfCommand}" 
+                        Margin="32,0,0,0"
+                        VerticalAlignment="Bottom"
+                        Padding="16,10"
+                        ToolTip="Generar reporte PDF del resumen de producción">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="📄" Margin="0,0,8,0" VerticalAlignment="Center" FontSize="16"/>
+                        <TextBlock Text="EXPORTAR RESUMEN" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                    </StackPanel>
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsControlProduccionDetailVisible}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1"
@@ -381,160 +643,67 @@
                 </Border.Effect>
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <Grid Margin="0,0,0,20">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+                    <Grid Grid.Row="0">
 
-                        <StackPanel>
-                            <TextBlock FontSize="17"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource PrimaryTextBrush}"
-                                       Text="Vista de Operaciones" />
-                            <TextBlock Margin="0,5,0,0"
-                                       FontSize="13"
-                                       Foreground="{DynamicResource SecondaryTextBrush}"
-                                       Text="Gestión y monitoreo en tiempo real." />
-                        </StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition>
+                                    <ColumnDefinition.Style>
+                                        <Style TargetType="ColumnDefinition">
+                                            <Setter Property="Width" Value="0" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Lances}">
+                                                    <Setter Property="Width" Value="1.4*" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsControlProduccionDetailVisible}" Value="True">
+                                                    <Setter Property="Width" Value="400" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ColumnDefinition.Style>
+                                </ColumnDefinition>
+                            </Grid.ColumnDefinitions>
 
-                        <Button Grid.Column="1"
-                                Style="{StaticResource PrimaryButtonStyle}"
-                                Command="{Binding PrimaryActionCommand}"
-                                Content="{Binding PrimaryActionLabel}" />
-                    </Grid>
+                            <Grid Grid.Column="0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
 
-                    <Grid Grid.Row="1">
-                        <Grid Visibility="{Binding IsDashboardVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
+                                <!-- Vista de Reemplazo de Especie (Se superpone a la lista) -->
+                                <ContentControl Content="{Binding ReemplazoEspecieVM}" Grid.RowSpan="4" Panel.ZIndex="10">
+                                    <ContentControl.Style>
+                                        <Style TargetType="ContentControl">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ReemplazoEspecie}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ContentControl.Style>
+                                </ContentControl>
 
-                            <ItemsControl ItemsSource="{Binding DashboardCards}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <UniformGrid Columns="4" />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Style="{StaticResource MetricCardStyle}">
-                                            <StackPanel>
-                                                <TextBlock FontSize="12"
-                                                           Foreground="{DynamicResource SecondaryTextBrush}"
-                                                           Text="{Binding Label}" />
-                                                <TextBlock Margin="0,10,0,0"
-                                                           FontFamily="{DynamicResource DisplayFontFamily}"
-                                                           FontSize="30"
-                                                           FontWeight="SemiBold"
-                                                           Foreground="{DynamicResource PrimaryTextBrush}"
-                                                           Text="{Binding Value}" />
-                                                <TextBlock Margin="0,8,0,0"
-                                                           FontSize="12"
-                                                           Foreground="{DynamicResource AccentBrush}"
-                                                           Text="{Binding Delta}" />
-                                                <TextBlock Margin="0,10,0,0"
-                                                           FontSize="12"
-                                                           TextWrapping="Wrap"
-                                                           Foreground="{DynamicResource SecondaryTextBrush}"
-                                                           Text="{Binding Footnote}" />
-                                            </StackPanel>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-
-                            <Grid Grid.Row="1">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="1.35*" />
-                                    <ColumnDefinition Width="18" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-
-                                <Border Style="{StaticResource SurfaceBorderStyle}"
-                                        Padding="20">
-                                    <StackPanel>
-                                        <TextBlock FontSize="18"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource PrimaryTextBrush}"
-                                                   Text="Ritmo operativo semanal" />
-                                        <ItemsControl Margin="0,20,0,0"
-                                                      ItemsSource="{Binding TrendPoints}">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Grid Margin="0,0,0,14">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="56" />
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="88" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock VerticalAlignment="Center"
-                                                                   FontWeight="SemiBold"
-                                                                   Foreground="{DynamicResource PrimaryTextBrush}"
-                                                                   Text="{Binding Label}" />
-                                                        <ProgressBar Grid.Column="1"
-                                                                     Style="{StaticResource SlimProgressBarStyle}"
-                                                                     Margin="14,0"
-                                                                     Maximum="100"
-                                                                     Value="{Binding Value}" />
-                                                        <TextBlock Grid.Column="2"
-                                                                   VerticalAlignment="Center"
-                                                                   HorizontalAlignment="Right"
-                                                                   Foreground="{DynamicResource SecondaryTextBrush}"
-                                                                   Text="{Binding Caption}" />
-                                                    </Grid>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                    </StackPanel>
-                                </Border>
-
-                                <ItemsControl Grid.Column="2"
-                                              ItemsSource="{Binding InsightCards}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border Style="{StaticResource SurfaceBorderStyle}"
-                                                    Margin="0,0,0,14"
-                                                    Padding="16">
-                                                <StackPanel>
-                                                    <TextBlock FontSize="11"
-                                                               FontWeight="SemiBold"
-                                                               Foreground="{DynamicResource AccentBrush}"
-                                                               Text="{Binding Label}" />
-                                                    <TextBlock Margin="0,8,0,0"
-                                                               FontSize="16"
-                                                               FontWeight="SemiBold"
-                                                               Foreground="{DynamicResource PrimaryTextBrush}"
-                                                               Text="{Binding Title}" />
-                                                    <TextBlock Margin="0,8,0,0"
-                                                               FontSize="13"
-                                                               TextWrapping="Wrap"
-                                                               Foreground="{DynamicResource SecondaryTextBrush}"
-                                                               Text="{Binding Description}" />
-                                                    <TextBlock Margin="0,12,0,0"
-                                                               FontSize="12"
-                                                               Foreground="{DynamicResource PrimaryTextBrush}"
-                                                               Text="{Binding Meta}" />
-                                                </StackPanel>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </Grid>
-                        </Grid>
-
-                        <Grid Visibility="{Binding IsTableVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
+                                <!-- Vista de Lanzador de Procesos -->
+                                <ContentControl Content="{Binding ProcesosVM}" Grid.RowSpan="4" Panel.ZIndex="10">
+                                    <ContentControl.Style>
+                                        <Style TargetType="ContentControl">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Procesos}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ContentControl.Style>
+                                </ContentControl>
 
                             <ItemsControl ItemsSource="{Binding ActiveFilters}">
                                 <ItemsControl.ItemsPanel>
@@ -624,7 +793,7 @@
                                     <StackPanel Grid.Column="3" Margin="8,0,16,0">
                                         <Label Content="Búsqueda" Style="{StaticResource FormLabelStyle}"/>
                                         <TextBox Style="{StaticResource PremiumTextBoxStyle}"
-                                                 Text="{Binding MareasSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                                 Text="{Binding MareasSearchText}"
                                                  Tag="Número o comentarios...">
                                             <TextBox.InputBindings>
                                                 <KeyBinding Key="Enter" Command="{Binding ApplyMareaFiltersCommand}" />
@@ -632,12 +801,22 @@
                                         </TextBox>
                                     </StackPanel>
 
-                                    <Button Grid.Column="4" 
-                                            Style="{StaticResource PrimaryButtonStyle}"
-                                            Command="{Binding ApplyMareaFiltersCommand}"
-                                            Content="Filtrar"
-                                            VerticalAlignment="Bottom"
-                                            Padding="24,10"/>
+                                    <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Bottom">
+                                        <Button Style="{StaticResource ThemeButtonStyle}"
+                                                Command="{Binding ImportMareaCommand}"
+                                                Content="Importar Marea"
+                                                Margin="0,0,12,0"
+                                                Padding="16,10"/>
+                                        <Button Style="{StaticResource ThemeButtonStyle}"
+                                                Command="{Binding ClearMareaFiltersCommand}"
+                                                Content="Limpiar"
+                                                Margin="0,0,12,0"
+                                                Padding="16,10"/>
+                                        <Button Style="{StaticResource PrimaryButtonStyle}"
+                                                Command="{Binding ApplyMareaFiltersCommand}"
+                                                Content="Filtrar"
+                                                Padding="24,10"/>
+                                    </StackPanel>
                                 </Grid>
                             </Border>
 
@@ -685,7 +864,7 @@
                                             <Label Content="Nro. Lance" Style="{StaticResource FormLabelStyle}"/>
                                             <TextBox Width="100" 
                                                      Style="{StaticResource PremiumTextBoxStyle}"
-                                                     Text="{Binding LancesFilterNroLance}">
+                                                     Text="{Binding LancesFilterNroLance, TargetNullValue=''}">
                                                 <TextBox.InputBindings>
                                                     <KeyBinding Key="Enter" Command="{Binding ApplyLanceFiltersCommand}" />
                                                 </TextBox.InputBindings>
@@ -696,7 +875,7 @@
                                     <StackPanel Grid.Column="2" Margin="8,0,16,0">
                                         <Label Content="Especie" Style="{StaticResource FormLabelStyle}"/>
                                         <TextBox Style="{StaticResource PremiumTextBoxStyle}"
-                                                 Text="{Binding LancesFilterEspecie, UpdateSourceTrigger=PropertyChanged}"
+                                                 Text="{Binding LancesFilterEspecie}"
                                                  Tag="Buscar especie...">
                                             <TextBox.InputBindings>
                                                 <KeyBinding Key="Enter" Command="{Binding ApplyLanceFiltersCommand}" />
@@ -704,13 +883,41 @@
                                         </TextBox>
                                     </StackPanel>
 
-                                    <Button Grid.Column="3" 
-                                            Style="{StaticResource PrimaryButtonStyle}"
-                                            Command="{Binding ApplyLanceFiltersCommand}"
-                                            Content="Filtrar"
-                                            VerticalAlignment="Bottom"
-                                            Padding="24,10"/>
+                                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Bottom">
+                                        <Button Style="{StaticResource ThemeButtonStyle}"
+                                                Command="{Binding ClearLanceFiltersCommand}"
+                                                Content="Limpiar"
+                                                Margin="0,0,12,0"
+                                                Padding="16,10"/>
+                                        <Button Style="{StaticResource PrimaryButtonStyle}"
+                                                Command="{Binding ApplyLanceFiltersCommand}"
+                                                Content="Filtrar"
+                                                Padding="24,10"/>
+                                    </StackPanel>
                                 </Grid>
+                            </Border>
+                            
+                            <!-- Barra de Filtros Control Produccion -->
+                            <Border Grid.Row="1" 
+                                    Padding="16,12"
+                                    Margin="0,0,0,16">
+                                <Border.Style>
+                                    <Style TargetType="Border" BasedOn="{StaticResource SurfaceBorderStyle}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <StackPanel Orientation="Horizontal">
+                                    <CheckBox Content="Mostrar únicamente ítems con diferencias" 
+                                              IsChecked="{Binding ControlSoloConDiferencias}"
+                                              VerticalAlignment="Center"
+                                              FontWeight="SemiBold"
+                                              Foreground="{DynamicResource PrimaryTextBrush}" />
+                                </StackPanel>
                             </Border>
 
                             <Border Grid.Row="2"
@@ -720,30 +927,611 @@
                                     BorderThickness="0,0,0,1">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1.0*" />
+                                        <ColumnDefinition Width="1.8*" />
+                                        <ColumnDefinition Width="1.1*" />
+                                        <ColumnDefinition Width="1.8*" />
+                                        <ColumnDefinition Width="1.1*" />
+                                        <ColumnDefinition Width="1.1*" />
                                         <ColumnDefinition Width="1.2*" />
-                                        <ColumnDefinition Width="1.1*" />
-                                        <ColumnDefinition Width="1.1*" />
-                                        <ColumnDefinition Width="1.1*" />
-                                        <ColumnDefinition Width="1.1*" />
-                                        <ColumnDefinition Width="1.2*" />
-                                        <ColumnDefinition Width="0.9*" />
-                                        <ColumnDefinition Width="40" />
+                                        <ColumnDefinition Width="0.5*" />
+                                        <ColumnDefinition Width="0.5*" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column1Header}" />
-                                    <TextBlock Grid.Column="1" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column2Header}" />
-                                    <TextBlock Grid.Column="2" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column3Header}" />
-                                    <TextBlock Grid.Column="3" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column4Header}" />
-                                    <TextBlock Grid.Column="4" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column5Header}" />
-                                    <TextBlock Grid.Column="5" Style="{StaticResource HeaderLabelStyle}" Text="Estado" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Column2Header}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource HeaderLabelStyle}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
+                                                        <Setter Property="HorizontalAlignment" Value="Right" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock Grid.Column="2" Text="{Binding Column3Header}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource HeaderLabelStyle}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
+                                                        <Setter Property="HorizontalAlignment" Value="Right" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock Grid.Column="3" Text="{Binding Column4Header}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource HeaderLabelStyle}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
+                                                        <Setter Property="HorizontalAlignment" Value="Right" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock Grid.Column="4" Text="{Binding Column5Header}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource HeaderLabelStyle}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
+                                                        <Setter Property="HorizontalAlignment" Value="Right" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Produccion}">
+                                                        <Setter Property="HorizontalAlignment" Value="Right" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock Grid.Column="5" Text="{Binding Column6Header}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource HeaderLabelStyle}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
+                                                        <Setter Property="HorizontalAlignment" Value="Right" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Produccion}">
+                                                        <Setter Property="HorizontalAlignment" Value="Right" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock Grid.Column="6" Text="{Binding Column7Header}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource HeaderLabelStyle}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
+                                                        <Setter Property="HorizontalAlignment" Value="Right" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock Grid.Column="7" Text="{Binding Column8Header}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource HeaderLabelStyle}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
+                                                        <Setter Property="HorizontalAlignment" Value="Right" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock Grid.Column="8" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column9Header}" />
                                 </Grid>
                             </Border>
 
-                            <ScrollViewer Grid.Row="3"
-                                          Style="{StaticResource SlimScrollViewerStyle}"
-                                          VerticalScrollBarVisibility="Auto">
-                                <ItemsControl ItemsSource="{Binding Records}">
-                                </ItemsControl>
-                            </ScrollViewer>
+                            <ListBox x:Name="RecordsList" Grid.Row="3"
+                                     ItemsSource="{Binding RecordsView}"
+                                     SelectedItem="{Binding SelectedRecord}"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     HorizontalContentAlignment="Stretch"
+                                     VirtualizingStackPanel.IsVirtualizing="True"
+                                     VirtualizingStackPanel.VirtualizationMode="Recycling"
+                                     PreviewKeyDown="RecordsList_PreviewKeyDown">
+                                <ListBox.InputBindings>
+                                    <KeyBinding Key="Enter" Command="{Binding OpenSelectedRecordEditCommand}" />
+                                </ListBox.InputBindings>
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                        <Setter Property="Padding" Value="0" />
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListBoxItem">
+                                                    <ContentPresenter HorizontalAlignment="Stretch" />
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+
+                                <ListBox.GroupStyle>
+                                    <GroupStyle>
+                                        <GroupStyle.HeaderTemplate>
+                                            <DataTemplate>
+                                                <Border Background="{DynamicResource SidebarSecondaryBackgroundBrush}" 
+                                                        Padding="12,8" 
+                                                        Margin="0,16,0,8"
+                                                        BorderBrush="{DynamicResource SidebarBorderBrush}"
+                                                        BorderThickness="0,0,0,1">
+                                                    <TextBlock Text="{Binding Name}" 
+                                                               FontWeight="Bold" 
+                                                               FontSize="14"
+                                                               Foreground="{DynamicResource AccentBrush}"/>
+                                                </Border>
+                                            </DataTemplate>
+                                        </GroupStyle.HeaderTemplate>
+                                    </GroupStyle>
+                                </ListBox.GroupStyle>
+                            </ListBox>
+                        </Grid>
+
+                        <GridSplitter Grid.Column="1" 
+                                      Width="6" 
+                                      HorizontalAlignment="Center" 
+                                      VerticalAlignment="Stretch"
+                                      Background="{DynamicResource SidebarBorderBrush}"
+                                      ShowsPreview="True">
+                            <GridSplitter.Style>
+                                <Style TargetType="GridSplitter">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Lances}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
+                                            <Setter Property="Visibility" Value="{Binding IsControlProduccionDetailVisible, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </GridSplitter.Style>
+                        </GridSplitter>
+
+                        <Border Grid.Column="2" 
+                                Margin="12,0,0,0" 
+                                BorderBrush="{DynamicResource TableRowBorderBrush}" 
+                                BorderThickness="1"
+                                ClipToBounds="True">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Lances}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <Grid>
+                                    <gmap:GMapControl x:Name="MainMap" 
+                                                      MaxZoom="18"
+                                                      MinZoom="2"
+                                                      Zoom="10"
+                                                      Loaded="MainMap_Loaded"
+                                                      MouseMove="MainMap_MouseMove"
+                                                      MouseLeave="MainMap_MouseLeave" />
+
+                                    <!-- HUD de Datos de Navegación -->
+                                    <Border HorizontalAlignment="Right" VerticalAlignment="Top" 
+                                            Margin="16" Padding="14" 
+                                            Background="{DynamicResource CardBackgroundBrush}" 
+                                            Opacity="0.9"
+                                            BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8"
+                                            Visibility="{Binding CurrentPlaybackPoint, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=invert}">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="15" ShadowDepth="0" Opacity="0.15" />
+                                        </Border.Effect>
+                                        <StackPanel Width="170">
+                                            <TextBlock Text="NAV DATA HUD" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,12" />
+                                            
+                                            <Grid Margin="0,0,0,6">
+                                                <TextBlock Text="FECHA" FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding CurrentPlaybackPoint.FechaHora, StringFormat=dd/MM/yyyy}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Right" />
+                                            </Grid>
+                                            <Grid Margin="0,0,0,6">
+                                                <TextBlock Text="HORA" FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding CurrentPlaybackPoint.FechaHora, StringFormat=HH:mm:ss}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Right" />
+                                            </Grid>
+                                            <Separator Background="{DynamicResource CardBorderBrush}" Margin="0,4,0,8" />
+                                            
+                                            <Grid Margin="0,0,0,6">
+                                                <TextBlock Text="LATITUD" FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding CurrentPlaybackPoint.Latitud, Converter={StaticResource CoordinateConverter}, ConverterParameter=lat}" 
+                                                           FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Right" />
+                                            </Grid>
+                                            <Grid Margin="0,0,0,6">
+                                                <TextBlock Text="LONGITUD" FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding CurrentPlaybackPoint.Longitud, Converter={StaticResource CoordinateConverter}, ConverterParameter=lon}" 
+                                                           FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Right" />
+                                            </Grid>
+                                            <Separator Background="{DynamicResource CardBorderBrush}" Margin="0,4,0,8" />
+
+                                            <Grid Margin="0,0,0,6">
+                                                <TextBlock Text="VELOCIDAD" FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding CurrentPlaybackPoint.Velocidad, StringFormat=\{0:0.0\} nudos}" 
+                                                           FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Right" />
+                                            </Grid>
+                                            <Grid>
+                                                <TextBlock Text="RUMBO" FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding CurrentPlaybackPoint.Rumbo, StringFormat=\{0:0\}º}" 
+                                                           FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Right" />
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- HUD de Coordenadas del Puntero -->
+                                    <Border HorizontalAlignment="Right" VerticalAlignment="Bottom" 
+                                            Margin="16" Padding="10,6" 
+                                            Background="{DynamicResource CardBackgroundBrush}" 
+                                            Opacity="0.85"
+                                            BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
+                                            CornerRadius="6"
+                                            IsHitTestVisible="False">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="10" ShadowDepth="0" Opacity="0.1" />
+                                        </Border.Effect>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="POSICIÓN:" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <TextBlock Text="{Binding MouseLatitudeDisplay}" 
+                                                       FontSize="11" 
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource PrimaryTextBrush}" 
+                                                       VerticalAlignment="Center" />
+                                            <TextBlock Text="   " FontSize="11" VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding MouseLongitudeDisplay}" 
+                                                       FontSize="11" 
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource PrimaryTextBrush}" 
+                                                       VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Control de Capas de Mapa -->
+                                    <Border HorizontalAlignment="Left" VerticalAlignment="Top" 
+                                            Margin="16" Padding="14" 
+                                            Background="{DynamicResource CardBackgroundBrush}" 
+                                            Opacity="0.9"
+                                            BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
+                                            CornerRadius="8"
+                                            Visibility="{Binding TotalTrackPoints, Converter={StaticResource IntToVisibilityConverter}}">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="15" ShadowDepth="0" Opacity="0.15" />
+                                        </Border.Effect>
+                                        <StackPanel>
+                                            <TextBlock Text="CAPAS DE TRAYECTORIA" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,12" />
+                                            
+                                            <CheckBox Content="Mostrar Línea de Track" 
+                                                      IsChecked="{Binding ShowTrackLine, UpdateSourceTrigger=PropertyChanged}" 
+                                                      Foreground="{DynamicResource PrimaryTextBrush}"
+                                                      FontSize="11" Margin="0,0,0,8" 
+                                                      Cursor="Hand" />
+                                            
+                                            <CheckBox Content="Mostrar Puntos de Track" 
+                                                      IsChecked="{Binding ShowTrackPoints, UpdateSourceTrigger=PropertyChanged}" 
+                                                      Foreground="{DynamicResource PrimaryTextBrush}"
+                                                      FontSize="11" 
+                                                      Cursor="Hand" />
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+
+                                <!-- Panel de Reproducción de Trayectoria -->
+                                <Border Grid.Row="1" 
+                                        Background="{DynamicResource SidebarSecondaryBackgroundBrush}"
+                                        BorderBrush="{DynamicResource SidebarBorderBrush}"
+                                        BorderThickness="0,1,0,0"
+                                        Padding="16,12">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding TotalTrackPoints, Converter={StaticResource IntToVisibilityConverter}}" Value="Visible">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="180" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Controles -->
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <controls:DatePickerPremium SelectedDate="{Binding SelectedPlaybackDate}" 
+                                                                        Width="110" 
+                                                                        Height="32" 
+                                                                        Margin="0,0,12,0" 
+                                                                        EsCompacto="True" />
+                                            
+                                            <Button Command="{Binding GoToStartCommand}" 
+                                                    Style="{StaticResource ThemeButtonStyle}"
+                                                    ToolTip="Ir al Inicio"
+                                                    Padding="6">
+                                                <TextBlock Text="⏮" FontSize="14" />
+                                            </Button>
+                                            <Button Command="{Binding PrevPointCommand}" 
+                                                    Style="{StaticResource ThemeButtonStyle}"
+                                                    ToolTip="Punto Anterior"
+                                                    Padding="6">
+                                                <TextBlock Text="⏪" FontSize="14" />
+                                            </Button>
+                                            
+                                            <Grid Margin="4,0">
+                                                <!-- Botón Play (cuando no está reproduciendo) -->
+                                                <Button Command="{Binding PlayCommand}" 
+                                                        Style="{StaticResource PrimaryButtonStyle}"
+                                                        ToolTip="Reproducir"
+                                                        Padding="8,4"
+                                                        Visibility="{Binding IsPlaying, Converter={StaticResource EnhancedBooleanToVisibilityConverter}, ConverterParameter=invert}">
+                                                    <TextBlock Text="▶" FontSize="14" Foreground="White" />
+                                                </Button>
+                                                <!-- Botón Stop (cuando está reproduciendo) -->
+                                                <Button Command="{Binding PauseCommand}" 
+                                                        Style="{StaticResource PrimaryButtonStyle}"
+                                                        ToolTip="Detener"
+                                                        Padding="8,4"
+                                                        Background="{DynamicResource DangerForegroundBrush}"
+                                                        Visibility="{Binding IsPlaying, Converter={StaticResource EnhancedBooleanToVisibilityConverter}}">
+                                                    <TextBlock Text="⏹" FontSize="14" Foreground="White" />
+                                                </Button>
+                                            </Grid>
+
+                                            <Button Command="{Binding NextPointCommand}" 
+                                                    Style="{StaticResource ThemeButtonStyle}"
+                                                    ToolTip="Siguiente Punto"
+                                                    Padding="6">
+                                                <TextBlock Text="⏩" FontSize="14" />
+                                            </Button>
+                                            <Button Command="{Binding GoToEndCommand}" 
+                                                    Style="{StaticResource ThemeButtonStyle}"
+                                                    ToolTip="Ir al Final"
+                                                    Padding="6">
+                                                <TextBlock Text="⏭" FontSize="14" />
+                                            </Button>
+                                        </StackPanel>
+
+                                        <!-- Deslizador -->
+                                        <Grid Grid.Column="1" Margin="24,0">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <Slider Minimum="0" 
+                                                    Maximum="{Binding TotalTrackPoints, Mode=OneWay, Converter={StaticResource MathConverter}, ConverterParameter=x-1}"
+                                                    Value="{Binding CurrentTrackPointIndex}"
+                                                    Style="{StaticResource PremiumSliderStyle}"
+                                                    VerticalAlignment="Center">
+                                                <Slider.ToolTip>
+                                                    <ToolTip Content="{Binding SelectedTrackPointInfo}" 
+                                                             Visibility="{Binding SelectedTrackPointInfo, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=invert}"/>
+                                                </Slider.ToolTip>
+                                            </Slider>
+                                            <TextBlock Grid.Row="1" 
+                                                       Text="{Binding SelectedTrackPointInfo}" 
+                                                       HorizontalAlignment="Center" 
+                                                       FontSize="11" 
+                                                       Foreground="{DynamicResource SecondaryTextBrush}"
+                                                       Margin="0,4,0,0" />
+                                        </Grid>
+
+                                        <!-- Ventana de Visibilidad -->
+                                        <Grid Grid.Column="2" Margin="16,0,24,0" 
+                                              IsEnabled="{Binding IsTrackVisibilitySliderEnabled}"
+                                              VerticalAlignment="Center">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <TextBlock Text="VENTANA:" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding TrackVisibilityWindowDaysLabel}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="4,0"/>
+                                            </StackPanel>
+                                            <Slider Grid.Row="1" 
+                                                    Minimum="0" Maximum="6" 
+                                                    Value="{Binding TrackVisibilitySliderValue}" 
+                                                    TickFrequency="1" IsSnapToTickEnabled="True"
+                                                    Style="{StaticResource PremiumSliderStyle}"
+                                                    Margin="0,2,0,0"/>
+                                        </Grid>
+
+                                        <!-- Info Adicional -->
+                                        <StackPanel Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                            <TextBlock Text="REPRODUCCIÓN DE TRAYECTORIA" 
+                                                       FontSize="10" 
+                                                       FontWeight="Bold" 
+                                                       Foreground="{DynamicResource AccentBrush}" 
+                                                       HorizontalAlignment="Right"/>
+                                            <TextBlock FontSize="12" 
+                                                       Foreground="{DynamicResource SecondaryTextBrush}" 
+                                                       HorizontalAlignment="Right"
+                                                       Margin="0,2,0,0">
+                                                <Run Text="{Binding CurrentTrackPointIndex, Mode=OneWay, Converter={StaticResource MathConverter}, ConverterParameter=x+1, TargetNullValue=0}" />
+                                                <Run Text=" / " />
+                                                <Run Text="{Binding TotalTrackPoints, Mode=OneWay}" />
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <!-- Detail Sidebar (Specific to ControlProduccion) -->
+                        <Grid Grid.Column="2" Width="380">
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
+                                            <Setter Property="Visibility" Value="{Binding IsControlProduccionDetailVisible, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Grid.Style>
+
+                            <Border BorderBrush="{DynamicResource TableRowBorderBrush}" 
+                                    BorderThickness="1"
+                                    ClipToBounds="True"
+                                    Background="{DynamicResource SidebarBackgroundBrush}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <Border Padding="16" Background="{DynamicResource SidebarSecondaryBackgroundBrush}" BorderBrush="{DynamicResource SidebarBorderBrush}" BorderThickness="0,0,0,1">
+                                        <StackPanel>
+                                            <TextBlock Text="DETALLE POR LANCE" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,8"/>
+                                            <TextBlock Text="{Binding SelectedControlItem.Especie}" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                                            <TextBlock Text="{Binding SelectedControlItem.FechaDisplay}" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <ListView Grid.Row="1" 
+                                              ItemsSource="{Binding ControlLanceDetails}"
+                                              Background="Transparent"
+                                              BorderThickness="0"
+                                              SelectionMode="Single">
+                                        <ListView.ItemContainerStyle>
+                                            <Style TargetType="ListViewItem">
+                                                 <Setter Property="Background" Value="Transparent" />
+                                                 <Setter Property="BorderThickness" Value="0" />
+                                                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                                 <EventSetter Event="MouseDoubleClick" Handler="ControlLance_MouseDoubleClick" />
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="ListViewItem">
+                                                            <Border x:Name="Bd" 
+                                                                    Background="{TemplateBinding Background}" 
+                                                                    BorderBrush="{TemplateBinding BorderBrush}" 
+                                                                    BorderThickness="{TemplateBinding BorderThickness}" 
+                                                                    Padding="0" 
+                                                                    SnapsToDevicePixels="True">
+                                                                <GridViewRowPresenter VerticalAlignment="{TemplateBinding VerticalContentAlignment}" 
+                                                                                      SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBackgroundBrush}" />
+                                                                </Trigger>
+                                                                <Trigger Property="IsSelected" Value="True">
+                                                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SelectionBackgroundBrush}" />
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </ListView.ItemContainerStyle>
+                                        <ListView.View>
+                                            <GridView>
+                                                <GridView.ColumnHeaderContainerStyle>
+                                                    <Style TargetType="GridViewColumnHeader">
+                                                        <Setter Property="Padding" Value="10,8" />
+                                                        <Setter Property="HorizontalContentAlignment" Value="Right" />
+                                                        <Setter Property="Background" Value="Transparent" />
+                                                        <Setter Property="BorderThickness" Value="0,0,0,1" />
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource TableRowBorderBrush}" />
+                                                        <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+                                                        <Setter Property="FontSize" Value="11" />
+                                                        <Setter Property="FontWeight" Value="SemiBold" />
+                                                        <Setter Property="Template">
+                                                            <Setter.Value>
+                                                                <ControlTemplate TargetType="GridViewColumnHeader">
+                                                                    <Border BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}">
+                                                                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center" Margin="{TemplateBinding Padding}" />
+                                                                    </Border>
+                                                                </ControlTemplate>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </Style>
+                                                </GridView.ColumnHeaderContainerStyle>
+                                                <GridViewColumn Header="LANCE" Width="85">
+                                                     <GridViewColumn.CellTemplate>
+                                                         <DataTemplate>
+                                                             <TextBlock Text="{Binding NroLanceDisplay}" 
+                                                                        FontWeight="SemiBold" 
+                                                                        Foreground="{DynamicResource PrimaryTextBrush}" 
+                                                                        Margin="10,4"
+                                                                        ToolTip="{Binding EspecieDetalle}"/>
+                                                         </DataTemplate>
+                                                     </GridViewColumn.CellTemplate>
+                                                 </GridViewColumn>
+                                                <GridViewColumn Width="85">
+                                                    <GridViewColumn.Header>
+                                                        <TextBlock Text="CAPTURA" />
+                                                    </GridViewColumn.Header>
+                                                    <GridViewColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <TextBlock Text="{Binding CapturaKgDisplay}" Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Right" Margin="0,4,10,4"/>
+                                                        </DataTemplate>
+                                                    </GridViewColumn.CellTemplate>
+                                                </GridViewColumn>
+                                                <GridViewColumn Width="85">
+                                                    <GridViewColumn.Header>
+                                                        <TextBlock Text="DESCARTE" />
+                                                    </GridViewColumn.Header>
+                                                    <GridViewColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <TextBlock Text="{Binding DescarteKgDisplay}" Foreground="{DynamicResource DangerForegroundBrush}" HorizontalAlignment="Right" Margin="0,4,10,4"/>
+                                                        </DataTemplate>
+                                                    </GridViewColumn.CellTemplate>
+                                                </GridViewColumn>
+                                                <GridViewColumn Width="85">
+                                                    <GridViewColumn.Header>
+                                                        <TextBlock Text="RETENIDA" />
+                                                    </GridViewColumn.Header>
+                                                    <GridViewColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <TextBlock Text="{Binding NetaKgDisplay}" Foreground="{DynamicResource SuccessForegroundBrush}" FontWeight="SemiBold" HorizontalAlignment="Right" Margin="0,4,10,4"/>
+                                                        </DataTemplate>
+                                                    </GridViewColumn.CellTemplate>
+                                                </GridViewColumn>
+                                            </GridView>
+                                        </ListView.View>
+                                    </ListView>
+
+                                    <Border Grid.Row="2" 
+                                            Background="{DynamicResource SidebarSecondaryBackgroundBrush}" 
+                                            BorderBrush="{DynamicResource SidebarBorderBrush}" 
+                                            BorderThickness="0,1,0,0"
+                                            Padding="12,14">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="85" />
+                                                <ColumnDefinition Width="85" />
+                                                <ColumnDefinition Width="85" />
+                                                <ColumnDefinition Width="85" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="TOTAL" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding TotalCapturaKg, StringFormat={}{0:N1}}" FontWeight="Bold" Foreground="{DynamicResource PrimaryTextBrush}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding TotalDescarteKg, StringFormat={}{0:N1}}" FontWeight="Bold" Foreground="{DynamicResource DangerForegroundBrush}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
+                                            <TextBlock Grid.Column="3" Text="{Binding TotalRetenidaKg, StringFormat={}{0:N1}}" FontWeight="Bold" Foreground="{DynamicResource SuccessForegroundBrush}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+                            </Border>
+                        </Grid>
                         </Grid>
                     </Grid>
                 </Grid>

@@ -9,6 +9,7 @@ public sealed class Marea
     public DateTime FechaInicio { get; set; } = DateTime.Today;
     public DateTime? FechaFin { get; set; }
     public string? BuqueID { get; set; }
+    public string? Metadata { get; set; }
     public Buque? Buque { get; set; }
 
     public ICollection<MareaEtapa> Etapas { get; set; } = new List<MareaEtapa>();

@@ -8,5 +8,6 @@ public sealed class UserSettings
     
     public WindowState WindowState { get; set; } = WindowState.Maximized;
     public string? ActiveMareaId { get; set; }
+    public int? LastSelectedMareaAnio { get; set; }
 }
 

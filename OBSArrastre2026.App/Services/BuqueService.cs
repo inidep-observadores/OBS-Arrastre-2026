@@ -6,17 +6,28 @@ namespace OBSArrastre2026.App.Services;
 
 public interface IBuqueService
 {
-    Task<IReadOnlyList<BuqueListItemViewModel>> GetBuquesAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<BuqueListItemViewModel>> GetBuquesAsync(bool onlyWithMareas = false, CancellationToken cancellationToken = default);
 }
 
 public sealed class BuqueService(IDbContextFactory<AppDbContext> dbContextFactory) : IBuqueService
 {
-    public async Task<IReadOnlyList<BuqueListItemViewModel>> GetBuquesAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<BuqueListItemViewModel>> GetBuquesAsync(bool onlyWithMareas = false, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        return await dbContext.Buques
-            .AsNoTracking()
+        var query = dbContext.Buques.AsNoTracking();
+
+        if (onlyWithMareas)
+        {
+            var buqueIdsConMareas = await dbContext.Mareas
+                .Select(m => m.BuqueID)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
+            query = query.Where(b => buqueIdsConMareas.Contains(b.Id));
+        }
+
+        return await query
             .OrderBy(x => x.Nombre)
             .Select(x => new BuqueListItemViewModel(
                 x.Id,

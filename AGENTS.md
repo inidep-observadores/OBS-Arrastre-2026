@@ -1,8 +1,8 @@
-# OBS Arrastre 2026 Agent Guide
+# Control de mareas Agent Guide
 
 ## Scope
 
-This repository contains a .NET 10 WPF desktop application for the OBS Arrastre 2026 domain.
+This repository contains a .NET 10 WPF desktop application for the Control de mareas domain.
 Use this file as the project-specific operating guide for Codex-compatible agents.
 
 ## Project Defaults

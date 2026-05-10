@@ -2,10 +2,16 @@ namespace OBSArrastre2026.App.Models;
 
 public enum NavigationSection
 {
-    Inicio,
     Mareas,
     Lances,
     Muestras,
     Submuestras,
-    Produccion
+    Produccion,
+    ControlProduccion,
+    ReemplazoEspecie,
+    ConfigurarUnidadDescarte,
+    Separator,
+    GenerarRecursosInforme,
+    ExportarDbf,
+    Procesos
 }

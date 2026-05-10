@@ -1,3 +1,4 @@
+using System.IO;
 using FluentAssertions;
 using NSubstitute;
 using OBSArrastre2026.App.Models.Import;
@@ -18,6 +19,13 @@ public class MareaImportServiceTests
 
     public MareaImportServiceTests()
     {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        var dbContext = new AppDbContext(options);
+        
+        _dbFactory.CreateDbContextAsync().Returns(dbContext);
+        
         _service = new MareaImportService(_extractor, _report, _dbFactory);
     }
 
@@ -34,15 +42,28 @@ public class MareaImportServiceTests
         _extractor.ReadSubmuestrasAsync(Arg.Any<string>())
             .Returns(new List<LegacySubmuestra>());
 
-        _report.GenerateValidationPdf(Arg.Any<MareaValidationReport>())
-            .Returns(new byte[] { 1, 2, 3 });
+        _report.GenerateValidationPdfAsync(Arg.Any<MareaValidationReport>())
+            .Returns(Task.FromResult(new byte[] { 1, 2, 3 }));
 
         // Act
-        var result = await _service.ProcessMareaImportAsync("C:\\Temp", "TEST", 100, 2026, new List<MareaEtapa>());
+        string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(tempDir);
+        File.WriteAllText(Path.Combine(tempDir, "C10026.DBF"), "");
+        File.WriteAllText(Path.Combine(tempDir, "M10026.DBF"), "");
+        File.WriteAllText(Path.Combine(tempDir, "P10026.DBF"), "");
+
+        var marea = new Marea 
+        { 
+            Buque = new Buque { Nombre = "TEST" }, 
+            NumeroInidep = 100, 
+            AnioInidep = 2026,
+            Etapas = new List<MareaEtapa>()
+        };
+        var result = await _service.ProcessMareaImportAsync(tempDir, marea);
 
         // Assert
         result.Should().NotBeNull();
         await _extractor.Received(1).ReadCapturasAsync(Arg.Is<string>(s => s.Contains("C10026")));
-        _report.Received(1).GenerateValidationPdf(Arg.Any<MareaValidationReport>());
+        await _report.Received(1).GenerateValidationPdfAsync(Arg.Any<MareaValidationReport>());
     }
 }

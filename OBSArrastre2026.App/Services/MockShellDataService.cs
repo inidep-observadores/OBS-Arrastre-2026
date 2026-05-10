@@ -7,8 +7,6 @@ public interface IMockShellDataService
 {
     IReadOnlyList<NavigationItemViewModel> GetNavigationItems();
 
-    DashboardContent GetDashboard();
-
     ListSectionContent GetListSection(NavigationSection section);
 }
 
@@ -16,51 +14,29 @@ public sealed class MockShellDataService : IMockShellDataService
 {
     public IReadOnlyList<NavigationItemViewModel> GetNavigationItems() =>
     [
-        new(NavigationSection.Inicio, "Inicio", "Panel de control general", "◌"),
         new(NavigationSection.Mareas, "Mareas", "Cabeceras y estado operativo", "◇"),
         new(NavigationSection.Lances, "Lances", "Registro y control de capturas", "△", true),
         new(NavigationSection.Muestras, "Muestras", "Muestreo biologico y control", "▣", true),
         new(NavigationSection.Submuestras, "Submuestras", "Detalle por individuo", "▤", true),
-        new(NavigationSection.Produccion, "Produccion", "Registros diarios de proceso", "◫", true)
+        new(NavigationSection.Produccion, "Produccion", "Registros diarios de proceso", "◫", true),
+        new(NavigationSection.ControlProduccion, "Control Capt./Prod.", "Balance de masa diario por especie", "⚖", true),
+        new(NavigationSection.ReemplazoEspecie, "Reemplazar especie", "Reidentificación masiva en la marea", "⇄", true)
     ];
-
-    public DashboardContent GetDashboard() =>
-        new(
-            "Vista general",
-            "Inicio",
-            "Maqueta premium para visualizar la operacion de arrastre con foco en navegacion, jerarquia visual y lectura rapida.",
-            "Crear acceso rapido",
-            [
-                new("Mareas activas", "18", "+3 esta semana", "Cabeceras abiertas en seguimiento"),
-                new("Lances cargados", "246", "+12 hoy", "Actividad consolidada por etapa"),
-                new("Muestras listas", "89", "74% revisadas", "Pendientes de integracion biologica"),
-                new("Produccion diaria", "42.8 t", "+6.4%", "Simulacion de cierre operativo")
-            ],
-            [
-                new("Operacion", "Turno de carga sugerido", "La maqueta prioriza acciones frecuentes y lectura lateral continua para operadores.", "Sidebar persistente + area principal adaptable"),
-                new("Muestras", "Revision biologica", "La seccion de muestras y submuestras comparte un lenguaje visual de detalle para evitar saltos cognitivos.", "Tablas mock con badges y filtros"),
-                new("Tema", "Claro, oscuro y sistema", "El layout usa recursos dinamicos para preparar el soporte de tema real sin rehacer las vistas.", "Theme service desacoplado")
-            ],
-            [
-                new("Lun", 42, "Carga inicial"),
-                new("Mar", 58, "Mayor actividad"),
-                new("Mie", 76, "Pico de registros"),
-                new("Jue", 63, "Revision y control"),
-                new("Vie", 88, "Cierre operativo")
-            ]);
 
     public ListSectionContent GetListSection(NavigationSection section) => section switch
     {
         NavigationSection.Mareas => new(
             "Cabecera maestra",
             "Mareas",
-            "Lista mock de mareas basada en el esquema SQL. La prioridad es probar densidad, filtros y lectura rapida.",
+            "Gestión integral de las mareas del buque, incluyendo períodos operativos, estados de cierre y auditoría general.",
             "Nueva marea",
             "Codigo",
             "Buque",
             "Inicio",
             "Fin",
             "Comentario",
+            "",
+            "",
             ["Activas", "Con buque asignado", "Ultimos 30 dias"],
             [
                 new("MAR-2026-014", "Mar Azul", "05 Abr 2026", "18 Abr 2026", "Control de langostino", "En curso"),
@@ -71,13 +47,15 @@ public sealed class MockShellDataService : IMockShellDataService
         NavigationSection.Lances => new(
             "Actividad por etapa",
             "Lances",
-            "Maqueta de la tabla maestra lances, pensada para lectura operacional y futura integracion de filtros geograficos.",
+            "Registro detallado de lances de pesca con control de posición geográfica, tiempos de arrastre y captura total por especie.",
             "Nuevo lance",
             "Nro",
             "Fecha",
             "Latitud",
             "Longitud",
             "Captura Total",
+            "Hora Inicio",
+            "Hora Fin",
             ["Marea activa", "Con coordenadas", "Ultimas 72 hs"],
             [
                 new("084", "09 Abr 2026 06:20", "44.12 / -62.91", "95-110 m", "Mar 3 / Viento 40°", "Validado"),
@@ -88,13 +66,15 @@ public sealed class MockShellDataService : IMockShellDataService
         NavigationSection.Muestras => new(
             "Control biologico",
             "Muestras",
-            "Vista mock de muestras, con foco en especie, origen y estado de revision de cada toma.",
+            "Administración de muestras biológicas y comerciales para el análisis de tallas y composición por especie.",
             "Nueva muestra",
             "ID",
             "Lance",
             "Especie",
             "Clase",
             "Observador",
+            "",
+            "",
             ["Con especie", "Revision pendiente", "Ultima campana"],
             [
                 new("M-2401", "Lance 084", "Merluza hubbsi", "Biologica", "A. Peralta", "Lista"),
@@ -105,30 +85,32 @@ public sealed class MockShellDataService : IMockShellDataService
         NavigationSection.Submuestras => new(
             "Detalle por individuo",
             "Submuestras",
-            "Representacion mock de items_submuestras, preparada para alto detalle sin perder legibilidad.",
+            "Muestras que ya cuentan con ejemplares individuales procesados.",
             "Nueva submuestra",
-            "ID",
-            "Muestra",
-            "Sexo",
-            "Estadio",
-            "Medida clave",
-            ["Con estadio", "Lecturas completas", "Ultima revision"],
+            "Nro. Lance",
+            "Fecha",
+            "Hora Virada",
+            "Especie",
+            "Peso",
+            "",
+            "",
+            [],
             [
-                new("SM-981", "M-2401", "Hembra", "III", "32.4 cm / 410 g", "Completa"),
-                new("SM-978", "M-2401", "Macho", "II", "30.8 cm / 380 g", "Completa"),
-                new("SM-962", "M-2398", "Indeterminado", "I", "21.3 cm / 145 g", "Pendiente"),
-                new("SM-955", "M-2386", "Hembra", "IV", "34.1 cm / 432 g", "Auditada")
+                new("21", "24/04/2026", "14:30", "Merluza común", "45.2 kg", "SM-001"),
+                new("22", "24/04/2026", "18:45", "Abadejo", "12.8 kg", "SM-002")
             ]),
         NavigationSection.Produccion => new(
             "Parte operativo",
             "Produccion",
-            "Mock de registros_produccion, optimizado para carga diaria y contraste rapido entre producto y kilos.",
+            "Seguimiento diario de la producción a bordo, discriminado por producto, categoría, kilos y factores de conversión.",
             "Nuevo registro",
             "Fecha",
             "Marea",
             "Producto",
             "Categoria",
             "Kg",
+            "",
+            "",
             ["Hoy", "Con comentarios", "Orden por producto"],
             [
                 new("09 Abr 2026", "MAR-2026-014", "Cola de langostino", "A", "8,250", "Cerrado"),
@@ -136,6 +118,20 @@ public sealed class MockShellDataService : IMockShellDataService
                 new("08 Abr 2026", "MAR-2026-013", "Filet merluza", "Premium", "6,420", "Revision"),
                 new("08 Abr 2026", "MAR-2026-013", "Harina", "Subproducto", "15,180", "Borrador")
             ]),
+        NavigationSection.ControlProduccion => new(
+            "Auditoría de Masa",
+            "Control Capt./Prod.",
+            "Comparativa entre la producción declarada (reconstruida a captura) y los lances del día.",
+            "Actualizar",
+            "Fecha",
+            "Especie",
+            "Prod. Total",
+            "Capt. Recon.",
+            "Capt. Total",
+            "Dif. Kg",
+            "Dif. %",
+            ["Solo diferencias", "Ultima semana"],
+            []),
         _ => throw new ArgumentOutOfRangeException(nameof(section), section, null)
     };
 }

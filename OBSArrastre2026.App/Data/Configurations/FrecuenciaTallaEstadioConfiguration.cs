@@ -18,6 +18,7 @@ public sealed class FrecuenciaTallaEstadioConfiguration : IEntityTypeConfigurati
         builder.Property(x => x.EstadiosHembras).HasColumnName("EstadiosHembras");
         builder.Property(x => x.EstadiosMachos).HasColumnName("EstadiosMachos");
         builder.Property(x => x.NroIndeterminados).HasColumnName("NroIndeterminados").IsRequired();
+        builder.Property(x => x.Metadata).HasColumnName("Metadata");
 
         builder.HasOne(x => x.Muestra)
             .WithMany(m => m.FrecuenciasTallasEstadio)

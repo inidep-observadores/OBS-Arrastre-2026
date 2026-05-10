@@ -44,6 +44,24 @@ public sealed class CatchItemViewModel : ObservableObject
             if (SetProperty(ref _searchText, value))
             {
                 OnPropertyChanged(nameof(FilteredEspecies));
+                
+                // Si el texto se vacía, limpiamos la especie seleccionada
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    SelectedEspecie = null;
+                    IsExpanded = false;
+                }
+                else
+                {
+                    // Si el usuario escribe algo que no coincide con la especie actual, abrimos el desplegable
+                    string currentName = SelectedEspecie?.NombreVulgar ?? string.Empty;
+                    string currentFull = SelectedEspecie != null ? $"{SelectedEspecie.NombreVulgar} ({SelectedEspecie.NombreCientifico})" : string.Empty;
+                    
+                    if (value != currentName && value != currentFull)
+                    {
+                        IsExpanded = true;
+                    }
+                }
             }
         }
     }
@@ -57,12 +75,18 @@ public sealed class CatchItemViewModel : ObservableObject
             {
                 _entity.Especie = value;
                 _entity.EspecieID = value?.ID;
+                
                 if (value != null)
                 {
-                    _searchText = $"{value.NombreVulgar} ({value.NombreCientifico})";
+                    // Al seleccionar, actualizamos el texto de búsqueda al nombre vulgar
+                    // para que coincida con TextSearch.TextPath="NombreVulgar"
+                    _searchText = value.NombreVulgar;
                     OnPropertyChanged(nameof(SearchText));
-                    OnPropertyChanged(nameof(SummaryText));
+                    IsExpanded = false;
                 }
+                
+                OnPropertyChanged(nameof(EspecieNombreVulgar));
+                OnPropertyChanged(nameof(EspecieNombreCientifico));
             }
         }
     }
@@ -90,44 +114,114 @@ public sealed class CatchItemViewModel : ObservableObject
         get => _entity.DatoCaptura;
         set 
         {
-            _entity.DatoCaptura = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(SummaryText));
+            if (_entity.DatoCaptura != value)
+            {
+                _entity.DatoCaptura = value;
+                OnPropertyChanged();
+                NotifyParentOfWeightChange?.Invoke();
+                NotifyCalculatedWeightsChanged();
+            }
         }
     }
 
+
+
+
     public TipoDatoCaptura TipoDatoCaptura
     {
-        get => (TipoDatoCaptura)_entity.TipoDatoCaptura;
+        get => _entity.TipoDatoCaptura;
         set 
         {
-            _entity.TipoDatoCaptura = (int)value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(SummaryText));
+            if (_entity.TipoDatoCaptura != value)
+            {
+                _entity.TipoDatoCaptura = value;
+                OnPropertyChanged();
+                NotifyParentOfWeightChange?.Invoke();
+                NotifyCalculatedWeightsChanged();
+            }
         }
     }
+
+
+
 
     public double DatoDescarte
     {
         get => _entity.DatoDescarte;
         set 
         {
-            _entity.DatoDescarte = value;
+            if (_entity.DatoDescarte != value)
+            {
+                _entity.DatoDescarte = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(DatoDescartePorcentajeDisplay));
+                OnPropertyChanged(nameof(DatoDescarteKilosDisplay));
+                OnPropertyChanged(nameof(SummaryText));
+            }
+        }
+    }
+
+
+
+
+    public TipoDatoDescarte TipoDatoDescarte
+    {
+        get => _entity.TipoDatoDescarte;
+        set 
+        {
+            _entity.TipoDatoDescarte = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(DatoDescartePorcentajeDisplay));
+            OnPropertyChanged(nameof(DatoDescarteKilosDisplay));
             OnPropertyChanged(nameof(SummaryText));
         }
     }
 
-    public TipoDatoDescarte TipoDatoDescarte
-    {
-        get => (TipoDatoDescarte)_entity.TipoDatoDescarte;
+
+    public int NumeroOrden 
+    { 
+        get => _entity.NumeroOrden;
         set 
         {
-            _entity.TipoDatoDescarte = (int)value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(SummaryText));
+            if (_entity.NumeroOrden != value)
+            {
+                _entity.NumeroOrden = value;
+                OnPropertyChanged();
+            }
         }
     }
+    public string EspecieNombreVulgar => SelectedEspecie?.NombreVulgar ?? "---";
+    public string EspecieNombreCientifico => SelectedEspecie?.NombreCientifico ?? "---";
+
+    public string DatoCapturaDisplay
+    {
+        get
+        {
+            string unidad = TipoDatoCaptura == TipoDatoCaptura.Porcentaje ? "%" : "Kg";
+            return $"{DatoCaptura:N2} {unidad}";
+        }
+    }
+
+    public double CapturaTotalKg => _entity.CapturaTotalKgCalculado;
+
+    public string DatoDescartePorcentajeDisplay
+    {
+        get
+        {
+            double value = _entity.PorcentDescarteCalculado;
+            return value > 0 ? $"{value:N2}%" : "---";
+        }
+    }
+
+    public string DatoDescarteKilosDisplay
+    {
+        get
+        {
+            double value = _entity.PesoDescarteCalculado;
+            return value > 0 ? $"{value:N2}" : "---";
+        }
+    }
+
 
     public string SummaryText
     {
@@ -135,14 +229,24 @@ public sealed class CatchItemViewModel : ObservableObject
         {
             if (SelectedEspecie == null) return "Nueva especie...";
             
-            string unidadCaptura = TipoDatoCaptura == TipoDatoCaptura.Kilogramos ? "Kg" : "%";
-            return $"{SelectedEspecie.NombreVulgar} - {DatoCaptura} {unidadCaptura}";
+            return $"{SelectedEspecie.FullDisplayName} - {DatoCapturaDisplay}";
         }
+    }
+
+    public void NotifyCalculatedWeightsChanged()
+    {
+        OnPropertyChanged(nameof(DatoCapturaDisplay));
+        OnPropertyChanged(nameof(CapturaTotalKg));
+        OnPropertyChanged(nameof(DatoDescartePorcentajeDisplay));
+        OnPropertyChanged(nameof(DatoDescarteKilosDisplay));
+        OnPropertyChanged(nameof(SummaryText));
     }
 
     public ICommand ToggleExpandedCommand { get; }
     public ICommand RemoveCommand { get; }
     public Action<CatchItemViewModel>? RequestDeletion { get; set; }
+    public Action? NotifyParentOfWeightChange { get; set; }
+
 
     public ItemCaptura ToEntity() => _entity;
 }

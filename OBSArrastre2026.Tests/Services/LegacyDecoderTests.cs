@@ -55,7 +55,7 @@ public class LegacyDecoderTests
         var baseM = new LegacyMuestra
         {
             Lance = 1,
-            CodEspec = 1,
+            CodEspec = "1",
             PrimTalla = 10,
             UltTalla = 15
         };
@@ -65,7 +65,7 @@ public class LegacyDecoderTests
         var extension = new LegacyMuestra
         {
             Lance = 1, 
-            CodEspec = 1, 
+            CodEspec = "1", 
             PrimTalla = 20, 
             UltTalla = 25
         };

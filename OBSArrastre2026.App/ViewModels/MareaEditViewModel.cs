@@ -14,6 +14,8 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
     private readonly IMareaService _mareaService;
     private readonly IBuqueService _buqueService;
     private readonly IMareaImportService _mareaImportService;
+    private readonly IJsonImportService _jsonImportService;
+    private readonly IActiveMareaManager _activeMareaManager;
     private readonly Action _onClose;
     private string? _mareaId;
     private int _anioInidep;
@@ -24,6 +26,7 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
     private string? _comentarios;
     private BuqueListItemViewModel? _selectedBuque;
     private bool _isLoading;
+    private string? _metadata;
 
     public MareaEditViewModel(
         Action onClose, 
@@ -31,12 +34,16 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
         IMareaService mareaService,
         IBuqueService buqueService,
         IMareaImportService mareaImportService,
+        IJsonImportService jsonImportService,
+        IActiveMareaManager activeMareaManager,
         string? mareaId = null) : base(validator)
     {
         _onClose = onClose;
         _mareaService = mareaService;
         _buqueService = buqueService;
         _mareaImportService = mareaImportService;
+        _jsonImportService = jsonImportService;
+        _activeMareaManager = activeMareaManager;
         _mareaId = mareaId;
         
         _fechaInicio = DateTime.Today;
@@ -146,14 +153,25 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
     {
         if (AnioInidep < 2000 || NumeroInidep <= 0)
         {
-            ShowMessage?.Invoke("Validación", "Se requiere Año y Número de Marea válidos para importar.", null, MessageDialogType.Warning);
+            if (ShowMessage != null) await ShowMessage("Validación", "Se requiere Año y Número de Marea válidos para importar.", null, MessageDialogType.Warning);
             return;
         }
 
         if (string.IsNullOrEmpty(_mareaId))
         {
-            ShowMessage?.Invoke("Marea No Guardada", "Debe guardar la marea antes de intentar importar datos.", null, MessageDialogType.Warning);
-            return;
+            // Si es una marea nueva, guardamos un borrador para obtener un ID
+            if (SelectedBuque == null)
+            {
+                if (ShowMessage != null) await ShowMessage("Validación", "Debe seleccionar un Buque antes de importar, o importar desde un JSON que lo contenga.", null, MessageDialogType.Warning);
+                // Si el usuario va a importar de JSON, tal vez no necesite seleccionar buque aún.
+                // Pero necesitamos un ID. Generamos uno.
+                _mareaId = Guid.NewGuid().ToString();
+            }
+            else
+            {
+                await SaveAsync(); // Guarda el estado actual
+                if (string.IsNullOrEmpty(_mareaId)) return; // Falló el guardado
+            }
         }
 
         // 1. Verificar si hay datos
@@ -173,7 +191,7 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
             }
             catch (Exception ex)
             {
-                ShowMessage?.Invoke("Error", $"No se pudo limpiar la marea: {ex.Message}", ex.ToString(), MessageDialogType.Error);
+                if (ShowMessage != null) await ShowMessage("Error", $"No se pudo limpiar la marea: {ex.Message}", ex.ToString(), MessageDialogType.Error);
                 return;
             }
             finally
@@ -186,7 +204,7 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
         var mareaFull = await _mareaService.GetMareaAsync(_mareaId);
         if (mareaFull == null || !mareaFull.Etapas.Any())
         {
-            ShowMessage?.Invoke("Sin Etapas", "No se puede importar datos si la marea no tiene al menos una etapa cargada.", null, MessageDialogType.Warning);
+            if (ShowMessage != null) await ShowMessage("Sin Etapas", "No se puede importar datos si la marea no tiene al menos una etapa cargada.", null, MessageDialogType.Warning);
             return;
         }
 
@@ -196,29 +214,46 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
             NumeroInidep, 
             AnioInidep, 
             _mareaImportService,
+            _jsonImportService,
+            _mareaService,
             SelectedBuque?.Nombre ?? "Sin Nombre",
             mareaFull.Etapas,
-            files => 
+            async (files, mareaId) => 
             {
                 ShowCustomDialog?.Invoke(null); // Cerrar diálogos
+
+                // Si la importación fue exitosa y tenemos ID, la activamos automáticamente
+                if (files != null && !string.IsNullOrEmpty(mareaId))
+                {
+                    await _activeMareaManager.SetActiveMareaAsync(mareaId);
+                }
+                
+                // Siempre refrescamos los detalles (por si se crearon etapas o cambió el buque)
+                await RefreshDetailsAsync();
+
+                // Si la marea que estamos editando es la activa (o acaba de ser activada), refrescamos el gestor global
+                if (_mareaId == _activeMareaManager.ActiveMareaId)
+                {
+                    await _activeMareaManager.RefreshAsync();
+                }
+
                 if (files != null)
                 {
-                    ShowMessage?.Invoke("Éxito", "La importación finalizó correctamente. Los lances y muestras han sido guardados en la base de datos.", null, MessageDialogType.Success);
-                    _ = RefreshDetailsAsync();
+                    if (ShowMessage != null) await ShowMessage("Éxito", "La importación finalizó correctamente. Los lances y muestras han sido guardados en la base de datos.", null, MessageDialogType.Success);
                 }
             });
 
-        importVm.ShowMessage = (title, msg, details, type) => ShowMessage?.Invoke(title, msg, details, type);
+        importVm.ShowMessage = (title, msg, details, type) => ShowMessage != null ? ShowMessage(title, msg, details, type) : Task.CompletedTask;
         importVm.ShowConfirmation = (title, msg) => ShowConfirmation?.Invoke(title, msg) ?? Task.FromResult(false);
         ShowCustomDialog?.Invoke(importVm);
     }
 
     private async Task RefreshDetailsAsync()
     {
-        // Podríamos recargar los lances/etapas aquí si es necesario
+        await InitializeAsync();
     }
 
-    public Action<string, string, string?, MessageDialogType>? ShowMessage { get; set; }
+    public Func<string, string, string?, MessageDialogType, Task>? ShowMessage { get; set; }
 
     private async Task InitializeAsync()
     {
@@ -242,6 +277,7 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
                     FechaInicio = marea.FechaInicio;
                     FechaFin = marea.FechaFin;
                     SelectedBuque = Buques.FirstOrDefault(b => b.ID == marea.BuqueID);
+                    _metadata = marea.Metadata;
 
                     Etapas.Clear();
                     foreach (var etapa in marea.Etapas.OrderBy(e => e.FechaZarpada))
@@ -294,6 +330,17 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
             IsLoading = true;
             try
             {
+                // Verificar duplicados si es una marea nueva
+                if (string.IsNullOrEmpty(_mareaId))
+                {
+                    var existing = await _mareaService.FindMareaAsync(NumeroInidep, AnioInidep);
+                    if (existing != null)
+                    {
+                        if (ShowMessage != null) await ShowMessage("Marea Duplicada", $"Ya existe una marea registrada con el código {NumeroInidep}/{AnioInidep % 100:D2} para el buque {existing.Buque?.Nombre ?? "desconocido"}.", null, MessageDialogType.Warning);
+                        return;
+                    }
+                }
+
                 var marea = new Marea
                 {
                     ID = _mareaId ?? Guid.NewGuid().ToString(),
@@ -302,7 +349,8 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
                     Comentarios = Comentarios,
                     FechaInicio = FechaInicio,
                     FechaFin = FechaFin,
-                    BuqueID = SelectedBuque?.ID
+                    BuqueID = SelectedBuque?.ID,
+                    Metadata = _metadata
                 };
 
                 // Añadir etapas desde los ViewModels

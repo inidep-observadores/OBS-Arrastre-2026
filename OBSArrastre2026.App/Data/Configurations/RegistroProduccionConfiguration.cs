@@ -17,8 +17,14 @@ public sealed class RegistroProduccionConfiguration : IEntityTypeConfiguration<R
         builder.Property(x => x.Fecha).HasColumnName("fecha").IsRequired();
         builder.Property(x => x.IdProducto).HasColumnName("id_producto").IsRequired();
         builder.Property(x => x.Categoria).HasColumnName("categoria");
+        builder.Property(x => x.EspecieId).HasColumnName("especie_id");
+        builder.Property(x => x.Factor).HasColumnName("factor_conversion");
+        builder.Property(x => x.Operarios).HasColumnName("operarios");
         builder.Property(x => x.Kg).HasColumnName("kg");
+        builder.Property(x => x.NumeroOrden).HasColumnName("NumeroOrden").IsRequired();
+        builder.Property(x => x.EspecieOriginal).HasColumnName("EspecieOriginal");
         builder.Property(x => x.Comentarios).HasColumnName("comentarios");
+        builder.Property(x => x.Metadata).HasColumnName("Metadata");
 
         builder.HasOne(x => x.MareaEtapa)
             .WithMany(e => e.RegistrosProduccion)
@@ -30,7 +36,12 @@ public sealed class RegistroProduccionConfiguration : IEntityTypeConfiguration<R
             .HasForeignKey(x => x.IdProducto)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(x => new { x.MareaEtapaId, x.Fecha, x.IdProducto }).IsUnique();
+        builder.HasOne(x => x.Especie)
+            .WithMany()
+            .HasForeignKey(x => x.EspecieId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(x => new { x.MareaEtapaId, x.Fecha, x.IdProducto, x.Categoria }).HasDatabaseName("idx_registros_produccion_unico_logico");
         
         builder.HasIndex(x => x.MareaEtapaId).HasDatabaseName("idx_registros_produccion_marea_etapa_id");
         builder.HasIndex(x => x.Fecha).HasDatabaseName("idx_registros_produccion_fecha");

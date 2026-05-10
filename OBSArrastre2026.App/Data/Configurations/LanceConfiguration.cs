@@ -37,6 +37,7 @@ public sealed class LanceConfiguration : IEntityTypeConfiguration<Lance>
         builder.Property(x => x.PresionHpa).HasColumnName("presion_hpa");
 
         builder.Property(x => x.CapturaTotalKg).HasColumnName("captura_total_kg");
+        builder.Property(x => x.DescarteTotalKg).HasColumnName("descarte_total_kg");
         builder.Property(x => x.VelocidadArrastreNudos).HasColumnName("velocidad_arrastre_nudos");
         builder.Property(x => x.RumboGrados).HasColumnName("rumbo_grados");
 
@@ -45,9 +46,11 @@ public sealed class LanceConfiguration : IEntityTypeConfiguration<Lance>
         builder.Property(x => x.CableFiladoM).HasColumnName("cable_filado_m");
         builder.Property(x => x.AberturaVerticalM).HasColumnName("abertura_vertical_m");
         builder.Property(x => x.DistanciaAlasM).HasColumnName("distancia_alas_m");
-        builder.Property(x => x.ProfundidadArteM).HasColumnName("profundidad_arte_m");
+        builder.Property(x => x.DistanciaPortonesM).HasColumnName("distancia_portones_m");
 
         builder.Property(x => x.SelectividadSiNo).HasColumnName("selectividad_si_no");
+        builder.Property(x => x.Comentarios).HasColumnName("comentarios");
+        builder.Property(x => x.Metadata).HasColumnName("Metadata");
 
         builder.HasOne(x => x.MareaEtapa)
             .WithMany(e => e.Lances)

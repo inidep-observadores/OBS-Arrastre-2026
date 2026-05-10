@@ -19,6 +19,13 @@ public class MareaIntegrationTests
 
     public MareaIntegrationTests()
     {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        var dbContext = new AppDbContext(options);
+        
+        _dbFactory.CreateDbContextAsync().Returns(dbContext);
+
         _importService = new MareaImportService(_extractor, _reportService, _dbFactory);
     }
 
@@ -43,18 +50,18 @@ public class MareaIntegrationTests
                 new() { Lance = 1, Barco = "TEST", Marea = 100, CaptTotal = 500, LatInic = 43.15, LongInic = 55.30 },
                 new() { Lance = 2, Barco = "TEST", Marea = 100, CaptTotal = 300, ProfInic = 100, ProfFinal = 110 }
             };
-            capturas[0].Especies[1] = 500;
-            capturas[1].Especies[1] = 300;
+            capturas[0].Especies["1"] = 500;
+            capturas[1].Especies["1"] = 300;
 
             var muestras = new List<LegacyMuestra>
             {
-                new() { Lance = 1, Barco = "TEST", Marea = 100, CodEspec = 1, PrimTalla = 10, UltTalla = 12 }
+                new() { Lance = 1, Barco = "TEST", Marea = 100, CodEspec = "1", PrimTalla = 10, UltTalla = 12 }
             };
             muestras[0].Tallies.Add(new DecodedTally(10, 0, 0, 0, 5));
 
             var muestrasX = new List<LegacyMuestra>
             {
-                new() { Lance = 1, Barco = "TEST", Marea = 100, CodEspec = 1, PrimTalla = 15, UltTalla = 15 }
+                new() { Lance = 1, Barco = "TEST", Marea = 100, CodEspec = "1", PrimTalla = 15, UltTalla = 15 }
             };
             muestrasX[0].Tallies.Add(new DecodedTally(15, 0, 0, 0, 2));
 
@@ -64,10 +71,18 @@ public class MareaIntegrationTests
             _extractor.ReadSubmuestrasAsync(Arg.Any<string>()).Returns(new List<LegacySubmuestra>());
             _extractor.ReadLgAsync(Arg.Any<string>()).Returns(new List<LegacyLg>());
 
-            _reportService.GenerateValidationPdf(Arg.Any<MareaValidationReport>()).Returns(new byte[] { 1, 2, 3 });
+            _reportService.GenerateValidationPdfAsync(Arg.Any<MareaValidationReport>()).Returns(Task.FromResult(new byte[] { 1, 2, 3 }));
 
             // Act
-                        var result = await _importService.ProcessMareaImportAsync(tempPath, "TEST", 100, 2026, new List<MareaEtapa>());
+            var marea = new Marea 
+            { 
+                Buque = new Buque { Nombre = "TEST" }, 
+                NumeroInidep = 100, 
+                AnioInidep = 2026,
+                Etapas = new List<MareaEtapa>()
+            };
+            var result = await _importService.ProcessMareaImportAsync(tempPath, marea);
+
 
             // Assert
             result.Should().NotBeNull();
@@ -76,7 +91,7 @@ public class MareaIntegrationTests
             lance1Muestra.Tallies.Should().HaveCount(2);
             lance1Muestra.UltTalla.Should().Be(15);
 
-            _reportService.Received(1).GenerateValidationPdf(Arg.Any<MareaValidationReport>());
+            await _reportService.Received(1).GenerateValidationPdfAsync(Arg.Any<MareaValidationReport>());
         }
         finally
         {
@@ -98,17 +113,25 @@ public class MareaIntegrationTests
             {
                 new() { Lance = 1, Barco = "TEST", Marea = 100, CaptTotal = 999 }
             };
-            capturas[0].Especies[1] = 500;
+            capturas[0].Especies["1"] = 500;
 
             _extractor.ReadCapturasAsync(Arg.Any<string>()).Returns(capturas);
             _extractor.ReadMuestrasAsync(Arg.Any<string>()).Returns(new List<LegacyMuestra>());
             _extractor.ReadSubmuestrasAsync(Arg.Any<string>()).Returns(new List<LegacySubmuestra>());
             _extractor.ReadLgAsync(Arg.Any<string>()).Returns(new List<LegacyLg>());
             
-            _reportService.GenerateValidationPdf(Arg.Any<MareaValidationReport>()).Returns(new byte[] { 1, 2, 3 });
+            _reportService.GenerateValidationPdfAsync(Arg.Any<MareaValidationReport>()).Returns(Task.FromResult(new byte[] { 1, 2, 3 }));
 
             // Act
-                        var result = await _importService.ProcessMareaImportAsync(tempPath, "TEST", 100, 2026, new List<MareaEtapa>());
+            var marea = new Marea 
+            { 
+                Buque = new Buque { Nombre = "TEST" }, 
+                NumeroInidep = 100, 
+                AnioInidep = 2026,
+                Etapas = new List<MareaEtapa>()
+            };
+            var result = await _importService.ProcessMareaImportAsync(tempPath, marea);
+
 
             // Assert
             result.Issues.Should().Contain(i => i.Category == "Captura" && i.Level == ValidationLevel.AutoFixed);

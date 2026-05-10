@@ -7,10 +7,13 @@
              xmlns:vm="clr-namespace:OBSArrastre2026.App.ViewModels"
              xmlns:controls="clr-namespace:OBSArrastre2026.App.Controls"
              xmlns:models="clr-namespace:OBSArrastre2026.App.Models"
+             xmlns:conv="clr-namespace:OBSArrastre2026.App.Converters"
              xmlns:system="clr-namespace:System;assembly=mscorlib"
              mc:Ignorable="d" 
-             d:DesignHeight="900" d:DesignWidth="1000">
+             d:DesignHeight="850" d:DesignWidth="1100">
     <UserControl.Resources>
+        <conv:StringUpperConverter x:Key="StringUpperConverter" />
+        
         <ObjectDataProvider x:Key="TipoDatoCapturaEnum" MethodName="GetValues" ObjectType="{x:Type system:Enum}">
             <ObjectDataProvider.MethodParameters>
                 <x:Type TypeName="models:TipoDatoCaptura"/>
@@ -21,6 +24,34 @@
                 <x:Type TypeName="models:TipoDatoDescarte"/>
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
+
+        <!-- Estilos Locales Ultra Compactos (Estilo Planilla de Papel) -->
+        <Style x:Key="PaperLabelStyle" TargetType="Label" BasedOn="{StaticResource FormLabelStyle}">
+            <Setter Property="FontSize" Value="9" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="Padding" Value="2,0" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+        </Style>
+
+        <Style x:Key="PaperTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource PremiumTextBoxStyle}">
+            <Setter Property="Padding" Value="4,2" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+
+        <Style x:Key="PaperHeaderStyle" TargetType="TextBlock" BasedOn="{StaticResource SectionHeaderStyle}">
+            <Setter Property="FontSize" Value="9" />
+            <Setter Property="Background" Value="{DynamicResource SurfaceBackgroundBrush}" />
+            <Setter Property="Padding" Value="4,2" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="TextAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,0,0,2" />
+        </Style>
+
+
     </UserControl.Resources>
 
     <UserControl.InputBindings>
@@ -29,444 +60,494 @@
     
     <AdornerDecorator>
         <Border Background="{DynamicResource ShellBackgroundBrush}"
-                Padding="32"
+                Padding="30,20"
                 CornerRadius="0"
-                MaxWidth="1100"
+                MaxWidth="1180"
+                Height="850"
                 VerticalAlignment="Center"
                 BorderBrush="{DynamicResource SidebarBorderBrush}"
                 BorderThickness="1">
             <Border.Effect>
-                <DropShadowEffect BlurRadius="50" Color="Black" Opacity="0.3" ShadowDepth="10" />
+                <DropShadowEffect BlurRadius="60" Color="Black" Opacity="0.25" ShadowDepth="10" />
             </Border.Effect>
 
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" /> <!-- Header -->
+                    <RowDefinition Height="*" />    <!-- Content Area -->
+                    <RowDefinition Height="Auto" /> <!-- Footer -->
                 </Grid.RowDefinitions>
 
-                <!-- Header basado en MareaEdit pero con datos de Lance -->
-                <Grid Margin="0,0,0,24">
+                <!-- 1. Header estilo Premium -->
+                <Grid Margin="0,0,0,16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-
+                    
                     <StackPanel>
-                        <TextBlock Text="EDICIÓN DE LANCE"
-                                   FontSize="12"
+                        <TextBlock Text="{Binding Title, Converter={StaticResource StringUpperConverter}}"
+                                   FontSize="11"
                                    FontWeight="Bold"
                                    Foreground="{DynamicResource AccentBrush}" />
-                        <TextBlock Text="{Binding Title}"
-                                   FontSize="28"
+                        <TextBlock Text="Carga de Planilla de Lance"
+                                   FontSize="22"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource PrimaryTextBrush}"
-                                   Margin="0,4,0,0" />
+                                   Margin="0,2,0,0" />
                     </StackPanel>
 
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Button Command="{Binding CancelCommand}"
-                                Content="Cancelar"
-                                Margin="0,0,12,0"
-                                Style="{StaticResource ThemeButtonStyle}"
-                                Padding="20,10" />
-                        <Button Command="{Binding SaveCommand}"
-                                Content="Guardar Lance"
-                                Style="{StaticResource PrimaryButtonStyle}"
-                                Padding="24,12" />
-                    </StackPanel>
+                    <Border Grid.Column="1" 
+                            Background="{DynamicResource SurfaceBackgroundBrush}" 
+                            CornerRadius="0" 
+                            Padding="16,8"
+                            BorderBrush="{DynamicResource SidebarBorderBrush}"
+                            BorderThickness="1"
+                            VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                             <TextBlock Text="CAPTURA TOTAL" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" FontSize="10" FontWeight="Bold" Margin="0,0,10,0" />
+                             <TextBlock Text="{Binding CapturaTotalKg, StringFormat={}{0:N0}}" FontWeight="Bold" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="18" VerticalAlignment="Center" />
+                             <TextBlock Text=" KG" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" FontSize="10" FontWeight="Bold" Opacity="0.5" />
+                        </StackPanel>
+                    </Border>
                 </Grid>
 
-                <!-- Body (Scrollable) -->
-                <ScrollViewer Grid.Row="1" Style="{StaticResource SlimScrollViewerStyle}" MaxHeight="700">
-                    <StackPanel>
-                        <!-- SECCIÓN 1: NAVEGACIÓN (Orden del Mockup) -->
-                        <Border Style="{StaticResource SurfaceBorderStyle}" Padding="20" Margin="0,0,0,16">
-                            <StackPanel>
-                                <TextBlock Text="NAVEGACIÓN" Style="{StaticResource SectionHeaderStyle}" Margin="0,0,0,16" />
-                                <Grid>
+                <!-- 2. Main Area con Panel Lateral -->
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" /> 
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Grid Grid.Column="0" Margin="0,0,16,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" /> <!-- Datos Grales (Style Planilla) -->
+                            <RowDefinition Height="*" />    <!-- Tabla Especies -->
+                        </Grid.RowDefinitions>
+
+                        <!-- SECCIÓN DATOS GENERALES (MIMETIC A LA PLANILLA DE PAPEL) -->
+                        <Border Style="{StaticResource SurfaceBorderStyle}" Padding="16" Margin="0,0,0,16">
+                            <Grid TextElement.FontSize="11">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" /> <!-- Fila 1: Fecha, Lance, Hora, Estado, Ubic -->
+                                    <RowDefinition Height="Auto" /> <!-- Separador -->
+                                    <RowDefinition Height="Auto" /> <!-- Fila 2: Prof, Viento, Temp, Pres, Capt -->
+                                    <RowDefinition Height="Auto" /> <!-- Separador -->
+                                    <RowDefinition Height="Auto" /> <!-- Fila 3: Arrastre, Malla, Cable, AbV, DistA, ProfA -->
+                                    <RowDefinition Height="Auto" /> <!-- Separador -->
+                                    <RowDefinition Height="Auto" /> <!-- Fila 4: Comentarios -->
+                                </Grid.RowDefinitions>
+
+                                <!-- FILA 1 DE LA PLANILLA PAPEL -->
+                                <Grid Grid.Row="0">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="16" />
-                                        <ColumnDefinition Width="120" />
-                                        <ColumnDefinition Width="16" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="16" />
-                                        <ColumnDefinition Width="120" />
+                                        <ColumnDefinition Width="Auto" /> <!-- Fecha -->
+                                        <ColumnDefinition Width="20" />
+                                        <ColumnDefinition Width="Auto" /> <!-- N° Lance -->
+                                        <ColumnDefinition Width="20" />
+                                        <ColumnDefinition Width="Auto" /> <!-- Hora -->
+                                        <ColumnDefinition Width="20" />
+                                        <ColumnDefinition Width="Auto" /> <!-- Estado -->
+                                        <ColumnDefinition Width="20" />
+                                        <ColumnDefinition Width="*" />    <!-- Ubicación -->
                                     </Grid.ColumnDefinitions>
+
+                                    <!-- FECHA -->
                                     <StackPanel>
-                                        <Label Content="Fecha Inicio" Style="{StaticResource FormLabelStyle}" />
-                                        <controls:DatePickerPremium SelectedDate="{Binding Fecha}" />
+                                        <TextBlock Text="FECHA" Style="{StaticResource PaperHeaderStyle}" />
+                                        <controls:DatePickerPremium SelectedDate="{Binding Fecha}" Width="120" Height="28" EsCompacto="True" />
                                     </StackPanel>
+
+                                    <!-- N° LANCE -->
                                     <StackPanel Grid.Column="2">
-                                        <Label Content="Hora Inicio" Style="{StaticResource FormLabelStyle}" />
-                                        <controls:TimePickerPremium SelectedTime="{Binding HoraInicio}" />
+                                        <TextBlock Text="N° LANCE" Style="{StaticResource PaperHeaderStyle}" />
+                                        <TextBox Text="{Binding NroLance}" Style="{StaticResource PaperTextBoxStyle}" Width="60" />
                                     </StackPanel>
+
+                                    <!-- HORA -->
                                     <StackPanel Grid.Column="4">
-                                        <Label Content="Fecha Fin" Style="{StaticResource FormLabelStyle}" />
-                                        <controls:DatePickerPremium SelectedDate="{Binding Fecha}" /> <!-- Usando misma fecha por simplificación si no hay campo fecha fin -->
+                                        <TextBlock Text="HORA" Style="{StaticResource PaperHeaderStyle}" />
+                                        <UniformGrid Columns="2">
+                                            <StackPanel Margin="0,0,4,0">
+                                                <Label Content="INICIAL" Style="{StaticResource PaperLabelStyle}" />
+                                                <controls:TimePickerPremium SelectedTime="{Binding HoraInicio}" Width="80" Height="28" EsCompacto="True" />
+                                            </StackPanel>
+                                            <StackPanel>
+                                                <Label Content="FINAL" Style="{StaticResource PaperLabelStyle}" />
+                                                <controls:TimePickerPremium SelectedTime="{Binding HoraFinal}" Width="80" Height="28" EsCompacto="True" />
+                                            </StackPanel>
+                                        </UniformGrid>
                                     </StackPanel>
+
+                                    <!-- ESTADO -->
                                     <StackPanel Grid.Column="6">
-                                        <Label Content="Hora Fin" Style="{StaticResource FormLabelStyle}" />
-                                        <controls:TimePickerPremium SelectedTime="{Binding HoraFinal}" />
+                                        <TextBlock Text="ESTADO" Style="{StaticResource PaperHeaderStyle}" />
+                                        <UniformGrid Columns="2">
+                                            <StackPanel Margin="0,0,4,0">
+                                                <Label Content="TIEM" Style="{StaticResource PaperLabelStyle}" />
+                                                <TextBox Text="{Binding EstadoTiempoCodigo}" Style="{StaticResource PaperTextBoxStyle}" Width="45" />
+                                            </StackPanel>
+                                            <StackPanel>
+                                                <Label Content="MAR" Style="{StaticResource PaperLabelStyle}" />
+                                                <TextBox Text="{Binding EstadoMarCodigo}" Style="{StaticResource PaperTextBoxStyle}" Width="45" />
+                                            </StackPanel>
+                                        </UniformGrid>
                                     </StackPanel>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
 
-                        <!-- SECCIÓN 2: POSICIONES -->
-                        <Border Style="{StaticResource SurfaceBorderStyle}" Padding="20" Margin="0,0,0,16">
-                            <StackPanel>
-                                <TextBlock Text="POSICIONES (Latitud / Longitud Inicial y Final)" Style="{StaticResource SectionHeaderStyle}" Margin="0,0,0,16" />
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="16" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="16" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="16" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel>
-                                        <Label Content="Lat. inicial" Style="{StaticResource FormLabelStyle}" />
-                                        <controls:CoordinatePickerPremium SelectedValue="{Binding LatitudInicioDecimal}" IsLatitude="True" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="2">
-                                        <Label Content="Long. inicial" Style="{StaticResource FormLabelStyle}" />
-                                        <controls:CoordinatePickerPremium SelectedValue="{Binding LongitudInicioDecimal}" IsLatitude="False" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="4">
-                                        <Label Content="Lat. final" Style="{StaticResource FormLabelStyle}" />
-                                        <controls:CoordinatePickerPremium SelectedValue="{Binding LatitudFinalDecimal}" IsLatitude="True" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="6">
-                                        <Label Content="Long. final" Style="{StaticResource FormLabelStyle}" />
-                                        <controls:CoordinatePickerPremium SelectedValue="{Binding LongitudFinalDecimal}" IsLatitude="False" />
-                                    </StackPanel>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Fila con Grupos Pequeños: Profundidad, Viento, Temperatura, Presión, Captura -->
-                        <UniformGrid Columns="3" Margin="0,0,0,16">
-                            <!-- Profundidad -->
-                            <Border Style="{StaticResource SurfaceBorderStyle}" Padding="16" Margin="0,0,8,0">
-                                <StackPanel>
-                                    <TextBlock Text="PROFUNDIDAD (m)" Style="{StaticResource SectionHeaderStyle}" Margin="0,0,0,12" />
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="8" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel>
-                                            <Label Content="Inicial" Style="{StaticResource FormLabelStyle}" />
-                                            <TextBox Text="{Binding ProfundidadInicioM}" Style="{StaticResource PremiumTextBoxStyle}" />
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="2">
-                                            <Label Content="Final" Style="{StaticResource FormLabelStyle}" />
-                                            <TextBox Text="{Binding ProfundidadFinalM}" Style="{StaticResource PremiumTextBoxStyle}" />
-                                        </StackPanel>
-                                    </Grid>
-                                </StackPanel>
-                            </Border>
-
-                            <!-- Viento -->
-                            <Border Style="{StaticResource SurfaceBorderStyle}" Padding="16" Margin="4,0,4,0">
-                                <StackPanel>
-                                    <TextBlock Text="VIENTO" Style="{StaticResource SectionHeaderStyle}" Margin="0,0,0,12" />
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="8" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel>
-                                            <Label Content="Dirección (°)" Style="{StaticResource FormLabelStyle}" />
-                                            <TextBox Text="{Binding VientoDireccionGrados}" Style="{StaticResource PremiumTextBoxStyle}" />
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="2">
-                                            <Label Content="Fuerza (Bft)" Style="{StaticResource FormLabelStyle}" />
-                                            <TextBox Text="{Binding VientoFuerzaBeaufort}" Style="{StaticResource PremiumTextBoxStyle}" />
-                                        </StackPanel>
-                                    </Grid>
-                                </StackPanel>
-                            </Border>
-
-                            <!-- Temperatura -->
-                            <Border Style="{StaticResource SurfaceBorderStyle}" Padding="16" Margin="8,0,0,0">
-                                <StackPanel>
-                                    <TextBlock Text="TEMPERATURA (°C)" Style="{StaticResource SectionHeaderStyle}" Margin="0,0,0,12" />
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="8" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel>
-                                            <Label Content="Aire" Style="{StaticResource FormLabelStyle}" />
-                                            <TextBox Text="{Binding TemperaturaAireC}" Style="{StaticResource PremiumTextBoxStyle}" />
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="2">
-                                            <Label Content="Red/Fondo" Style="{StaticResource FormLabelStyle}" />
-                                            <TextBox Text="{Binding TemperaturaRedC}" Style="{StaticResource PremiumTextBoxStyle}" />
-                                        </StackPanel>
-                                    </Grid>
-                                </StackPanel>
-                            </Border>
-                        </UniformGrid>
-
-                        <UniformGrid Columns="3" Margin="0,0,0,16">
-                            <!-- Presión -->
-                            <Border Style="{StaticResource SurfaceBorderStyle}" Padding="16" Margin="0,0,8,0">
-                                <StackPanel>
-                                    <TextBlock Text="PRESIÓN" Style="{StaticResource SectionHeaderStyle}" Margin="0,0,0,12" />
-                                    <Label Content="Presión (hPa)" Style="{StaticResource FormLabelStyle}" />
-                                    <TextBox Text="{Binding PresionHpa}" Style="{StaticResource PremiumTextBoxStyle}" />
-                                </StackPanel>
-                            </Border>
-
-                            <!-- Captura Total -->
-                            <Border Style="{StaticResource SurfaceBorderStyle}" Padding="16" Margin="4,0,4,0">
-                                <StackPanel>
-                                    <TextBlock Text="CAPTURA TOTAL" Style="{StaticResource SectionHeaderStyle}" Margin="0,0,0,12" />
-                                    <Label Content="Total (kg)" Style="{StaticResource FormLabelStyle}" />
-                                    <TextBox Text="{Binding CapturaTotalKg}" Style="{StaticResource PremiumTextBoxStyle}" FontWeight="Bold" />
-                                </StackPanel>
-                            </Border>
-
-                            <!-- Arrastre -->
-                            <Border Style="{StaticResource SurfaceBorderStyle}" Padding="16" Margin="8,0,0,0">
-                                <StackPanel>
-                                    <TextBlock Text="ARRASTRE" Style="{StaticResource SectionHeaderStyle}" Margin="0,0,0,12" />
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="8" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel>
-                                            <Label Content="Velocidad (kts)" Style="{StaticResource FormLabelStyle}" />
-                                            <TextBox Text="{Binding VelocidadArrastreNudos}" Style="{StaticResource PremiumTextBoxStyle}" />
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="2">
-                                            <Label Content="Rumbo (°)" Style="{StaticResource FormLabelStyle}" />
-                                            <TextBox Text="{Binding RumboGrados}" Style="{StaticResource PremiumTextBoxStyle}" />
-                                        </StackPanel>
-                                    </Grid>
-                                </StackPanel>
-                            </Border>
-                        </UniformGrid>
-
-                        <!-- Arte de Pesca -->
-                        <Border Style="{StaticResource SurfaceBorderStyle}" Padding="20" Margin="0,0,0,16">
-                            <StackPanel>
-                                <TextBlock Text="ARTE DE PESCA" Style="{StaticResource SectionHeaderStyle}" Margin="0,0,0,16" />
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="16" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="16" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="16" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="16" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="16" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel>
-                                        <Label Content="Malla Copo" Style="{StaticResource FormLabelStyle}" />
-                                        <TextBox Text="{Binding MallaCopoMm}" Style="{StaticResource PremiumTextBoxStyle}" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="2">
-                                        <Label Content="Malla Alas" Style="{StaticResource FormLabelStyle}" />
-                                        <TextBox Text="{Binding MallaAlasMm}" Style="{StaticResource PremiumTextBoxStyle}" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="4">
-                                        <Label Content="Cable Filado" Style="{StaticResource FormLabelStyle}" />
-                                        <TextBox Text="{Binding CableFiladoM}" Style="{StaticResource PremiumTextBoxStyle}" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="6">
-                                        <Label Content="Ab. Vertical" Style="{StaticResource FormLabelStyle}" />
-                                        <TextBox Text="{Binding AberturaVerticalM}" Style="{StaticResource PremiumTextBoxStyle}" />
-                                    </StackPanel>
+                                    <!-- UBICACION -->
                                     <StackPanel Grid.Column="8">
-                                        <Label Content="Dist. Alas" Style="{StaticResource FormLabelStyle}" />
-                                        <TextBox Text="{Binding DistanciaAlasM}" Style="{StaticResource PremiumTextBoxStyle}" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="10">
-                                        <Label Content="Prof. Arte" Style="{StaticResource FormLabelStyle}" />
-                                        <TextBox Text="{Binding ProfundidadArteM}" Style="{StaticResource PremiumTextBoxStyle}" />
+                                        <TextBlock Text="UBICACION" Style="{StaticResource PaperHeaderStyle}" />
+                                        <UniformGrid Columns="4">
+                                            <StackPanel Margin="0,0,4,0">
+                                                <Label Content="LAT. INIC" Style="{StaticResource PaperLabelStyle}" />
+                                                <controls:CoordinatePickerPremium SelectedValue="{Binding LatitudInicioDecimal}" IsLatitude="True" Height="28" EsCompacto="True" />
+                                            </StackPanel>
+                                            <StackPanel Margin="0,0,4,0">
+                                                <Label Content="LON. INIC" Style="{StaticResource PaperLabelStyle}" />
+                                                <controls:CoordinatePickerPremium SelectedValue="{Binding LongitudInicioDecimal}" IsLatitude="False" Height="28" EsCompacto="True" />
+                                            </StackPanel>
+                                            <StackPanel Margin="0,0,4,0">
+                                                <Label Content="LAT. FIN" Style="{StaticResource PaperLabelStyle}" />
+                                                <controls:CoordinatePickerPremium SelectedValue="{Binding LatitudFinalDecimal}" IsLatitude="True" Height="28" EsCompacto="True" />
+                                            </StackPanel>
+                                            <StackPanel>
+                                                <Label Content="LON. FIN" Style="{StaticResource PaperLabelStyle}" />
+                                                <controls:CoordinatePickerPremium SelectedValue="{Binding LongitudFinalDecimal}" IsLatitude="False" Height="28" EsCompacto="True" />
+                                            </StackPanel>
+                                        </UniformGrid>
                                     </StackPanel>
                                 </Grid>
-                            </StackPanel>
+
+                                <Border Grid.Row="1" Height="20" />
+
+                                <!-- FILA 2 DE LA PLANILLA PAPEL -->
+                                <Grid Grid.Row="2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" /> <!-- Profundidad -->
+                                        <ColumnDefinition Width="20" />
+                                        <ColumnDefinition Width="Auto" /> <!-- Viento -->
+                                        <ColumnDefinition Width="20" />
+                                        <ColumnDefinition Width="Auto" /> <!-- Temp -->
+                                        <ColumnDefinition Width="20" />
+                                        <ColumnDefinition Width="Auto" /> <!-- Presion -->
+                                        <ColumnDefinition Width="20" />
+                                        <ColumnDefinition Width="*" />    <!-- Captura Total -->
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- PROFUNDIDAD (m) -->
+                                    <StackPanel>
+                                        <TextBlock Text="PROFUNDIDAD (m)" Style="{StaticResource PaperHeaderStyle}" />
+                                        <UniformGrid Columns="2">
+                                            <StackPanel Margin="0,0,4,0">
+                                                <Label Content="INICIAL" Style="{StaticResource PaperLabelStyle}" />
+                                                <TextBox Text="{Binding ProfundidadInicioM}" Style="{StaticResource PaperTextBoxStyle}" Width="65" />
+                                            </StackPanel>
+                                            <StackPanel>
+                                                <Label Content="FINAL" Style="{StaticResource PaperLabelStyle}" />
+                                                <TextBox Text="{Binding ProfundidadFinalM}" Style="{StaticResource PaperTextBoxStyle}" Width="65" />
+                                            </StackPanel>
+                                        </UniformGrid>
+                                    </StackPanel>
+
+                                    <!-- VIENTO -->
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="VIENTO" Style="{StaticResource PaperHeaderStyle}" />
+                                        <UniformGrid Columns="2">
+                                            <StackPanel Margin="0,0,4,0">
+                                                <Label Content="DIREC" Style="{StaticResource PaperLabelStyle}" />
+                                                <TextBox Text="{Binding VientoDireccionGrados}" Style="{StaticResource PaperTextBoxStyle}" Width="60" />
+                                            </StackPanel>
+                                            <StackPanel>
+                                                <Label Content="FUERZA" Style="{StaticResource PaperLabelStyle}" />
+                                                <TextBox Text="{Binding VientoFuerzaBeaufort}" Style="{StaticResource PaperTextBoxStyle}" Width="60" />
+                                            </StackPanel>
+                                        </UniformGrid>
+                                    </StackPanel>
+
+                                    <!-- TEMPERATURA (C°) -->
+                                    <StackPanel Grid.Column="4">
+                                        <TextBlock Text="TEMPERATURA (C°)" Style="{StaticResource PaperHeaderStyle}" />
+                                        <UniformGrid Columns="2">
+                                            <StackPanel Margin="0,0,4,0">
+                                                <Label Content="AIRE" Style="{StaticResource PaperLabelStyle}" />
+                                                <TextBox Text="{Binding TemperaturaAireC}" Style="{StaticResource PaperTextBoxStyle}" Width="60" />
+                                            </StackPanel>
+                                            <StackPanel>
+                                                <Label Content="RED" Style="{StaticResource PaperLabelStyle}" />
+                                                <TextBox Text="{Binding TemperaturaRedC}" Style="{StaticResource PaperTextBoxStyle}" Width="60" />
+                                            </StackPanel>
+                                        </UniformGrid>
+                                    </StackPanel>
+
+                                    <!-- PRESION (mb) -->
+                                    <StackPanel Grid.Column="6">
+                                        <TextBlock Text="PRESION (mb)" Style="{StaticResource PaperHeaderStyle}" />
+                                        <Border Height="13" /> <!-- Alineación con los que tienen sub-etiquetas -->
+                                        <TextBox Text="{Binding PresionHpa}" Style="{StaticResource PaperTextBoxStyle}" Width="80" />
+                                    </StackPanel>
+
+                                    <!-- CAPTURA TOTAL (Kg) -->
+                                    <StackPanel Grid.Column="8">
+                                        <TextBlock Text="CAPTURA TOTAL (Kg)" Style="{StaticResource PaperHeaderStyle}" />
+                                        <Border Height="13" />
+                                        <TextBox Text="{Binding CapturaTotalKg}" Style="{StaticResource PaperTextBoxStyle}" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Border Grid.Row="3" Height="20" />
+
+                                <!-- FILA 3 DE LA PLANILLA PAPEL -->
+                                <Grid Grid.Row="4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" /> <!-- Arrastre -->
+                                        <ColumnDefinition Width="20" />
+                                        <ColumnDefinition Width="Auto" /> <!-- Malla -->
+                                        <ColumnDefinition Width="20" />
+                                        <ColumnDefinition Width="Auto" /> <!-- Cable -->
+                                        <ColumnDefinition Width="20" />
+                                        <ColumnDefinition Width="Auto" /> <!-- AbVert -->
+                                        <ColumnDefinition Width="20" />
+                                        <ColumnDefinition Width="Auto" /> <!-- DistA -->
+                                        <ColumnDefinition Width="20" />
+                                        <ColumnDefinition Width="*" />    <!-- DistP -->
+                                        <ColumnDefinition Width="20" />
+                                        <ColumnDefinition Width="Auto" /> <!-- Select -->
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- ARRASTRE -->
+                                    <StackPanel>
+                                        <TextBlock Text="ARRASTRE" Style="{StaticResource PaperHeaderStyle}" />
+                                        <UniformGrid Columns="2">
+                                            <StackPanel Margin="0,0,4,0">
+                                                <Label Content="VEL" Style="{StaticResource PaperLabelStyle}" />
+                                                <TextBox Text="{Binding VelocidadArrastreNudos}" Style="{StaticResource PaperTextBoxStyle}" Width="55" />
+                                            </StackPanel>
+                                            <StackPanel>
+                                                <Label Content="RUMBO" Style="{StaticResource PaperLabelStyle}" />
+                                                <TextBox Text="{Binding RumboGrados}" Style="{StaticResource PaperTextBoxStyle}" Width="55" />
+                                            </StackPanel>
+                                        </UniformGrid>
+                                    </StackPanel>
+
+                                    <!-- ABERT. MALLA -->
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="ABERT. MALLA" Style="{StaticResource PaperHeaderStyle}" />
+                                        <UniformGrid Columns="2">
+                                            <StackPanel Margin="0,0,4,0">
+                                                <Label Content="COPO" Style="{StaticResource PaperLabelStyle}" />
+                                                <TextBox Text="{Binding MallaCopoMm}" Style="{StaticResource PaperTextBoxStyle}" Width="55" />
+                                            </StackPanel>
+                                            <StackPanel>
+                                                <Label Content="ALAS" Style="{StaticResource PaperLabelStyle}" />
+                                                <TextBox Text="{Binding MallaAlasMm}" Style="{StaticResource PaperTextBoxStyle}" Width="55" />
+                                            </StackPanel>
+                                        </UniformGrid>
+                                    </StackPanel>
+
+                                    <!-- CABLE FIL. (m) -->
+                                    <StackPanel Grid.Column="4">
+                                        <TextBlock Text="CABLE FIL. (m)" Style="{StaticResource PaperHeaderStyle}" />
+                                        <Border Height="13" />
+                                        <TextBox Text="{Binding CableFiladoM}" Style="{StaticResource PaperTextBoxStyle}" Width="80" />
+                                    </StackPanel>
+
+                                    <!-- ABERT. VERT (m) -->
+                                    <StackPanel Grid.Column="6">
+                                        <TextBlock Text="ABERT. VERT (m)" Style="{StaticResource PaperHeaderStyle}" />
+                                        <Border Height="13" />
+                                        <TextBox Text="{Binding AberturaVerticalM}" Style="{StaticResource PaperTextBoxStyle}" Width="90" />
+                                    </StackPanel>
+
+                                    <!-- DIST. ALAS (m) -->
+                                    <StackPanel Grid.Column="8">
+                                        <TextBlock Text="DIST. ALAS (m)" Style="{StaticResource PaperHeaderStyle}" />
+                                        <Border Height="13" />
+                                        <TextBox Text="{Binding DistanciaAlasM}" Style="{StaticResource PaperTextBoxStyle}" Width="90" />
+                                    </StackPanel>
+
+                                    <!-- DIST. PORTONES (m) -->
+                                    <StackPanel Grid.Column="10">
+                                        <TextBlock Text="DIST. PORTONES (m)" Style="{StaticResource PaperHeaderStyle}" />
+                                        <Border Height="13" />
+                                        <TextBox Text="{Binding DistanciaPortonesM}" Style="{StaticResource PaperTextBoxStyle}" />
+                                    </StackPanel>
+
+                                    <!-- SELECTIVIDAD -->
+                                    <StackPanel Grid.Column="12" VerticalAlignment="Bottom">
+                                        <CheckBox Content="Selectividad" IsChecked="{Binding Selectividad}" FontSize="11" Margin="0,0,0,8" VerticalAlignment="Bottom" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Border Grid.Row="5" Height="10" />
+
+                                <!-- FILA 4: COMENTARIOS -->
+                                <Grid Grid.Row="6">
+                                    <StackPanel>
+                                        <TextBlock Text="COMENTARIOS / OBSERVACIONES" Style="{StaticResource PaperHeaderStyle}" />
+                                        <TextBox Text="{Binding Comentarios}" 
+                                                 Style="{StaticResource PaperTextBoxStyle}" 
+                                                 Height="60" 
+                                                 AcceptsReturn="True" 
+                                                 TextWrapping="Wrap" 
+                                                 VerticalScrollBarVisibility="Auto"
+                                                 HorizontalContentAlignment="Left"
+                                                 VerticalContentAlignment="Top"
+                                                 Padding="8,4" />
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
                         </Border>
 
-                        <!-- Otros y Comentarios -->
-                        <Grid Margin="0,0,0,24">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="200" />
-                                <ColumnDefinition Width="16" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <Border Style="{StaticResource SurfaceBorderStyle}" Padding="20">
-                                <StackPanel>
-                                    <TextBlock Text="OTROS" Style="{StaticResource SectionHeaderStyle}" Margin="0,0,0,12" />
-                                    <CheckBox Content="Selectividad" IsChecked="{Binding Selectividad}" Margin="0,0,0,8" />
-                                </StackPanel>
-                            </Border>
-                            <Border Grid.Column="2" Style="{StaticResource SurfaceBorderStyle}" Padding="20">
-                                <StackPanel>
-                                    <TextBlock Text="COMENTARIOS" Style="{StaticResource SectionHeaderStyle}" Margin="0,0,0,12" />
-                                    <TextBox Text="{Binding Comentarios}" Style="{StaticResource PremiumTextBoxStyle}" MinHeight="45" AcceptsReturn="True" />
-                                </StackPanel>
-                            </Border>
-                        </Grid>
+                        <!-- Tabla Especies -->
+                        <Border Grid.Row="1" Style="{StaticResource SurfaceBorderStyle}" Padding="0" ClipToBounds="True">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
 
-                        <!-- ESPECIES CAPTURADAS (Timeline/Expandable Items) -->
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="ESPECIES CAPTURADAS" Style="{StaticResource SectionHeaderStyle}" VerticalAlignment="Center" />
-                            <Button Grid.Column="1" 
-                                    Command="{Binding AddCatchItemCommand}" 
-                                    Content="+ Añadir Especie" 
-                                    Style="{StaticResource ThemeButtonStyle}" 
-                                    Foreground="{DynamicResource AccentBrush}" />
-                        </Grid>
+                                <Border Background="{DynamicResource SurfaceBackgroundBrush}" Padding="16,10" BorderBrush="{DynamicResource SidebarBorderBrush}" BorderThickness="0,0,0,1">
+                                    <Grid>
+                                        <TextBlock Text="ESPECIES CAPTURADAS" Style="{StaticResource SectionHeaderStyle}" VerticalAlignment="Center" FontSize="11" />
+                                        <Button HorizontalAlignment="Right" 
+                                                Command="{Binding AddCatchItemCommand}"
+                                                Style="{StaticResource ThemeButtonStyle}"
+                                                Foreground="{DynamicResource AccentBrush}"
+                                                Padding="12,6">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="+ " FontWeight="Bold" />
+                                                <TextBlock Text="AÑADIR ESPECIE" FontSize="10" />
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                </Border>
 
-                        <ItemsControl ItemsSource="{Binding ItemsCaptura}" Margin="0,16,0,32">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Style="{StaticResource SurfaceBorderStyle}" Margin="0,0,0,8" Padding="0" ClipToBounds="True">
-                                        <StackPanel>
-                                            <!-- Header Item (Clickable) -->
-                                            <Button Command="{Binding ToggleExpandedCommand}" 
-                                                    Style="{StaticResource ThemeButtonStyle}"
-                                                    HorizontalContentAlignment="Stretch"
-                                                    Padding="16,12"
-                                                    BorderThickness="0"
-                                                    Background="Transparent">
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*" />
-                                                        <ColumnDefinition Width="Auto" />
-                                                        <ColumnDefinition Width="20" />
-                                                        <ColumnDefinition Width="Auto" />
-                                                    </Grid.ColumnDefinitions>
-                                                    <TextBlock Text="{Binding SummaryText}" 
-                                                               FontWeight="SemiBold" 
-                                                               Foreground="{DynamicResource PrimaryTextBrush}" />
-
-                                                    <Button Grid.Column="1"
-                                                            Command="{Binding RemoveCommand}"
+                                <DataGrid Grid.Row="1" 
+                                          ItemsSource="{Binding ItemsCaptura}" 
+                                          SelectedItem="{Binding SelectedCatchItem}"
+                                          Style="{StaticResource PremiumDataGridStyle}"
+                                          IsReadOnly="True">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="ORD" Binding="{Binding NumeroOrden}" Width="40" ElementStyle="{StaticResource DataGridTextCenter}" />
+                                        <DataGridTextColumn Header="ESPECIE" Binding="{Binding EspecieNombreVulgar}" Width="*" FontWeight="SemiBold" FontSize="13" ElementStyle="{StaticResource DataGridTextLeft}" />
+                                        <DataGridTextColumn Header="CAPTURA" Binding="{Binding DatoCapturaDisplay}" Width="110" ElementStyle="{StaticResource DataGridTextRight}" HeaderStyle="{StaticResource PremiumDataGridColumnHeaderRightStyle}" />
+                                        <DataGridTextColumn Header="DESC. (%)" Binding="{Binding DatoDescartePorcentajeDisplay}" Width="100" ElementStyle="{StaticResource DataGridTextRight}" HeaderStyle="{StaticResource PremiumDataGridColumnHeaderRightStyle}" Foreground="{DynamicResource SecondaryTextBrush}" />
+                                        <DataGridTextColumn Header="DESC. (KG)" Binding="{Binding DatoDescarteKilosDisplay}" Width="110" ElementStyle="{StaticResource DataGridTextRight}" HeaderStyle="{StaticResource PremiumDataGridColumnHeaderRightStyle}" FontWeight="SemiBold" />
+                                        <DataGridTemplateColumn Width="60">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Command="{Binding RemoveCommand}"
                                                             Content="✕"
-                                                            ToolTip="Eliminar especie"
                                                             Style="{StaticResource ThemeButtonStyle}"
-                                                            Foreground="#FF5252"
-                                                            Padding="8,0"
-                                                            VerticalAlignment="Center" />
+                                                            Foreground="{DynamicResource DangerForegroundBrush}"
+                                                            HorizontalAlignment="Center"
+                                                            Padding="8,2"
+                                                            FontSize="11" />
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
 
-                                                    <TextBlock Grid.Column="3" Text="▼" VerticalAlignment="Center">
-                                                        <TextBlock.Style>
-                                                            <Style TargetType="TextBlock">
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding IsExpanded}" Value="True">
-                                                                        <Setter Property="RenderTransform">
-                                                                            <Setter.Value>
-                                                                                <RotateTransform Angle="180" CenterX="5" CenterY="5" />
-                                                                            </Setter.Value>
-                                                                        </Setter>
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </TextBlock.Style>
-                                                    </TextBlock>
-                                                </Grid>
-                                            </Button>
+                                <Border Grid.Row="2" Padding="20,10" Background="{DynamicResource SurfaceBackgroundBrush}" BorderBrush="{DynamicResource SidebarBorderBrush}" BorderThickness="0,1,0,0">
+                                    <TextBlock Text="{Binding ItemsCaptura.Count, StringFormat='{}Total registros: {0}'}" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" />
+                                </Border>
+                            </Grid>
+                        </Border>
+                    </Grid>
 
-                                            <!-- Content Item (Collapsible) -->
-                                            <Border Visibility="{Binding IsExpanded, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                    Padding="16"
-                                                    BorderBrush="{DynamicResource SidebarBorderBrush}"
-                                                    BorderThickness="0,1,0,0">
-                                                <Grid>
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition Height="Auto" />
-                                                        <RowDefinition Height="16" />
-                                                        <RowDefinition Height="Auto" />
-                                                    </Grid.RowDefinitions>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="2*" />
-                                                        <ColumnDefinition Width="16" />
-                                                        <ColumnDefinition Width="*" />
-                                                        <ColumnDefinition Width="16" />
-                                                        <ColumnDefinition Width="*" />
-                                                    </Grid.ColumnDefinitions>
+                    <!-- Panel Lateral (Edición de Especie) -->
+                    <Border Grid.Column="1" 
+                            Width="340" 
+                            Style="{StaticResource SurfaceBorderStyle}"
+                            Background="{DynamicResource ShellBackgroundBrush}" 
+                            Visibility="{Binding HasSelectedCatchItem, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
 
-                                                    <!-- Buscador de Especie Autocomplete -->
-                                                    <StackPanel Grid.ColumnSpan="5">
-                                                        <Label Content="Buscar Especie (Nombre vulgar o científico)" Style="{StaticResource FormLabelStyle}" />
-                                                        <Grid>
-                                                            <ComboBox ItemsSource="{Binding FilteredEspecies}"
-                                                                      SelectedItem="{Binding SelectedEspecie}"
-                                                                      IsEditable="True"
-                                                                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                                                      Style="{StaticResource PremiumComboBoxStyle}">
-                                                                <ComboBox.ItemTemplate>
-                                                                    <DataTemplate>
-                                                                        <StackPanel Orientation="Horizontal">
-                                                                            <TextBlock Text="{Binding NombreVulgar}" FontWeight="Bold" />
-                                                                            <TextBlock Text=" (" />
-                                                                            <TextBlock Text="{Binding NombreCientifico}" FontStyle="Italic" />
-                                                                            <TextBlock Text=")" />
-                                                                        </StackPanel>
-                                                                    </DataTemplate>
-                                                                </ComboBox.ItemTemplate>
-                                                            </ComboBox>
-                                                        </Grid>
-                                                    </StackPanel>
+                            <Border Background="{DynamicResource AccentMutedBrush}" Padding="24,20" BorderBrush="{DynamicResource SidebarBorderBrush}" BorderThickness="0,0,0,1">
+                                <StackPanel>
+                                    <TextBlock Text="EDITAR ESPECIE" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" />
+                                    <TextBlock Text="{Binding SelectedCatchItem.EspecieNombreVulgar}" 
+                                               FontSize="18" FontWeight="SemiBold" 
+                                               Foreground="{DynamicResource PrimaryTextBrush}"
+                                               Margin="0,4,0,0" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
 
-                                                    <!-- Captura y Descarte -->
-                                                    <StackPanel Grid.Row="2">
-                                                        <Label Content="Captura" Style="{StaticResource FormLabelStyle}" />
-                                                        <TextBox Text="{Binding DatoCaptura}" Style="{StaticResource PremiumTextBoxStyle}" />
-                                                    </StackPanel>
-                                                    <StackPanel Grid.Row="2" Grid.Column="2">
-                                                        <Label Content="Unidad" Style="{StaticResource FormLabelStyle}" />
-                                                        <ComboBox ItemsSource="{Binding Source={StaticResource TipoDatoCapturaEnum}}"
-                                                                  SelectedItem="{Binding TipoDatoCaptura}"
-                                                                  Style="{StaticResource PremiumComboBoxStyle}" />
-                                                    </StackPanel>
-                                                    
-                                                    <StackPanel Grid.Row="2" Grid.Column="4">
-                                                        <Label Content="Descarte" Style="{StaticResource FormLabelStyle}" />
-                                                        <TextBox Text="{Binding DatoDescarte}" Style="{StaticResource PremiumTextBoxStyle}" />
-                                                    </StackPanel>
-                                                    <!-- Podríamos añadir unidad de descarte si fuera distinta, el mockup muestra % o kg -->
-                                                </Grid>
-                                            </Border>
-                                        </StackPanel>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
-                </ScrollViewer>
+                            <ScrollViewer Grid.Row="1" Style="{StaticResource SlimScrollViewerStyle}" Padding="24">
+                                <StackPanel>
+                                    <controls:SpeciesSelectorPremium 
+                                        Label="Buscador de Especie"
+                                        ItemsSource="{Binding AllEspecies}"
+                                        SelectedItem="{Binding SelectedCatchItem.SelectedEspecie}"
+                                        Margin="0,0,0,24" />
 
-                <!-- Footer -->
-                <Border Grid.Row="2" BorderBrush="{DynamicResource SidebarBorderBrush}" BorderThickness="0,1,0,0" Padding="0,16,0,0">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <TextBlock Text="[TAB] Navegar" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" Margin="0,0,20,0" />
+                                    <TextBlock Text="CAPTURA" FontWeight="Bold" FontSize="10" Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,12"/>
+                                    <Grid Margin="0,0,0,24">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="12" />
+                                            <ColumnDefinition Width="140" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Text="{Binding SelectedCatchItem.DatoCaptura}" Style="{StaticResource PremiumTextBoxStyle}" />
+                                        <ComboBox Grid.Column="2"
+                                                  ItemsSource="{Binding Source={StaticResource TipoDatoCapturaEnum}}"
+                                                  SelectedItem="{Binding SelectedCatchItem.TipoDatoCaptura}"
+                                                  Style="{StaticResource PremiumComboBoxStyle}" />
+                                    </Grid>
+
+                                    <TextBlock Text="DESCARTE" FontWeight="Bold" FontSize="10" Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,12"/>
+                                    <Grid Margin="0,0,0,24">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="12" />
+                                            <ColumnDefinition Width="140" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Text="{Binding SelectedCatchItem.DatoDescarte}" Style="{StaticResource PremiumTextBoxStyle}" />
+                                        <ComboBox Grid.Column="2"
+                                                  ItemsSource="{Binding Source={StaticResource TipoDatoDescarteEnum}}"
+                                                  SelectedItem="{Binding SelectedCatchItem.TipoDatoDescarte}"
+                                                  Style="{StaticResource PremiumComboBoxStyle}" />
+                                    </Grid>
+                                </StackPanel>
+                            </ScrollViewer>
+
+                            <Border Grid.Row="2" Padding="24" BorderBrush="{DynamicResource SidebarBorderBrush}" BorderThickness="0,1,0,0">
+                                <Button Content="CERRAR EDICIÓN" 
+                                        Click="CerrarEdicion_Click"
+                                        Style="{StaticResource ThemeButtonStyle}"
+                                        Foreground="{DynamicResource AccentBrush}"
+                                        HorizontalAlignment="Stretch" FontSize="12" />
+                            </Border>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- 3. Footer -->
+                <Grid Grid.Row="2" Margin="0,20,0,0">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="[TAB] Navegar planilla" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" Margin="0,0,24,0" />
                         <TextBlock Text="[ESC] Salir" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" />
                     </StackPanel>
-                </Border>
+                    
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                         <Button Content="Descartar" 
+                                 Command="{Binding CancelCommand}"
+                                 Style="{StaticResource ThemeButtonStyle}" 
+                                 Padding="20,10"
+                                 Margin="0,0,16,0" />
+                         <Button Content="GUARDAR LANCE" 
+                                 Command="{Binding SaveCommand}"
+                                 Style="{StaticResource PrimaryButtonStyle}"
+                                 Padding="30,12" />
+                    </StackPanel>
+                </Grid>
             </Grid>
         </Border>
     </AdornerDecorator>

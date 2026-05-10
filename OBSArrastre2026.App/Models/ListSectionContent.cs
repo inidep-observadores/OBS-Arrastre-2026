@@ -12,5 +12,7 @@ public sealed record ListSectionContent(
     string Column3Header,
     string Column4Header,
     string Column5Header,
+    string Column6Header,
+    string Column7Header,
     IReadOnlyList<string> Filters,
     IReadOnlyList<MockRecordRowViewModel> Rows);

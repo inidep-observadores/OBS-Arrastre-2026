@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using OBSArrastre2026.App.Data;
 using OBSArrastre2026.App.Data.Entities;
+using OBSArrastre2026.App.Models;
 
 namespace OBSArrastre2026.App.Services;
 
@@ -169,5 +170,50 @@ public sealed class MareaService(IDbContextFactory<AppDbContext> dbContextFactor
             .ExecuteDeleteAsync(cancellationToken);
             
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task DeleteMareaAsync(string id, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        
+        var marea = await dbContext.Mareas.FirstOrDefaultAsync(x => x.ID == id, cancellationToken);
+        if (marea != null)
+        {
+            dbContext.Mareas.Remove(marea);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    public async Task<Marea?> FindMareaAsync(int numero, int anio, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        
+        return await dbContext.Mareas
+            .Include(m => m.Buque)
+            .Include(m => m.Etapas)
+            .FirstOrDefaultAsync(m => m.NumeroInidep == numero && m.AnioInidep == anio, cancellationToken);
+    }
+
+    public async Task SetTipoDatoDescarteMasivoAsync(string mareaId, TipoDatoDescarte tipo, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        
+        var stageIds = await dbContext.MareaEtapas
+            .Where(e => e.MareaID == mareaId)
+            .Select(e => e.ID)
+            .ToListAsync(cancellationToken);
+
+        if (!stageIds.Any()) return;
+
+        var lanceIds = await dbContext.Lances
+            .Where(l => stageIds.Contains(l.MareaEtapaId))
+            .Select(l => l.Id)
+            .ToListAsync(cancellationToken);
+
+        if (!lanceIds.Any()) return;
+
+        await dbContext.ItemsCaptura
+            .Where(i => lanceIds.Contains(i.LanceID))
+            .ExecuteUpdateAsync(s => s.SetProperty(i => i.TipoDatoDescarte, tipo), cancellationToken);
     }
 }

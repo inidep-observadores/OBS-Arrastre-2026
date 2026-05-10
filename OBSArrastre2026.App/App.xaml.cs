@@ -13,6 +13,9 @@ using OBSArrastre2026.App.Models;
 using OBSArrastre2026.App.Services;
 using OBSArrastre2026.App.ViewModels;
 
+using OBSArrastre2026.App.Features.Mareas;
+using OBSArrastre2026.App.Features.Lances;
+
 namespace OBSArrastre2026.App;
 
 public partial class App : Application
@@ -40,7 +43,8 @@ public partial class App : Application
                 services.AddDbContextFactory<AppDbContext>((sp, options) =>
                 {
                     var databasePathProvider = sp.GetRequiredService<IDatabasePathProvider>();
-                    options.UseSqlite(databasePathProvider.GetConnectionString());
+                    options.UseSqlite(databasePathProvider.GetConnectionString())
+                           .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
                 });
 
                 services.AddSingleton<IDatabaseInitializer, DatabaseInitializer>();
@@ -48,6 +52,10 @@ public partial class App : Application
                 services.AddSingleton<IBuqueService, BuqueService>();
                 services.AddSingleton<IMareaService, MareaService>();
                 services.AddSingleton<ILanceService, LanceService>();
+                services.AddSingleton<IMuestraService, MuestraService>();
+                services.AddSingleton<ISubmuestraService, SubmuestraService>();
+                services.AddSingleton<IProduccionService, ProduccionService>();
+                services.AddSingleton<IProductoService, ProductoService>();
 
                 // Servicios de sincronización de datos
                 services.AddSingleton<IDbfExtractorService, DbfExtractorService>();
@@ -59,26 +67,72 @@ public partial class App : Application
                         sp.GetRequiredService<IDbfExtractorService>(),
                         sp.GetRequiredService<IMareaReportService>(),
                         sp.GetRequiredService<IDbContextFactory<AppDbContext>>()));
+                services.AddSingleton<IMareaValidationService, MareaValidationService>();
+                services.AddSingleton<GeoJsonService>();
+                services.AddSingleton<IMapRenderingService, MapRenderingService>();
+                services.AddSingleton<IExcelReportService, ExcelReportService>();
+                services.AddSingleton<IMareaSummaryService, MareaSummaryService>();
+                services.AddSingleton<IDbfExporterService, DbfExporterService>();
 
                 // Validación y ViewModels
                 services.AddValidatorsFromAssemblyContaining<App>();
-                
-                services.AddSingleton<Func<Action, string?, MareaEditViewModel>>(sp => 
-                    (onClose, mareaId) => new MareaEditViewModel(
-                        onClose, 
-                        sp.GetRequiredService<IValidator<MareaEditViewModel>>(),
-                        sp.GetRequiredService<IMareaService>(),
-                        sp.GetRequiredService<IBuqueService>(),
-                        sp.GetRequiredService<IMareaImportService>(),
-                        mareaId));
+                services.AddTransient<IValidator<MuestraEditViewModel>, MuestraEditViewModelValidator>();
+                services.AddTransient<IValidator<SubmuestraEditViewModel>, SubmuestraEditViewModelValidator>();
+                services.AddTransient<IValidator<ProduccionEditViewModel>, ProduccionEditViewModelValidator>();
 
-                services.AddSingleton<Func<Action, string, string?, LanceEditViewModel>>(sp => 
-                    (onClose, mareaEtapaId, lanceId) => new LanceEditViewModel(
-                        onClose, 
-                        sp.GetRequiredService<IValidator<LanceEditViewModel>>(),
-                        sp.GetRequiredService<ILanceService>(),
-                        mareaEtapaId,
-                        lanceId));
+                services.AddTransient<MareaEditViewModel>();
+                services.AddTransient<LanceEditViewModel>();
+                services.AddTransient<MuestraEditViewModel>();
+                services.AddTransient<SubmuestraEditViewModel>();
+
+                services.AddSingleton<Func<Action, string?, MareaEditViewModel>>(sp =>
+                    (onClose, mareaId) =>
+                    {
+                        var validator = sp.GetRequiredService<IValidator<MareaEditViewModel>>();
+                        var mareaService = sp.GetRequiredService<IMareaService>();
+                        var buqueService = sp.GetRequiredService<IBuqueService>();
+                        var mareaImportService = sp.GetRequiredService<IMareaImportService>();
+                        var jsonImportService = sp.GetRequiredService<IJsonImportService>();
+                        var activeMareaManager = sp.GetRequiredService<IActiveMareaManager>();
+                        return new MareaEditViewModel(onClose, validator, mareaService, buqueService, mareaImportService, jsonImportService, activeMareaManager, mareaId);
+                    });
+
+                services.AddSingleton<Func<Action, string, string?, LanceEditViewModel>>(sp =>
+                    (onClose, mareaId, lanceId) =>
+                    {
+                        var validator = sp.GetRequiredService<IValidator<LanceEditViewModel>>();
+                        var lanceService = sp.GetRequiredService<ILanceService>();
+                        return new LanceEditViewModel(onClose, validator, lanceService, mareaId, lanceId);
+                    });
+
+                services.AddSingleton<Func<Action, string, string?, MuestraEditViewModel>>(sp =>
+                    (onClose, lanceId, muestraId) =>
+                    {
+                        var validator = sp.GetRequiredService<IValidator<MuestraEditViewModel>>();
+                        var muestraService = sp.GetRequiredService<IMuestraService>();
+                        var lanceService = sp.GetRequiredService<ILanceService>();
+                        return new MuestraEditViewModel(onClose, validator, muestraService, lanceService, lanceId, muestraId);
+                    });
+
+                services.AddSingleton<Func<Action, string, SubmuestraEditViewModel>>(sp =>
+                    (onClose, muestraId) =>
+                    {
+                        var validator = sp.GetRequiredService<IValidator<SubmuestraEditViewModel>>();
+                        var submuestraService = sp.GetRequiredService<ISubmuestraService>();
+                        var muestraService = sp.GetRequiredService<IMuestraService>();
+                        return new SubmuestraEditViewModel(onClose, validator, submuestraService, muestraService, muestraId);
+                    });
+
+                services.AddTransient<ProduccionEditViewModel>();
+                services.AddSingleton<Func<Action, string?, ProduccionEditViewModel>>(sp =>
+                    (onClose, registroId) =>
+                    {
+                        var validator = sp.GetRequiredService<IValidator<ProduccionEditViewModel>>();
+                        var produccionService = sp.GetRequiredService<IProduccionService>();
+                        var productoService = sp.GetRequiredService<IProductoService>();
+                        var activeMareaManager = sp.GetRequiredService<IActiveMareaManager>();
+                        return new ProduccionEditViewModel(onClose, validator, produccionService, productoService, activeMareaManager, registroId);
+                    });
 
                 services.AddSingleton<MainWindowViewModel>();
                 services.AddSingleton<MainWindow>();
@@ -96,7 +150,9 @@ public partial class App : Application
     {
         if (sender is TextBox tb)
         {
-            tb.SelectAll();
+            // Usamos Dispatcher para asegurar que la selección ocurra después de que 
+            // los eventos de mouse (que podrían deseleccionar) hayan terminado.
+            tb.Dispatcher.BeginInvoke(new Action(() => tb.SelectAll()));
         }
     }
 
@@ -122,13 +178,22 @@ public partial class App : Application
 
     protected override async void OnStartup(StartupEventArgs e)
     {
+        // Habilitar soporte para codificaciones legacy (IBM850, Windows-1252, etc.)
+        System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+
         base.OnStartup(e);
 
         await _host.StartAsync();
 
-        // Inicializar base de datos y realizar sembrado/sincronización de datos maestros
-        await _host.Services.GetRequiredService<IDatabaseInitializer>().InitializeAsync();
+        // Inicializar base de datos (migraciones)
+        var databaseInitializer = _host.Services.GetRequiredService<IDatabaseInitializer>();
+        await databaseInitializer.InitializeAsync();
+        
+        // Sincronizar datos maestros (especies, buques) necesarios para el catálogo
         await _host.Services.GetRequiredService<IDataSyncCoordinator>().SyncAllAsync();
+
+        // Sembrar catálogos que dependen de datos maestros
+        await databaseInitializer.SeedCatalogsAsync();
 
         // Cargar preferencias de usuario
         var settingsService = _host.Services.GetRequiredService<IUserSettingsService>();

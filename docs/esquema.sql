@@ -29,6 +29,24 @@ CREATE TABLE especies (
 );
 
 CREATE UNIQUE INDEX ix_especies_codigo_inidep ON especies (CodigoInidep);
+ 
+ 
+ -- especies_viejas definition
+ 
+ CREATE TABLE especies_viejas (
+     ID TEXT NOT NULL CONSTRAINT pk_especies_viejas PRIMARY KEY,
+     CodigoInidep TEXT NULL,
+     DocumentoInformativo TEXT NULL,
+     Especifico TEXT NULL,
+     Familia TEXT NULL,
+     Frecuente INTEGER NOT NULL,
+     Genero TEXT NULL,
+     NombreCientifico TEXT NULL,
+     NombreVulgar TEXT NULL,
+     Orden TEXT NULL
+ );
+ 
+ CREATE UNIQUE INDEX ix_especies_viejas_codigo_inidep ON especies_viejas (CodigoInidep);
 
 
 -- productos definition
@@ -52,6 +70,11 @@ CREATE TABLE mareas (
     FechaInicio TEXT NOT NULL,
     FechaFin TEXT NULL,
     BuqueID TEXT NULL,
+    BuqueCodigo INTEGER NULL,
+    ObservadorNombre TEXT NULL,
+    ObservadorApellido TEXT NULL,
+    ObservadorCodigo INTEGER NULL,
+    Metadata TEXT NULL,
     CONSTRAINT fk_mareas_buques_buque_id FOREIGN KEY (BuqueID) REFERENCES buques (ID)
 );
 
@@ -71,6 +94,7 @@ CREATE TABLE marea_etapas (
 	NombreOficialPesca TEXT,
 	AnioMareaBuque INTEGER,
 	NumeroMareaBuque INTEGER,
+	Metadata TEXT NULL,
 	CONSTRAINT fk_marea_etapas_especies_especie_objetivo_id FOREIGN KEY (EspecieObjetivoID) REFERENCES especies(ID) ON DELETE SET NULL,
 	CONSTRAINT fk_marea_etapas_mareas_marea_id FOREIGN KEY (MareaID) REFERENCES mareas(ID) ON DELETE CASCADE
 );
@@ -89,6 +113,7 @@ CREATE TABLE registros_produccion (
     categoria TEXT,
     kg REAL,
     comentarios TEXT,
+    Metadata TEXT NULL,
     UNIQUE(marea_etapa_id, fecha, id_producto),
     FOREIGN KEY (marea_etapa_id) REFERENCES marea_etapas(id) ON DELETE CASCADE,
     FOREIGN KEY (id_producto) REFERENCES productos(id) ON DELETE RESTRICT
@@ -122,6 +147,7 @@ CREATE TABLE lances (
     temperatura_red_c REAL,
     presion_hpa INTEGER,
     captura_total_kg REAL,
+    descarte_total_kg REAL,
     velocidad_arrastre_nudos REAL,
     rumbo_grados INTEGER,
     malla_copo_mm INTEGER,
@@ -129,8 +155,9 @@ CREATE TABLE lances (
     cable_filado_m INTEGER,
     abertura_vertical_m REAL,
     distancia_alas_m REAL,
-    profundidad_arte_m INTEGER,
+    distancia_portones_m REAL,
     selectividad_si_no INTEGER CHECK (selectividad_si_no IN (0,1)),
+    Metadata TEXT NULL,
     UNIQUE(marea_etapa_id, nro_lance),
     FOREIGN KEY (marea_etapa_id) REFERENCES marea_etapas(id) ON DELETE CASCADE
 );
@@ -154,6 +181,8 @@ CREATE TABLE muestras (
     DiscriminaSexo INTEGER NOT NULL,
     HayIndeterminados INTEGER NOT NULL,
     PesoMuestra_PesoGramos REAL NULL,
+    TipoMuestra INTEGER NOT NULL DEFAULT 1, -- 1=Estandar, 2=Descarte
+    Metadata TEXT NULL,
     CONSTRAINT fk_muestras_especies_especie_id FOREIGN KEY (EspecieID) REFERENCES especies (ID) ON DELETE RESTRICT,
     CONSTRAINT fk_muestras_lances_lance_id FOREIGN KEY (LanceID) REFERENCES lances (ID) ON DELETE CASCADE
 );
@@ -171,9 +200,11 @@ CREATE TABLE frecuencias_de_tallas (
     NroMachos INTEGER NOT NULL,
     NroHembras INTEGER NOT NULL,
     NroIndeterminados INTEGER NOT NULL,
+    NroTotal INTEGER NOT NULL,
     NroLangostinosMachoMaduros INTEGER NOT NULL,
     NroLangostinosHembraMaduras INTEGER NOT NULL,
     NroLangostinosHembraImpregnadas INTEGER NOT NULL,
+    Metadata TEXT NULL,
     CONSTRAINT fk_frecuencias_de_tallas_muestras_muestra_id FOREIGN KEY (MuestraID) REFERENCES muestras (ID) ON DELETE CASCADE
 );
 
@@ -189,6 +220,7 @@ CREATE TABLE frecuencias_de_tallas_con_estadio (
     EstadiosHembras TEXT NULL,
     EstadiosMachos TEXT NULL,
     NroIndeterminados INTEGER NOT NULL,
+    Metadata TEXT NULL,
     CONSTRAINT fk_frecuencias_de_tallas_con_estadio_muestras_muestra_id FOREIGN KEY (MuestraID) REFERENCES muestras (ID) ON DELETE CASCADE
 );
 
@@ -206,6 +238,7 @@ CREATE TABLE items_captura (
     DatoCaptura REAL NOT NULL,
     TipoDatoDescarte INTEGER NOT NULL,
     DatoDescarte REAL NOT NULL,
+    Metadata TEXT NULL,
     CONSTRAINT fk_items_captura_especies_especie_id FOREIGN KEY (EspecieID) REFERENCES especies (ID) ON DELETE RESTRICT,
     CONSTRAINT fk_items_captura_lances_lance_id FOREIGN KEY (LanceID) REFERENCES lances (ID) ON DELETE CASCADE
 );
@@ -225,6 +258,7 @@ CREATE TABLE items_submuestras (
     ReplecionGastrica INTEGER NULL,
     Edad REAL NULL,
     Comentarios TEXT NULL,
+    Metadata TEXT NULL,
     CONSTRAINT fk_items_submuestras_muestras_muestra_id FOREIGN KEY (MuestraID) REFERENCES muestras (ID) ON DELETE CASCADE
 );
 
@@ -242,6 +276,7 @@ CREATE TABLE item_contenido_gastrico (
     Porcentaje REAL NOT NULL,
     CantPiezas INTEGER NOT NULL,
     Comentarios TEXT NULL,
+    Metadata TEXT NULL,
     CONSTRAINT fk_item_contenido_gastrico_items_submuestras_item_submuestra_id FOREIGN KEY (ItemSubmuestraID) REFERENCES items_submuestras (ID) ON DELETE CASCADE
 );
 

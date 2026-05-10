@@ -17,11 +17,24 @@ public record ValidationIssue(
     string? OriginalValue = null,
     string? CorrectedValue = null);
 
+public record EtapaValidationInfo(int Numero, DateTime? FechaInicio, DateTime? FechaFin);
+
 public class MareaValidationReport
 {
+    public string? MareaMetadata { get; set; }
+    public string? ImportPath { get; set; }
     public string Barco { get; set; } = string.Empty;
     public string Marea { get; set; } = string.Empty;
     public int Año { get; set; }
+    public int? BuqueCodigo { get; set; }
+    public string? ObservadorNombre { get; set; }
+    public string? ObservadorApellido { get; set; }
+    public int? ObservadorCodigo { get; set; }
+    public TipoDatoDescarte UnidadDescarte { get; set; } = TipoDatoDescarte.Kilogramos;
+    
+    public DateTime? FechaInicioMarea { get; set; }
+    public DateTime? FechaFinMarea { get; set; }
+    public List<EtapaValidationInfo> Etapas { get; set; } = new();
     
     public List<ValidationIssue> Issues { get; } = new();
     
@@ -30,10 +43,15 @@ public class MareaValidationReport
     public List<LegacyMuestra> Muestras { get; set; } = new();
     public List<LegacySubmuestra> Submuestras { get; set; } = new();
     public List<LegacyLg> Lgs { get; set; } = new();
+    public List<LegacyTracking> Tracking { get; set; } = new();
+    public List<LegacyProduccion> Produccion { get; set; } = new();
+    
+    public List<string> ArchivosProcesados { get; set; } = new();
     
     public int TotalLances { get; set; }
-    public int LancesConErrores => Issues.Count(i => i.Level == ValidationLevel.Error);
-    public int LancesConAdvertencias => Issues.Count(i => i.Level == ValidationLevel.Warning);
+    public int TotalErrors => Issues.Count(i => i.Level == ValidationLevel.Error || i.Level == ValidationLevel.Fatal);
+    public int TotalWarnings => Issues.Count(i => i.Level == ValidationLevel.Warning);
+    public int TotalAutoFixes => Issues.Count(i => i.Level == ValidationLevel.AutoFixed);
     
     public bool HasFatalErrors => Issues.Any(i => i.Level == ValidationLevel.Fatal);
 
