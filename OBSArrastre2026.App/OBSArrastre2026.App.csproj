@@ -24,6 +24,7 @@
     <None Update="Resources\Templates\*.docx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Remove="Resources\Templates\~$*.docx" />
   </ItemGroup>
 
   <ItemGroup>

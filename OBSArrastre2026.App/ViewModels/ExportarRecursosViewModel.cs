@@ -248,22 +248,30 @@ public class ExportarRecursosViewModel : ObservableObject
             docBytes = await _reportService.GenerateFullMareaReportWordAsync(_marea, _lances, allProduccion, summary);
         }
 
-        // Estructura: Inf_MAR_DIOYT_{AñoActual}_{ApellidoRevisor}{1InicialNombreRevisor}_{AñoMarea}_{NroMarea}_{CodigoBuque}
-        var settings = _userSettingsService.GetSettings();
-        string añoActual = DateTime.Now.Year.ToString();
-        
-        string apellido = (settings.RevisorApellido ?? "S_A").Replace(" ", "_");
-        string inicialNombre = !string.IsNullOrEmpty(settings.RevisorNombre) ? settings.RevisorNombre[0].ToString().ToUpper() : "";
-        
-        string añoMarea = _marea.AnioInidep.ToString();
-        string nroMarea = _marea.NumeroInidep.ToString("00");
-        
-        var meta = MareaMetadataHelper.GetMetadata(_marea);
-        string codigoBuque = meta.BuqueCodigo?.ToString() ?? "0";
+        string fileName;
+        if (useTemplate)
+        {
+            // Estructura oficial: Inf_MAR_DIOYT_{AñoActual}_{ApellidoRevisor}{1InicialNombreRevisor}_{AñoMarea}_{NroMarea}_{CodigoBuque}
+            var settings = _userSettingsService.GetSettings();
+            string añoActual = DateTime.Now.Year.ToString();
+            string apellido = (settings.RevisorApellido ?? "S_A").Replace(" ", "_");
+            string inicialNombre = !string.IsNullOrEmpty(settings.RevisorNombre) ? settings.RevisorNombre[0].ToString().ToUpper() : "";
+            string añoMarea = _marea.AnioInidep.ToString();
+            string nroMarea = _marea.NumeroInidep.ToString("00");
+            var meta = MareaMetadataHelper.GetMetadata(_marea);
+            string codigoBuque = meta.BuqueCodigo?.ToString() ?? "0";
 
-        string fileName = $"Inf_MAR_DIOYT_{añoActual}_{apellido}{inicialNombre}_{añoMarea}_{nroMarea}_{codigoBuque}.docx";
+            fileName = $"Inf_MAR_DIOYT_{añoActual}_{apellido}{inicialNombre}_{añoMarea}_{nroMarea}_{codigoBuque}.docx";
+        }
+        else
+        {
+            // Estructura estándar heredada: Informe_Marea_{nroMarea}{AñoMarea2Digitos}
+            string aa = (_marea.AnioInidep % 100).ToString("00");
+            string nn = _marea.NumeroInidep.ToString("00");
+            fileName = $"Informe_Marea_{nn}{aa}.docx";
+        }
+
         string filePath = Path.Combine(targetFolder, fileName);
-
         await File.WriteAllBytesAsync(filePath, docBytes);
 
     }
