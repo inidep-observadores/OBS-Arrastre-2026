@@ -55,9 +55,9 @@ public class MainWindowViewModel : ObservableObject
     private object? _currentEditViewModel;
     private object? _activeDialog;
     private ProcesosViewModel? _procesosVM;
-    
-    private const string RayaGenericVirtualId = "RAYA_GENERICA_GRUPO";
+    private ConfiguracionViewModel? _configuracionVM;
     private HashSet<string> _commonRayaIds = new();
+    private const string RayaGenericVirtualId = "RAYA_GENERICA_GRUPO";
     
     private bool IsRaya(Especie? e)
     {
@@ -307,7 +307,8 @@ public class MainWindowViewModel : ObservableObject
         IMareaSummaryService mareaSummaryService,
         IUserSettingsService userSettingsService,
         IDbfExporterService dbfExporterService,
-        IDbContextFactory<AppDbContext> dbContextFactory)
+        IDbContextFactory<AppDbContext> dbContextFactory,
+        ConfiguracionViewModel configuracionViewModel)
     {
         _mockShellDataService = mockShellDataService;
         _themeService = themeService;
@@ -333,6 +334,7 @@ public class MainWindowViewModel : ObservableObject
         _mareaSummaryService = mareaSummaryService;
         _userSettingsService = userSettingsService;
         _dbfExporterService = dbfExporterService;
+        _configuracionVM = configuracionViewModel;
 
         SearchPlaceholder = "Buscar...";
         SetSystemThemeCommand = new RelayCommand(() => ApplyTheme(AppThemeMode.System));
@@ -368,6 +370,8 @@ public class MainWindowViewModel : ObservableObject
 
         NavigationItems.Add(new NavigationItemViewModel(NavigationSection.Separator, "", "", ""));
         NavigationItems.Add(new NavigationItemViewModel(NavigationSection.Procesos, "Procesos", "Lanzador de procesos", "⚡", true));
+        NavigationItems.Add(new NavigationItemViewModel(NavigationSection.Separator, "", "", ""));
+        NavigationItems.Add(ConfiguracionNavigationItem);
 
         _procesosVM = new ProcesosViewModel(
             new AsyncRelayCommand(OpenGenerarRecursosInformeAsync),
@@ -433,6 +437,8 @@ public class MainWindowViewModel : ObservableObject
     public string SearchPlaceholder { get; }
 
     public ObservableCollection<NavigationItemViewModel> NavigationItems { get; } = [];
+
+    public NavigationItemViewModel ConfiguracionNavigationItem { get; } = new(NavigationSection.Configuracion, "Configuración", "Preferencias del sistema", "⚙", false);
 
     public ObservableCollection<string> ActiveFilters { get; } = [];
 
@@ -682,6 +688,12 @@ public class MainWindowViewModel : ObservableObject
     {
         get => _reemplazoEspecieVM;
         private set => SetProperty(ref _reemplazoEspecieVM, value);
+    }
+
+    public ConfiguracionViewModel? ConfiguracionVM
+    {
+        get => _configuracionVM;
+        private set => SetProperty(ref _configuracionVM, value);
     }
 
     public int? MareasFilterAnio
@@ -1257,6 +1269,16 @@ public class MainWindowViewModel : ObservableObject
             PageEyebrow = "Centro de control";
             PageTitle = "Procesos";
             PageDescription = "Panel centralizado para la ejecución de tareas de exportación y configuración masiva.";
+            PrimaryActionLabel = "";
+
+            return;
+        }
+
+        if (section == NavigationSection.Configuracion)
+        {
+            PageEyebrow = "Ajustes";
+            PageTitle = "Configuración";
+            PageDescription = "Preferencias de usuario y configuración del sistema.";
             PrimaryActionLabel = "";
 
             return;

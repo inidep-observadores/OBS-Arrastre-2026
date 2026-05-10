@@ -48,6 +48,10 @@
             <views:ProcesosView />
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type vm:ConfiguracionViewModel}">
+            <views:ConfiguracionView />
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:MareaListItemViewModel}">
             <!-- ... -->
             <Border Style="{StaticResource TableRowStyle}" Cursor="Hand">
@@ -435,9 +439,9 @@
                             </Grid>
                             <DataTemplate.Triggers>
                                 <DataTrigger Binding="{Binding Section}" Value="{x:Static models:NavigationSection.Separator}">
-                                    <Setter TargetName="IconText" Property="Visibility" Value="Collapsed" />
-                                    <Setter TargetName="TitleText" Property="Visibility" Value="Collapsed" />
-                                    <Setter TargetName="SeparatorLine" Property="Visibility" Value="Visible" />
+                                    <Setter TargetName="IconText" Value="Collapsed" Property="Visibility" />
+                                    <Setter TargetName="TitleText" Value="Collapsed" Property="Visibility" />
+                                    <Setter TargetName="SeparatorLine" Value="Visible" Property="Visibility" />
                                     <Setter TargetName="RootGrid" Property="MinHeight" Value="25" />
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding IsEnabled}" Value="False">
@@ -698,6 +702,20 @@
                                             <Setter Property="Visibility" Value="Collapsed" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Procesos}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ContentControl.Style>
+                                </ContentControl>
+
+                                <!-- Vista de Configuración -->
+                                <ContentControl Content="{Binding ConfiguracionVM}" Grid.RowSpan="4" Panel.ZIndex="10">
+                                    <ContentControl.Style>
+                                        <Style TargetType="ContentControl">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Configuracion}">
                                                     <Setter Property="Visibility" Value="Visible" />
                                                 </DataTrigger>
                                             </Style.Triggers>

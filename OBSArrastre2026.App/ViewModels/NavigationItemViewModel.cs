@@ -6,6 +6,7 @@ namespace OBSArrastre2026.App.ViewModels;
 public sealed class NavigationItemViewModel : ObservableObject
 {
     private bool _isEnabled = true;
+    private bool _isSelected;
 
     public NavigationItemViewModel(NavigationSection section, string title, string caption, string glyph, bool requiresActiveMarea = false)
     {
@@ -26,5 +27,11 @@ public sealed class NavigationItemViewModel : ObservableObject
     {
         get => _isEnabled;
         set => SetProperty(ref _isEnabled, value);
+    }
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set => SetProperty(ref _isSelected, value);
     }
 }
