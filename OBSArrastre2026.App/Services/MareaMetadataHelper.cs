@@ -27,6 +27,18 @@ public class MareaMetadata
 
     [JsonPropertyName("observador_codigo")]
     public int? ObservadorCodigo { get; set; }
+    
+    [JsonPropertyName("buque_eslora")]
+    public double? BuqueEslora { get; set; }
+
+    [JsonPropertyName("buque_potencia")]
+    public int? BuquePotencia { get; set; }
+
+    [JsonPropertyName("tipo_buque")]
+    public string? TipoBuque { get; set; }
+
+    [JsonPropertyName("pesqueria")]
+    public string? Pesqueria { get; set; }
 }
 
 public static class MareaMetadataHelper
@@ -69,13 +81,21 @@ public static class MareaMetadataHelper
         return GetMetadata(json).ImportFolder;
     }
 
-    public static string UpdateFromLegacyFields(string? existingJson, int? buqueCodigo, string? obsNombre, string? obsApellido, int? obsCodigo)
+    public static string UpdateFromLegacyFields(string? existingJson, 
+        int? buqueCodigo, string? obsNombre, string? obsApellido, int? obsCodigo,
+        double? eslora = null, int? potencia = null, string? tipoBuque = null, string? pesqueria = null)
     {
         var meta = GetMetadata(existingJson);
         meta.BuqueCodigo = buqueCodigo;
         meta.ObservadorNombre = obsNombre;
         meta.ObservadorApellido = obsApellido;
         meta.ObservadorCodigo = obsCodigo;
+        
+        if (eslora.HasValue) meta.BuqueEslora = eslora;
+        if (potencia.HasValue) meta.BuquePotencia = potencia;
+        if (!string.IsNullOrEmpty(tipoBuque)) meta.TipoBuque = tipoBuque;
+        if (!string.IsNullOrEmpty(pesqueria)) meta.Pesqueria = pesqueria;
+
         return SetMetadata(meta);
     }
 }

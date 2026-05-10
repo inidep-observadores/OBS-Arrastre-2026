@@ -245,7 +245,9 @@ public sealed class JsonImportService : IJsonImportService
                     Comentarios = mareaDto.Comentarios,
                     FechaInicio = mareaDto.FechaInicio,
                     FechaFin = mareaDto.FechaFin,
-                    Metadata = MareaMetadataHelper.UpdateFromLegacyFields(null, mareaDto.BuqueCodigo, mareaDto.ObservadorNombre, mareaDto.ObservadorApellido, mareaDto.ObservadorCodigo)
+                    Metadata = MareaMetadataHelper.UpdateFromLegacyFields(null, 
+                        mareaDto.BuqueCodigo, mareaDto.ObservadorNombre, mareaDto.ObservadorApellido, mareaDto.ObservadorCodigo,
+                        mareaDto.BuqueEslora, mareaDto.BuquePotencia, mareaDto.TipoBuque, mareaDto.Pesqueria)
                 };
 
                 foreach (var eDto in mareaDto.Etapas)
@@ -300,7 +302,9 @@ public sealed class JsonImportService : IJsonImportService
         marea.Comentarios = dto.Comentarios;
         marea.FechaInicio = dto.FechaInicio;
         marea.FechaFin = dto.FechaFin;
-        marea.Metadata = MareaMetadataHelper.UpdateFromLegacyFields(marea.Metadata, dto.BuqueCodigo, dto.ObservadorNombre, dto.ObservadorApellido, dto.ObservadorCodigo);
+        marea.Metadata = MareaMetadataHelper.UpdateFromLegacyFields(marea.Metadata, 
+            dto.BuqueCodigo, dto.ObservadorNombre, dto.ObservadorApellido, dto.ObservadorCodigo,
+            dto.BuqueEslora, dto.BuquePotencia, dto.TipoBuque, dto.Pesqueria);
 
         // Reemplazar etapas (Borrado físico seguido de inserción)
         context.MareaEtapas.RemoveRange(marea.Etapas);
@@ -335,6 +339,10 @@ public sealed class JsonImportService : IJsonImportService
         public string? ObservadorNombre { get; set; }
         public string? ObservadorApellido { get; set; }
         public int? ObservadorCodigo { get; set; }
+        public double? BuqueEslora { get; set; }
+        public int? BuquePotencia { get; set; }
+        public string? TipoBuque { get; set; }
+        public string? Pesqueria { get; set; }
         public List<PortableEtapaDto> Etapas { get; set; } = new();
     }
 

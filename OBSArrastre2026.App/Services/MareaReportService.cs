@@ -904,9 +904,15 @@ public class MareaReportService : IMareaReportService
         var meta = MareaMetadataHelper.GetMetadata(marea);
         doc.InsertParagraph($"Asistente Investigación Pesquera: {meta.ObservadorCodigo:N0}")
             .Font("Times New Roman").FontSize(14).Bold().SpacingAfter(12);
-        doc.InsertParagraph($"Nombre del Buque: {meta.BuqueCodigo:N0}. Eslora: — m. Potencia: — HP.")
+        
+        string eslora = meta.BuqueEslora.HasValue ? $"{meta.BuqueEslora:N2} m" : "— m";
+        string potencia = meta.BuquePotencia.HasValue ? $"{meta.BuquePotencia:N0} HP" : "— HP";
+        
+        doc.InsertParagraph($"Nombre del Buque: {meta.BuqueCodigo:N0}. Eslora: {eslora}. Potencia: {potencia}.")
             .Font("Times New Roman").FontSize(14).Bold().SpacingAfter(12);
-        doc.InsertParagraph("Tipo de buque: ")
+        
+        string tipoBuque = !string.IsNullOrEmpty(meta.TipoBuque) ? meta.TipoBuque : "—";
+        doc.InsertParagraph($"Tipo de buque: {tipoBuque}")
             .Font("Times New Roman").FontSize(14).Bold().SpacingAfter(15);
     }
 
