@@ -828,6 +828,11 @@ public class MareaReportService : IMareaReportService
                 doc.ReplaceText("{AñoMarea}", marea.AnioInidep.ToString());
                 doc.ReplaceText("{NroMarea}", marea.NumeroInidep.ToString("00"));
 
+                var meta = MareaMetadataHelper.GetMetadata(marea);
+                string palabrasClave = $"{meta.TipoBuque}, {meta.Pesqueria}".Trim(' ', ',');
+                if (string.IsNullOrWhiteSpace(palabrasClave)) palabrasClave = "—";
+                doc.ReplaceText("{PalabrasClave}", palabrasClave);
+
                 // 2. Reemplazo en Pies de Página (DocX requiere reemplazo explícito en cada sección de footer)
                 doc.Footers.Odd?.ReplaceText("{AñoMarea}", marea.AnioInidep.ToString());
                 doc.Footers.Odd?.ReplaceText("{NroMarea}", marea.NumeroInidep.ToString("00"));
@@ -942,23 +947,32 @@ public class MareaReportService : IMareaReportService
         }
         doc.InsertParagraph("No se realizó la tarea de registrar la captura incidental de aves y mamíferos marinos.")
             .Font("Times New Roman").FontSize(10);
-        doc.InsertParagraph("Aleteo de tiburones: No realizó.")
+        doc.InsertParagraph("Aleteo de tiburones: {Especificar}")
             .Font("Times New Roman").FontSize(10);
-        doc.InsertParagraph("Habitabilidad del buque: Buena")
+        doc.InsertParagraph("Habitabilidad del buque: {Especificar}")
             .Font("Times New Roman").FontSize(10).SpacingAfter(10);
 
         // Palabras clave
+        var metaKeys = MareaMetadataHelper.GetMetadata(marea);
+        string kw = $"{metaKeys.TipoBuque}, {metaKeys.Pesqueria}".Trim(' ', ',');
+        if (string.IsNullOrWhiteSpace(kw)) kw = "—";
+
         doc.InsertParagraph("Palabras Clave").Font("Times New Roman").FontSize(12).Bold().SpacingAfter(4);
-        doc.InsertParagraph("{PalabrasClave}").Font("Times New Roman").FontSize(12).SpacingAfter(15);
+        doc.InsertParagraph(kw).Font("Times New Roman").FontSize(12).SpacingAfter(15);
 
         // Descripción artes de pesca
         doc.InsertParagraph("Descripción artes de pesca").Font("Times New Roman").FontSize(14).Bold().SpacingAfter(6);
-        doc.InsertParagraph("Denominación y tipo: Red de arrastre de fondo.").Font("Times New Roman").FontSize(12).Italic();
-        doc.InsertParagraph("Características generales:").Font("Times New Roman").FontSize(12).Italic().SpacingAfter(40);
+        doc.InsertParagraph("Denominación y tipo:").Font("Times New Roman").FontSize(12).Italic();
+        
+        string artePesca = !string.IsNullOrEmpty(metaKeys.ArtePesca) ? metaKeys.ArtePesca : "—";
+        doc.InsertParagraph(artePesca).Font("Times New Roman").FontSize(12).SpacingAfter(10);
+        
+        doc.InsertParagraph("Características generales").Font("Times New Roman").FontSize(12).Italic();
+        doc.InsertParagraph("{Describir en base al Modeinfo}").Font("Times New Roman").FontSize(12).SpacingAfter(40);
 
         // Metodología
         doc.InsertParagraph("Metodología de captura, estimación y producción").Font("Times New Roman").FontSize(14).Bold().SpacingAfter(6);
-        doc.InsertParagraph().SpacingAfter(60);
+        doc.InsertParagraph("{Describir en base al Modeinfo}").Font("Times New Roman").FontSize(12).SpacingAfter(60);
 
         // Resultados
         doc.InsertParagraph("Resultados obtenidos").Font("Times New Roman").FontSize(14).Bold().SpacingAfter(10);

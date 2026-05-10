@@ -39,6 +39,9 @@ public class MareaMetadata
 
     [JsonPropertyName("pesqueria")]
     public string? Pesqueria { get; set; }
+
+    [JsonPropertyName("arte_pesca")]
+    public string? ArtePesca { get; set; }
 }
 
 public static class MareaMetadataHelper
@@ -83,7 +86,7 @@ public static class MareaMetadataHelper
 
     public static string UpdateFromLegacyFields(string? existingJson, 
         int? buqueCodigo, string? obsNombre, string? obsApellido, int? obsCodigo,
-        double? eslora = null, int? potencia = null, string? tipoBuque = null, string? pesqueria = null)
+        double? eslora = null, int? potencia = null, string? tipoBuque = null, string? pesqueria = null, string? artePesca = null)
     {
         var meta = GetMetadata(existingJson);
         meta.BuqueCodigo = buqueCodigo;
@@ -95,6 +98,7 @@ public static class MareaMetadataHelper
         if (potencia.HasValue) meta.BuquePotencia = potencia;
         if (!string.IsNullOrEmpty(tipoBuque)) meta.TipoBuque = tipoBuque;
         if (!string.IsNullOrEmpty(pesqueria)) meta.Pesqueria = pesqueria;
+        if (!string.IsNullOrEmpty(artePesca)) meta.ArtePesca = artePesca;
 
         return SetMetadata(meta);
     }

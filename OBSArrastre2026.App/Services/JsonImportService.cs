@@ -247,7 +247,7 @@ public sealed class JsonImportService : IJsonImportService
                     FechaFin = mareaDto.FechaFin,
                     Metadata = MareaMetadataHelper.UpdateFromLegacyFields(null, 
                         mareaDto.BuqueCodigo, mareaDto.ObservadorNombre, mareaDto.ObservadorApellido, mareaDto.ObservadorCodigo,
-                        mareaDto.BuqueEslora, mareaDto.BuquePotencia, mareaDto.TipoBuque, mareaDto.Pesqueria)
+                        mareaDto.BuqueEslora, mareaDto.BuquePotencia, mareaDto.TipoBuque, mareaDto.Pesqueria, mareaDto.ArtePesca)
                 };
 
                 foreach (var eDto in mareaDto.Etapas)
@@ -304,7 +304,7 @@ public sealed class JsonImportService : IJsonImportService
         marea.FechaFin = dto.FechaFin;
         marea.Metadata = MareaMetadataHelper.UpdateFromLegacyFields(marea.Metadata, 
             dto.BuqueCodigo, dto.ObservadorNombre, dto.ObservadorApellido, dto.ObservadorCodigo,
-            dto.BuqueEslora, dto.BuquePotencia, dto.TipoBuque, dto.Pesqueria);
+            dto.BuqueEslora, dto.BuquePotencia, dto.TipoBuque, dto.Pesqueria, dto.ArtePesca);
 
         // Reemplazar etapas (Borrado físico seguido de inserción)
         context.MareaEtapas.RemoveRange(marea.Etapas);
@@ -343,6 +343,7 @@ public sealed class JsonImportService : IJsonImportService
         public int? BuquePotencia { get; set; }
         public string? TipoBuque { get; set; }
         public string? Pesqueria { get; set; }
+        public string? ArtePesca { get; set; }
         public List<PortableEtapaDto> Etapas { get; set; } = new();
     }
 
