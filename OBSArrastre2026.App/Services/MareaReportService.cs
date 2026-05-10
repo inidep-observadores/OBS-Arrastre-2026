@@ -880,21 +880,14 @@ public class MareaReportService : IMareaReportService
                 doc.ReplaceText("NroMarea", marea.NumeroInidep.ToString("00"));
 
                 // 2. Reemplazo en Pies de Página
-                foreach (var footer in doc.Footers.Odd)
-                {
-                    footer.ReplaceText("AñoMareaPie", marea.AnioInidep.ToString());
-                    footer.ReplaceText("NroMareaPie", marea.NumeroInidep.ToString("00"));
-                }
-                foreach (var footer in doc.Footers.Even)
-                {
-                    footer.ReplaceText("AñoMareaPie", marea.AnioInidep.ToString());
-                    footer.ReplaceText("NroMareaPie", marea.NumeroInidep.ToString("00"));
-                }
-                foreach (var footer in doc.Footers.First)
-                {
-                    footer.ReplaceText("AñoMareaPie", marea.AnioInidep.ToString());
-                    footer.ReplaceText("NroMareaPie", marea.NumeroInidep.ToString("00"));
-                }
+                doc.Footers.Odd?.ReplaceText("AñoMareaPie", marea.AnioInidep.ToString());
+                doc.Footers.Odd?.ReplaceText("NroMareaPie", marea.NumeroInidep.ToString("00"));
+                
+                doc.Footers.Even?.ReplaceText("AñoMareaPie", marea.AnioInidep.ToString());
+                doc.Footers.Even?.ReplaceText("NroMareaPie", marea.NumeroInidep.ToString("00"));
+                
+                doc.Footers.First?.ReplaceText("AñoMareaPie", marea.AnioInidep.ToString());
+                doc.Footers.First?.ReplaceText("NroMareaPie", marea.NumeroInidep.ToString("00"));
 
                 // 3. Volcado de contenido técnico
                 await PopulateMareaReportContentAsync(doc, marea, lances, produccion, summary);
@@ -1007,14 +1000,7 @@ public class MareaReportService : IMareaReportService
                     doc.InsertParagraph("Distribución de frecuencias de longitudes").Font("Times New Roman").FontSize(14).Bold().SpacingBefore(10).SpacingAfter(6);
                     await InsertFrequenciesSectionAsync(doc, etapaLances);
 
-                    if (i < etapas.Count - 1)
-                        doc.InsertParagraph().InsertPageBreakAfterSelf();
-                }
-
-                doc.Save();
-                return ms.ToArray();
-            }
-        });
+        }
     }
 
     private void InsertSpeciesTable(DocX doc, List<Lance> lances)
