@@ -5,7 +5,7 @@ echo ======================================================
 
 echo 1. Publicando aplicacion (Auto-contenida)...
 if exist setup\publish rmdir /s /q setup\publish
-dotnet publish OBSArrastre2026.App\OBSArrastre2026.App.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true -o setup\publish
+dotnet publish OBSArrastre2026.App\OBSArrastre2026.App.csproj -c Release -r win-x64 --self-contained true -o setup\publish
 
 echo 2. Compilando instalador con NSIS...
 :: Intentar encontrar makensis en rutas comunes y en la version portable indicada
@@ -14,7 +14,9 @@ if exist "D:\Portables\PortableApps\NSISPortable\App\NSIS\Bin\makensis.exe" set 
 if exist "C:\Program Files (x86)\NSIS\makensis.exe" set MAKENSIS="C:\Program Files (x86)\NSIS\makensis.exe"
 if exist "C:\Program Files\NSIS\makensis.exe" set MAKENSIS="C:\Program Files\NSIS\makensis.exe"
 
-%MAKENSIS% setup\installer.nsi
+pushd setup
+%MAKENSIS% installer.nsi
+popd
 
 if %ERRORLEVEL% EQU 0 (
     echo ======================================================
