@@ -1639,7 +1639,7 @@ public class MareaReportService : IMareaReportService
                     // Recuadro de información principal
                     col.Item().Border(1).Padding(20).Column(inner =>
                     {
-                        inner.Item().AlignCenter().Text("Recibí del Proyecto Observadores").FontSize(16).SemiBold().FontColor(Colors.Blue.Darken3);
+                        inner.Item().AlignCenter().Text("Recibí del Proyecto Observadores").FontSize(16).SemiBold();
                         inner.Item().PaddingTop(15).Row(row =>
                         {
                             row.RelativeItem().Column(c =>
@@ -1669,27 +1669,50 @@ public class MareaReportService : IMareaReportService
                         });
                     });
 
-                    // Listado de lances por especie
-                    col.Item().PaddingTop(30).Row(row =>
+                    // Listado de lances por especie en formato tabla
+                    col.Item().PaddingTop(30).Table(table =>
                     {
-                        row.RelativeItem(2).Text("ESPECIE").SemiBold().Underline();
-                        row.RelativeItem(3).Text("LANCES").SemiBold().Underline();
-                    });
-
-                    foreach (var especie in report.Especies)
-                    {
-                        col.Item().PaddingTop(10).Row(row =>
+                        table.ColumnsDefinition(columns =>
                         {
-                            row.RelativeItem(2).Text(especie.NombreEspecie).Italic();
-                            row.RelativeItem(3).Column(lCol =>
-                            {
-                                foreach (var lance in especie.Lances)
-                                {
-                                    lCol.Item().Text($"{lance.NroLance} [ {lance.Area} ]");
-                                }
-                            });
+                            columns.RelativeColumn(6); // Especie (más peso)
+                            columns.RelativeColumn(2); // Nro. de lance
+                            columns.RelativeColumn(2); // Área
                         });
-                    }
+
+                        table.Header(header =>
+                        {
+                            header.Cell().Text("ESPECIE").SemiBold().Underline();
+                            header.Cell().AlignCenter().Text("Nro. de lance").SemiBold().Underline();
+                            header.Cell().AlignCenter().Text("Área").SemiBold().Underline();
+                        });
+
+                        foreach (var especie in report.Especies)
+                        {
+                            bool isFirst = true;
+                            foreach (var lance in especie.Lances)
+                            {
+                                var cellEspecie = table.Cell().PaddingTop(5);
+                                if (isFirst)
+                                {
+                                    cellEspecie.Text(t => 
+                                    {
+                                        t.Span(especie.NombreEspecie);
+                                        if (!string.IsNullOrEmpty(especie.NombreCientifico))
+                                        {
+                                            t.Span($" ({especie.NombreCientifico})").Italic();
+                                        }
+                                    });
+                                }
+
+                                table.Cell().PaddingTop(5).AlignCenter().Text(lance.NroLance.ToString());
+                                table.Cell().PaddingTop(5).AlignCenter().Text(lance.Area?.ToString() ?? "-");
+                                isFirst = false;
+                            }
+                            
+                            // Línea divisoria entre especies para mejorar la claridad
+                            table.Cell().ColumnSpan(3).PaddingVertical(5).LineHorizontal(0.5f).LineColor(QuestPDF.Helpers.Colors.Grey.Lighten3);
+                        }
+                    });
 
                     // Firma y Fecha
                     col.Item().PaddingTop(60).AlignRight().Column(fCol =>
