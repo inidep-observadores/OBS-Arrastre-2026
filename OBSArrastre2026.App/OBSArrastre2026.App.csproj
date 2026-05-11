@@ -20,7 +20,8 @@
     <None Update="assets\geojson\*.geojson">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Data\Import\Raw\*.DBF">
+    <None Include="..\source_data\*.DBF">
+      <Link>source_data\%(FileName)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Resources\Templates\*.docx">

@@ -15,13 +15,16 @@ public sealed class DataSyncCoordinator : IDataSyncCoordinator
         _dbfExtractor = dbfExtractor;
         _jsonImporter = jsonImporter;
 
-        var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+        // Las carpetas de TRABAJO (donde escribimos) deben estar en LocalAppData para evitar errores de permisos en Program Files
+        var userAppData = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "ControlDeMareas", // Coincide con el nombre de la carpeta de la base de datos
+            "Import");
 
-        // Rutas locales de la aplicación
-        _rawPath = Path.Combine(baseDir, "Data", "Import", "Raw");
-        _stagingPath = Path.Combine(baseDir, "Data", "Import", "Staging");
+        _rawPath = Path.Combine(userAppData, "Raw");
+        _stagingPath = Path.Combine(userAppData, "Staging");
 
-        // Asegurar directorios locales
+        // Asegurar directorios de trabajo
         Directory.CreateDirectory(_rawPath);
         Directory.CreateDirectory(_stagingPath);
     }
