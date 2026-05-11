@@ -205,4 +205,34 @@ public static class LegacyDecoder
         string s = $"{Math.Min(mm, 999):D3}{Math.Min(hm, 999):D3}{Math.Min(hi, 999):D3}";
         return double.Parse(s);
     }
+
+    /// <summary>
+    /// Calcula el área estadística (cuadrícula + cuadrante decimal) a partir de coordenadas.
+    /// Formato: (LatAbs * 100 + LonAbs) + .Cuadrante
+    /// Cuadrantes: NO=1, NE=2, SO=3, SE=4
+    /// </summary>
+    public static double CalculateGridArea(double lat, double lon)
+    {
+        double latAbs = Math.Abs(lat);
+        double lonAbs = Math.Abs(lon);
+
+        // Parte entera: Lat * 100 + Lon
+        int baseCuad = ((int)Math.Truncate(latAbs) * 100) + (int)Math.Truncate(lonAbs);
+
+        // Cuadrante decimal (30' x 30')
+        double latDec = latAbs - Math.Truncate(latAbs);
+        double lonDec = lonAbs - Math.Truncate(lonAbs);
+
+        int cuadrante = 0;
+        if (latDec < 0.5) // Norte
+        {
+            cuadrante = (lonDec >= 0.5) ? 1 : 2; // Oeste (1) o Este (2)
+        }
+        else // Sur
+        {
+            cuadrante = (lonDec >= 0.5) ? 3 : 4; // Oeste (3) o Este (4)
+        }
+
+        return baseCuad + (cuadrante / 10.0);
+    }
 }

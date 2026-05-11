@@ -473,10 +473,12 @@ public class MareaImportService : IMareaImportService
                         EspecieOriginal = rm.Especie,
                         Fuente = rm.Fuente,
                         Tarte = rm.Tarte,
-                        Area = rm.Area,
                         FactPond = rm.FactPond,
                         PrimTalla = rm.PrimTalla,
                         UltTalla = rm.UltTalla,
+                        Area = (rm.Area == null || rm.Area <= 0) && lance.LatitudInicioDecimal.HasValue && lance.LongitudInicioDecimal.HasValue
+                            ? LegacyDecoder.CalculateGridArea(lance.LatitudInicioDecimal.Value, lance.LongitudInicioDecimal.Value)
+                            : rm.Area,
                         PesoMuestra_PesoGramos = rm.PesoMues * 1000.0
                     };
 

@@ -23,6 +23,7 @@ public interface IMareaReportService
     Task<byte[]> GenerateMareaSummaryWordAsync(MareaSummaryReport report);
     Task<byte[]> GenerateFullMareaReportWordAsync(Marea marea, List<Lance> lances, List<RegistroProduccion> produccion, MareaSummaryReport summary);
     Task<byte[]> GenerateMareaReportTemplateAsync(Marea marea, List<Lance> lances, List<RegistroProduccion> produccion, MareaSummaryReport summary);
+    Task<byte[]> GenerateRecibiProyectoPdfAsync(RecibiProyectoReport report);
 }
 
 public class MareaReportService : IMareaReportService
@@ -1614,5 +1615,99 @@ public class MareaReportService : IMareaReportService
     private string FormatVal(double val)
     {
         return val % 1 == 0 ? val.ToString("N0") : val.ToString("N2");
+    }
+
+    public async Task<byte[]> GenerateRecibiProyectoPdfAsync(RecibiProyectoReport report)
+    {
+        return await Task.Run(() => QuestPDF.Fluent.Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(1.5f, Unit.Centimetre);
+                page.PageColor(Colors.White);
+                page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.Verdana));
+
+                page.Header().Column(col =>
+                {
+                    col.Item().AlignCenter().Text("INSTITUTO NACIONAL DE INVESTIGACIÓN Y DESARROLLO PESQUERO").FontSize(12).SemiBold();
+                    col.Item().PaddingTop(5).LineHorizontal(1).LineColor(Colors.Black);
+                });
+
+                page.Content().PaddingVertical(20).Column(col =>
+                {
+                    // Recuadro de información principal
+                    col.Item().Border(1).Padding(20).Column(inner =>
+                    {
+                        inner.Item().AlignCenter().Text("Recibí del Proyecto Observadores").FontSize(16).SemiBold().FontColor(Colors.Blue.Darken3);
+                        inner.Item().PaddingTop(15).Row(row =>
+                        {
+                            row.RelativeItem().Column(c =>
+                            {
+                                c.Item().Text(t => { t.Span("Sobres con otolitos: ").SemiBold(); t.Span(report.Otolitos); });
+                                c.Item().Text(t => { t.Span("Escamas: ").SemiBold(); t.Span(report.Escamas); });
+                                c.Item().Text(t => { t.Span("Gónadas: ").SemiBold(); t.Span(report.Gonadas); });
+                            });
+                        });
+
+                        inner.Item().PaddingTop(20).Text("Correspondiente a:").Underline().SemiBold();
+
+                        inner.Item().PaddingTop(10).Row(row =>
+                        {
+                            row.ConstantItem(100).Text("Buque:").SemiBold();
+                            row.RelativeItem().Text(report.BuqueNombre).FontSize(12).Bold();
+                        });
+                        inner.Item().Row(row =>
+                        {
+                            row.ConstantItem(100).Text("Marea:").SemiBold();
+                            row.RelativeItem().Text($"{report.MareaNumero}/{report.MareaAnio}");
+                        });
+                        inner.Item().Row(row =>
+                        {
+                            row.ConstantItem(100).Text("Observador:").SemiBold();
+                            row.RelativeItem().Text(report.ObservadorNombreCompleto).Bold();
+                        });
+                    });
+
+                    // Listado de lances por especie
+                    col.Item().PaddingTop(30).Row(row =>
+                    {
+                        row.RelativeItem(2).Text("ESPECIE").SemiBold().Underline();
+                        row.RelativeItem(3).Text("LANCES").SemiBold().Underline();
+                    });
+
+                    foreach (var especie in report.Especies)
+                    {
+                        col.Item().PaddingTop(10).Row(row =>
+                        {
+                            row.RelativeItem(2).Text(especie.NombreEspecie).Italic();
+                            row.RelativeItem(3).Column(lCol =>
+                            {
+                                foreach (var lance in especie.Lances)
+                                {
+                                    lCol.Item().Text($"{lance.NroLance} [ {lance.Area} ]");
+                                }
+                            });
+                        });
+                    }
+
+                    // Firma y Fecha
+                    col.Item().PaddingTop(60).AlignRight().Column(fCol =>
+                    {
+                        fCol.Item().Width(200).LineHorizontal(1);
+                        fCol.Item().PaddingTop(5).AlignCenter().Text("Firma y aclaración").FontSize(9);
+                        fCol.Item().PaddingTop(10).AlignCenter().Text(t => { t.Span("Fecha: ").SemiBold(); t.Span(report.FechaGeneracion.ToString("dd/MM/yy")); });
+                    });
+                });
+
+                page.Footer().AlignCenter().Text(x =>
+                {
+                    x.Span("Página ");
+                    x.CurrentPageNumber();
+                    x.Span(" de ");
+                    x.TotalPages();
+                });
+            });
+        }).GeneratePdf());
     }
 }

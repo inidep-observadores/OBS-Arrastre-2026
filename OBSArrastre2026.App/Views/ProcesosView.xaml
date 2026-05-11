@@ -107,6 +107,24 @@
                                 </Border>
                             </StackPanel>
                         </Border>
+                        <!-- Tarjeta: Reporte de Submuestras (Recibí Proyecto) -->
+                        <Border Style="{StaticResource ProcessCardStyle}">
+                            <Border.InputBindings>
+                                <MouseBinding MouseAction="LeftClick" Command="{Binding GenerarRecibiCommand}" />
+                            </Border.InputBindings>
+                            <StackPanel>
+                                <Border Style="{StaticResource IconBorderStyle}" Background="#F3E5F5">
+                                    <TextBlock Text="📄" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <TextBlock Text="Recibo de Otolitos" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,0,8" />
+                                <TextBlock Text="Genera el reporte PDF de submuestras (otolitos, escamas, gónadas) para el proyecto de observadores." 
+                                           FontSize="14" Foreground="{DynamicResource SecondaryTextBrush}" TextWrapping="Wrap" LineHeight="20" />
+                                
+                                <Border Margin="0,24,0,0" Padding="0,12,0,0" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,1,0,0">
+                                    <TextBlock Text="Generar PDF →" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" FontSize="13" />
+                                </Border>
+                            </StackPanel>
+                        </Border>
                     </UniformGrid>
                 </StackPanel>
                 

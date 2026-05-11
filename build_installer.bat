@@ -4,7 +4,8 @@ echo Generando Instalador para Control de mareas
 echo ======================================================
 
 echo 1. Publicando aplicacion (Auto-contenida)...
-dotnet publish OBSArrastre2026.App\OBSArrastre2026.App.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -p:PublishReadyToRun=true -o setup\publish
+if exist setup\publish rmdir /s /q setup\publish
+dotnet publish OBSArrastre2026.App\OBSArrastre2026.App.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true -o setup\publish
 
 echo 2. Compilando instalador con NSIS...
 :: Intentar encontrar makensis en rutas comunes y en la version portable indicada

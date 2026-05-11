@@ -4,6 +4,7 @@
              xmlns:vm="clr-namespace:OBSArrastre2026.App.ViewModels"
              xmlns:conv="clr-namespace:OBSArrastre2026.App.Converters"
              xmlns:models="clr-namespace:OBSArrastre2026.App.Models"
+             xmlns:views="clr-namespace:OBSArrastre2026.App.Views"
              xmlns:system="clr-namespace:System;assembly=mscorlib">
     <Application.Resources>
         <!-- Plantilla Global para Buques: Asegura que siempre se vea el Nombre -->
@@ -638,6 +639,10 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <DataTemplate DataType="{x:Type vm:RecibiProyectoSelectionViewModel}">
+            <views:RecibiProyectoSelectionView />
+        </DataTemplate>
+
         <!-- Diálogo de Mensajes Premium -->
         <DataTemplate DataType="{x:Type vm:MessageDialogViewModel}">
             <Border Width="450" 

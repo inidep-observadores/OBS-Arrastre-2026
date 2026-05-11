@@ -375,6 +375,7 @@ public class MainWindowViewModel : ObservableObject
 
         _procesosVM = new ProcesosViewModel(
             new AsyncRelayCommand(OpenGenerarRecursosInformeAsync),
+            new AsyncRelayCommand(OpenGenerarRecibiPdfAsync),
             new AsyncRelayCommand(OpenExportarDbfAsync),
             new AsyncRelayCommand(OpenConfigurarUnidadDescarteAsync)
         );
@@ -1010,6 +1011,77 @@ public class MainWindowViewModel : ObservableObject
                     ShowMessage("Error", $"No se pudo abrir la carpeta: {ex.Message}", null, MessageDialogType.Error);
                 }
             }
+        }
+    }
+
+    private async Task OpenGenerarRecibiPdfAsync()
+    {
+        var activeMareaId = _activeMareaManager.ActiveMareaId;
+        if (string.IsNullOrEmpty(activeMareaId))
+        {
+            ShowMessage("Sin marea activa", "Debe seleccionar una marea activa para realizar esta acción.", null, MessageDialogType.Warning);
+            return;
+        }
+
+        try
+        {
+            // 1. Obtener los datos base del reporte (todas las especies con submuestra)
+            var reportData = await _mareaSummaryService.GetRecibiProyectoReportAsync(activeMareaId);
+            
+            if (reportData.Especies == null || !reportData.Especies.Any())
+            {
+                ShowMessage("Sin datos", "No se encontraron especies con submuestras para esta marea.", null, MessageDialogType.Info);
+                return;
+            }
+
+            // 2. Mostrar el diálogo de selección
+            var selectionVm = new RecibiProyectoSelectionViewModel(reportData.Especies);
+            ActiveDialog = selectionVm;
+
+            // 3. Esperar a que el usuario confirme o cancele
+            var selectedEspecies = await selectionVm.SelectionTask;
+            ActiveDialog = null;
+
+            // 4. Si el usuario confirmó (no es null) y hay especies seleccionadas
+            if (selectedEspecies != null)
+            {
+                if (!selectedEspecies.Any())
+                {
+                    ShowMessage("Selección vacía", "Debe seleccionar al menos una especie para generar el reporte.", null, MessageDialogType.Warning);
+                    return;
+                }
+
+                // Actualizar los datos del reporte con la selección filtrada
+                reportData.Especies = selectedEspecies;
+
+                var pdfBytes = await _reportService.GenerateRecibiProyectoPdfAsync(reportData);
+
+                string fileName = $"Recibi_{reportData.BuqueNombre.Replace(" ", "_")}_{reportData.MareaNumero}_{reportData.MareaAnio}.pdf";
+                string importFolder = MareaMetadataHelper.GetImportFolder(_activeMareaManager.ActiveMarea!.Metadata);
+                string savePath;
+
+                if (!string.IsNullOrEmpty(importFolder))
+                {
+                    savePath = Path.Combine(importFolder, "reportes", fileName);
+                    Directory.CreateDirectory(Path.GetDirectoryName(savePath)!);
+                }
+                else
+                {
+                    savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), fileName);
+                }
+
+                await File.WriteAllBytesAsync(savePath, pdfBytes);
+
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = savePath,
+                    UseShellExecute = true
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("Error", "No se pudo generar el reporte PDF.", ex.Message, MessageDialogType.Error);
         }
     }
 

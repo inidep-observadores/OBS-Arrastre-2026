@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using OBSArrastre2026.App.Services.Internal;
 using OBSArrastre2026.App.Data;
 using OBSArrastre2026.App.Data.Entities;
 using OBSArrastre2026.App.Models.Reports;
@@ -375,11 +376,68 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
         if (!lance.LatitudInicioDecimal.HasValue || !lance.LongitudInicioDecimal.HasValue) 
             return "S/D";
 
-        double lat = Math.Abs(lance.LatitudInicioDecimal.Value);
-        double lon = Math.Abs(lance.LongitudInicioDecimal.Value);
+        double area = LegacyDecoder.CalculateGridArea(lance.LatitudInicioDecimal.Value, lance.LongitudInicioDecimal.Value);
+        return area.ToString("F1").Replace('.', ',');
+    }
 
-        int cuad = ((int)Math.Truncate(lat) * 100) + (int)Math.Truncate(lon);
-        return cuad.ToString();
+    public async Task<RecibiProyectoReport> GetRecibiProyectoReportAsync(string mareaId)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+
+        var marea = await dbContext.Mareas
+            .Include(m => m.Buque)
+            .Include(m => m.Etapas)
+            .FirstOrDefaultAsync(m => m.ID == mareaId);
+
+        if (marea == null) throw new Exception("Marea no encontrada");
+
+        var meta = MareaMetadataHelper.GetMetadata(marea);
+
+        var report = new RecibiProyectoReport
+        {
+            BuqueNombre = marea.Buque?.Nombre ?? "Sin Buque",
+            MareaNumero = marea.NumeroInidep.ToString(),
+            MareaAnio = marea.AnioInidep,
+            ObservadorNombreCompleto = $"{(meta.ObservadorApellido ?? "").ToUpper()}, {meta.ObservadorNombre ?? ""}".Trim(',', ' '),
+            FechaGeneracion = DateTime.Now,
+            Otolitos = "S",
+            Escamas = "N",
+            Gonadas = "N"
+        };
+
+        var stageIds = marea.Etapas.Select(e => e.ID).ToList();
+
+        var submuestras = await dbContext.ItemsSubmuestras
+            .Include(s => s.Muestra).ThenInclude(m => m.Lance)
+            .Include(s => s.Muestra).ThenInclude(m => m.Especie)
+            .Where(s => stageIds.Contains(s.Muestra.Lance.MareaEtapaId))
+            .ToListAsync();
+
+        if (submuestras.Any())
+        {
+            // Agrupar por especie
+            var groupedBySpecies = submuestras
+                .GroupBy(s => s.Muestra!.EspecieID)
+                .Select(g => new RecibiProyectoEspecieItem
+                {
+                    NombreEspecie = g.First().Muestra!.Especie?.NombreVulgar ?? g.First().Muestra!.Especie?.NombreCientifico ?? g.First().Muestra!.EspecieOriginal ?? "Desconocida",
+                    NombreCientifico = g.First().Muestra!.Especie?.NombreCientifico ?? string.Empty,
+                    Lances = g.GroupBy(s => s.Muestra!.Lance!.NroLance)
+                              .Select(gl => new RecibiProyectoLanceItem
+                              {
+                                  NroLance = gl.Key,
+                                  Area = gl.First().Muestra!.Area?.ToString("F1") ?? GetCuadricula(gl.First().Muestra!.Lance!)
+                              })
+                              .OrderBy(l => l.NroLance)
+                              .ToList()
+                })
+                .OrderBy(e => e.NombreEspecie)
+                .ToList();
+
+            report.Especies = groupedBySpecies;
+        }
+
+        return report;
     }
 
     private int GetSpeciesCutoff(string? codigoInidep)

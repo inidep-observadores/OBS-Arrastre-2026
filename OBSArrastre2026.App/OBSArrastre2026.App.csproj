@@ -9,6 +9,11 @@
     <ApplicationIcon>assets\icons\app_icon.ico</ApplicationIcon>
     <AssemblyName>ControlDeMareas</AssemblyName>
     <Product>Control de mareas</Product>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishSelfContained>true</PublishSelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
 
   <ItemGroup>
