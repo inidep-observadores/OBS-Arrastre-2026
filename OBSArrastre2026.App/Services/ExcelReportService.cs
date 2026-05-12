@@ -192,7 +192,11 @@ namespace OBSArrastre2026.App.Services
                     .OrderBy(f => f.Talla)
                     .ToList();
 
-                double totalIndividuosMuestra = frecuenciasAgrupadas.Sum(f => (double)f.Total);
+                double totalMachos = frecuenciasAgrupadas.Sum(f => (double)f.Machos);
+                double totalHembras = frecuenciasAgrupadas.Sum(f => (double)f.Hembras);
+                double totalIndet = frecuenciasAgrupadas.Sum(f => (double)f.Indet);
+                double totalGeneral = frecuenciasAgrupadas.Sum(f => (double)f.Total);
+
                 var chartPoints = new List<(double Talla, double Machos, double Hembras, double Indet, double Total)>();
 
                 int row = 4;
@@ -218,33 +222,22 @@ namespace OBSArrastre2026.App.Services
                     worksheet.Cell(row, col++).Value = f.Total;
 
                     // Columnas de porcentaje
-                    double pMachos = 0, pHembras = 0, pIndet = 0, pTotal = 0;
-                    if (totalIndividuosMuestra > 0)
-                    {
-                        pMachos = (f.Machos * 100.0) / totalIndividuosMuestra;
-                        pHembras = (f.Hembras * 100.0) / totalIndividuosMuestra;
-                        pIndet = (f.Indet * 100.0) / totalIndividuosMuestra;
-                        pTotal = (f.Total * 100.0) / totalIndividuosMuestra;
+                    double pMachos = totalMachos > 0 ? (f.Machos * 100.0) / totalMachos : 0;
+                    double pHembras = totalHembras > 0 ? (f.Hembras * 100.0) / totalHembras : 0;
+                    double pIndet = totalIndet > 0 ? (f.Indet * 100.0) / totalIndet : 0;
+                    double pTotal = totalGeneral > 0 ? (f.Total * 100.0) / totalGeneral : 0;
 
-                        worksheet.Cell(row, col).Value = pMachos;
-                        worksheet.Cell(row, col++).Style.NumberFormat.Format = "0.00";
+                    worksheet.Cell(row, col).Value = pMachos;
+                    worksheet.Cell(row, col++).Style.NumberFormat.Format = "0.00";
 
-                        worksheet.Cell(row, col).Value = pHembras;
-                        worksheet.Cell(row, col++).Style.NumberFormat.Format = "0.00";
+                    worksheet.Cell(row, col).Value = pHembras;
+                    worksheet.Cell(row, col++).Style.NumberFormat.Format = "0.00";
 
-                        worksheet.Cell(row, col).Value = pIndet;
-                        worksheet.Cell(row, col++).Style.NumberFormat.Format = "0.00";
+                    worksheet.Cell(row, col).Value = pIndet;
+                    worksheet.Cell(row, col++).Style.NumberFormat.Format = "0.00";
 
-                        worksheet.Cell(row, col).Value = pTotal;
-                        worksheet.Cell(row, col++).Style.NumberFormat.Format = "0.00";
-                    }
-                    else
-                    {
-                        worksheet.Cell(row, col++).Value = 0;
-                        worksheet.Cell(row, col++).Value = 0;
-                        worksheet.Cell(row, col++).Value = 0;
-                        worksheet.Cell(row, col++).Value = 0;
-                    }
+                    worksheet.Cell(row, col).Value = pTotal;
+                    worksheet.Cell(row, col++).Style.NumberFormat.Format = "0.00";
 
                     chartPoints.Add((f.Talla, pMachos, pHembras, pIndet, pTotal));
                     row++;
