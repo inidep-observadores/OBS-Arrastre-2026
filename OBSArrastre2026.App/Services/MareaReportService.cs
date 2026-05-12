@@ -1109,9 +1109,7 @@ public class MareaReportService : IMareaReportService
         SetT(3, totalK > 0 ? FormatVal(totalD * 100.0 / totalK) : "0");
         SetT(4, lances.Count.ToString());
         SetT(5, lances.Select(l => l.Fecha).Distinct().Count().ToString());
-
-        SetT(5, lances.Select(l => l.Fecha).Distinct().Count().ToString());
-
+    
         doc.InsertTable(table);
     }
 
@@ -1198,7 +1196,7 @@ public class MareaReportService : IMareaReportService
         table.Alignment = Alignment.center;
         table.Design = TableDesign.TableGrid;
         table.AutoFit = AutoFit.Window;
-        table.SetWidthsPercentage(new float[] { 38, 22, 20, 12, 8 }, null);
+        table.SetWidthsPercentage(new float[] { 34, 38, 8, 12, 8 }, null);
 
         string[] headers = { "Especie", "Producto", "Categoría", "Kilos", "Factor" };
         for (int i = 0; i < headers.Length; i++)
@@ -1268,15 +1266,19 @@ public class MareaReportService : IMareaReportService
                     .OrderBy(pts => pts.Talla)
                     .ToList();
 
-                double totalN = statsPoints.Sum(p => (double)p.Total);
-                if (totalN > 0)
+                double totalM = statsPoints.Sum(p => (double)p.Machos);
+                double totalH = statsPoints.Sum(p => (double)p.Hembras);
+                double totalI = statsPoints.Sum(p => (double)p.Indet);
+                double totalT = statsPoints.Sum(p => (double)p.Total);
+
+                if (totalT > 0)
                 {
                     var chartData = statsPoints.Select(p => (
                         Talla: p.Talla,
-                        Machos: (p.Machos * 100.0 / totalN),
-                        Hembras: (p.Hembras * 100.0 / totalN),
-                        Indet: (p.Indet * 100.0 / totalN),
-                        Total: (p.Total * 100.0 / totalN)
+                        Machos: (totalM > 0 ? p.Machos * 100.0 / totalM : 0),
+                        Hembras: (totalH > 0 ? p.Hembras * 100.0 / totalH : 0),
+                        Indet: (totalI > 0 ? p.Indet * 100.0 / totalI : 0),
+                        Total: (totalT > 0 ? p.Total * 100.0 / totalT : 0)
                     )).ToList();
 
                     var chartBytes = RenderFrequencyChart(chartData, cutoff, especie.NombreCientifico, especie.CodigoInidep == "5139030101");
@@ -1331,7 +1333,7 @@ public class MareaReportService : IMareaReportService
         bool plotTotal = isLangostino || (!hasMachos && !hasHembras && !hasIndet);
 
         double maxYValue = dataPoints.Max(p => {
-            double val = Math.Max(p.Machos, Math.Max(p.Hembras, p.Indet));
+            double val = Math.Max(p.Machos, p.Hembras);
             if (plotTotal) val = Math.Max(val, p.Total);
             return val;
         });
@@ -1416,17 +1418,15 @@ public class MareaReportService : IMareaReportService
         }
 
         // Draw Series
-        if (plotTotal && hasTotal) DrawSeries(p => p.Total, SKColors.Black, null, 3.0f);
-        if (hasHembras) DrawSeries(p => p.Hembras, SKColors.Black, new float[] { 10, 5, 2, 5 }, 1.5f);
-        if (hasMachos) DrawSeries(p => p.Machos, SKColors.Black, null, 1.5f);
-        if (hasIndet) DrawSeries(p => p.Indet, SKColors.Black, new float[] { 2, 5 }, 1.5f);
+        if (plotTotal && hasTotal) DrawSeries(p => p.Total, SKColors.Black, null, 3.2f);
+        if (hasHembras) DrawSeries(p => p.Hembras, SKColors.Black, new float[] { 10, 5, 2, 5 }, 2.0f);
+        if (hasMachos) DrawSeries(p => p.Machos, SKColors.Black, null, 2.0f);
 
         // Draw Legend
         var legendItems = new List<(string Label, float[] Dash, float Width)>();
-        if (hasMachos) legendItems.Add(("machos", null, 1.5f));
-        if (hasHembras) legendItems.Add(("hembras", new float[] { 10, 5, 2, 5 }, 1.5f));
-        if (plotTotal && hasTotal) legendItems.Add(("totales", null, 3.0f));
-        if (hasIndet) legendItems.Add(("indet.", new float[] { 2, 5 }, 1.5f));
+        if (hasMachos) legendItems.Add(("Machos", null, 2.0f));
+        if (hasHembras) legendItems.Add(("Hembras", new float[] { 10, 5, 2, 5 }, 2.0f));
+        if (plotTotal && hasTotal) legendItems.Add(("Total", null, 3.2f));
 
         if (legendItems.Any())
         {
@@ -1586,7 +1586,7 @@ public class MareaReportService : IMareaReportService
             "7210030201" => 32, // Polaca
             "7210040102" => 61, // Merluza Austral
             "7210020101" => 40, // Salilota australis
-            "7218320101" => 82, // Merluza Negra
+            "7218280201" => 82, // Merluza Negra
             "7218350201" => 29, // Savorín
             "7218160501" => 30, // Pescadilla común
             "7204020101" => 9,  // Anchoíta
