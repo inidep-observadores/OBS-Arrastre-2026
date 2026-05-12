@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using ClosedXML.Excel;
 using SkiaSharp;
 using OBSArrastre2026.App.Data.Entities;
+using OBSArrastre2026.App.Services.Internal;
 
 namespace OBSArrastre2026.App.Services
 {
@@ -952,11 +953,8 @@ namespace OBSArrastre2026.App.Services
             if (!lance.LatitudInicioDecimal.HasValue || !lance.LongitudInicioDecimal.HasValue) 
                 return "S/D";
 
-            double lat = Math.Abs(lance.LatitudInicioDecimal.Value);
-            double lon = Math.Abs(lance.LongitudInicioDecimal.Value);
-
-            int cuad = ((int)Math.Truncate(lat) * 100) + (int)Math.Truncate(lon);
-            return cuad.ToString();
+            double area = LegacyDecoder.CalculateGridArea(lance.LatitudInicioDecimal.Value, lance.LongitudInicioDecimal.Value);
+            return Math.Truncate(area).ToString("0");
         }
 
         private double CalculateDurationHours(Lance lance)

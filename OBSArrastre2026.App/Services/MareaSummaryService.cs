@@ -377,7 +377,8 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
             return "S/D";
 
         double area = LegacyDecoder.CalculateGridArea(lance.LatitudInicioDecimal.Value, lance.LongitudInicioDecimal.Value);
-        return area.ToString("F1").Replace('.', ',');
+        // Se ignora el cuadrante (decimal) para la agrupación según requerimiento
+        return Math.Truncate(area).ToString("0");
     }
 
     public async Task<RecibiProyectoReport> GetRecibiProyectoReportAsync(string mareaId)
@@ -426,7 +427,9 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
                               .Select(gl => new RecibiProyectoLanceItem
                               {
                                   NroLance = gl.Key,
-                                  Area = gl.First().Muestra!.Area?.ToString("F1") ?? GetCuadricula(gl.First().Muestra!.Lance!)
+                                  Area = gl.First().Muestra!.Area.HasValue 
+                                            ? Math.Truncate(gl.First().Muestra!.Area.Value).ToString("0") 
+                                            : GetCuadricula(gl.First().Muestra!.Lance!)
                               })
                               .OrderBy(l => l.NroLance)
                               .ToList()

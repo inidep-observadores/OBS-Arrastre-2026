@@ -11,6 +11,7 @@ using OBSArrastre2026.App.Services;
 using OBSArrastre2026.App.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 using OBSArrastre2026.App.Data;
+using OBSArrastre2026.App.Services.Internal;
 using GMap.NET;
 using System.IO;
 using System.Diagnostics;
@@ -2216,7 +2217,7 @@ public class MainWindowViewModel : ObservableObject
                         return icKey == key;
                     })).ToList();
                     var groupedByArea = spLances
-                        .GroupBy(l => $"{(int)Math.Abs(l.LatitudInicioDecimal ?? 0)}{(int)Math.Abs(l.LongitudInicioDecimal ?? 0)}")
+                        .GroupBy(l => Math.Truncate(LegacyDecoder.CalculateGridArea(l.LatitudInicioDecimal ?? 0, l.LongitudInicioDecimal ?? 0)).ToString("0"))
                         .Select(g => 
                         {
                             double totalHoras = 0;
