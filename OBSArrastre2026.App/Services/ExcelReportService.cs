@@ -285,7 +285,7 @@ namespace OBSArrastre2026.App.Services
             bool plotTotal = isLangostino || (!hasMachos && !hasHembras && !hasIndet);
 
             double maxYValue = dataPoints.Max(p => {
-                double val = Math.Max(p.Machos, Math.Max(p.Hembras, p.Indet));
+                double val = Math.Max(p.Machos, p.Hembras);
                 if (plotTotal) val = Math.Max(val, p.Total);
                 return val;
             });
@@ -386,7 +386,6 @@ namespace OBSArrastre2026.App.Services
 
             if (hasMachos) DrawSeries(p => p.Machos, SKColors.Black, null, 2.0f);
             if (hasHembras) DrawSeries(p => p.Hembras, SKColors.Black, new float[] { 10, 5, 2, 5 }, 2.0f);
-            if (hasIndet) DrawSeries(p => p.Indet, SKColors.Black, new float[] { 2, 5 }, 2.0f);
 
             if (cutoff > 0 && cutoff >= minX && cutoff <= maxX)
             {
@@ -398,7 +397,6 @@ namespace OBSArrastre2026.App.Services
             float legendY = height - 15;
             if (hasMachos) { canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Black, StrokeWidth = 2.0f }); canvas.DrawText("Machos", legendX + 35, legendY, textPaint); legendX += 130; }
             if (hasHembras) { canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Black, StrokeWidth = 2.0f, PathEffect = SKPathEffect.CreateDash(new float[] { 10, 5, 2, 5 }, 0) }); canvas.DrawText("Hembras", legendX + 35, legendY, textPaint); legendX += 130; }
-            if (hasIndet) { canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Black, StrokeWidth = 2.0f, PathEffect = SKPathEffect.CreateDash(new float[] { 2, 5 }, 0) }); canvas.DrawText("Indet.", legendX + 35, legendY, textPaint); legendX += 130; }
             
             if (plotTotal && hasTotal)
             {
