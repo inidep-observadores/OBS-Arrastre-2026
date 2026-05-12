@@ -56,7 +56,7 @@ public sealed class DatabaseInitializer(IDbContextFactory<AppDbContext> dbContex
             new { Code = "7210030201", Sexo = 2, A = 0.026, B = 3.2278, Medida = "LT", Obs = "Oficial 2026 - Hembras" },
 
             // Merluza negra (D. eleginoides) - 7218320101
-            new { Code = "7218320101", Sexo = 0, A = 0.0042, B = 3.19385, Medida = "LT", Obs = "Oficial 2026 - Total" },
+            new { Code = "7218280201", Sexo = 0, A = 0.0042, B = 3.19385, Medida = "LT", Obs = "Oficial 2026 - Total" },
 
             // Pescadilla (Cynoscion guatucupa) - 7218160501
             new { Code = "7218160501", Sexo = 0, A = 0.00552, B = 3.1310, Medida = "LT", Obs = "Región Bonaerense" },
