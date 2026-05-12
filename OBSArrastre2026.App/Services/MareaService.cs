@@ -119,7 +119,7 @@ public sealed class MareaService(IDbContextFactory<AppDbContext> dbContextFactor
             var search = busquedaTextual.Trim().ToLower();
             query = query.Where(x => 
                 (x.Comentarios != null && x.Comentarios.ToLower().Contains(search)) ||
-                (x.NumeroInidep.ToString() + "/" + (x.AnioInidep % 100).ToString("D2")).Contains(search));
+                (x.NumeroInidep.ToString() + "/" + (x.AnioInidep % 100).ToString()).Contains(search));
         }
 
         // Ordenar: Las "En curso" (FechaFin null) arriba, luego por FechaFin desc, luego por FechaInicio desc
