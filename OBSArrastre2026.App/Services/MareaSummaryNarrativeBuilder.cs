@@ -164,11 +164,27 @@ public static class MareaSummaryNarrativeBuilder
             }
 
             // Cuadrado dominante (mayor cantidad de operaciones de pesca y captura)
-            if (etapa.CuadradoDominante != null && etapa.Cuadrados.Count > 1)
+            if (etapa.Cuadrados.Count > 1)
             {
-                sb.Normal($", siendo el de mayor cantidad de operaciones de pesca y captura el {etapa.CuadradoDominante} con ");
-                sb.Normal($"{etapa.CuadradoDominanteCapturaKg:N0} kg en {etapa.CuadradoDominanteLances} {Pluralizar(etapa.CuadradoDominanteLances, "lance", "lances")} ");
-                sb.Normal($"durante {etapa.CuadradoDominanteDias} {Pluralizar(etapa.CuadradoDominanteDias, "día", "días")}");
+                if (etapa.CuadradoMasLances == etapa.CuadradoMayorCaptura)
+                {
+                    if (etapa.CuadradoMasLances != null)
+                    {
+                        sb.Normal($", siendo el de mayor cantidad de operaciones de pesca y captura el {etapa.CuadradoMasLances} con ");
+                        sb.Normal($"{etapa.CuadradoMayorCapturaKg:N0} kg en {etapa.CuadradoMasLancesNro} {Pluralizar(etapa.CuadradoMasLancesNro, "lance", "lances")}");
+                    }
+                }
+                else
+                {
+                    if (etapa.CuadradoMasLances != null)
+                    {
+                        sb.Normal($", siendo el de mayor cantidad de operaciones de pesca el {etapa.CuadradoMasLances} ({etapa.CuadradoMasLancesNro} {Pluralizar(etapa.CuadradoMasLancesNro, "lance", "lances")})");
+                    }
+                    if (etapa.CuadradoMayorCaptura != null)
+                    {
+                        sb.Normal($" y el de mayor captura el {etapa.CuadradoMayorCaptura} ({etapa.CuadradoMayorCapturaKg:N0} kg)");
+                    }
+                }
             }
             sb.Normal(". ");
         }

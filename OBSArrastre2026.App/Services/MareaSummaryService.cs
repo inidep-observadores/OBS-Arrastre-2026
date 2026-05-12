@@ -118,7 +118,10 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
                 .ThenByDescending(g => g.CapturaKg)
                 .ToList();
 
-            var dominante = cuadradoGroups.FirstOrDefault();
+            var masLances = cuadradoGroups.OrderByDescending(g => g.Lances).ThenByDescending(g => g.CapturaKg).FirstOrDefault();
+            var mayorCaptura = cuadradoGroups.OrderByDescending(g => g.CapturaKg).FirstOrDefault();
+            var dominante = masLances; // Para mantener compatibilidad
+
             var cuadradosOrdenados = cuadradoGroups.Select(g => g.Cuadrado).OrderBy(c => c).ToList();
 
             // Especie objetivo de la etapa
@@ -192,6 +195,10 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
                 CapturaKg = lancesEtapa.SelectMany(l => l.ItemsCaptura).Sum(ic => ic.CapturaTotalKgCalculado),
                 DescarteKg = lancesEtapa.SelectMany(l => l.ItemsCaptura).Sum(ic => ic.PesoDescarteCalculado),
                 Cuadrados = cuadradosOrdenados,
+                CuadradoMasLances = masLances?.Cuadrado,
+                CuadradoMasLancesNro = masLances?.Lances ?? 0,
+                CuadradoMayorCaptura = mayorCaptura?.Cuadrado,
+                CuadradoMayorCapturaKg = mayorCaptura?.CapturaKg ?? 0,
                 CuadradoDominante = dominante?.Cuadrado,
                 CuadradoDominanteLances = dominante?.Lances ?? 0,
                 CuadradoDominanteCapturaKg = dominante?.CapturaKg ?? 0,

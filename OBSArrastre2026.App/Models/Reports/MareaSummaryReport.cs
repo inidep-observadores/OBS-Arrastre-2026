@@ -81,11 +81,21 @@ public class NarrativaEtapa
     public double DescartePct => CapturaKg > 0 ? DescarteKg * 100.0 / CapturaKg : 0;
     /// <summary>Cuadrados estadísticos donde operó el buque.</summary>
     public List<string> Cuadrados { get; set; } = new();
-    /// <summary>Cuadrado con más lances/operaciones.</summary>
+    
+    /// <summary>Área/Cuadrado con más lances/operaciones.</summary>
+    public string? CuadradoMasLances { get; set; }
+    public int CuadradoMasLancesNro { get; set; }
+    
+    /// <summary>Área/Cuadrado con mayor volumen de captura.</summary>
+    public string? CuadradoMayorCaptura { get; set; }
+    public double CuadradoMayorCapturaKg { get; set; }
+    
+    /// <summary>Obsoleto: use CuadradoMasLances o CuadradoMayorCaptura. Se mantiene por compatibilidad.</summary>
     public string? CuadradoDominante { get; set; }
     public int CuadradoDominanteLances { get; set; }
     public double CuadradoDominanteCapturaKg { get; set; }
     public int CuadradoDominanteDias { get; set; }
+
     /// <summary>Especie objetivo declarada en la etapa (puede diferir entre etapas).</summary>
     public NarrativaEspecieObjetivo? EspecieObjetivo { get; set; }
     /// <summary>Especies secundarias con captura relevante observadas en la etapa.</summary>

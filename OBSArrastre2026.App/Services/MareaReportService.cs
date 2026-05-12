@@ -1109,9 +1109,7 @@ public class MareaReportService : IMareaReportService
         SetT(3, totalK > 0 ? FormatVal(totalD * 100.0 / totalK) : "0");
         SetT(4, lances.Count.ToString());
         SetT(5, lances.Select(l => l.Fecha).Distinct().Count().ToString());
-
-        SetT(5, lances.Select(l => l.Fecha).Distinct().Count().ToString());
-
+    
         doc.InsertTable(table);
     }
 
@@ -1198,7 +1196,7 @@ public class MareaReportService : IMareaReportService
         table.Alignment = Alignment.center;
         table.Design = TableDesign.TableGrid;
         table.AutoFit = AutoFit.Window;
-        table.SetWidthsPercentage(new float[] { 38, 22, 20, 12, 8 }, null);
+        table.SetWidthsPercentage(new float[] { 34, 38, 8, 12, 8 }, null);
 
         string[] headers = { "Especie", "Producto", "Categoría", "Kilos", "Factor" };
         for (int i = 0; i < headers.Length; i++)
@@ -1588,7 +1586,7 @@ public class MareaReportService : IMareaReportService
             "7210030201" => 32, // Polaca
             "7210040102" => 61, // Merluza Austral
             "7210020101" => 40, // Salilota australis
-            "7218320101" => 82, // Merluza Negra
+            "7218280201" => 82, // Merluza Negra
             "7218350201" => 29, // Savorín
             "7218160501" => 30, // Pescadilla común
             "7204020101" => 9,  // Anchoíta
