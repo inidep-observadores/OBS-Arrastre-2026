@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "PowerShell(head *)",
+      "Bash(git checkout *)",
+      "Bash(dotnet test *)",
+      "Bash(dotnet build *)",
+      "Bash(Select-String \"\\(Con error|FAIL|Superado\\)\")",
+      "Bash(git stash *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}

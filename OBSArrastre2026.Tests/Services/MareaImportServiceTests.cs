@@ -45,6 +45,9 @@ public class MareaImportServiceTests
         _report.GenerateValidationPdfAsync(Arg.Any<MareaValidationReport>())
             .Returns(Task.FromResult(new byte[] { 1, 2, 3 }));
 
+        _extractor.DetectEncodingSmartAsync(Arg.Any<string>())
+            .Returns(Task.FromResult(System.Text.Encoding.UTF8));
+
         // Act
         string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
         Directory.CreateDirectory(tempDir);

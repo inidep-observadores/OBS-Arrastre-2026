@@ -99,12 +99,12 @@ public class MareaImportService : IMareaImportService
         if (pPath != null)
         {
             var detectedEnc = await _extractor.DetectEncodingSmartAsync(pPath);
-            meta.EncodingCodePage = detectedEnc.CodePage;
+            meta.EncodingCodePage = detectedEnc?.CodePage ?? 1252;
         }
         else if (cPath != null)
         {
              var detectedEnc = await _extractor.DetectEncodingSmartAsync(cPath);
-             meta.EncodingCodePage = detectedEnc.CodePage;
+             meta.EncodingCodePage = detectedEnc?.CodePage ?? 1252;
         }
         marea.Metadata = JsonSerializer.Serialize(meta);
         report.MareaMetadata = marea.Metadata;
