@@ -186,15 +186,15 @@
                 </Border.InputBindings>
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.0*" />
-                        <ColumnDefinition Width="1.8*" />
-                        <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.8*" />
-                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="2.5*" />
+                        <ColumnDefinition Width="1.2*" />
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="1.0*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="0.5*" />
-                        <ColumnDefinition Width="0.5*" />
+                        <ColumnDefinition Width="0.4*" />
                     </Grid.ColumnDefinitions>
                     <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Text="{Binding NroLance}" HorizontalAlignment="Right" />
                     <TextBlock Grid.Column="1" Style="{StaticResource BodySecondaryStyle}" Text="{Binding FechaDisplay}" HorizontalAlignment="Center" />
@@ -225,15 +225,15 @@
                 </Border.InputBindings>
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.0*" />
-                        <ColumnDefinition Width="1.8*" />
-                        <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.8*" />
-                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="2.5*" />
+                        <ColumnDefinition Width="1.2*" />
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="1.0*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="0.5*" />
-                        <ColumnDefinition Width="0.5*" />
+                        <ColumnDefinition Width="0.4*" />
                     </Grid.ColumnDefinitions>
                     <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Text="{Binding LanceNro}" HorizontalAlignment="Right" />
                     <TextBlock Grid.Column="1" Style="{StaticResource BodySecondaryStyle}" Text="{Binding LanceFecha}" HorizontalAlignment="Center" />
@@ -261,15 +261,15 @@
                 </Border.InputBindings>
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.0*" />
-                        <ColumnDefinition Width="1.8*" />
-                        <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.8*" />
-                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="2.5*" />
+                        <ColumnDefinition Width="1.2*" />
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="1.0*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="0.5*" />
-                        <ColumnDefinition Width="0.5*" />
+                        <ColumnDefinition Width="0.4*" />
                     </Grid.ColumnDefinitions>
                     
                     <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Text="{Binding FechaDisplay}" />
@@ -301,15 +301,15 @@
                 
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.0*" />
-                        <ColumnDefinition Width="1.8*" />
-                        <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.8*" />
-                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="2.5*" />
+                        <ColumnDefinition Width="1.2*" />
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="1.0*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="0.5*" />
-                        <ColumnDefinition Width="0.5*" />
+                        <ColumnDefinition Width="0.4*" />
                     </Grid.ColumnDefinitions>
 
                     <!-- Columna 1: Fecha (Detalle) o Especie (Resumen) -->
@@ -945,15 +945,15 @@
                                     BorderThickness="0,0,0,1">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="1.0*" />
-                                        <ColumnDefinition Width="1.8*" />
-                                        <ColumnDefinition Width="1.1*" />
-                                        <ColumnDefinition Width="1.8*" />
-                                        <ColumnDefinition Width="1.1*" />
+                                        <ColumnDefinition Width="2.5*" />
+                                        <ColumnDefinition Width="1.2*" />
                                         <ColumnDefinition Width="1.1*" />
                                         <ColumnDefinition Width="1.2*" />
+                                        <ColumnDefinition Width="1.0*" />
+                                        <ColumnDefinition Width="1.1*" />
+                                        <ColumnDefinition Width="1.1*" />
                                         <ColumnDefinition Width="0.5*" />
-                                        <ColumnDefinition Width="0.5*" />
+                                        <ColumnDefinition Width="0.4*" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="{Binding Column1Header}">
                                         <TextBlock.Style>
