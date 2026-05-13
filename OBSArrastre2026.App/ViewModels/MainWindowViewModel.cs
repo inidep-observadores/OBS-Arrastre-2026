@@ -58,6 +58,7 @@ public class MainWindowViewModel : ObservableObject
     private ProcesosViewModel? _procesosVM;
     private ConfiguracionViewModel? _configuracionVM;
     private HashSet<string> _commonRayaIds = new();
+    private readonly Dictionary<NavigationSection, string?> _lastSelectedIdBySection = new();
     private const string RayaGenericVirtualId = "RAYA_GENERICA_GRUPO";
     
     private bool IsRaya(Especie? e)
@@ -482,8 +483,68 @@ public class MainWindowViewModel : ObservableObject
     public ICommand GoToStartCommand { get; }
     public ICommand GoToEndCommand { get; }
 
+    private void SaveSelection()
+    {
+        if (SelectedNavigationItem == null) return;
+        
+        string? id = null;
+        if (SelectedRecord is MareaListItemViewModel m) id = m.ID;
+        else if (SelectedRecord is LanceListItemViewModel l) id = l.ID;
+        else if (SelectedRecord is MuestraListItemViewModel mu) id = mu.ID;
+        else if (SelectedRecord is ProduccionListItemViewModel p) id = p.ID;
+        else if (SelectedRecord is ControlProduccionListItemViewModel cp) id = cp.ID;
+        
+        // No sobreescribir con null si ya tenemos algo guardado para evitar perder el ID durante recargas asíncronas
+        if (id != null)
+        {
+            _lastSelectedIdBySection[SelectedNavigationItem.Section] = id;
+        }
+    }
+
+    private void RestoreSelection()
+    {
+        if (SelectedNavigationItem == null) return;
+        if (!_lastSelectedIdBySection.TryGetValue(SelectedNavigationItem.Section, out var id) || id == null) return;
+
+        object? toSelect = Records.FirstOrDefault(r => 
+        {
+            if (r is MareaListItemViewModel m) return m.ID == id;
+            if (r is LanceListItemViewModel l) return l.ID == id;
+            if (r is MuestraListItemViewModel mu) return mu.ID == id;
+            if (r is ProduccionListItemViewModel p) return p.ID == id;
+            if (r is ControlProduccionListItemViewModel cp)
+            {
+                if (cp.ID == id) return true;
+                
+                // Soporte para navegación entre Resumen y Detalle
+                // Si guardamos un ID de detalle pero estamos en resumen (o viceversa), comparamos por especie/etapa
+                var parts = id.Split('_');
+                if (parts.Length >= 2 && (id.StartsWith("D_") || id.StartsWith("S_")))
+                {
+                    string targetEspecieId = parts[1];
+                    if (cp.EspecieId == targetEspecieId)
+                    {
+                        // Si además coincide la etapa, es el match ideal
+                        if (parts.Length >= 3 && cp.NumeroEtapa.ToString() == parts[2])
+                            return true;
+                        
+                        // Si no coincide la etapa (ej: detalle), aceptamos el primer match de especie si estamos cambiando de modo
+                        return cp.IsSummaryView != id.StartsWith("S_");
+                    }
+                }
+            }
+            return false;
+        });
+
+        if (toSelect != null)
+        {
+            SelectedRecord = toSelect;
+        }
+    }
+
     private async Task LoadMuestrasAsync()
     {
+        SaveSelection();
         var activeMarea = _activeMareaManager.ActiveMarea;
         if (activeMarea == null)
         {
@@ -508,10 +569,13 @@ public class MainWindowViewModel : ObservableObject
         {
             Records.Add(vm);
         }
+
+        RestoreSelection();
     }
 
     private async Task LoadProduccionAsync()
     {
+        SaveSelection();
         var activeMarea = _activeMareaManager.ActiveMarea;
         if (activeMarea == null)
         {
@@ -538,6 +602,8 @@ public class MainWindowViewModel : ObservableObject
         {
             Records.Add(vm);
         }
+
+        RestoreSelection();
     }
 
     private void OpenSelectedRecordEdit()
@@ -563,11 +629,13 @@ public class MainWindowViewModel : ObservableObject
     private void OpenEditSubmuestraForm(MuestraListItemViewModel? vm)
     {
         if (vm == null) return;
+        SaveSelection();
         CurrentEditViewModel = _submuestraEditFactory(() => { CurrentEditViewModel = null; _ = LoadSubmuestrasAsync(); }, vm.Muestra.ID);
     }
 
     private void OpenCreateProduccionForm()
     {
+        SaveSelection();
         CurrentEditViewModel = _produccionEditFactory(() => {
             CurrentEditViewModel = null;
             _ = LoadProduccionAsync();
@@ -576,6 +644,7 @@ public class MainWindowViewModel : ObservableObject
 
     private void OpenEditProduccionForm(ProduccionListItemViewModel vm)
     {
+        SaveSelection();
         CurrentEditViewModel = _produccionEditFactory(() => {
             CurrentEditViewModel = null;
             _ = LoadProduccionAsync();
@@ -584,6 +653,7 @@ public class MainWindowViewModel : ObservableObject
 
     private async Task LoadSubmuestrasAsync()
     {
+        SaveSelection();
         var activeMareaId = _activeMareaManager.ActiveMareaId;
         if (string.IsNullOrEmpty(activeMareaId))
         {
@@ -599,6 +669,8 @@ public class MainWindowViewModel : ObservableObject
         {
             Records.Add(vm);
         }
+
+        RestoreSelection();
     }
 
     private void OpenEditMuestraForm(MuestraListItemViewModel? vm)
@@ -611,11 +683,13 @@ public class MainWindowViewModel : ObservableObject
             return;
         }
 
+        SaveSelection();
         CurrentEditViewModel = _muestraEditFactory(() => { CurrentEditViewModel = null; _ = LoadMuestrasAsync(); }, vm.Muestra.LanceID!, vm.Muestra.ID);
     }
 
     private void OpenCreateMuestraForm()
     {
+        SaveSelection();
         var activeMarea = _activeMareaManager.ActiveMarea;
         if (activeMarea == null) return;
 
@@ -657,6 +731,7 @@ public class MainWindowViewModel : ObservableObject
                 return;
             }
 
+            SaveSelection();
             LoadSection(value.Section);
         }
     }
@@ -1448,6 +1523,7 @@ public class MainWindowViewModel : ObservableObject
                 return;
             }
 
+            SaveSelection();
             SelectedRecord = null;
 
             var mareas = await _mareaService.GetMareasAsync(
@@ -1465,6 +1541,8 @@ public class MainWindowViewModel : ObservableObject
             {
                 Records.Add(vm);
             }
+
+            RestoreSelection();
 
             // Actualizar filtros activos visuales
             ActiveFilters.Clear();
@@ -1490,6 +1568,7 @@ public class MainWindowViewModel : ObservableObject
 
     private void OpenCreateMareaForm()
     {
+        SaveSelection();
         var vm = _mareaEditFactory(() => 
         {
             CurrentEditViewModel = null;
@@ -1506,6 +1585,7 @@ public class MainWindowViewModel : ObservableObject
     {
         if (item == null) return;
         
+        SaveSelection();
         var vm = _mareaEditFactory(() => 
         {
             CurrentEditViewModel = null;
@@ -1522,6 +1602,7 @@ public class MainWindowViewModel : ObservableObject
     {
         try
         {
+            SaveSelection();
             if (string.IsNullOrEmpty(_activeMareaManager.ActiveMareaId))
             {
                 RecordsView.GroupDescriptions.Clear();
@@ -1545,6 +1626,8 @@ public class MainWindowViewModel : ObservableObject
             RecordsView.GroupDescriptions.Clear();
             Records.Clear();
             foreach (var vm in viewModels) Records.Add(vm);
+
+            RestoreSelection();
 
             ActiveFilters.Clear();
             if (LancesFilterFechaDesde.HasValue) ActiveFilters.Add($"Desde: {LancesFilterFechaDesde.Value:dd/MM/yyyy}");
@@ -1724,6 +1807,7 @@ public class MainWindowViewModel : ObservableObject
     {
         if (item == null) return;
         
+        SaveSelection();
         var vm = _lanceEditFactory(() => 
         {
             CurrentEditViewModel = null;
@@ -2047,6 +2131,8 @@ public class MainWindowViewModel : ObservableObject
     {
         if (vm == null || IsControlProduccionDetailVisible) return;
 
+        SaveSelection();
+
         ControlProduccionSelectedEspecieId = vm.EspecieId;
         
         if (vm.EspecieId == RayaGenericVirtualId)
@@ -2069,6 +2155,7 @@ public class MainWindowViewModel : ObservableObject
 
     private void BackToControlProduccionSummary()
     {
+        SaveSelection();
         ControlProduccionSelectedEspecieId = null;
         ControlProduccionSelectedEspecie = null;
         _ = LoadControlProduccionAsync();
@@ -2322,6 +2409,7 @@ public class MainWindowViewModel : ObservableObject
     {
         try
         {
+            SaveSelection();
             RecordsView.Filter = item => 
             {
                 if (!_controlSoloConDiferencias) return true;
@@ -2562,27 +2650,10 @@ public class MainWindowViewModel : ObservableObject
                 RecordsView.GroupDescriptions.Clear();
             }
 
-            // Intentar restaurar la selección previa para mantener el contexto del usuario
-            var prevSelected = SelectedControlItem;
-            ControlProduccionListItemViewModel? newSelected = null;
+            RestoreSelection();
 
-            if (prevSelected != null)
+            if (SelectedRecord == null && Records.Count > 0)
             {
-                newSelected = Records.Cast<ControlProduccionListItemViewModel>()
-                    .FirstOrDefault(r => 
-                        r.IsSummaryView == prevSelected.IsSummaryView &&
-                        r.EspecieId == prevSelected.EspecieId &&
-                        r.NumeroEtapa == prevSelected.NumeroEtapa &&
-                        (r.IsSummaryView || r.Fecha.Date == prevSelected.Fecha.Date));
-            }
-
-            if (newSelected != null)
-            {
-                SelectedRecord = newSelected;
-            }
-            else if (Records.Count > 0)
-            {
-                // Si no se encontró el previo o no había, seleccionar el primero
                 SelectedRecord = Records[0];
             }
         }

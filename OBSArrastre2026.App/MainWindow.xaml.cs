@@ -530,6 +530,17 @@ public partial class MainWindow : Window
         }
     }
 
+    private void RecordsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is ListBox listBox && listBox.SelectedItem != null)
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                listBox.ScrollIntoView(listBox.SelectedItem);
+            }), System.Windows.Threading.DispatcherPriority.Background);
+        }
+    }
+
     private void ControlLance_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (sender is ListViewItem item && item.DataContext is ControlLanceDetailViewModel detailVm)

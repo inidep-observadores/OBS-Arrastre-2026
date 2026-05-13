@@ -1110,7 +1110,8 @@
                                      HorizontalContentAlignment="Stretch"
                                      VirtualizingStackPanel.IsVirtualizing="True"
                                      VirtualizingStackPanel.VirtualizationMode="Recycling"
-                                     PreviewKeyDown="RecordsList_PreviewKeyDown">
+                                     PreviewKeyDown="RecordsList_PreviewKeyDown"
+                                     SelectionChanged="RecordsList_SelectionChanged">
                                 <ListBox.InputBindings>
                                     <KeyBinding Key="Enter" Command="{Binding OpenSelectedRecordEditCommand}" />
                                 </ListBox.InputBindings>

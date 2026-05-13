@@ -28,4 +28,6 @@ public sealed class ProduccionListItemViewModel(RegistroProduccion registro) : O
     public double Factor => registro.Factor ?? 0;
     
     public double Kg => registro.Kg ?? 0;
+
+    public string ID => registro.Id;
 }

@@ -17,6 +17,10 @@ public sealed class ControlProduccionListItemViewModel : ObservableObject
     public string EtapaDisplay { get; set; } = string.Empty;
     public bool IsSummaryView { get; set; }
 
+    public string ID => IsSummaryView 
+        ? $"S_{EspecieId}_{NumeroEtapa}" 
+        : $"D_{EspecieId}_{NumeroEtapa}_{Fecha:yyyyMMdd}";
+
     public string FechaDisplay => Fecha.ToString("dd/MM/yyyy");
     
     public string ProduccionTotalDisplay => ProduccionTotal.ToString("N1");

@@ -28,4 +28,6 @@ public sealed class MuestraListItemViewModel(Muestra muestra)
     public string PesoDisplay => Muestra.PesoMuestra_PesoGramos.HasValue 
         ? $"{(Muestra.PesoMuestra_PesoGramos.Value / 1000.0):N2} kg" 
         : "-";
+
+    public string ID => Muestra.ID;
 }
