@@ -7,6 +7,7 @@ using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using FluentValidation;
 using OBSArrastre2026.App.Data.Entities;
+using OBSArrastre2026.App.Models;
 using OBSArrastre2026.App.Services;
 
 namespace OBSArrastre2026.App.ViewModels;
@@ -49,6 +50,38 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
     private bool _selectividad;
     private string? _comentarios;
     private CatchItemViewModel? _selectedCatchItem;
+    private IReadOnlyList<Lance> _lancesInStage = new List<Lance>();
+    
+    // Initial values for change detection
+    private int _initialNroLance;
+    private DateTime _initialFecha;
+    private string? _initialHoraInicio;
+    private string? _initialHoraFinal;
+    private double? _initialLatitudInicio;
+    private double? _initialLongitudInicio;
+    private double? _initialLatitudFinal;
+    private double? _initialLongitudFinal;
+    private int? _initialProfundidadInicio;
+    private int? _initialProfundidadFinal;
+    private int? _initialVientoDireccion;
+    private int? _initialVientoFuerza;
+    private double? _initialTempAire;
+    private double? _initialTempRed;
+    private int? _initialPresionHpa;
+    private double? _initialCapturaTotalKg;
+    private double? _initialVelocidadArrastre;
+    private int? _initialRumbo;
+    private int? _initialMallaCopo;
+    private int? _initialMallaAlas;
+    private int? _initialCableFilado;
+    private double? _initialAberturaVertical;
+    private double? _initialDistanciaAlas;
+    private double? _initialDistanciaPortones;
+    private int? _initialEstadoTiempo;
+    private int? _initialEstadoMar;
+    private bool _initialSelectividad;
+    private string? _initialComentarios;
+    private List<(string? EspecieId, double DatoCaptura, TipoDatoCaptura TipoDatoCaptura, double DatoDescarte, TipoDatoDescarte TipoDatoDescarte)> _initialItems = new();
 
     public LanceEditViewModel(
         Action onClose,
@@ -66,6 +99,8 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
         SaveCommand = new AsyncRelayCommand(SaveAsync);
         CancelCommand = new RelayCommand(Cancel);
         AddCatchItemCommand = new RelayCommand(AddCatchItem);
+        MovePreviousCommand = new AsyncRelayCommand(MovePreviousAsync, () => CanMovePrevious);
+        MoveNextCommand = new AsyncRelayCommand(MoveNextAsync, () => CanMoveNext);
 
         _ = InitializeAsync();
     }
@@ -150,6 +185,14 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
     public ICommand AddCatchItemCommand { get; }
+    public ICommand MovePreviousCommand { get; }
+    public ICommand MoveNextCommand { get; }
+
+    private bool _canMovePrevious;
+    public bool CanMovePrevious { get => _canMovePrevious; set => SetProperty(ref _canMovePrevious, value); }
+
+    private bool _canMoveNext;
+    public bool CanMoveNext { get => _canMoveNext; set => SetProperty(ref _canMoveNext, value); }
 
     public IEnumerable<Especie> AllEspecies => _allEspecies;
 
@@ -163,58 +206,227 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
         try
         {
             _allEspecies = (await _lanceService.GetEspeciesAsync()).ToList();
+            _lancesInStage = (await _lanceService.GetLancesAsync(mareaEtapaId: _mareaEtapaId))
+                .OrderBy(l => l.NroLance)
+                .ToList();
 
             if (_lanceId != null)
             {
-                var lance = await _lanceService.GetLanceAsync(_lanceId);
-                if (lance != null)
-                {
-                    NroLance = lance.NroLance;
-                    if (DateTime.TryParse(lance.Fecha, out var date)) Fecha = date;
-                    HoraInicio = lance.HoraInicio;
-                    HoraFinal = lance.HoraFinal;
-                    LatitudInicioDecimal = lance.LatitudInicioDecimal;
-                    LongitudInicioDecimal = lance.LongitudInicioDecimal;
-                    LatitudFinalDecimal = lance.LatitudFinalDecimal;
-                    LongitudFinalDecimal = lance.LongitudFinalDecimal;
-                    ProfundidadInicioM = lance.ProfundidadInicioM;
-                    ProfundidadFinalM = lance.ProfundidadFinalM;
-                    EstadoTiempoCodigo = lance.EstadoTiempoCodigo;
-                    EstadoMarCodigo = lance.EstadoMarCodigo;
-                    VientoDireccionGrados = lance.VientoDireccionGrados;
-                    VientoFuerzaBeaufort = lance.VientoFuerzaBeaufort;
-                    TemperaturaAireC = lance.TemperaturaAireC;
-                    TemperaturaRedC = lance.TemperaturaRedC;
-                    PresionHpa = lance.PresionHpa;
-                    CapturaTotalKg = lance.CapturaTotalKg;
-                    VelocidadArrastreNudos = lance.VelocidadArrastreNudos;
-                    RumboGrados = lance.RumboGrados;
-                    MallaCopoMm = lance.MallaCopoMm;
-                    MallaAlasMm = lance.MallaAlasMm;
-                    CableFiladoM = lance.CableFiladoM;
-                    AberturaVerticalM = lance.AberturaVerticalM;
-                    DistanciaAlasM = lance.DistanciaAlasM;
-                    DistanciaPortonesM = lance.DistanciaPortonesM;
-                    Selectividad = lance.SelectividadSiNo == 1;
-                    Comentarios = lance.Comentarios;
-
-                    ItemsCaptura.Clear();
-                    foreach (var item in lance.ItemsCaptura.OrderBy(i => i.NumeroOrden))
-                    {
-                        var vm = new CatchItemViewModel(item, _allEspecies);
-                        vm.RequestDeletion = HandleCatchItemDeletion;
-                        vm.NotifyParentOfWeightChange = NotificarCambioPesosEnItems;
-                        ItemsCaptura.Add(vm);
-
-                    }
-                    SincronizarOrden();
-                }
+                await LoadLanceDataAsync(_lanceId);
+            }
+            else
+            {
+                UpdateNavigationState();
             }
         }
         finally
         {
             IsLoading = false;
         }
+    }
+
+    private async Task LoadLanceDataAsync(string lanceId)
+    {
+        var lance = await _lanceService.GetLanceAsync(lanceId);
+        if (lance != null)
+        {
+            _lanceId = lanceId;
+            NroLance = lance.NroLance;
+            if (DateTime.TryParse(lance.Fecha, out var date)) Fecha = date;
+            HoraInicio = lance.HoraInicio;
+            HoraFinal = lance.HoraFinal;
+            LatitudInicioDecimal = lance.LatitudInicioDecimal;
+            LongitudInicioDecimal = lance.LongitudInicioDecimal;
+            LatitudFinalDecimal = lance.LatitudFinalDecimal;
+            LongitudFinalDecimal = lance.LongitudFinalDecimal;
+            ProfundidadInicioM = lance.ProfundidadInicioM;
+            ProfundidadFinalM = lance.ProfundidadFinalM;
+            EstadoTiempoCodigo = lance.EstadoTiempoCodigo;
+            EstadoMarCodigo = lance.EstadoMarCodigo;
+            VientoDireccionGrados = lance.VientoDireccionGrados;
+            VientoFuerzaBeaufort = lance.VientoFuerzaBeaufort;
+            TemperaturaAireC = lance.TemperaturaAireC;
+            TemperaturaRedC = lance.TemperaturaRedC;
+            PresionHpa = lance.PresionHpa;
+            CapturaTotalKg = lance.CapturaTotalKg;
+            VelocidadArrastreNudos = lance.VelocidadArrastreNudos;
+            RumboGrados = lance.RumboGrados;
+            MallaCopoMm = lance.MallaCopoMm;
+            MallaAlasMm = lance.MallaAlasMm;
+            CableFiladoM = lance.CableFiladoM;
+            AberturaVerticalM = lance.AberturaVerticalM;
+            DistanciaAlasM = lance.DistanciaAlasM;
+            DistanciaPortonesM = lance.DistanciaPortonesM;
+            Selectividad = lance.SelectividadSiNo == 1;
+            Comentarios = lance.Comentarios;
+
+            ItemsCaptura.Clear();
+            foreach (var item in lance.ItemsCaptura.OrderBy(i => i.NumeroOrden))
+            {
+                var vm = new CatchItemViewModel(item, _allEspecies);
+                vm.RequestDeletion = HandleCatchItemDeletion;
+                vm.NotifyParentOfWeightChange = NotificarCambioPesosEnItems;
+                ItemsCaptura.Add(vm);
+            }
+            SincronizarOrden();
+            
+            CaptureInitialState();
+            UpdateNavigationState();
+        }
+    }
+
+    private void CaptureInitialState()
+    {
+        _initialNroLance = NroLance;
+        _initialFecha = Fecha;
+        _initialHoraInicio = HoraInicio;
+        _initialHoraFinal = HoraFinal;
+        _initialLatitudInicio = LatitudInicioDecimal;
+        _initialLongitudInicio = LongitudInicioDecimal;
+        _initialLatitudFinal = LatitudFinalDecimal;
+        _initialLongitudFinal = LongitudFinalDecimal;
+        _initialProfundidadInicio = ProfundidadInicioM;
+        _initialProfundidadFinal = ProfundidadFinalM;
+        _initialVientoDireccion = VientoDireccionGrados;
+        _initialVientoFuerza = VientoFuerzaBeaufort;
+        _initialTempAire = TemperaturaAireC;
+        _initialTempRed = TemperaturaRedC;
+        _initialPresionHpa = PresionHpa;
+        _initialCapturaTotalKg = CapturaTotalKg;
+        _initialVelocidadArrastre = VelocidadArrastreNudos;
+        _initialRumbo = RumboGrados;
+        _initialMallaCopo = MallaCopoMm;
+        _initialMallaAlas = MallaAlasMm;
+        _initialCableFilado = CableFiladoM;
+        _initialAberturaVertical = AberturaVerticalM;
+        _initialDistanciaAlas = DistanciaAlasM;
+        _initialDistanciaPortones = DistanciaPortonesM;
+        _initialEstadoTiempo = EstadoTiempoCodigo;
+        _initialEstadoMar = EstadoMarCodigo;
+        _initialSelectividad = Selectividad;
+        _initialComentarios = Comentarios;
+        
+        _initialItems = ItemsCaptura.Select(i => (
+            EspecieId: i.SelectedEspecie?.ID, 
+            i.DatoCaptura, 
+            i.TipoDatoCaptura,
+            i.DatoDescarte,
+            i.TipoDatoDescarte)).ToList();
+    }
+
+    private bool HasChanges()
+    {
+        if (_initialNroLance != NroLance) return true;
+        if (_initialFecha != Fecha) return true;
+        if (_initialHoraInicio != HoraInicio) return true;
+        if (_initialHoraFinal != HoraFinal) return true;
+        if (_initialLatitudInicio != LatitudInicioDecimal) return true;
+        if (_initialLongitudInicio != LongitudInicioDecimal) return true;
+        if (_initialLatitudFinal != LatitudFinalDecimal) return true;
+        if (_initialLongitudFinal != LongitudFinalDecimal) return true;
+        if (_initialProfundidadInicio != ProfundidadInicioM) return true;
+        if (_initialProfundidadFinal != ProfundidadFinalM) return true;
+        if (_initialVientoDireccion != VientoDireccionGrados) return true;
+        if (_initialVientoFuerza != VientoFuerzaBeaufort) return true;
+        if (_initialTempAire != TemperaturaAireC) return true;
+        if (_initialTempRed != TemperaturaRedC) return true;
+        if (_initialPresionHpa != PresionHpa) return true;
+        if (_initialCapturaTotalKg != CapturaTotalKg) return true;
+        if (_initialVelocidadArrastre != VelocidadArrastreNudos) return true;
+        if (_initialRumbo != RumboGrados) return true;
+        if (_initialMallaCopo != MallaCopoMm) return true;
+        if (_initialMallaAlas != MallaAlasMm) return true;
+        if (_initialCableFilado != CableFiladoM) return true;
+        if (_initialAberturaVertical != AberturaVerticalM) return true;
+        if (_initialDistanciaAlas != DistanciaAlasM) return true;
+        if (_initialDistanciaPortones != DistanciaPortonesM) return true;
+        if (_initialEstadoTiempo != EstadoTiempoCodigo) return true;
+        if (_initialEstadoMar != EstadoMarCodigo) return true;
+        if (_initialSelectividad != Selectividad) return true;
+        if (_initialComentarios != Comentarios) return true;
+        
+        if (_initialItems.Count != ItemsCaptura.Count) return true;
+        for (int i = 0; i < _initialItems.Count; i++)
+        {
+            var initial = _initialItems[i];
+            var current = ItemsCaptura[i];
+            if (initial.EspecieId != current.SelectedEspecie?.ID || 
+                initial.DatoCaptura != current.DatoCaptura || 
+                initial.TipoDatoCaptura != current.TipoDatoCaptura ||
+                initial.DatoDescarte != current.DatoDescarte ||
+                initial.TipoDatoDescarte != current.TipoDatoDescarte) return true;
+        }
+        
+        return false;
+    }
+
+    private void UpdateNavigationState()
+    {
+        if (string.IsNullOrEmpty(_lanceId))
+        {
+            CanMovePrevious = false;
+            CanMoveNext = false;
+        }
+        else
+        {
+            var currentIndex = _lancesInStage.ToList().FindIndex(l => l.Id == _lanceId);
+            CanMovePrevious = currentIndex > 0;
+            CanMoveNext = currentIndex >= 0 && currentIndex < _lancesInStage.Count - 1;
+        }
+        
+        (MovePreviousCommand as AsyncRelayCommand)?.NotifyCanExecuteChanged();
+        (MoveNextCommand as AsyncRelayCommand)?.NotifyCanExecuteChanged();
+    }
+
+    private async Task MovePreviousAsync()
+    {
+        if (!await PromptSaveIfDirtyAsync()) return;
+
+        var currentIndex = _lancesInStage.ToList().FindIndex(l => l.Id == _lanceId);
+        if (currentIndex > 0)
+        {
+            IsLoading = true;
+            try
+            {
+                await LoadLanceDataAsync(_lancesInStage[currentIndex - 1].Id);
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+    }
+
+    private async Task MoveNextAsync()
+    {
+        if (!await PromptSaveIfDirtyAsync()) return;
+
+        var currentIndex = _lancesInStage.ToList().FindIndex(l => l.Id == _lanceId);
+        if (currentIndex >= 0 && currentIndex < _lancesInStage.Count - 1)
+        {
+            IsLoading = true;
+            try
+            {
+                await LoadLanceDataAsync(_lancesInStage[currentIndex + 1].Id);
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+    }
+
+    private async Task<bool> PromptSaveIfDirtyAsync()
+    {
+        if (!HasChanges()) return true;
+
+        var confirm = await (ShowConfirmation?.Invoke("Cambios pendientes", "El lance actual tiene cambios sin guardar. ¿Desea guardarlos antes de cambiar de registro?") ?? Task.FromResult(false));
+        if (confirm)
+        {
+            return await SaveInternalAsync();
+        }
+        
+        return true; // Continuar sin guardar si el usuario elige no guardar (o si el diálogo falla)
     }
 
     private void AddCatchItem()
@@ -260,6 +472,14 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
 
 
     private async Task SaveAsync()
+    {
+        if (await SaveInternalAsync())
+        {
+            _onClose();
+        }
+    }
+
+    private async Task<bool> SaveInternalAsync()
     {
         if (ValidateAll())
         {
@@ -308,13 +528,24 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
                 }
 
                 await _lanceService.SaveLanceAsync(lance);
-                _onClose();
+                
+                // Refresh internal state after save
+                _lanceId = lance.Id;
+                CaptureInitialState();
+                
+                return true;
+            }
+            catch (Exception ex)
+            {
+                ShowMessage?.Invoke("Error", $"No se pudo guardar el lance: {ex.Message}", null, MessageDialogType.Error);
+                return false;
             }
             finally
             {
                 IsLoading = false;
             }
         }
+        return false;
     }
 
     private void Cancel() => _onClose();

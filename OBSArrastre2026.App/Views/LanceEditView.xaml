@@ -529,10 +529,23 @@
                     </Border>
                 </Grid>
 
-                <controls:FormActionBar Grid.Row="2" 
-                                        CancelCommand="{Binding CancelCommand}" 
-                                        SaveCommand="{Binding SaveCommand}" 
-                                        SaveContent="GUARDAR LANCE" />
+                <controls:FormActionBar Grid.Row="2"
+                                        SaveCommand="{Binding SaveCommand}"
+                                        CancelCommand="{Binding CancelCommand}"
+                                        SaveContent="GUARDAR LANCE">
+                    <controls:FormActionBar.AdditionalContent>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
+                            <Button Content="Anterior" 
+                                    Command="{Binding MovePreviousCommand}" 
+                                    Style="{StaticResource ThemeButtonStyle}"
+                                    Width="100" Margin="0,0,8,0"/>
+                            <Button Content="Siguiente" 
+                                    Command="{Binding MoveNextCommand}" 
+                                    Style="{StaticResource ThemeButtonStyle}"
+                                    Width="100"/>
+                        </StackPanel>
+                    </controls:FormActionBar.AdditionalContent>
+                </controls:FormActionBar>
             </Grid>
         </Border>
     </AdornerDecorator>
