@@ -1743,7 +1743,9 @@ public class MainWindowViewModel : ObservableObject
         var editVm = _lanceEditFactory(() => 
         {
             CurrentEditViewModel = null;
-            if (SelectedControlItem != null) _ = LoadControlLanceDetailsAsync(SelectedControlItem);
+            // Refrescamos la lista principal, lo cual disparará también el refresco del detalle
+            // si logramos preservar la selección.
+            _ = LoadControlProduccionAsync();
         }, vm.MareaEtapaId, vm.LanceId);
         
         editVm.ShowCustomDialog = diag => ActiveDialog = diag;
@@ -2558,9 +2560,27 @@ public class MainWindowViewModel : ObservableObject
                 RecordsView.GroupDescriptions.Clear();
             }
 
-            // Auto-seleccionar el primer registro para que el panel lateral no aparezca vacío
-            if (Records.Count > 0)
+            // Intentar restaurar la selección previa para mantener el contexto del usuario
+            var prevSelected = SelectedControlItem;
+            ControlProduccionListItemViewModel? newSelected = null;
+
+            if (prevSelected != null)
             {
+                newSelected = Records.Cast<ControlProduccionListItemViewModel>()
+                    .FirstOrDefault(r => 
+                        r.IsSummaryView == prevSelected.IsSummaryView &&
+                        r.EspecieId == prevSelected.EspecieId &&
+                        r.NumeroEtapa == prevSelected.NumeroEtapa &&
+                        (r.IsSummaryView || r.Fecha.Date == prevSelected.Fecha.Date));
+            }
+
+            if (newSelected != null)
+            {
+                SelectedRecord = newSelected;
+            }
+            else if (Records.Count > 0)
+            {
+                // Si no se encontró el previo o no había, seleccionar el primero
                 SelectedRecord = Records[0];
             }
         }
