@@ -1995,7 +1995,8 @@ public class MainWindowViewModel : ObservableObject
 
     private async Task ImportMareaAsync()
     {
-        var importVm = new ImportDbfViewModel(
+        ImportDbfViewModel? importVm = null;
+        importVm = new ImportDbfViewModel(
             null, // Nueva marea
             0,
             DateTime.Today.Year,
@@ -2007,6 +2008,7 @@ public class MainWindowViewModel : ObservableObject
             async (files, mareaId) => 
             {
                 ActiveDialog = null;
+                importVm.Dispose(); // Limpiar archivos temporales si los hubiera
                 
                 // Refrescamos siempre la lista (pedido por el usuario)
                 await LoadMareasAsync();
