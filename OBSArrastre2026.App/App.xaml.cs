@@ -15,6 +15,7 @@ using OBSArrastre2026.App.ViewModels;
 
 using OBSArrastre2026.App.Features.Mareas;
 using OBSArrastre2026.App.Features.Lances;
+using OBSArrastre2026.App.Views;
 
 namespace OBSArrastre2026.App;
 
@@ -179,29 +180,36 @@ public partial class App : Application
 
     protected override async void OnStartup(StartupEventArgs e)
     {
+        // Cargar preferencias de usuario y aplicar tema lo antes posible
+        var settingsService = _host.Services.GetRequiredService<IUserSettingsService>();
+        var settings = settingsService.GetSettings();
+        _host.Services.GetRequiredService<IThemeService>().ApplyTheme(settings.ThemeMode);
+
+        // Mostrar pantalla de inicio inmediatamente (ya tendrá el tema aplicado)
+        var splash = new SplashWindow();
+        splash.Show();
+
         // Habilitar soporte para codificaciones legacy (IBM850, Windows-1252, etc.)
+        splash.UpdateStatus("Configurando entorno...");
         System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 
         base.OnStartup(e);
 
+        splash.UpdateStatus("Iniciando servicios del sistema...");
         await _host.StartAsync();
 
         // Inicializar base de datos (migraciones)
+        splash.UpdateStatus("Inicializando base de datos...");
         var databaseInitializer = _host.Services.GetRequiredService<IDatabaseInitializer>();
         await databaseInitializer.InitializeAsync();
         
         // Sincronizar datos maestros (especies, buques) necesarios para el catálogo
+        splash.UpdateStatus("Sincronizando datos maestros...");
         await _host.Services.GetRequiredService<IDataSyncCoordinator>().SyncAllAsync();
 
         // Sembrar catálogos que dependen de datos maestros
+        splash.UpdateStatus("Preparando catálogos...");
         await databaseInitializer.SeedCatalogsAsync();
-
-        // Cargar preferencias de usuario
-        var settingsService = _host.Services.GetRequiredService<IUserSettingsService>();
-        var settings = settingsService.GetSettings();
-
-        // Aplicar tema guardado
-        _host.Services.GetRequiredService<IThemeService>().ApplyTheme(settings.ThemeMode);
 
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         
@@ -209,9 +217,12 @@ public partial class App : Application
         mainWindow.WindowState = settings.WindowState;
         
         // Inicializar gestión de marea activa
+        splash.UpdateStatus("Cargando marea activa...");
         await _host.Services.GetRequiredService<IActiveMareaManager>().InitializeAsync();
 
+        splash.UpdateStatus("Listo");
         mainWindow.Show();
+        splash.Close();
     }
 
     protected override async void OnExit(ExitEventArgs e)
