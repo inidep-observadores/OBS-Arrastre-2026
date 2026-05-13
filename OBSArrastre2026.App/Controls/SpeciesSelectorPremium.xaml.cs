@@ -198,7 +198,19 @@ public partial class SpeciesSelectorPremium : UserControl
         }
         else
         {
-            SpeciesCombo.IsDropDownOpen = true;
+            // Si el dropdown no está abierto, al abrirlo WPF suele seleccionar todo el texto.
+            // Guardamos la posición del cursor y la restauramos tras abrir.
+            if (!SpeciesCombo.IsDropDownOpen)
+            {
+                int caretIndex = tb.CaretIndex;
+                SpeciesCombo.IsDropDownOpen = true;
+                tb.SelectionStart = caretIndex;
+                tb.SelectionLength = 0;
+            }
+            else
+            {
+                SpeciesCombo.IsDropDownOpen = true;
+            }
         }
     }
 }
