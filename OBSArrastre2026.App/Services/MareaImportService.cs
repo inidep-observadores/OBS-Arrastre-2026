@@ -184,15 +184,24 @@ public class MareaImportService : IMareaImportService
         var productos = await dbContext.Productos.ToListAsync();
 
         var especiesDict = new Dictionary<string, string>();
+        var especiesSinAcentosDict = new Dictionary<string, string>();
         foreach (var esp in especiesDB)
         {
             var codeStr = NormalizeInidepCode(esp.CodigoInidep);
             if (!string.IsNullOrEmpty(codeStr))
             {
                 if (!string.IsNullOrEmpty(esp.NombreVulgar))
-                    especiesDict[esp.NombreVulgar.Trim().ToUpper().Normalize(NormalizationForm.FormC)] = codeStr;
+                {
+                    var name = esp.NombreVulgar.Trim().ToUpper().Normalize(NormalizationForm.FormC);
+                    especiesDict[name] = codeStr;
+                    especiesSinAcentosDict[RemoveAccents(name)] = codeStr;
+                }
                 if (!string.IsNullOrEmpty(esp.NombreCientifico))
-                    especiesDict[esp.NombreCientifico.Trim().ToUpper().Normalize(NormalizationForm.FormC)] = codeStr;
+                {
+                    var name = esp.NombreCientifico.Trim().ToUpper().Normalize(NormalizationForm.FormC);
+                    especiesDict[name] = codeStr;
+                    especiesSinAcentosDict[RemoveAccents(name)] = codeStr;
+                }
             }
         }
 
@@ -644,9 +653,23 @@ public class MareaImportService : IMareaImportService
                         }
                         else if (!especieByNombreMap.TryGetValue(searchName, out speciesId))
                         {
-                            // Fallback: Probar si el campo Especie trae el código INIDEP directamente (normalizado)
-                            var searchCode = NormalizeInidepCode(rp.Especie);
-                            especieByCodigoMap.TryGetValue(searchCode, out speciesId);
+                            // Nuevo Fallback: Intentar búsqueda sin acentos
+                            var searchNameNoAccents = RemoveAccents(searchName);
+                            foreach (var kvp in especieByNombreMap)
+                            {
+                                if (RemoveAccents(kvp.Key) == searchNameNoAccents)
+                                {
+                                    speciesId = kvp.Value;
+                                    break;
+                                }
+                            }
+
+                            if (speciesId == null)
+                            {
+                                // Fallback anterior: Probar si el campo Especie trae el código INIDEP directamente (normalizado)
+                                var searchCode = NormalizeInidepCode(rp.Especie);
+                                especieByCodigoMap.TryGetValue(searchCode, out speciesId);
+                            }
                         }
                     }
 
@@ -744,5 +767,23 @@ public class MareaImportService : IMareaImportService
         // Si el código viene como "721004.0" (común en DBFs numéricos), lo convertimos a "721004"
         if (double.TryParse(code, out double d)) return ((long)d).ToString();
         return code.Trim();
+    }
+
+    private string RemoveAccents(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return text;
+        var normalizedString = text.Normalize(NormalizationForm.FormD);
+        var stringBuilder = new StringBuilder();
+
+        foreach (var c in normalizedString)
+        {
+            var unicodeCategory = System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c);
+            if (unicodeCategory != System.Globalization.UnicodeCategory.NonSpacingMark)
+            {
+                stringBuilder.Append(c);
+            }
+        }
+
+        return stringBuilder.ToString().Normalize(NormalizationForm.FormC);
     }
 }

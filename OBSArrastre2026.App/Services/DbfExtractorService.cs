@@ -57,6 +57,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
                 // Ref: https://www.dbf2002.com/dbf-file-format.html
                 return cpByte switch
                 {
+                    0x00 => Encoding.GetEncoding(1252), // Windows ANSI por defecto (más común que 437 hoy)
                     0x01 => Encoding.GetEncoding(437), // DOS USA
                     0x02 => Encoding.GetEncoding(850), // DOS Multilingual
                     0x03 => Encoding.GetEncoding(1252), // Windows ANSI
@@ -78,7 +79,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
                     0xC9 => Encoding.GetEncoding(1251), // Windows Russian
                     0xCA => Encoding.GetEncoding(1254), // Windows Turkish
                     0xCB => Encoding.GetEncoding(1253), // Windows Greek
-                    _ => Encoding.GetEncoding(437) // Default legacy (DOS)
+                    _ => Encoding.GetEncoding(1252) // Default Windows ANSI
                 };
             }
         }
@@ -91,7 +92,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
     private async Task<Encoding?> FindCorrectEncodingByHeuristicAsync(string dbfPath)
     {
         // Candidatos en orden de prioridad para el entorno INIDEP
-        var candidateCPs = new List<int> { 1252, 850, 437 };
+        var candidateCPs = new List<int> { 1252, 850, 437, 65001 };
         
         foreach (var cp in candidateCPs)
         {
@@ -103,14 +104,13 @@ public sealed class DbfExtractorService : IDbfExtractorService
                 var colMap = GetColumnMap(reader);
 
                 // Columnas donde es probable encontrar texto con acentos/eñes
-                var columnsToTest = new[] { "ESPECIE", "NOMVULCAS", "NOM_VULGAR", "NOMVUL", "NOM_VUL", "NOMVULG", "BARCO", "COMENTARIO", "OBSERVAC", "PRODUCTO", "NOMBRE" };
+                var columnsToTest = new[] { "ESPECIE", "NOMVULCAS", "NOM_VULGAR", "NOMVUL", "NOM_VUL", "NOMVULG", "BARCO", "COMENTARIO", "OBSERVAC", "PRODUCTO", "NOMBRE", "CATEGORIA" };
                 var targetCols = colMap.Where(kv => columnsToTest.Contains(kv.Key.ToUpper())).Select(kv => kv.Value).ToList();
 
                 // Si es el archivo de especies, tenemos un "Gold Standard" (Merluza común con su código)
                 bool isSpeciesTable = colMap.ContainsKey("CODINIDEP") || colMap.ContainsKey("COD_INIDEP");
 
-                int count = 0;
-                while (reader.Read() && count++ < 500) // Revisamos los primeros 500 registros
+                while (reader.Read())
                 {
                     if (isSpeciesTable)
                     {
@@ -136,11 +136,12 @@ public sealed class DbfExtractorService : IDbfExtractorService
                         var val = reader.GetValue(colIdx)?.ToString();
                         if (string.IsNullOrEmpty(val)) continue;
 
-                        // Patrones comunes: común, tiburón, español, bártola, marea, producción
+                        // Patrones comunes: común, tiburón, español, bártola, marea, producción, categoría
                         if (val.Contains("com\u00FAn", StringComparison.OrdinalIgnoreCase) || 
                             val.Contains("tibur\u00F3n", StringComparison.OrdinalIgnoreCase) ||
                             val.Contains("espa\u00F1ol", StringComparison.OrdinalIgnoreCase) ||
-                            val.Contains("producci\u00F3n", StringComparison.OrdinalIgnoreCase))
+                            val.Contains("producci\u00F3n", StringComparison.OrdinalIgnoreCase) ||
+                            val.Contains("categor\u00EDa", StringComparison.OrdinalIgnoreCase))
                         {
                             return encoding;
                         }
@@ -248,9 +249,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
                 {
                     int codIdx = colMap[codCol];
                     int nomIdx = colMap[nomCol];
-                    int count = 0;
-                    
-                    while (reader.Read() && count++ < 2000) // Escaneo profundo para catálogo
+                    while (reader.Read()) // Escaneo total para catálogo
                     {
                         var codVal = reader.GetValue(codIdx)?.ToString()?.Trim();
                         // Buscamos Merluza común (7210040101)

@@ -91,9 +91,13 @@ public sealed class MareaValidationEngine
                     if (especiesCodigosValidos.Contains(oldCode)) return false;
                 }
                 
-                // 4. Fallback final: ¿Es un código INIDEP?
-                // (Para validación, los códigos válidos están en especiesCodigosValidos)
+                // 4. Fallback: ¿Es un código INIDEP?
                 if (especiesCodigosValidos.Contains(name)) return false;
+
+                // 5. NUEVO: Fallback tolerante a acentos
+                var nameNoAccents = RemoveAccents(name);
+                if (especiesDict.Keys.Any(k => RemoveAccents(k.ToUpper()) == nameNoAccents)) return false;
+                if (especiesViejasDict.Keys.Any(k => RemoveAccents(k.ToUpper()) == nameNoAccents)) return false;
                 
                 return true;
             })
@@ -236,6 +240,24 @@ public sealed class MareaValidationEngine
 
         var firstPart = string.Join(", ", distinctSorted.Take(distinctSorted.Count - 1));
         return $"lances {firstPart} y {distinctSorted.Last()}";
+    }
+
+    private string RemoveAccents(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return text;
+        var normalizedString = text.Normalize(NormalizationForm.FormD);
+        var stringBuilder = new StringBuilder();
+
+        foreach (var c in normalizedString)
+        {
+            var unicodeCategory = CharUnicodeInfo.GetUnicodeCategory(c);
+            if (unicodeCategory != UnicodeCategory.NonSpacingMark)
+            {
+                stringBuilder.Append(c);
+            }
+        }
+
+        return stringBuilder.ToString().Normalize(NormalizationForm.FormC);
     }
 
     private void ValidateTemporalConsistency(
@@ -650,6 +672,24 @@ public sealed class MareaValidationEngine
                             if (especiesCodigosValidos.Contains(bridgeCode))
                             {
                                 codEspecieMuestra = bridgeCode;
+                            }
+                        }
+                        // 4. NUEVO: Búsqueda tolerante a acentos
+                        else
+                        {
+                            var searchNoAccents = RemoveAccents(searchName);
+                            var match = especiesDict.FirstOrDefault(kvp => RemoveAccents(kvp.Key.ToUpper()) == searchNoAccents);
+                            if (match.Value != null)
+                            {
+                                codEspecieMuestra = match.Value;
+                            }
+                            else
+                            {
+                                var oldMatch = especiesViejasDict.FirstOrDefault(kvp => RemoveAccents(kvp.Key.ToUpper()) == searchNoAccents);
+                                if (oldMatch.Value != null && especiesCodigosValidos.Contains(oldMatch.Value))
+                                {
+                                    codEspecieMuestra = oldMatch.Value;
+                                }
                             }
                         }
                     }
