@@ -186,15 +186,15 @@
                 </Border.InputBindings>
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="2.5*" />
-                        <ColumnDefinition Width="1.2*" />
-                        <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.2*" />
                         <ColumnDefinition Width="1.0*" />
+                        <ColumnDefinition Width="1.8*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.8*" />
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.2*" />
                         <ColumnDefinition Width="0.5*" />
-                        <ColumnDefinition Width="0.4*" />
+                        <ColumnDefinition Width="0.5*" />
                     </Grid.ColumnDefinitions>
                     <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Text="{Binding NroLance}" HorizontalAlignment="Right" />
                     <TextBlock Grid.Column="1" Style="{StaticResource BodySecondaryStyle}" Text="{Binding FechaDisplay}" HorizontalAlignment="Center" />
@@ -225,15 +225,15 @@
                 </Border.InputBindings>
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="2.5*" />
-                        <ColumnDefinition Width="1.2*" />
-                        <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.2*" />
                         <ColumnDefinition Width="1.0*" />
+                        <ColumnDefinition Width="1.8*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.8*" />
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.2*" />
                         <ColumnDefinition Width="0.5*" />
-                        <ColumnDefinition Width="0.4*" />
+                        <ColumnDefinition Width="0.5*" />
                     </Grid.ColumnDefinitions>
                     <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Text="{Binding LanceNro}" HorizontalAlignment="Right" />
                     <TextBlock Grid.Column="1" Style="{StaticResource BodySecondaryStyle}" Text="{Binding LanceFecha}" HorizontalAlignment="Center" />
@@ -261,15 +261,15 @@
                 </Border.InputBindings>
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="2.5*" />
-                        <ColumnDefinition Width="1.2*" />
-                        <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.2*" />
                         <ColumnDefinition Width="1.0*" />
+                        <ColumnDefinition Width="1.8*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.8*" />
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.2*" />
                         <ColumnDefinition Width="0.5*" />
-                        <ColumnDefinition Width="0.4*" />
+                        <ColumnDefinition Width="0.5*" />
                     </Grid.ColumnDefinitions>
                     
                     <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Text="{Binding FechaDisplay}" />
@@ -301,19 +301,19 @@
                 
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="2.5*" />
-                        <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="3.0*" />
+                        <ColumnDefinition Width="1.4*" />
+                        <ColumnDefinition Width="0.9*" />
+                        <ColumnDefinition Width="1.4*" />
+                        <ColumnDefinition Width="0.9*" />
+                        <ColumnDefinition Width="0.9*" />
                         <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.2*" />
-                        <ColumnDefinition Width="1.0*" />
-                        <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="0.5*" />
                         <ColumnDefinition Width="0.4*" />
+                        <ColumnDefinition Width="0.1*" />
                     </Grid.ColumnDefinitions>
 
                     <!-- Columna 1: Fecha (Detalle) o Especie (Resumen) -->
-                    <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}">
+                    <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" TextTrimming="CharacterEllipsis">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
                                 <Setter Property="Text" Value="{Binding FechaDisplay}" />
@@ -944,160 +944,207 @@
                                     BorderBrush="{DynamicResource TableRowBorderBrush}"
                                     BorderThickness="0,0,0,1">
                                 <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="2.5*" />
-                                        <ColumnDefinition Width="1.2*" />
-                                        <ColumnDefinition Width="1.1*" />
-                                        <ColumnDefinition Width="1.2*" />
-                                        <ColumnDefinition Width="1.0*" />
-                                        <ColumnDefinition Width="1.1*" />
-                                        <ColumnDefinition Width="1.1*" />
-                                        <ColumnDefinition Width="0.5*" />
-                                        <ColumnDefinition Width="0.4*" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="{Binding Column1Header}">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock" BasedOn="{StaticResource HeaderLabelStyle}">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Lances}">
-                                                        <Setter Property="HorizontalAlignment" Value="Right" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Muestras}">
-                                                        <Setter Property="HorizontalAlignment" Value="Right" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Submuestras}">
-                                                        <Setter Property="HorizontalAlignment" Value="Right" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                    <TextBlock Grid.Column="1" Text="{Binding Column2Header}">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock" BasedOn="{StaticResource HeaderLabelStyle}">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Lances}">
-                                                        <Setter Property="HorizontalAlignment" Value="Center" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Muestras}">
-                                                        <Setter Property="HorizontalAlignment" Value="Center" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Submuestras}">
-                                                        <Setter Property="HorizontalAlignment" Value="Center" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
-                                                        <Setter Property="HorizontalAlignment" Value="Right" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                    <TextBlock Grid.Column="2" Text="{Binding Column3Header}">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock" BasedOn="{StaticResource HeaderLabelStyle}">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Lances}">
-                                                        <Setter Property="HorizontalAlignment" Value="Right" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Muestras}">
-                                                        <Setter Property="HorizontalAlignment" Value="Center" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Submuestras}">
-                                                        <Setter Property="HorizontalAlignment" Value="Center" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
-                                                        <Setter Property="HorizontalAlignment" Value="Right" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                    <TextBlock Grid.Column="3" Text="{Binding Column4Header}">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock" BasedOn="{StaticResource HeaderLabelStyle}">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Lances}">
-                                                        <Setter Property="HorizontalAlignment" Value="Right" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Muestras}">
-                                                        <Setter Property="HorizontalAlignment" Value="Left" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Submuestras}">
-                                                        <Setter Property="HorizontalAlignment" Value="Left" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
-                                                        <Setter Property="HorizontalAlignment" Value="Right" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                    <TextBlock Grid.Column="4" Text="{Binding Column5Header}">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock" BasedOn="{StaticResource HeaderLabelStyle}">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Lances}">
-                                                        <Setter Property="HorizontalAlignment" Value="Right" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Muestras}">
-                                                        <Setter Property="HorizontalAlignment" Value="Right" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Submuestras}">
-                                                        <Setter Property="HorizontalAlignment" Value="Right" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
-                                                        <Setter Property="HorizontalAlignment" Value="Right" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Produccion}">
-                                                        <Setter Property="HorizontalAlignment" Value="Right" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                    <TextBlock Grid.Column="5" Text="{Binding Column6Header}">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock" BasedOn="{StaticResource HeaderLabelStyle}">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Lances}">
-                                                        <Setter Property="HorizontalAlignment" Value="Center" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
-                                                        <Setter Property="HorizontalAlignment" Value="Right" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Produccion}">
-                                                        <Setter Property="HorizontalAlignment" Value="Right" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                    <TextBlock Grid.Column="6" Text="{Binding Column7Header}">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock" BasedOn="{StaticResource HeaderLabelStyle}">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Lances}">
-                                                        <Setter Property="HorizontalAlignment" Value="Center" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
-                                                        <Setter Property="HorizontalAlignment" Value="Right" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                    <TextBlock Grid.Column="7" Text="{Binding Column8Header}">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock" BasedOn="{StaticResource HeaderLabelStyle}">
+                                    <!-- Encabezados Estándar (Para todas las listas excepto ControlProduccion) -->
+                                    <Grid>
+                                        <Grid.Style>
+                                            <Style TargetType="Grid">
+                                                <Setter Property="Visibility" Value="Visible" />
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
-                                                        <Setter Property="HorizontalAlignment" Value="Right" />
+                                                        <Setter Property="Visibility" Value="Collapsed" />
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                    <TextBlock Grid.Column="8" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column9Header}" />
+                                        </Grid.Style>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="1.0*" />
+                                            <ColumnDefinition Width="1.8*" />
+                                            <ColumnDefinition Width="1.1*" />
+                                            <ColumnDefinition Width="1.8*" />
+                                            <ColumnDefinition Width="1.1*" />
+                                            <ColumnDefinition Width="1.1*" />
+                                            <ColumnDefinition Width="1.2*" />
+                                            <ColumnDefinition Width="0.5*" />
+                                            <ColumnDefinition Width="0.5*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Column1Header}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource HeaderLabelStyle}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Lances}">
+                                                            <Setter Property="HorizontalAlignment" Value="Right" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Muestras}">
+                                                            <Setter Property="HorizontalAlignment" Value="Right" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Submuestras}">
+                                                            <Setter Property="HorizontalAlignment" Value="Right" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <TextBlock Grid.Column="1" Text="{Binding Column2Header}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource HeaderLabelStyle}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Lances}">
+                                                            <Setter Property="HorizontalAlignment" Value="Center" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Muestras}">
+                                                            <Setter Property="HorizontalAlignment" Value="Center" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Submuestras}">
+                                                            <Setter Property="HorizontalAlignment" Value="Center" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
+                                                            <Setter Property="HorizontalAlignment" Value="Right" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <TextBlock Grid.Column="2" Text="{Binding Column3Header}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource HeaderLabelStyle}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Lances}">
+                                                            <Setter Property="HorizontalAlignment" Value="Right" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Muestras}">
+                                                            <Setter Property="HorizontalAlignment" Value="Center" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Submuestras}">
+                                                            <Setter Property="HorizontalAlignment" Value="Center" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
+                                                            <Setter Property="HorizontalAlignment" Value="Right" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <TextBlock Grid.Column="3" Text="{Binding Column4Header}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource HeaderLabelStyle}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Lances}">
+                                                            <Setter Property="HorizontalAlignment" Value="Right" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Muestras}">
+                                                            <Setter Property="HorizontalAlignment" Value="Left" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Submuestras}">
+                                                            <Setter Property="HorizontalAlignment" Value="Left" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
+                                                            <Setter Property="HorizontalAlignment" Value="Right" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <TextBlock Grid.Column="4" Text="{Binding Column5Header}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource HeaderLabelStyle}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Lances}">
+                                                            <Setter Property="HorizontalAlignment" Value="Right" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Muestras}">
+                                                            <Setter Property="HorizontalAlignment" Value="Right" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Submuestras}">
+                                                            <Setter Property="HorizontalAlignment" Value="Right" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
+                                                            <Setter Property="HorizontalAlignment" Value="Right" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Produccion}">
+                                                            <Setter Property="HorizontalAlignment" Value="Right" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <TextBlock Grid.Column="5" Text="{Binding Column6Header}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource HeaderLabelStyle}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Lances}">
+                                                            <Setter Property="HorizontalAlignment" Value="Center" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
+                                                            <Setter Property="HorizontalAlignment" Value="Right" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Produccion}">
+                                                            <Setter Property="HorizontalAlignment" Value="Right" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <TextBlock Grid.Column="6" Text="{Binding Column7Header}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource HeaderLabelStyle}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Lances}">
+                                                            <Setter Property="HorizontalAlignment" Value="Center" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
+                                                            <Setter Property="HorizontalAlignment" Value="Right" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <TextBlock Grid.Column="7" Text="{Binding Column8Header}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource HeaderLabelStyle}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
+                                                            <Setter Property="HorizontalAlignment" Value="Right" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <TextBlock Grid.Column="8" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column9Header}" />
+                                    </Grid>
+
+                                    <!-- Encabezados Especializados para ControlProduccion (Mayor ancho para Especie) -->
+                                    <Grid>
+                                        <Grid.Style>
+                                            <Style TargetType="Grid">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Grid.Style>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="3.0*" />
+                                            <ColumnDefinition Width="1.4*" />
+                                            <ColumnDefinition Width="0.9*" />
+                                            <ColumnDefinition Width="1.4*" />
+                                            <ColumnDefinition Width="0.9*" />
+                                            <ColumnDefinition Width="0.9*" />
+                                            <ColumnDefinition Width="1.1*" />
+                                            <ColumnDefinition Width="0.4*" />
+                                            <ColumnDefinition Width="0.1*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column1Header}" />
+                                        <TextBlock Grid.Column="1" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column2Header}" HorizontalAlignment="Right" />
+                                        <TextBlock Grid.Column="2" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column3Header}" HorizontalAlignment="Right" />
+                                        <TextBlock Grid.Column="3" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column4Header}" HorizontalAlignment="Right" />
+                                        <TextBlock Grid.Column="4" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column5Header}" HorizontalAlignment="Right" />
+                                        <TextBlock Grid.Column="5" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column6Header}" HorizontalAlignment="Right" />
+                                        <TextBlock Grid.Column="6" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column7Header}" HorizontalAlignment="Right" />
+                                        <TextBlock Grid.Column="7" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column8Header}" HorizontalAlignment="Right" />
+                                        <TextBlock Grid.Column="8" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column9Header}" />
+                                    </Grid>
                                 </Grid>
                             </Border>
 
