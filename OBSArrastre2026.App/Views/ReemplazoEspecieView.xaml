@@ -99,17 +99,10 @@
             </ListBox>
         </Border>
 
-        <!-- Footer / Action -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0">
-            <Button Content="Aplicar Cambios Masivos" 
-                    Command="{Binding AplicarCambiosCommand}"
-                    Style="{StaticResource PrimaryButtonStyle}" 
-                    Padding="32,14" FontSize="16">
-                <Button.Effect>
-                    <DropShadowEffect BlurRadius="15" Direction="-90" RenderingBias="Quality" ShadowDepth="2" Opacity="0.2"/>
-                </Button.Effect>
-            </Button>
-        </StackPanel>
+        <controls:FormActionBar Grid.Row="2" 
+                                CancelCommand="{Binding CancelCommand}" 
+                                SaveCommand="{Binding SaveCommand}" 
+                                SaveContent="Aplicar Cambios Masivos" />
 
         <!-- Loading Overlay -->
         <Grid Grid.RowSpan="3" Background="#80000000" Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">

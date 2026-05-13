@@ -529,25 +529,10 @@
                     </Border>
                 </Grid>
 
-                <!-- 3. Footer -->
-                <Grid Grid.Row="2" Margin="0,20,0,0">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="[TAB] Navegar planilla" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" Margin="0,0,24,0" />
-                        <TextBlock Text="[ESC] Salir" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" />
-                    </StackPanel>
-                    
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                         <Button Content="Descartar" 
-                                 Command="{Binding CancelCommand}"
-                                 Style="{StaticResource ThemeButtonStyle}" 
-                                 Padding="20,10"
-                                 Margin="0,0,16,0" />
-                         <Button Content="GUARDAR LANCE" 
-                                 Command="{Binding SaveCommand}"
-                                 Style="{StaticResource PrimaryButtonStyle}"
-                                 Padding="30,12" />
-                    </StackPanel>
-                </Grid>
+                <controls:FormActionBar Grid.Row="2" 
+                                        CancelCommand="{Binding CancelCommand}" 
+                                        SaveCommand="{Binding SaveCommand}" 
+                                        SaveContent="GUARDAR LANCE" />
             </Grid>
         </Border>
     </AdornerDecorator>

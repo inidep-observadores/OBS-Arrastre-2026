@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
@@ -43,16 +44,28 @@ public partial class ReemplazoEspecieViewModel : ObservableObject
     public ObservableCollection<EspecieReemplazoItem> EspeciesEnMarea { get; } = new();
     public ObservableCollection<Especie> TodasLasEspecies { get; } = new();
 
+    private readonly Action? _onClose;
+
     public Action<string, string, string?, MessageDialogType>? ShowMessage { get; set; }
     public Func<string, string, Task<bool>>? ShowConfirmation { get; set; }
 
     public ReemplazoEspecieViewModel(
         IDbContextFactory<AppDbContext> dbContextFactory,
-        IActiveMareaManager activeMareaManager)
+        IActiveMareaManager activeMareaManager,
+        Action? onClose = null)
     {
         _dbContextFactory = dbContextFactory;
         _activeMareaManager = activeMareaManager;
+        _onClose = onClose;
+
+        SaveCommand = new AsyncRelayCommand(AplicarCambiosAsync);
+        CancelCommand = new RelayCommand(Cancel);
     }
+
+    public ICommand SaveCommand { get; }
+    public ICommand CancelCommand { get; }
+
+    private void Cancel() => _onClose?.Invoke();
 
     [RelayCommand]
     public async Task LoadDataAsync()

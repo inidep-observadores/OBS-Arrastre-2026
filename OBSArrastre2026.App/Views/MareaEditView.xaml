@@ -50,23 +50,6 @@
                                    Margin="0,4,0,0" />
                     </StackPanel>
 
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Button Command="{Binding ImportDbfCommand}"
-                                Content="Importar (JSON/DBF)"
-                                Margin="0,0,12,0"
-                                Style="{StaticResource ThemeButtonStyle}"
-                                Foreground="{DynamicResource AccentBrush}"
-                                Padding="20,10" />
-                        <Button Command="{Binding CancelCommand}"
-                                Content="Cancelar"
-                                Margin="0,0,12,0"
-                                Style="{StaticResource ThemeButtonStyle}"
-                                Padding="20,10" />
-                        <Button Command="{Binding SaveCommand}"
-                                Content="Guardar Marea"
-                                Style="{StaticResource PrimaryButtonStyle}"
-                                Padding="24,12" />
-                    </StackPanel>
                 </Grid>
 
                 <!-- Body -->
@@ -281,15 +264,16 @@
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- Footer Shortcut Help -->
-                <Border Grid.Row="2" BorderBrush="{DynamicResource SidebarBorderBrush}" BorderThickness="0,1,0,0" Padding="0,16,0,0">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <TextBlock Text="[TAB] Navegar" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" Margin="0,0,20,0" />
-                        <TextBlock Text="[ENTER] Siguiente/Expandir" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" Margin="0,0,20,0" />
-                        <TextBlock Text="[CTRL+N] Nueva etapa" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" Margin="0,0,20,0" />
-                        <TextBlock Text="[ESC] Salir" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" />
-                    </StackPanel>
-                </Border>
+                <controls:FormActionBar Grid.Row="2" 
+                                        CancelCommand="{Binding CancelCommand}" 
+                                        SaveCommand="{Binding SaveCommand}"
+                                        SaveContent="Guardar Marea">
+                    <Button Command="{Binding ImportDbfCommand}"
+                            Content="Importar (JSON/DBF)"
+                            Style="{StaticResource ThemeButtonStyle}"
+                            Foreground="{DynamicResource AccentBrush}"
+                            Padding="20,10" />
+                </controls:FormActionBar>
             </Grid>
         </Border>
     </AdornerDecorator>

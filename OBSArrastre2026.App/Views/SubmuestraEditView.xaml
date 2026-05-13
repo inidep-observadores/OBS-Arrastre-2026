@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:vm="clr-namespace:OBSArrastre2026.App.ViewModels"
+             xmlns:controls="clr-namespace:OBSArrastre2026.App.Controls"
              mc:Ignorable="d" 
              d:DesignHeight="600" d:DesignWidth="800">
     <AdornerDecorator>
@@ -194,19 +195,10 @@
                     </Border>
                 </Grid>
 
-                <Grid Grid.Row="2" Margin="0,30,0,0">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Content="Cancelar"
-                                Command="{Binding CancelCommand}"
-                                Style="{StaticResource ThemeButtonStyle}"
-                                Padding="24,10"
-                                Margin="0,0,16,0" />
-                        <Button Content="Guardar Submuestras"
-                                Command="{Binding SaveCommand}"
-                                Style="{StaticResource PrimaryButtonStyle}"
-                                Padding="32,12" />
-                    </StackPanel>
-                </Grid>
+                <controls:FormActionBar Grid.Row="2" 
+                                        CancelCommand="{Binding CancelCommand}" 
+                                        SaveCommand="{Binding SaveCommand}" 
+                                        SaveContent="Guardar Submuestras" />
             </Grid>
         </Border>
     </AdornerDecorator>

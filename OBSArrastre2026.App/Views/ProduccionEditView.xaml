@@ -105,19 +105,10 @@
                         </StackPanel>
                 </ScrollViewer>
 
-                <Grid Grid.Row="2" Margin="0,30,0,0">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Content="Cancelar"
-                                Command="{Binding CancelCommand}"
-                                Style="{StaticResource ThemeButtonStyle}"
-                                Padding="24,10"
-                                Margin="0,0,16,0" />
-                        <Button Content="Guardar Registro"
-                                Command="{Binding SaveCommand}"
-                                Style="{StaticResource PrimaryButtonStyle}"
-                                Padding="32,12" />
-                    </StackPanel>
-                </Grid>
+                <controls:FormActionBar Grid.Row="2" 
+                                        CancelCommand="{Binding CancelCommand}" 
+                                        SaveCommand="{Binding SaveCommand}" 
+                                        SaveContent="Guardar Registro" />
             </Grid>
         </Border>
     </AdornerDecorator>

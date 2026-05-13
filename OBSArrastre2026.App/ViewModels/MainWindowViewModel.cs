@@ -1397,7 +1397,7 @@ public class MainWindowViewModel : ObservableObject
 
         if (section == NavigationSection.ReemplazoEspecie)
         {
-            ReemplazoEspecieVM ??= new ReemplazoEspecieViewModel(_dbContextFactory, _activeMareaManager)
+            ReemplazoEspecieVM ??= new ReemplazoEspecieViewModel(_dbContextFactory, _activeMareaManager, () => SelectedNavigationItem = NavigationItems.FirstOrDefault(x => x.Section == NavigationSection.Mareas))
             {
                 ShowMessage = (t, m, d, type) => ShowMessage(t, m, d, type),
                 ShowConfirmation = (t, m) => ShowConfirmationAsync(t, m)
