@@ -579,7 +579,7 @@ public class MareaImportService : IMareaImportService
             await dbContext.SaveChangesAsync();
         }
 
-        // Map Tracking (Conversión UTC -> UTC-3 realizada en la extracción)
+        // Map Tracking (Se asume hora local desde el origen)
         if (report.Tracking.Any())
         {
             foreach (var rt in report.Tracking)

@@ -18,7 +18,7 @@ public sealed class MareaTracking
     public Marea? Marea { get; set; }
 
     /// <summary>
-    /// Fecha y hora del punto de seguimiento (convertida de UTC a Local/UTC-3).
+    /// Fecha y hora del punto de seguimiento (se almacena tal cual viene del origen, asumiendo hora local).
     /// </summary>
     public DateTime FechaHora { get; set; }
 

@@ -1576,11 +1576,18 @@ public class MainWindowViewModel : ObservableObject
                 .Where(l => l.MareaEtapa.MareaID == _activeMareaManager.ActiveMareaId)
                 .ToListAsync();
 
-            // 2. Obtener Track
-            CurrentTrack = await dbContext.TrackingPoints
+            var trackPoints = await dbContext.TrackingPoints
                 .Where(t => t.MareaID == _activeMareaManager.ActiveMareaId)
                 .OrderBy(t => t.FechaHora)
                 .ToListAsync();
+
+            // Conversión explícita a UTC-3 para el ploteo en el mapa (Hora Local Argentina)
+            foreach (var p in trackPoints)
+            {
+                p.FechaHora = p.FechaHora.AddHours(-3);
+            }
+
+            CurrentTrack = trackPoints;
 
             // Notificar a la vista para que actualice GMap.NET
             ShouldZoomOnNextUpdate = true;

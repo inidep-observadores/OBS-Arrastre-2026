@@ -157,7 +157,7 @@ public class LegacyTracking
         if (_cachedDateTime.HasValue) return _cachedDateTime.Value;
         if (DateTime.TryParse(FechaStr, out var dt))
         {
-            // Nota: La conversión UTC -> Local (UTC-3) ya se realiza en DbfExtractorService o al cargar desde DB.
+            // Nota: Se asume que la fecha ya viene en hora local en el archivo de origen.
             _cachedDateTime = dt;
             return dt;
         }

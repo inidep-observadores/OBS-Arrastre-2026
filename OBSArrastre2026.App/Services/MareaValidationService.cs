@@ -62,6 +62,12 @@ public class MareaValidationService : IMareaValidationService
             .OrderBy(t => t.FechaHora)
             .ToListAsync();
 
+        // Aplicar offset UTC-3 para consistencia con lances (que están en hora local)
+        foreach (var p in trackingPoints)
+        {
+            p.FechaHora = p.FechaHora.AddHours(-3);
+        }
+
         // Obtener catálogo de especies para validación de producción
         var especiesDB = await dbContext.Especies
             .Where(e => e.CodigoInidep != null && (e.NombreVulgar != null || e.NombreCientifico != null))
