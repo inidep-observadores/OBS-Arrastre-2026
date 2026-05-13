@@ -262,12 +262,12 @@
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1.0*" />
-                        <ColumnDefinition Width="1.8*" />
-                        <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="1.8*" />
-                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="2.8*" />
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="0.8*" />
                         <ColumnDefinition Width="0.5*" />
                         <ColumnDefinition Width="0.5*" />
                     </Grid.ColumnDefinitions>
@@ -953,6 +953,9 @@
                                                     <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
                                                         <Setter Property="Visibility" Value="Collapsed" />
                                                     </DataTrigger>
+                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Produccion}">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </Grid.Style>
@@ -1144,6 +1147,37 @@
                                         <TextBlock Grid.Column="6" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column7Header}" HorizontalAlignment="Right" />
                                         <TextBlock Grid.Column="7" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column8Header}" HorizontalAlignment="Right" />
                                         <TextBlock Grid.Column="8" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column9Header}" />
+                                    </Grid>
+
+                                    <!-- Encabezados Especializados para Produccion (Mayor ancho para Especie) -->
+                                    <Grid>
+                                        <Grid.Style>
+                                            <Style TargetType="Grid">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Produccion}">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Grid.Style>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="1.0*" />
+                                            <ColumnDefinition Width="2.8*" />
+                                            <ColumnDefinition Width="1.1*" />
+                                            <ColumnDefinition Width="1.2*" />
+                                            <ColumnDefinition Width="1.1*" />
+                                            <ColumnDefinition Width="1.1*" />
+                                            <ColumnDefinition Width="0.8*" />
+                                            <ColumnDefinition Width="0.5*" />
+                                            <ColumnDefinition Width="0.5*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column1Header}" />
+                                        <TextBlock Grid.Column="1" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column2Header}" />
+                                        <TextBlock Grid.Column="2" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column3Header}" />
+                                        <TextBlock Grid.Column="3" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column4Header}" />
+                                        <TextBlock Grid.Column="4" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column5Header}" HorizontalAlignment="Right" />
+                                        <TextBlock Grid.Column="5" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column6Header}" HorizontalAlignment="Right" />
                                     </Grid>
                                 </Grid>
                             </Border>
