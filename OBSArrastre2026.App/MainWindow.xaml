@@ -307,8 +307,8 @@
                         <ColumnDefinition Width="1.4*" />
                         <ColumnDefinition Width="0.9*" />
                         <ColumnDefinition Width="0.9*" />
-                        <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="0.4*" />
+                        <ColumnDefinition Width="1.1*" MinWidth="90" />
+                        <ColumnDefinition Width="0.5*" MinWidth="70" />
                         <ColumnDefinition Width="0.1*" />
                     </Grid.ColumnDefinitions>
 
@@ -1134,8 +1134,8 @@
                                             <ColumnDefinition Width="1.4*" />
                                             <ColumnDefinition Width="0.9*" />
                                             <ColumnDefinition Width="0.9*" />
-                                            <ColumnDefinition Width="1.1*" />
-                                            <ColumnDefinition Width="0.4*" />
+                                            <ColumnDefinition Width="1.1*" MinWidth="90" />
+                                            <ColumnDefinition Width="0.5*" MinWidth="70" />
                                             <ColumnDefinition Width="0.1*" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column1Header}" />
