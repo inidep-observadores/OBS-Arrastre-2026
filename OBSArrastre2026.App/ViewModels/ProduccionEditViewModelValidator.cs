@@ -20,6 +20,6 @@ public sealed class ProduccionEditViewModelValidator : AbstractValidator<Producc
             .GreaterThan(0).WithMessage("Los kilogramos deben ser mayores a 0.");
             
         RuleFor(x => x.Factor)
-            .GreaterThan(0).When(x => x.Factor.HasValue).WithMessage("El factor debe ser mayor a 0.");
+            .GreaterThanOrEqualTo(0).When(x => x.Factor.HasValue).WithMessage("El factor debe ser mayor o igual a 0.");
     }
 }
