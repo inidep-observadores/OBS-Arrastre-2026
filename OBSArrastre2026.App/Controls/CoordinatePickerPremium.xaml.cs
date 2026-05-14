@@ -90,54 +90,75 @@ public partial class CoordinatePickerPremium : UserControl
         if (_isUpdating) return;
 
         string text = CoordInput.Text.ToUpper();
+        int caretBefore = CoordInput.CaretIndex;
         
-        // Impedir entrada de caracteres no válidos
-        string filtered = new string(text.Where(c => char.IsDigit(c) || "º,.'SNOE".Contains(c)).ToArray());
-        if (text != filtered)
+        // Contar cuántos dígitos hay antes del cursor actual para reposicionarlo luego
+        int digitsBeforeCaret = text.Substring(0, Math.Min(caretBefore, text.Length)).Count(char.IsDigit);
+        bool lastWasDigit = caretBefore > 0 && char.IsDigit(text[caretBefore - 1]);
+
+        // Extraer solo dígitos
+        string digits = new string(text.Where(char.IsDigit).ToArray());
+        if (digits.Length > 5) digits = digits.Substring(0, 5);
+
+        // Determinar cuadrante
+        char? quad = null;
+        string validQuads = IsLatitude ? "SN" : "OE";
+        foreach (char c in text)
+        {
+            if (validQuads.Contains(c)) quad = c;
+        }
+        if (quad == null) quad = IsLatitude ? 'S' : 'O';
+
+        // Construir texto formateado según la cantidad de dígitos
+        string formatted = "";
+        if (digits.Length > 0)
+        {
+            formatted += digits.Substring(0, Math.Min(digits.Length, 2));
+            if (digits.Length >= 2)
+            {
+                formatted += "º";
+                if (digits.Length > 2)
+                {
+                    formatted += digits.Substring(2, Math.Min(digits.Length - 2, 2));
+                    if (digits.Length >= 4)
+                    {
+                        formatted += ",";
+                        if (digits.Length > 4)
+                        {
+                            formatted += digits.Substring(4, 1);
+                            formatted += "'" + quad;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (text != formatted)
         {
             _isUpdating = true;
-            int caret = CoordInput.CaretIndex;
-            CoordInput.Text = filtered;
-            CoordInput.CaretIndex = Math.Max(0, caret - 1);
-            _isUpdating = false;
-            return;
-        }
-
-        // Auto-formateo simple al escribir (Detección de segmentos por longitud)
-        // Ejemplo: 46150 -> 46º15,0'S (basado en cuadrante default)
-        if (filtered.All(char.IsDigit) && filtered.Length >= 5)
-        {
-            TryFormatRawDigits(filtered);
-        }
-    }
-
-    private void TryFormatRawDigits(string digits)
-    {
-        if (digits.Length < 5) return;
-
-        try
-        {
-            int deg, min, tenth;
-            if (IsLatitude || digits.Length == 5)
+            CoordInput.Text = formatted;
+            
+            // Reposicionar cursor basándose en la cantidad de dígitos que había antes
+            int newCaret = 0;
+            int digitsCount = 0;
+            while (newCaret < formatted.Length && digitsCount < digitsBeforeCaret)
             {
-                deg = int.Parse(digits.Substring(0, 2));
-                min = int.Parse(digits.Substring(2, 2));
-                tenth = int.Parse(digits.Substring(4, 1));
+                if (char.IsDigit(formatted[newCaret])) digitsCount++;
+                newCaret++;
             }
-            else // Longitude con 3 dígitos 
+            
+            // Si el usuario acaba de escribir un dígito y quedó parado justo antes de un símbolo de máscara, saltarlo
+            if (lastWasDigit)
             {
-                deg = int.Parse(digits.Substring(0, 3));
-                min = int.Parse(digits.Substring(3, 2));
-                tenth = int.Parse(digits.Substring(5, 1));
+                while (newCaret < formatted.Length && !char.IsDigit(formatted[newCaret]) && !validQuads.Contains(formatted[newCaret]))
+                {
+                    newCaret++;
+                }
             }
 
-            char quad = IsLatitude ? 'S' : 'O';
-            _isUpdating = true;
-            CoordInput.Text = $"{deg}º{min:D2},{tenth}'{quad}";
-            CoordInput.CaretIndex = CoordInput.Text.Length;
+            CoordInput.CaretIndex = newCaret;
             _isUpdating = false;
         }
-        catch { }
     }
 
     private void CoordInput_PreviewKeyDown(object sender, KeyEventArgs e)
