@@ -154,6 +154,19 @@ public class MainWindowViewModel : ObservableObject
             }
         }
     }
+
+    private bool _controlAgruparPorEtapas;
+    public bool ControlAgruparPorEtapas
+    {
+        get => _controlAgruparPorEtapas;
+        set
+        {
+            if (SetProperty(ref _controlAgruparPorEtapas, value))
+            {
+                _ = LoadControlProduccionAsync();
+            }
+        }
+    }
     
     // Filtros de Lances
     private bool _showTrackLine = true;
@@ -2485,17 +2498,74 @@ public class MainWindowViewModel : ObservableObject
                     "");
 
                 Records.Clear();
-                var etapasOrdenadas = activeMarea.Etapas.OrderBy(e => e.FechaZarpada).ToList();
                 
-                for (int i = 0; i < etapasOrdenadas.Count; i++)
+                if (_controlAgruparPorEtapas)
                 {
-                    var etapa = etapasOrdenadas[i];
-                    var etapaLances = lances.Where(l => l.MareaEtapaId == etapa.ID).ToList();
-                    var etapaProduccion = produccion.Where(p => p.MareaEtapaId == etapa.ID).ToList();
-                    var etapaNombre = $"Etapa {i + 1} ({etapa.FechaZarpada:dd/MM} - {etapa.FechaArribo?.ToString("dd/MM") ?? "Act."})";
+                    var etapasOrdenadas = activeMarea.Etapas.OrderBy(e => e.FechaZarpada).ToList();
+                    
+                    for (int i = 0; i < etapasOrdenadas.Count; i++)
+                    {
+                        var etapa = etapasOrdenadas[i];
+                        var etapaLances = lances.Where(l => l.MareaEtapaId == etapa.ID).ToList();
+                        var etapaProduccion = produccion.Where(p => p.MareaEtapaId == etapa.ID).ToList();
+                        var etapaNombre = $"Etapa {i + 1} ({etapa.FechaZarpada:dd/MM} - {etapa.FechaArribo?.ToString("dd/MM") ?? "Act."})";
 
-                    // Agrupar producción de la etapa
-                    var prodSummary = etapaProduccion
+                        // Agrupar producción de la etapa
+                        var prodSummary = etapaProduccion
+                            .GroupBy(p => (IsRaya(p.Especie) && (IsGenericRaya(p.Especie) || !_commonRayaIds.Contains(p.EspecieId!))) ? RayaGenericVirtualId : (p.EspecieId ?? "S/D"))
+                            .ToDictionary(g => g.Key, g => new {
+                                EspecieNombre = g.Key == RayaGenericVirtualId ? "Rayas (Rajidae - Otras/Genérico)" : (g.First().Especie?.FullDisplayName ?? g.First().Comentarios?.Replace("Importado: ", "") ?? "Desconocida"),
+                                PesoProcesadoTotal = g.Sum(p => p.Kg ?? 0),
+                                CapturaReconstruida = g.Sum(p => (p.Kg ?? 0) * (p.Factor ?? 1.0))
+                            });
+
+                        // Agrupar capturas de la etapa
+                        var catchSummary = etapaLances.SelectMany(l => l.ItemsCaptura)
+                            .GroupBy(c => (IsRaya(c.Especie) && (IsGenericRaya(c.Especie) || !_commonRayaIds.Contains(c.EspecieID!))) ? RayaGenericVirtualId : (c.EspecieID ?? "S/D"))
+                            .ToDictionary(g => g.Key, g => new {
+                                EspecieNombre = g.Key == RayaGenericVirtualId ? "Rayas (Rajidae - Otras/Genérico)" : (g.First().Especie?.FullDisplayName ?? "Desconocida"),
+                                CapturaBruta = g.Sum(c => c.CapturaTotalKgCalculado),
+                                DescarteKg = g.Sum(c => c.PesoDescarteCalculado),
+                                CapturaRetenida = g.Sum(c => c.CapturaTotalKgCalculado - c.PesoDescarteCalculado)
+                            });
+
+                        var allSpeciesIds = prodSummary.Keys.Union(catchSummary.Keys)
+                            .OrderByDescending(spId => {
+                                catchSummary.TryGetValue(spId, out var c);
+                                return c?.CapturaBruta ?? 0;
+                            })
+                            .ToList();
+                            
+                        foreach (var spId in allSpeciesIds)
+                        {
+                            prodSummary.TryGetValue(spId, out var pData);
+                            catchSummary.TryGetValue(spId, out var cData);
+
+                            Records.Add(new ControlProduccionListItemViewModel
+                            {
+                                NumeroEtapa = i + 1,
+                                EtapaDisplay = etapaNombre,
+                                Especie = pData?.EspecieNombre ?? cData?.EspecieNombre ?? "Desconocida",
+                                EspecieId = spId,
+                                ProduccionTotal = pData?.PesoProcesadoTotal ?? 0,
+                                CapturaReconstruida = pData?.CapturaReconstruida ?? 0,
+                                CapturaBruta = cData?.CapturaBruta ?? 0,
+                                DescarteKg = cData?.DescarteKg ?? 0,
+                                CapturaRetenida = cData?.CapturaRetenida ?? 0,
+                                IsSummaryView = true
+                            });
+                        }
+                    }
+
+                    // Aplicar agrupación en la vista
+                    RecordsView.GroupDescriptions.Clear();
+                    RecordsView.GroupDescriptions.Add(new PropertyGroupDescription(nameof(ControlProduccionListItemViewModel.EtapaDisplay)));
+                }
+                else
+                {
+                    // VISTA GLOBAL (Sin discriminar por etapas)
+                    // Agrupar producción de toda la marea
+                    var prodSummary = produccion
                         .GroupBy(p => (IsRaya(p.Especie) && (IsGenericRaya(p.Especie) || !_commonRayaIds.Contains(p.EspecieId!))) ? RayaGenericVirtualId : (p.EspecieId ?? "S/D"))
                         .ToDictionary(g => g.Key, g => new {
                             EspecieNombre = g.Key == RayaGenericVirtualId ? "Rayas (Rajidae - Otras/Genérico)" : (g.First().Especie?.FullDisplayName ?? g.First().Comentarios?.Replace("Importado: ", "") ?? "Desconocida"),
@@ -2503,8 +2573,8 @@ public class MainWindowViewModel : ObservableObject
                             CapturaReconstruida = g.Sum(p => (p.Kg ?? 0) * (p.Factor ?? 1.0))
                         });
 
-                    // Agrupar capturas de la etapa
-                    var catchSummary = etapaLances.SelectMany(l => l.ItemsCaptura)
+                    // Agrupar capturas de toda la marea
+                    var catchSummary = lances.SelectMany(l => l.ItemsCaptura)
                         .GroupBy(c => (IsRaya(c.Especie) && (IsGenericRaya(c.Especie) || !_commonRayaIds.Contains(c.EspecieID!))) ? RayaGenericVirtualId : (c.EspecieID ?? "S/D"))
                         .ToDictionary(g => g.Key, g => new {
                             EspecieNombre = g.Key == RayaGenericVirtualId ? "Rayas (Rajidae - Otras/Genérico)" : (g.First().Especie?.FullDisplayName ?? "Desconocida"),
@@ -2527,8 +2597,8 @@ public class MainWindowViewModel : ObservableObject
 
                         Records.Add(new ControlProduccionListItemViewModel
                         {
-                            NumeroEtapa = i + 1,
-                            EtapaDisplay = etapaNombre,
+                            NumeroEtapa = 0,
+                            EtapaDisplay = "Toda la marea",
                             Especie = pData?.EspecieNombre ?? cData?.EspecieNombre ?? "Desconocida",
                             EspecieId = spId,
                             ProduccionTotal = pData?.PesoProcesadoTotal ?? 0,
@@ -2539,11 +2609,10 @@ public class MainWindowViewModel : ObservableObject
                             IsSummaryView = true
                         });
                     }
-                }
 
-                // Aplicar agrupación en la vista
-                RecordsView.GroupDescriptions.Clear();
-                RecordsView.GroupDescriptions.Add(new PropertyGroupDescription(nameof(ControlProduccionListItemViewModel.EtapaDisplay)));
+                    // Sin agrupación
+                    RecordsView.GroupDescriptions.Clear();
+                }
             }
             else
             {

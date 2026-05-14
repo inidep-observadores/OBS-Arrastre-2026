@@ -935,6 +935,12 @@
                                               VerticalAlignment="Center"
                                               FontWeight="SemiBold"
                                               Foreground="{DynamicResource PrimaryTextBrush}" />
+                                    <CheckBox Content="Agrupar por etapas" 
+                                              IsChecked="{Binding ControlAgruparPorEtapas}"
+                                              VerticalAlignment="Center"
+                                              FontWeight="SemiBold"
+                                              Margin="24,0,0,0"
+                                              Foreground="{DynamicResource PrimaryTextBrush}" />
                                 </StackPanel>
                             </Border>
 
