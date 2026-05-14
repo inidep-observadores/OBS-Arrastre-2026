@@ -18,6 +18,7 @@ public sealed class SubmuestraEditViewModel : ValidatableViewModelBase<Submuestr
     private readonly IMuestraService _muestraService;
     private readonly Action _onClose;
     private readonly string _muestraId;
+    private readonly List<string> _deletedIds = new();
     private bool _isLoading;
 
     private string _especieNombre = string.Empty;
@@ -148,6 +149,10 @@ public sealed class SubmuestraEditViewModel : ValidatableViewModelBase<Submuestr
 
         if (result == System.Windows.MessageBoxResult.Yes)
         {
+            if (!string.IsNullOrEmpty(vm.Item.ID))
+            {
+                _deletedIds.Add(vm.Item.ID);
+            }
             Submuestras.Remove(vm);
         }
     }
@@ -159,10 +164,11 @@ public sealed class SubmuestraEditViewModel : ValidatableViewModelBase<Submuestr
             IsLoading = true;
             try
             {
-                // En un escenario real, borraríamos las que ya no están y guardaríamos las nuevas.
-                // Para este MVP, vamos a guardar todas las actuales.
-                // Nota: El servicio debería manejar la persistencia masiva.
-                
+                foreach (var id in _deletedIds)
+                {
+                    await _submuestraService.DeleteSubmuestraAsync(id);
+                }
+
                 foreach (var vm in Submuestras)
                 {
                     await _submuestraService.SaveSubmuestraAsync(vm.Item);
@@ -174,6 +180,14 @@ public sealed class SubmuestraEditViewModel : ValidatableViewModelBase<Submuestr
             {
                 IsLoading = false;
             }
+        }
+        else
+        {
+            System.Windows.MessageBox.Show(
+                "Existen errores de validación en los ejemplares. Por favor, revise los datos (especialmente Repleción Gástrica debe estar entre 0 y 4).",
+                "Error de Validación",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
         }
     }
 
@@ -219,5 +233,17 @@ public sealed class ItemSubmuestraRowViewModel : ObservableObject
     {
         get => Item.PesoTotalGramos;
         set { if (Item.PesoTotalGramos != value) { Item.PesoTotalGramos = value; OnPropertyChanged(); } }
+    }
+
+    public int? ReplecionGastrica
+    {
+        get => Item.ReplecionGastrica;
+        set { if (Item.ReplecionGastrica != value) { Item.ReplecionGastrica = value; OnPropertyChanged(); } }
+    }
+
+    public string? Comentarios
+    {
+        get => Item.Comentarios;
+        set { if (Item.Comentarios != value) { Item.Comentarios = value; OnPropertyChanged(); } }
     }
 }
