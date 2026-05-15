@@ -285,7 +285,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
         {
             var c = new LegacyCaptura
             {
-                Barco = GetString(reader, colMap, "BARCO"),
+                Barco = GetBarcoValue(reader, colMap),
                 Marea = GetDouble(reader, colMap, "MAREA"),
                 Lance = GetDouble(reader, colMap, "LANCE"),
                 Fecha = GetDateTime(reader, colMap, "FECHA") ?? DateTime.MinValue,
@@ -363,7 +363,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
             var m = new LegacyMuestra
             {
                 NumeroOrden = ++order,
-                Barco = GetString(reader, colMap, "BARCO"),
+                Barco = GetBarcoValue(reader, colMap),
                 Marea = GetDouble(reader, colMap, "MAREA"),
                 Lance = GetDouble(reader, colMap, "LANCE"),
                 Fecha = GetDateTime(reader, colMap, "FECHA") ?? DateTime.MinValue,
@@ -418,7 +418,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
             list.Add(new LegacySubmuestra
             {
                 NumeroOrden = ++order,
-                Barco = GetString(reader, colMap, "BARCO"),
+                Barco = GetBarcoValue(reader, colMap),
                 Marea = GetDouble(reader, colMap, "MAREA"),
                 Lance = GetDouble(reader, colMap, "LANCE"),
                 Fecha = GetDateTime(reader, colMap, "FECHA") ?? DateTime.MinValue,
@@ -457,7 +457,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
         {
             var lg = new LegacyLg
             {
-                Barco = GetString(reader, colMap, "BARCO"),
+                Barco = GetBarcoValue(reader, colMap),
                 Marea = GetDouble(reader, colMap, "MAREA"),
                 Lance = GetDouble(reader, colMap, "LANCE"),
                 Fecha = GetDateTime(reader, colMap, "FECHA") ?? DateTime.MinValue,
@@ -499,7 +499,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
 
             list.Add(new LegacyTracking
             {
-                Buque = GetString(reader, colMap, "BUQUE"),
+                Buque = GetBarcoValue(reader, colMap),
                 Matricula = GetString(reader, colMap, "MATRICULA"),
                 FechaStr = processedFecha,
                 Latitud = GetDouble(reader, colMap, "LATITUD"),
@@ -526,7 +526,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
             list.Add(new LegacyProduccion
             {
                 NumeroOrden = ++order,
-                Barco = GetString(reader, colMap, "BARCO"),
+                Barco = GetBarcoValue(reader, colMap),
                 Marea = GetDouble(reader, colMap, "MAREA"),
                 Fecha = GetDateTime(reader, colMap, "FECHA") ?? DateTime.MinValue,
                 Especie = GetString(reader, colMap, "ESPECIE"),
@@ -557,6 +557,21 @@ public sealed class DbfExtractorService : IDbfExtractorService
         {
             var value = reader.GetValue(index);
             return value?.ToString()?.Trim() ?? "";
+        }
+        return "";
+    }
+
+    private string GetBarcoValue(DbfDataReader.DbfDataReader reader, Dictionary<string, int> map)
+    {
+        string[] candidates = { "BARCO", "BUQUE", "BUQ", "NOMB_BUQUE", "NOMB_BARCO", "NOMBRE" };
+        foreach (var name in candidates)
+        {
+            if (map.TryGetValue(name, out int index))
+            {
+                var value = reader.GetValue(index);
+                var strValue = value?.ToString()?.Trim() ?? "";
+                if (!string.IsNullOrEmpty(strValue)) return strValue;
+            }
         }
         return "";
     }
