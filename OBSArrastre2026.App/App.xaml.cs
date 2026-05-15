@@ -115,13 +115,14 @@ public partial class App : Application
                         return new MuestraEditViewModel(onClose, validator, muestraService, lanceService, lanceId, muestraId);
                     });
 
-                services.AddSingleton<Func<Action, string, SubmuestraEditViewModel>>(sp =>
+                services.AddSingleton<Func<Action, string?, SubmuestraEditViewModel>>(sp =>
                     (onClose, muestraId) =>
                     {
                         var validator = sp.GetRequiredService<IValidator<SubmuestraEditViewModel>>();
                         var submuestraService = sp.GetRequiredService<ISubmuestraService>();
                         var muestraService = sp.GetRequiredService<IMuestraService>();
-                        return new SubmuestraEditViewModel(onClose, validator, submuestraService, muestraService, muestraId);
+                        var activeMareaManager = sp.GetRequiredService<IActiveMareaManager>();
+                        return new SubmuestraEditViewModel(onClose, validator, submuestraService, muestraService, activeMareaManager, muestraId);
                     });
 
                 services.AddTransient<ProduccionEditViewModel>();

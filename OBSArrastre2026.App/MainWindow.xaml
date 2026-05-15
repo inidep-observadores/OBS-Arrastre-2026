@@ -567,6 +567,40 @@
                             </Style>
                         </Button.Style>
                     </Button>
+
+                    <!-- Nuevo Botón de Acción para Crear Registro -->
+                    <Button Command="{Binding PrimaryActionCommand}"
+                            Margin="24,0,0,0"
+                            VerticalAlignment="Bottom"
+                            Padding="18,10"
+                            ToolTip="Agregar un nuevo registro en esta sección">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="+" FontSize="20" FontWeight="Bold" Margin="0,-2,8,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding PrimaryActionLabel}" VerticalAlignment="Center" FontWeight="Bold" />
+                        </StackPanel>
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Mareas}">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Lances}">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Muestras}">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Submuestras}">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Produccion}">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
                 </StackPanel>
 
                 <Border Grid.Column="1" 

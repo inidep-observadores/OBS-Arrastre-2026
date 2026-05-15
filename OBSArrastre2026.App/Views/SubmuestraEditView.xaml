@@ -53,8 +53,20 @@
                     </Grid.RowDefinitions>
                     
                     <StackPanel Grid.Row="0">
+                        <!-- SELECCIÓN DE MUESTRA -->
+                        <Grid Margin="0,0,0,20">
+                            <StackPanel>
+                                <Label Content="Seleccionar Muestra (Lance y Fecha)" Style="{StaticResource FormLabelStyle}" />
+                                <ComboBox ItemsSource="{Binding MuestrasDisponibles}"
+                                          SelectedValue="{Binding SelectedMuestraId}"
+                                          SelectedValuePath="Id"
+                                          DisplayMemberPath="DisplayLabel"
+                                          Style="{StaticResource PremiumComboBoxStyle}" />
+                            </StackPanel>
+                        </Grid>
+
                         <!-- CABECERA DE CONTEXTO (Muestra) -->
-                        <Grid Margin="0,0,0,24">
+                        <Grid Margin="0,0,0,24" Visibility="{Binding SelectedMuestraId, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=invert}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="24" />

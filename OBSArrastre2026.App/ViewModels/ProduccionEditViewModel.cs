@@ -32,6 +32,7 @@ public sealed partial class ProduccionEditViewModel : ValidatableViewModelBase<P
     private List<Especie> _allEspecies = new();
     private bool _isExpanded;
     private string _searchText = string.Empty;
+    private string _productSearchText = string.Empty;
 
     public ProduccionEditViewModel(
         Action onClose,
@@ -144,8 +145,25 @@ public sealed partial class ProduccionEditViewModel : ValidatableViewModelBase<P
     public Producto? SelectedProducto
     {
         get => _selectedProducto;
-        set => SetProperty(ref _selectedProducto, value);
+        set
+        {
+            if (SetProperty(ref _selectedProducto, value))
+            {
+                if (value != null)
+                {
+                    ProductSearchText = value.Codigo;
+                }
+            }
+        }
     }
+
+    public string ProductSearchText
+    {
+        get => _productSearchText;
+        set => SetProperty(ref _productSearchText, value);
+    }
+
+    public Func<string, string, Task<bool>>? ShowConfirmation { get; set; }
 
     public string? Categoria
     {
@@ -219,7 +237,44 @@ public sealed partial class ProduccionEditViewModel : ValidatableViewModelBase<P
     {
         if (!ValidateAll()) return;
 
-        if (SelectedEtapa == null || SelectedProducto == null) return;
+        if (SelectedEtapa == null) return;
+
+        // Lógica de creación de producto nuevo si no existe
+        if (SelectedProducto == null && !string.IsNullOrWhiteSpace(ProductSearchText))
+        {
+            if (ShowConfirmation != null)
+            {
+                var confirm = await ShowConfirmation(
+                    "Producto nuevo", 
+                    $"El producto '{ProductSearchText}' no existe. ¿Desea crearlo y asignarlo a este registro?");
+                
+                if (confirm)
+                {
+                    var nuevoProducto = new Producto
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        Codigo = ProductSearchText,
+                        Descripcion = ProductSearchText,
+                        Orden = Productos.Count > 0 ? Productos.Max(p => p.Orden) + 1 : 1
+                    };
+                    
+                    await _productoService.SaveProductoAsync(nuevoProducto);
+                    Productos.Add(nuevoProducto);
+                    SelectedProducto = nuevoProducto;
+                }
+                else
+                {
+                    return; // El usuario no quiso crear el producto
+                }
+            }
+            else
+            {
+                // Si no hay forma de confirmar, no podemos seguir si no hay producto
+                return;
+            }
+        }
+
+        if (SelectedProducto == null) return;
 
         var registro = new RegistroProduccion
         {

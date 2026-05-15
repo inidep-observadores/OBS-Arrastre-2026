@@ -16,8 +16,9 @@ public sealed class SubmuestraEditViewModel : ValidatableViewModelBase<Submuestr
 {
     private readonly ISubmuestraService _submuestraService;
     private readonly IMuestraService _muestraService;
+    private readonly IActiveMareaManager _activeMareaManager;
     private readonly Action _onClose;
-    private readonly string _muestraId;
+    private string? _selectedMuestraId;
     private readonly List<string> _deletedIds = new();
     private bool _isLoading;
 
@@ -30,16 +31,18 @@ public sealed class SubmuestraEditViewModel : ValidatableViewModelBase<Submuestr
         IValidator<SubmuestraEditViewModel> validator,
         ISubmuestraService submuestraService,
         IMuestraService muestraService,
-        string muestraId) : base(validator)
+        IActiveMareaManager activeMareaManager,
+        string? muestraId) : base(validator)
     {
         _onClose = onClose;
         _submuestraService = submuestraService;
         _muestraService = muestraService;
-        _muestraId = muestraId;
+        _activeMareaManager = activeMareaManager;
+        _selectedMuestraId = muestraId;
 
         SaveCommand = new AsyncRelayCommand(SaveAsync);
         CancelCommand = new RelayCommand(Cancel);
-        AddItemCommand = new RelayCommand(AddItem);
+        AddItemCommand = new RelayCommand(AddItem, () => !string.IsNullOrEmpty(SelectedMuestraId));
         RemoveItemCommand = new RelayCommand<ItemSubmuestraRowViewModel>(RemoveItem);
         GoToNextCommand = new RelayCommand(GoToNext, () => CanGoToNext);
         GoToPreviousCommand = new RelayCommand(GoToPrevious, () => CanGoToPrevious);
@@ -48,6 +51,7 @@ public sealed class SubmuestraEditViewModel : ValidatableViewModelBase<Submuestr
     }
 
     public ObservableCollection<ItemSubmuestraRowViewModel> Submuestras { get; } = new();
+    public ObservableCollection<MuestraSelectionOption> MuestrasDisponibles { get; } = new();
     
     public List<SexoOption> SexoOptions { get; } = new()
     {
@@ -59,6 +63,19 @@ public sealed class SubmuestraEditViewModel : ValidatableViewModelBase<Submuestr
     public bool IsLoading { get => _isLoading; set => SetProperty(ref _isLoading, value); }
     public string EspecieNombre { get => _especieNombre; set => SetProperty(ref _especieNombre, value); }
     public string PesoMuestraDisplay { get => _pesoMuestraDisplay; set => SetProperty(ref _pesoMuestraDisplay, value); }
+
+    public string? SelectedMuestraId
+    {
+        get => _selectedMuestraId;
+        set
+        {
+            if (SetProperty(ref _selectedMuestraId, value))
+            {
+                _ = OnMuestraChangedAsync();
+                ((RelayCommand)AddItemCommand).RaiseCanExecuteChanged();
+            }
+        }
+    }
 
     public ItemSubmuestraRowViewModel? SelectedSubmuestra
     {
@@ -87,20 +104,22 @@ public sealed class SubmuestraEditViewModel : ValidatableViewModelBase<Submuestr
         IsLoading = true;
         try
         {
-            var muestra = await _muestraService.GetMuestraAsync(_muestraId);
-            if (muestra != null)
+            var activeMareaId = _activeMareaManager.ActiveMareaId;
+            if (!string.IsNullOrEmpty(activeMareaId))
             {
-                EspecieNombre = muestra.Especie?.NombreVulgar ?? "Sin Especie";
-                PesoMuestraDisplay = muestra.PesoMuestra_PesoGramos.HasValue 
-                    ? $"{(muestra.PesoMuestra_PesoGramos.Value / 1000.0):N2} kg" 
-                    : "0.00 kg";
-
-                var subs = await _submuestraService.GetSubmuestrasByMuestraIdAsync(_muestraId);
-                Submuestras.Clear();
-                foreach (var s in subs)
+                var muestras = await _muestraService.GetMuestrasPorMareaAsync(activeMareaId);
+                MuestrasDisponibles.Clear();
+                foreach (var m in muestras.OrderBy(x => x.Lance?.NroLance).ThenBy(x => x.Especie?.NombreVulgar))
                 {
-                    Submuestras.Add(new ItemSubmuestraRowViewModel(s));
+                    string lanceInfo = m.Lance != null ? $"Lance {m.Lance.NroLance} ({m.Lance.Fecha})" : "Sin Lance";
+                    string especieInfo = m.Especie?.NombreVulgar ?? "Sin Especie";
+                    MuestrasDisponibles.Add(new MuestraSelectionOption(m.ID, $"{lanceInfo} - {especieInfo}"));
                 }
+            }
+
+            if (!string.IsNullOrEmpty(_selectedMuestraId))
+            {
+                SelectedMuestraId = _selectedMuestraId;
             }
         }
         finally
@@ -109,10 +128,53 @@ public sealed class SubmuestraEditViewModel : ValidatableViewModelBase<Submuestr
         }
     }
 
+    private async Task OnMuestraChangedAsync()
+    {
+        if (string.IsNullOrEmpty(SelectedMuestraId))
+        {
+            Submuestras.Clear();
+            EspecieNombre = string.Empty;
+            PesoMuestraDisplay = string.Empty;
+            return;
+        }
+
+        IsLoading = true;
+        try
+        {
+            await LoadMuestraDataAsync(SelectedMuestraId);
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task LoadMuestraDataAsync(string muestraId)
+    {
+        var muestra = await _muestraService.GetMuestraAsync(muestraId);
+        if (muestra != null)
+        {
+            EspecieNombre = muestra.Especie?.NombreVulgar ?? "Sin Especie";
+            PesoMuestraDisplay = muestra.PesoMuestra_PesoGramos.HasValue 
+                ? $"{(muestra.PesoMuestra_PesoGramos.Value / 1000.0):N2} kg" 
+                : "0.00 kg";
+
+            var subs = await _submuestraService.GetSubmuestrasByMuestraIdAsync(muestraId);
+            Submuestras.Clear();
+            _deletedIds.Clear();
+            foreach (var s in subs)
+            {
+                Submuestras.Add(new ItemSubmuestraRowViewModel(s));
+            }
+        }
+    }
+
     private void AddItem()
     {
+        if (string.IsNullOrEmpty(SelectedMuestraId)) return;
+
         var lastNro = Submuestras.LastOrDefault()?.NroEjemplar ?? 0;
-        var newItem = new ItemSubmuestra { MuestraID = _muestraId, NroEjemplar = lastNro + 1 };
+        var newItem = new ItemSubmuestra { MuestraID = SelectedMuestraId, NroEjemplar = lastNro + 1 };
         var vm = new ItemSubmuestraRowViewModel(newItem);
         Submuestras.Add(vm);
         SelectedSubmuestra = vm;
@@ -159,6 +221,12 @@ public sealed class SubmuestraEditViewModel : ValidatableViewModelBase<Submuestr
 
     private async Task SaveAsync()
     {
+        if (string.IsNullOrEmpty(SelectedMuestraId))
+        {
+            System.Windows.MessageBox.Show("Debe seleccionar una muestra.", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
         if (ValidateAll())
         {
             IsLoading = true;
@@ -171,6 +239,8 @@ public sealed class SubmuestraEditViewModel : ValidatableViewModelBase<Submuestr
 
                 foreach (var vm in Submuestras)
                 {
+                    // Asegurar que el MuestraID sea el correcto si se cambió en el dropdown antes de añadir ítems
+                    vm.Item.MuestraID = SelectedMuestraId;
                     await _submuestraService.SaveSubmuestraAsync(vm.Item);
                 }
 
@@ -195,6 +265,7 @@ public sealed class SubmuestraEditViewModel : ValidatableViewModelBase<Submuestr
 }
 
 public record SexoOption(int? Value, string Label);
+public record MuestraSelectionOption(string Id, string DisplayLabel);
 
 public sealed class ItemSubmuestraRowViewModel : ObservableObject
 {

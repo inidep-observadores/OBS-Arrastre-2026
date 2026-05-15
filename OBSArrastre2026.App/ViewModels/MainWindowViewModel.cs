@@ -32,7 +32,7 @@ public class MainWindowViewModel : ObservableObject
     private readonly Func<Action, string?, MareaEditViewModel> _mareaEditFactory;
     private readonly Func<Action, string, string?, LanceEditViewModel> _lanceEditFactory;
     private readonly Func<Action, string, string?, MuestraEditViewModel> _muestraEditFactory;
-    private readonly Func<Action, string, SubmuestraEditViewModel> _submuestraEditFactory;
+    private readonly Func<Action, string?, SubmuestraEditViewModel> _submuestraEditFactory;
     private readonly Func<Action, string?, ProduccionEditViewModel> _produccionEditFactory;
     private readonly ISubmuestraService _submuestraService;
     private readonly IActiveMareaManager _activeMareaManager;
@@ -52,6 +52,7 @@ public class MainWindowViewModel : ObservableObject
     private string _pageDescription = string.Empty;
     private string _pageEyebrow = string.Empty;
     private string _primaryActionLabel = string.Empty;
+    private ICommand _primaryActionCommand;
     private AppThemeMode _currentThemeMode;
     private object? _currentEditViewModel;
     private object? _activeDialog;
@@ -351,7 +352,7 @@ public class MainWindowViewModel : ObservableObject
         Func<Action, string?, MareaEditViewModel> mareaEditFactory,
         Func<Action, string, string?, LanceEditViewModel> lanceEditFactory,
         Func<Action, string, string?, MuestraEditViewModel> muestraEditFactory,
-        Func<Action, string, SubmuestraEditViewModel> submuestraEditFactory,
+        Func<Action, string?, SubmuestraEditViewModel> submuestraEditFactory,
         ISubmuestraService submuestraService,
         IProduccionService produccionService,
         Func<Action, string?, ProduccionEditViewModel> produccionEditFactory,
@@ -509,7 +510,11 @@ public class MainWindowViewModel : ObservableObject
 
     public ICommand SetDarkThemeCommand { get; }
 
-    public ICommand PrimaryActionCommand { get; private set; }
+    public ICommand PrimaryActionCommand
+    {
+        get => _primaryActionCommand;
+        private set => SetProperty(ref _primaryActionCommand, value);
+    }
 
     public ICommand EditMareaCommand { get; }
     public ICommand ApplyMareaFiltersCommand { get; }
@@ -687,19 +692,23 @@ public class MainWindowViewModel : ObservableObject
     private void OpenCreateProduccionForm()
     {
         SaveSelection();
-        CurrentEditViewModel = _produccionEditFactory(() => {
+        var vm = _produccionEditFactory(() => {
             CurrentEditViewModel = null;
             _ = LoadProduccionAsync();
         }, null);
+        vm.ShowConfirmation = async (t, m) => (await ShowConfirmationAsync(t, m)) == true;
+        CurrentEditViewModel = vm;
     }
 
     private void OpenEditProduccionForm(ProduccionListItemViewModel vm)
     {
         SaveSelection();
-        CurrentEditViewModel = _produccionEditFactory(() => {
+        var editVm = _produccionEditFactory(() => {
             CurrentEditViewModel = null;
             _ = LoadProduccionAsync();
         }, vm.Registro.Id);
+        editVm.ShowConfirmation = async (t, m) => (await ShowConfirmationAsync(t, m)) == true;
+        CurrentEditViewModel = editVm;
     }
 
     private async Task LoadSubmuestrasAsync()
@@ -722,6 +731,16 @@ public class MainWindowViewModel : ObservableObject
         }
 
         RestoreSelection();
+    }
+
+    private void OpenCreateSubmuestraForm()
+    {
+        SaveSelection();
+        var activeMarea = _activeMareaManager.ActiveMarea;
+        if (activeMarea == null) return;
+
+        string? initialMuestraId = (SelectedRecord is MuestraListItemViewModel muestraVm) ? muestraVm.Muestra.ID : null;
+        CurrentEditViewModel = _submuestraEditFactory(() => { CurrentEditViewModel = null; _ = LoadSubmuestrasAsync(); }, initialMuestraId);
     }
 
     private void OpenEditMuestraForm(MuestraListItemViewModel? vm)
@@ -1340,6 +1359,7 @@ public class MainWindowViewModel : ObservableObject
             PageTitle = mareaSection.Title;
             PageDescription = mareaSection.Description;
             PrimaryActionLabel = mareaSection.PrimaryActionLabel;
+            PrimaryActionCommand = new RelayCommand(OpenCreateMareaForm);
             
             SetColumnHeaders(
                 mareaSection.Column1Header,
@@ -1401,7 +1421,7 @@ public class MainWindowViewModel : ObservableObject
             PageTitle = subSection.Title;
             PageDescription = subSection.Description;
             PrimaryActionLabel = subSection.PrimaryActionLabel;
-            PrimaryActionCommand = new RelayCommand(() => ShowMessage("En desarrollo", "La creación de submuestras individuales se realiza desde la edición de muestras."));
+            PrimaryActionCommand = new RelayCommand(OpenCreateSubmuestraForm);
 
             SetColumnHeaders(
                 "Nro. Lance",

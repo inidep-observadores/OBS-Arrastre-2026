@@ -9,4 +9,5 @@ public interface IProductoService
 {
     Task<IReadOnlyList<Producto>> GetProductosAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Especie>> GetEspeciesAsync(CancellationToken cancellationToken = default);
+    Task SaveProductoAsync(Producto producto, CancellationToken cancellationToken = default);
 }

@@ -11,6 +11,18 @@ namespace OBSArrastre2026.App.Services;
 
 public sealed class MuestraService(IDbContextFactory<AppDbContext> dbContextFactory) : IMuestraService
 {
+    public async Task<IReadOnlyList<Muestra>> GetMuestrasPorMareaAsync(string mareaId, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+        return await dbContext.Muestras
+            .Include(m => m.Especie)
+            .Include(m => m.Lance)
+            .Where(m => m.Lance!.MareaEtapa!.MareaID == mareaId)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Muestra>> GetMuestrasAsync(string lanceId, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);

@@ -27,4 +27,21 @@ public sealed class ProductoService(IDbContextFactory<AppDbContext> dbContextFac
             .ThenBy(e => e.NombreVulgar)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task SaveProductoAsync(Producto producto, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        
+        var existing = await dbContext.Productos.FirstOrDefaultAsync(p => p.Id == producto.Id, cancellationToken);
+        if (existing == null)
+        {
+            await dbContext.Productos.AddAsync(producto, cancellationToken);
+        }
+        else
+        {
+            dbContext.Entry(existing).CurrentValues.SetValues(producto);
+        }
+        
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
 }

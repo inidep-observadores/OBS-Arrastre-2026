@@ -86,6 +86,7 @@
                             <Label Content="Producto" Style="{StaticResource FormLabelStyle}" />
                             <ComboBox ItemsSource="{Binding Productos}"
                                       SelectedItem="{Binding SelectedProducto}"
+                                      Text="{Binding ProductSearchText, UpdateSourceTrigger=PropertyChanged}"
                                       DisplayMemberPath="Codigo"
                                       IsEditable="True"
                                       TextSearch.TextPath="Codigo"
