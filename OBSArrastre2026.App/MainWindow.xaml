@@ -308,6 +308,7 @@
                         <ColumnDefinition Width="1.4*" MinWidth="95" />
                         <ColumnDefinition Width="1.4*" MinWidth="95" />
                         <ColumnDefinition Width="1.4*" MinWidth="95" />
+                        <ColumnDefinition Width="1.4*" MinWidth="95" />
                         <ColumnDefinition Width="1.0*" MinWidth="80" />
                         <ColumnDefinition Width="0.5*" />
                     </Grid.ColumnDefinitions>
@@ -347,8 +348,19 @@
                                Foreground="{DynamicResource SecondaryTextBrush}" Text="{Binding CapturaRetenidaDisplay}" />
 
                     <!-- Columna 7: Dif. Kg -->
-                    <TextBlock Grid.Column="6" VerticalAlignment="Center" HorizontalAlignment="Right" 
-                               Foreground="{DynamicResource SecondaryTextBrush}" Text="{Binding DiferenciaKgDisplay}" />
+                    <TextBlock Grid.Column="6" VerticalAlignment="Center" HorizontalAlignment="Right" FontWeight="SemiBold">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Text" Value="{Binding DiferenciaKgDisplay}" />
+                                <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsDiferenciaKgNegativa}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource DangerForegroundBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
 
                     <!-- Columna 8: Dif. % -->
                     <TextBlock Grid.Column="7" VerticalAlignment="Center" HorizontalAlignment="Right" FontWeight="SemiBold">
@@ -357,16 +369,34 @@
                                 <Setter Property="Text" Value="{Binding DiferenciaPorcentajeDisplay}" />
                                 <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding HasDiferenciaSignificativa}" Value="True">
-                                        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                                    <DataTrigger Binding="{Binding IsDiferenciaPorcentajeNegativo}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource DangerForegroundBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+
+                    <!-- Columna 9: Saldo Acumulado -->
+                    <TextBlock Grid.Column="8" VerticalAlignment="Center" HorizontalAlignment="Right" FontWeight="SemiBold">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Text" Value="{Binding SaldoAcumuladoKgDisplay}" />
+                                <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsSaldoNegativo}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource DangerForegroundBrush}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsSaldoExcesivo}" Value="True">
+                                        <Setter Property="Foreground" Value="#FFD700" /> <!-- Dorado/Naranja para aviso de saldo alto -->
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </TextBlock.Style>
                     </TextBlock>
                     
-                    <!-- Columna 9: Vacía/Padding -->
-                    <TextBlock Grid.Column="8" Text="" />
+                    <!-- Columna 10: Vacía/Padding -->
+                    <TextBlock Grid.Column="9" Text="" />
                 </Grid>
             </Border>
         </DataTemplate>
@@ -1183,6 +1213,7 @@
                                             <ColumnDefinition Width="1.4*" MinWidth="95" />
                                             <ColumnDefinition Width="1.4*" MinWidth="95" />
                                             <ColumnDefinition Width="1.0*" MinWidth="80" />
+                                            <ColumnDefinition Width="1.4*" MinWidth="95" />
                                             <ColumnDefinition Width="0.5*" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column1Header}" HorizontalAlignment="Left" VerticalAlignment="Center" />
@@ -1193,7 +1224,8 @@
                                         <TextBlock Grid.Column="5" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column6Header}" HorizontalAlignment="Right" />
                                         <TextBlock Grid.Column="6" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column7Header}" HorizontalAlignment="Right" />
                                         <TextBlock Grid.Column="7" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column8Header}" HorizontalAlignment="Right" />
-                                        <TextBlock Grid.Column="8" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column9Header}" />
+                                        <TextBlock Grid.Column="8" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column9Header}" HorizontalAlignment="Right" />
+                                        <TextBlock Grid.Column="9" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column10Header}" />
                                     </Grid>
 
                                     <!-- Encabezados Especializados para Produccion (Mayor ancho para Especie) -->
@@ -1311,6 +1343,7 @@
                                         <ColumnDefinition Width="1.4*" MinWidth="95" />
                                         <ColumnDefinition Width="1.4*" MinWidth="95" />
                                         <ColumnDefinition Width="1.0*" MinWidth="80" />
+                                        <ColumnDefinition Width="1.4*" MinWidth="95" />
                                         <ColumnDefinition Width="0.5*" />
                                     </Grid.ColumnDefinitions>
 
@@ -1320,8 +1353,51 @@
                                     <TextBlock Grid.Column="3" Text="{Binding TotalCapturaBrutaControl, StringFormat={}{0:N1}}" VerticalAlignment="Center" FontWeight="Bold" Foreground="{DynamicResource SidebarSecondaryForegroundBrush}" HorizontalAlignment="Right" />
                                     <TextBlock Grid.Column="4" Text="{Binding TotalDescarteControl, StringFormat={}{0:N1}}" VerticalAlignment="Center" FontWeight="Bold" Foreground="{DynamicResource SidebarSecondaryForegroundBrush}" HorizontalAlignment="Right" />
                                     <TextBlock Grid.Column="5" Text="{Binding TotalRetenidaControl, StringFormat={}{0:N1}}" VerticalAlignment="Center" FontWeight="Bold" Foreground="{DynamicResource SidebarSecondaryForegroundBrush}" HorizontalAlignment="Right" />
-                                    <TextBlock Grid.Column="6" Text="{Binding TotalDiferenciaKgControl, StringFormat={}{0:N1}}" VerticalAlignment="Center" FontWeight="Bold" Foreground="{DynamicResource SidebarSecondaryForegroundBrush}" HorizontalAlignment="Right" />
-                                     <TextBlock Grid.Column="7" Text="{Binding TotalDiferenciaPorcentajeControl, StringFormat={}{0:N2}%}" VerticalAlignment="Center" FontWeight="Bold" Foreground="{DynamicResource SidebarSecondaryForegroundBrush}" HorizontalAlignment="Right" />
+                                    
+                                    <!-- Dif. Kg Total -->
+                                    <TextBlock Grid.Column="6" VerticalAlignment="Center" FontWeight="Bold" HorizontalAlignment="Right">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="{Binding TotalDiferenciaKgControl, StringFormat={}{0:N1}}" />
+                                                <Setter Property="Foreground" Value="{DynamicResource SidebarSecondaryForegroundBrush}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsTotalSaldoNegativo}" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource DangerForegroundBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+
+                                    <!-- Dif. % Total -->
+                                    <TextBlock Grid.Column="7" VerticalAlignment="Center" FontWeight="Bold" HorizontalAlignment="Right">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="{Binding TotalDiferenciaPorcentajeControl, StringFormat={}{0:N2}%}" />
+                                                <Setter Property="Foreground" Value="{DynamicResource SidebarSecondaryForegroundBrush}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsTotalDiferenciaPorcentajeNegativo}" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource DangerForegroundBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+
+                                    <!-- Saldo Acumulado Total -->
+                                    <TextBlock Grid.Column="8" VerticalAlignment="Center" FontWeight="Bold" HorizontalAlignment="Right">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="{Binding TotalDiferenciaKgControl, StringFormat={}{0:N1}}" />
+                                                <Setter Property="Foreground" Value="{DynamicResource SidebarSecondaryForegroundBrush}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsTotalSaldoNegativo}" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource DangerForegroundBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
 
 
                                 </Grid>

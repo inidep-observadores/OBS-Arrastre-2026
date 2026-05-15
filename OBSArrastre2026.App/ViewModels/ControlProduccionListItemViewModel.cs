@@ -34,8 +34,16 @@ public sealed class ControlProduccionListItemViewModel : ObservableObject
         ? (DiferenciaKg * 100.0 / CapturaRetenida) 
         : (CapturaReconstruida > 0 ? -100.0 : 0);
 
+    public double SaldoAcumuladoKg { get; set; }
+
     public string DiferenciaKgDisplay => DiferenciaKg.ToString("N1");
     public string DiferenciaPorcentajeDisplay => DiferenciaPorcentaje.ToString("N2") + "%";
+    public string SaldoAcumuladoKgDisplay => SaldoAcumuladoKg.ToString("N1");
 
     public bool HasDiferenciaSignificativa => Math.Abs(DiferenciaKg) > (CapturaRetenida * 0.01);
+    
+    public bool IsSaldoNegativo => SaldoAcumuladoKg < -0.1; // Tolerancia pequeña para errores de redondeo
+    public bool IsSaldoExcesivo => SaldoAcumuladoKg > 50000; // Por ejemplo, más de 50 toneladas pendientes (ajustable)
+    public bool IsDiferenciaKgNegativa => DiferenciaKg < -0.1;
+    public bool IsDiferenciaPorcentajeNegativo => DiferenciaPorcentaje < -0.1;
 }

@@ -70,6 +70,7 @@ public class ControlProduccionDetalleEspecieItem
     public double DescarteKg { get; set; }
     public double CapturaRetenida { get; set; }
     public double DiferenciaKg { get; set; }
+    public double SaldoAcumuladoKg { get; set; }
     public string DiferenciaPorcentaje { get; set; } = string.Empty;
 }
 

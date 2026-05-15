@@ -173,15 +173,30 @@ public class MainWindowViewModel : ObservableObject
     public double TotalDiferenciaKgControl
     {
         get => _totalDiferenciaKgControl;
-        private set => SetProperty(ref _totalDiferenciaKgControl, value);
+        private set
+        {
+            if (SetProperty(ref _totalDiferenciaKgControl, value))
+            {
+                OnPropertyChanged(nameof(IsTotalSaldoNegativo));
+            }
+        }
     }
     
     private double _totalDiferenciaPorcentajeControl;
     public double TotalDiferenciaPorcentajeControl
     {
         get => _totalDiferenciaPorcentajeControl;
-        private set => SetProperty(ref _totalDiferenciaPorcentajeControl, value);
+        private set
+        {
+            if (SetProperty(ref _totalDiferenciaPorcentajeControl, value))
+            {
+                OnPropertyChanged(nameof(IsTotalDiferenciaPorcentajeNegativo));
+            }
+        }
     }
+
+    public bool IsTotalSaldoNegativo => TotalDiferenciaKgControl < -0.1;
+    public bool IsTotalDiferenciaPorcentajeNegativo => TotalDiferenciaPorcentajeControl < -0.01;
 
 
     // Filtros de Mareas
@@ -1320,6 +1335,7 @@ public class MainWindowViewModel : ObservableObject
     public string Column7Header { get; private set; } = string.Empty;
     public string Column8Header { get; private set; } = string.Empty;
     public string Column9Header { get; private set; } = string.Empty;
+    public string Column10Header { get; private set; } = string.Empty;
 
     public ICommand ClearActiveMareaCommand => new AsyncRelayCommand(() => _activeMareaManager.SetActiveMareaAsync(null));
 
@@ -1944,7 +1960,7 @@ public class MainWindowViewModel : ObservableObject
     }
 
 
-    private void SetColumnHeaders(string column1, string column2, string column3, string column4, string column5, string column6 = "", string column7 = "", string column8 = "", string column9 = "")
+    private void SetColumnHeaders(string column1, string column2, string column3, string column4, string column5, string column6 = "", string column7 = "", string column8 = "", string column9 = "", string column10 = "")
     {
         Column1Header = column1;
         Column2Header = column2;
@@ -1955,6 +1971,7 @@ public class MainWindowViewModel : ObservableObject
         Column7Header = column7;
         Column8Header = column8;
         Column9Header = column9;
+        Column10Header = column10;
 
         OnPropertyChanged(nameof(Column1Header));
         OnPropertyChanged(nameof(Column2Header));
@@ -1965,6 +1982,7 @@ public class MainWindowViewModel : ObservableObject
         OnPropertyChanged(nameof(Column7Header));
         OnPropertyChanged(nameof(Column8Header));
         OnPropertyChanged(nameof(Column9Header));
+        OnPropertyChanged(nameof(Column10Header));
     }
 
     private string FormatCoordinate(double? value, bool isLatitude)
@@ -2537,6 +2555,7 @@ public class MainWindowViewModel : ObservableObject
                     DescarteKg = l.DescarteKg,
                     CapturaRetenida = l.CapturaRetenida,
                     DiferenciaKg = l.DiferenciaKg,
+                    SaldoAcumuladoKg = l.SaldoAcumuladoKg,
                     DiferenciaPorcentaje = l.DiferenciaPorcentajeDisplay
                 }).ToList()
             };
@@ -2651,6 +2670,7 @@ public class MainWindowViewModel : ObservableObject
                     "Capt. Retenida",
                     "Dif. Kg",
                     "Dif. %",
+                    "Saldo Acum.",
                     "");
 
                 Records.Clear();
@@ -2710,6 +2730,9 @@ public class MainWindowViewModel : ObservableObject
                                 CapturaRetenida = cData?.CapturaRetenida ?? 0,
                                 IsSummaryView = true
                             });
+
+                            var lastAdded = Records.Last() as ControlProduccionListItemViewModel;
+                            if (lastAdded != null) lastAdded.SaldoAcumuladoKg = lastAdded.DiferenciaKg;
                         }
                     }
 
@@ -2764,6 +2787,9 @@ public class MainWindowViewModel : ObservableObject
                             CapturaRetenida = cData?.CapturaRetenida ?? 0,
                             IsSummaryView = true
                         });
+
+                        var lastTotalItem = Records.Last() as ControlProduccionListItemViewModel;
+                        if (lastTotalItem != null) lastTotalItem.SaldoAcumuladoKg = lastTotalItem.DiferenciaKg;
                     }
 
                     // Sin agrupación
@@ -2792,6 +2818,7 @@ public class MainWindowViewModel : ObservableObject
                     "Capt. Retenida",
                     "Dif. Kg",
                     "Dif. %",
+                    "Saldo Acum.",
                     "");
 
                 bool isRayaGenericGroup = ControlProduccionSelectedEspecieId == RayaGenericVirtualId;
@@ -2844,13 +2871,14 @@ public class MainWindowViewModel : ObservableObject
                 // Unir fechas
                 var allDates = prodByDate.Keys.Union(catchByDate.Keys).OrderBy(d => d).ToList();
                 var results = new List<ControlProduccionListItemViewModel>();
+                double saldoAcumulado = 0;
 
                 foreach (var date in allDates)
                 {
                     prodByDate.TryGetValue(date, out var pData);
                     catchByDate.TryGetValue(date, out var cData);
 
-                    results.Add(new ControlProduccionListItemViewModel
+                    var itemVm = new ControlProduccionListItemViewModel
                     {
                         Fecha = date,
                         Especie = pData?.EspecieNombre ?? (isRayaGenericGroup ? "Rayas (Rajidae - Otras/Genérico)" : ControlProduccionSelectedEspecie?.FullDisplayName ?? "Desconocida"),
@@ -2861,7 +2889,11 @@ public class MainWindowViewModel : ObservableObject
                         DescarteKg = cData?.DescarteKg ?? 0,
                         CapturaRetenida = cData?.CapturaRetenida ?? 0,
                         IsSummaryView = false
-                    });
+                    };
+
+                    saldoAcumulado += itemVm.DiferenciaKg;
+                    itemVm.SaldoAcumuladoKg = saldoAcumulado;
+                    results.Add(itemVm);
                 }
 
                 var viewModels = results.ToList(); // Ya vienen ordenados por fecha por allDates

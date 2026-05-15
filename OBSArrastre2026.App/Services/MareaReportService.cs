@@ -494,6 +494,7 @@ public class MareaReportService : IMareaReportService
                             columns.RelativeColumn();   // Capt. Retenida
                             columns.RelativeColumn();   // Dif. Kg
                             columns.RelativeColumn();   // Dif. %
+                            columns.RelativeColumn();   // Saldo Acum.
                         });
 
                         table.Header(header =>
@@ -506,6 +507,7 @@ public class MareaReportService : IMareaReportService
                             header.Cell().Element(HeaderStyle).AlignRight().Text("CAPT. RET.");
                             header.Cell().Element(HeaderStyle).AlignRight().Text("DIF. KG");
                             header.Cell().Element(HeaderStyle).AlignRight().Text("DIF. %");
+                            header.Cell().Element(HeaderStyle).AlignRight().Text("SALDO ACUM.");
                         });
 
                         foreach (var item in report.Items)
@@ -518,6 +520,7 @@ public class MareaReportService : IMareaReportService
                             table.Cell().Element(CellStyle).AlignRight().Text(item.CapturaRetenida.ToString("N1"));
                             table.Cell().Element(CellStyle).AlignRight().Text(item.DiferenciaKg.ToString("N1"));
                             table.Cell().Element(CellStyle).AlignRight().Text(item.DiferenciaPorcentaje);
+                            table.Cell().Element(CellStyle).AlignRight().Text(item.SaldoAcumuladoKg.ToString("N1"));
                         }
 
                         // Totales
@@ -535,6 +538,7 @@ public class MareaReportService : IMareaReportService
                         
                         table.Cell().Element(FooterStyle).AlignRight().Text(totalDifKg.ToString("N1")).SemiBold();
                         table.Cell().Element(FooterStyle).AlignRight().Text(totalDifPct.ToString("N2") + "%").SemiBold();
+                        table.Cell().Element(FooterStyle).AlignRight().Text(totalDifKg.ToString("N1")).SemiBold();
 
                         IContainer CellStyle(IContainer container) => container.PaddingVertical(3).BorderBottom(1).BorderColor(Colors.Grey.Lighten4);
                         IContainer FooterStyle(IContainer container) => container.PaddingVertical(8).BorderTop(2).BorderColor(Colors.Black);
