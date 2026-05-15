@@ -301,15 +301,15 @@
                 
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="3.0*" />
-                        <ColumnDefinition Width="1.4*" />
-                        <ColumnDefinition Width="0.9*" />
-                        <ColumnDefinition Width="1.4*" />
-                        <ColumnDefinition Width="0.9*" />
-                        <ColumnDefinition Width="0.9*" />
-                        <ColumnDefinition Width="1.1*" MinWidth="90" />
-                        <ColumnDefinition Width="0.5*" MinWidth="70" />
-                        <ColumnDefinition Width="0.1*" />
+                        <ColumnDefinition Width="1.1*" MinWidth="85" />
+                        <ColumnDefinition Width="1.4*" MinWidth="95" />
+                        <ColumnDefinition Width="1.4*" MinWidth="95" />
+                        <ColumnDefinition Width="1.4*" MinWidth="95" />
+                        <ColumnDefinition Width="1.4*" MinWidth="95" />
+                        <ColumnDefinition Width="1.4*" MinWidth="95" />
+                        <ColumnDefinition Width="1.4*" MinWidth="95" />
+                        <ColumnDefinition Width="1.0*" MinWidth="80" />
+                        <ColumnDefinition Width="0.5*" />
                     </Grid.ColumnDefinitions>
 
                     <!-- Columna 1: Fecha (Detalle) o Especie (Resumen) -->
@@ -517,7 +517,7 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Orientation="Horizontal">
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
                     <Button Command="{Binding BackControlProduccionCommand}"
                             Visibility="{Binding IsControlProduccionDetailVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
                             Style="{StaticResource ThemeButtonStyle}"
@@ -532,109 +532,86 @@
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource AccentBrush}"
                                    Text="{Binding PageEyebrow}" />
-                    <TextBlock Margin="0,6,0,0"
-                               FontFamily="{DynamicResource DisplayFontFamily}"
-                               FontSize="36"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource PrimaryTextBrush}"
-                               Text="{Binding PageTitle}" />
-                    <TextBlock Margin="0,8,0,0"
-                               FontSize="14"
-                               Foreground="{DynamicResource SecondaryTextBrush}"
-                               Text="{Binding PageDescription}" />
-                </StackPanel>
-                
-                <Button Command="{Binding ExportControlProduccionPdfCommand}" 
-                        Margin="32,0,0,0"
-                        VerticalAlignment="Bottom"
-                        Padding="16,10"
-                        ToolTip="Generar reporte PDF del resumen de producción">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="📄" Margin="0,0,8,0" VerticalAlignment="Center" FontSize="16"/>
-                        <TextBlock Text="EXPORTAR RESUMEN" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        <TextBlock Margin="0,6,0,0"
+                                   FontFamily="{DynamicResource DisplayFontFamily}"
+                                   FontSize="36"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryTextBrush}"
+                                   Text="{Binding PageTitle}" />
+                        <TextBlock Margin="0,8,0,0"
+                                   FontSize="14"
+                                   Foreground="{DynamicResource SecondaryTextBrush}"
+                                   Text="{Binding PageDescription}" />
                     </StackPanel>
-                    <Button.Style>
-                        <Style TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
-                            <Setter Property="Visibility" Value="Collapsed" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding IsControlProduccionDetailVisible}" Value="True">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Button.Style>
-                </Button>
-                </StackPanel>
-
-                <StackPanel Grid.Column="1"
-                            Orientation="Horizontal"
-                            VerticalAlignment="Top">
-                    <Border Style="{StaticResource SurfaceBorderStyle}"
-                            Margin="0,0,16,0"
-                            Padding="16,10">
-                        <Grid Width="260">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Margin="0,0,10,0"
-                                       VerticalAlignment="Center"
-                                       FontSize="16"
-                                       Foreground="{DynamicResource SecondaryTextBrush}"
-                                       Text="⌕" />
-                            <TextBlock Grid.Column="1"
-                                       VerticalAlignment="Center"
-                                       FontSize="13"
-                                       Foreground="{DynamicResource SecondaryTextBrush}"
-                                       Text="{Binding SearchPlaceholder}" />
-                        </Grid>
-                    </Border>
-
-                    <Border Style="{StaticResource SurfaceBorderStyle}"
-                            Padding="6">
+                    
+                    <Button Command="{Binding ExportControlProduccionPdfCommand}" 
+                            Margin="32,0,0,0"
+                            VerticalAlignment="Bottom"
+                            Padding="16,10"
+                            ToolTip="Generar reporte PDF del resumen de producción">
                         <StackPanel Orientation="Horizontal">
-                            <Button Command="{Binding SetSystemThemeCommand}" Content="Sistema">
-                                <Button.Style>
-                                    <Style TargetType="Button" BasedOn="{StaticResource ThemeButtonStyle}">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsSystemThemeActive}" Value="True">
-                                                <Setter Property="Background" Value="{DynamicResource SelectionBackgroundBrush}" />
-                                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                            </Button>
-                            <Button Command="{Binding SetLightThemeCommand}" Content="Claro">
-                                <Button.Style>
-                                    <Style TargetType="Button" BasedOn="{StaticResource ThemeButtonStyle}">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsLightThemeActive}" Value="True">
-                                                <Setter Property="Background" Value="{DynamicResource SelectionBackgroundBrush}" />
-                                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                            </Button>
-                            <Button Command="{Binding SetDarkThemeCommand}" Content="Oscuro">
-                                <Button.Style>
-                                    <Style TargetType="Button" BasedOn="{StaticResource ThemeButtonStyle}">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsDarkThemeActive}" Value="True">
-                                                <Setter Property="Background" Value="{DynamicResource SelectionBackgroundBrush}" />
-                                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                            </Button>
+                            <TextBlock Text="📄" Margin="0,0,8,0" VerticalAlignment="Center" FontSize="16"/>
+                            <TextBlock Text="EXPORTAR RESUMEN" VerticalAlignment="Center" FontWeight="SemiBold"/>
                         </StackPanel>
-                    </Border>
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsControlProduccionDetailVisible}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
                 </StackPanel>
+
+                <Border Grid.Column="1" 
+                        Style="{StaticResource SurfaceBorderStyle}"
+                        Padding="6"
+                        VerticalAlignment="Top">
+                    <StackPanel Orientation="Horizontal">
+                        <Button Command="{Binding SetSystemThemeCommand}" Content="Sistema">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource ThemeButtonStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSystemThemeActive}" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource SelectionBackgroundBrush}" />
+                                            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                        <Button Command="{Binding SetLightThemeCommand}" Content="Claro">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource ThemeButtonStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsLightThemeActive}" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource SelectionBackgroundBrush}" />
+                                            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                        <Button Command="{Binding SetDarkThemeCommand}" Content="Oscuro">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource ThemeButtonStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDarkThemeActive}" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource SelectionBackgroundBrush}" />
+                                            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </StackPanel>
+                </Border>
             </Grid>
 
             <Border Grid.Row="1"
@@ -954,13 +931,19 @@
                                     <Grid>
                                         <Grid.Style>
                                             <Style TargetType="Grid">
-                                                <Setter Property="Visibility" Value="Visible" />
+                                                <Setter Property="Visibility" Value="Collapsed" />
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
-                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Mareas}">
+                                                        <Setter Property="Visibility" Value="Visible" />
                                                     </DataTrigger>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Produccion}">
-                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Lances}">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Muestras}">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Submuestras}">
+                                                        <Setter Property="Visibility" Value="Visible" />
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
@@ -1134,17 +1117,17 @@
                                             </Style>
                                         </Grid.Style>
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="3.0*" />
-                                            <ColumnDefinition Width="1.4*" />
-                                            <ColumnDefinition Width="0.9*" />
-                                            <ColumnDefinition Width="1.4*" />
-                                            <ColumnDefinition Width="0.9*" />
-                                            <ColumnDefinition Width="0.9*" />
-                                            <ColumnDefinition Width="1.1*" MinWidth="90" />
-                                            <ColumnDefinition Width="0.5*" MinWidth="70" />
-                                            <ColumnDefinition Width="0.1*" />
+                                            <ColumnDefinition Width="1.1*" MinWidth="85" />
+                                            <ColumnDefinition Width="1.4*" MinWidth="95" />
+                                            <ColumnDefinition Width="1.4*" MinWidth="95" />
+                                            <ColumnDefinition Width="1.4*" MinWidth="95" />
+                                            <ColumnDefinition Width="1.4*" MinWidth="95" />
+                                            <ColumnDefinition Width="1.4*" MinWidth="95" />
+                                            <ColumnDefinition Width="1.4*" MinWidth="95" />
+                                            <ColumnDefinition Width="1.0*" MinWidth="80" />
+                                            <ColumnDefinition Width="0.5*" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column1Header}" />
+                                        <TextBlock Grid.Column="0" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column1Header}" HorizontalAlignment="Left" VerticalAlignment="Center" />
                                         <TextBlock Grid.Column="1" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column2Header}" HorizontalAlignment="Right" />
                                         <TextBlock Grid.Column="2" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column3Header}" HorizontalAlignment="Right" />
                                         <TextBlock Grid.Column="3" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column4Header}" HorizontalAlignment="Right" />
@@ -1170,13 +1153,13 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="1.0*" />
                                             <ColumnDefinition Width="2.8*" />
-                                            <ColumnDefinition Width="1.1*" />
-                                            <ColumnDefinition Width="1.2*" />
-                                            <ColumnDefinition Width="1.1*" />
-                                            <ColumnDefinition Width="1.1*" />
-                                            <ColumnDefinition Width="0.8*" />
-                                            <ColumnDefinition Width="0.5*" />
-                                            <ColumnDefinition Width="0.5*" />
+                                            <ColumnDefinition Width="1.1*" MinWidth="95" />
+                                            <ColumnDefinition Width="1.2*" MinWidth="85" />
+                                            <ColumnDefinition Width="1.1*" MinWidth="95" />
+                                            <ColumnDefinition Width="1.1*" MinWidth="85" />
+                                            <ColumnDefinition Width="0.8*" MinWidth="85" />
+                                            <ColumnDefinition Width="0.5*" MinWidth="70" />
+                                            <ColumnDefinition Width="0.5*" MinWidth="70" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column1Header}" />
                                         <TextBlock Grid.Column="1" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column2Header}" />
@@ -1188,7 +1171,13 @@
                                 </Grid>
                             </Border>
 
-                            <ListBox x:Name="RecordsList" Grid.Row="3"
+                                                        <Grid Grid.Row="3">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <ListBox x:Name="RecordsList"
                                      ItemsSource="{Binding RecordsView}"
                                      SelectedItem="{Binding SelectedRecord}"
                                      Background="Transparent"
@@ -1237,6 +1226,48 @@
                                     </GroupStyle>
                                 </ListBox.GroupStyle>
                             </ListBox>
+
+                            <!-- Fila de Totales para ControlProduccion -->
+                            <Border Grid.Row="1" 
+                                    Background="{DynamicResource SidebarSecondaryBackgroundBrush}"
+                                    BorderBrush="{DynamicResource TableRowBorderBrush}"
+                                    BorderThickness="0,1,0,0"
+                                    Padding="18,12">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1.1*" MinWidth="85" />
+                                        <ColumnDefinition Width="1.4*" MinWidth="95" />
+                                        <ColumnDefinition Width="1.4*" MinWidth="95" />
+                                        <ColumnDefinition Width="1.4*" MinWidth="95" />
+                                        <ColumnDefinition Width="1.4*" MinWidth="95" />
+                                        <ColumnDefinition Width="1.4*" MinWidth="95" />
+                                        <ColumnDefinition Width="1.4*" MinWidth="95" />
+                                        <ColumnDefinition Width="1.0*" MinWidth="80" />
+                                        <ColumnDefinition Width="0.5*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0" Text="TOTALES" VerticalAlignment="Center" FontWeight="Bold" Foreground="{DynamicResource SidebarSecondaryForegroundBrush}" HorizontalAlignment="Left" />
+                                    <TextBlock Grid.Column="1" Text="{Binding TotalProduccionControl, StringFormat={}{0:N1}}" VerticalAlignment="Center" FontWeight="Bold" Foreground="{DynamicResource SidebarSecondaryForegroundBrush}" HorizontalAlignment="Right" />
+                                    <TextBlock Grid.Column="2" Text="{Binding TotalCapturaReconstruidaControl, StringFormat={}{0:N1}}" VerticalAlignment="Center" FontWeight="Bold" Foreground="{DynamicResource SidebarSecondaryForegroundBrush}" HorizontalAlignment="Right" />
+                                    <TextBlock Grid.Column="3" Text="{Binding TotalCapturaBrutaControl, StringFormat={}{0:N1}}" VerticalAlignment="Center" FontWeight="Bold" Foreground="{DynamicResource SidebarSecondaryForegroundBrush}" HorizontalAlignment="Right" />
+                                    <TextBlock Grid.Column="4" Text="{Binding TotalDescarteControl, StringFormat={}{0:N1}}" VerticalAlignment="Center" FontWeight="Bold" Foreground="{DynamicResource SidebarSecondaryForegroundBrush}" HorizontalAlignment="Right" />
+                                    <TextBlock Grid.Column="5" Text="{Binding TotalRetenidaControl, StringFormat={}{0:N1}}" VerticalAlignment="Center" FontWeight="Bold" Foreground="{DynamicResource SidebarSecondaryForegroundBrush}" HorizontalAlignment="Right" />
+                                    <TextBlock Grid.Column="6" Text="{Binding TotalDiferenciaKgControl, StringFormat={}{0:N1}}" VerticalAlignment="Center" FontWeight="Bold" Foreground="{DynamicResource SidebarSecondaryForegroundBrush}" HorizontalAlignment="Right" />
+
+
+                                </Grid>
+                            </Border>
+                            </Grid>
                         </Grid>
 
                         <GridSplitter Grid.Column="1" 
@@ -1630,7 +1661,7 @@
                                                         </Setter>
                                                     </Style>
                                                 </GridView.ColumnHeaderContainerStyle>
-                                                <GridViewColumn Header="LANCE" Width="85">
+                                                <GridViewColumn Header="LANCE" Width="95">
                                                      <GridViewColumn.CellTemplate>
                                                          <DataTemplate>
                                                              <TextBlock Text="{Binding NroLanceDisplay}" 
@@ -1641,7 +1672,7 @@
                                                          </DataTemplate>
                                                      </GridViewColumn.CellTemplate>
                                                  </GridViewColumn>
-                                                <GridViewColumn Width="85">
+                                                <GridViewColumn Width="95">
                                                     <GridViewColumn.Header>
                                                         <TextBlock Text="CAPTURA" />
                                                     </GridViewColumn.Header>
@@ -1651,7 +1682,7 @@
                                                         </DataTemplate>
                                                     </GridViewColumn.CellTemplate>
                                                 </GridViewColumn>
-                                                <GridViewColumn Width="85">
+                                                <GridViewColumn Width="95">
                                                     <GridViewColumn.Header>
                                                         <TextBlock Text="DESCARTE" />
                                                     </GridViewColumn.Header>
@@ -1661,7 +1692,7 @@
                                                         </DataTemplate>
                                                     </GridViewColumn.CellTemplate>
                                                 </GridViewColumn>
-                                                <GridViewColumn Width="85">
+                                                <GridViewColumn Width="95">
                                                     <GridViewColumn.Header>
                                                         <TextBlock Text="RETENIDA" />
                                                     </GridViewColumn.Header>
@@ -1682,10 +1713,10 @@
                                             Padding="12,14">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="85" />
-                                                <ColumnDefinition Width="85" />
-                                                <ColumnDefinition Width="85" />
-                                                <ColumnDefinition Width="85" />
+                                                <ColumnDefinition Width="95" />
+                                                <ColumnDefinition Width="95" />
+                                                <ColumnDefinition Width="95" />
+                                                <ColumnDefinition Width="95" />
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Text="TOTAL" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center"/>
                                             <TextBlock Grid.Column="1" Text="{Binding TotalCapturaKg, StringFormat={}{0:N1}}" FontWeight="Bold" Foreground="{DynamicResource PrimaryTextBrush}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>

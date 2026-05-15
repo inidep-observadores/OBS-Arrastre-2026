@@ -133,6 +133,48 @@ public class MainWindowViewModel : ObservableObject
         private set => SetProperty(ref _totalRetenidaKg, value);
     }
 
+    private double _totalProduccionControl;
+    public double TotalProduccionControl
+    {
+        get => _totalProduccionControl;
+        private set => SetProperty(ref _totalProduccionControl, value);
+    }
+
+    private double _totalCapturaReconstruidaControl;
+    public double TotalCapturaReconstruidaControl
+    {
+        get => _totalCapturaReconstruidaControl;
+        private set => SetProperty(ref _totalCapturaReconstruidaControl, value);
+    }
+
+    private double _totalCapturaBrutaControl;
+    public double TotalCapturaBrutaControl
+    {
+        get => _totalCapturaBrutaControl;
+        private set => SetProperty(ref _totalCapturaBrutaControl, value);
+    }
+
+    private double _totalDescarteControl;
+    public double TotalDescarteControl
+    {
+        get => _totalDescarteControl;
+        private set => SetProperty(ref _totalDescarteControl, value);
+    }
+
+    private double _totalRetenidaControl;
+    public double TotalRetenidaControl
+    {
+        get => _totalRetenidaControl;
+        private set => SetProperty(ref _totalRetenidaControl, value);
+    }
+
+    private double _totalDiferenciaKgControl;
+    public double TotalDiferenciaKgControl
+    {
+        get => _totalDiferenciaKgControl;
+        private set => SetProperty(ref _totalDiferenciaKgControl, value);
+    }
+
 
     // Filtros de Mareas
     private int? _mareasFilterAnio;
@@ -350,8 +392,6 @@ public class MainWindowViewModel : ObservableObject
         _userSettingsService = userSettingsService;
         _dbfExporterService = dbfExporterService;
         _configuracionVM = configuracionViewModel;
-
-        SearchPlaceholder = "Buscar...";
         SetSystemThemeCommand = new RelayCommand(() => ApplyTheme(AppThemeMode.System));
         SetLightThemeCommand = new RelayCommand(() => ApplyTheme(AppThemeMode.Light));
         SetDarkThemeCommand = new RelayCommand(() => ApplyTheme(AppThemeMode.Dark));
@@ -449,8 +489,6 @@ public class MainWindowViewModel : ObservableObject
     public string Title => "Control de mareas";
 
     public ICommand DeleteRecordCommand { get; }
-
-    public string SearchPlaceholder { get; }
 
     public ObservableCollection<NavigationItemViewModel> NavigationItems { get; } = [];
 
@@ -2739,10 +2777,43 @@ public class MainWindowViewModel : ObservableObject
             {
                 SelectedRecord = Records[0];
             }
+
+            // Calcular totales para la vista actual
+            CalculateControlProduccionTotals();
         }
         catch (Exception ex)
         {
             System.Windows.MessageBox.Show($"Error al cargar el control de producción: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
         }
+    }
+
+    private void CalculateControlProduccionTotals()
+    {
+        double prod = 0;
+        double recon = 0;
+        double bruta = 0;
+        double desc = 0;
+        double ret = 0;
+        double dif = 0;
+
+        foreach (var item in Records)
+        {
+            if (item is ControlProduccionListItemViewModel cp)
+            {
+                prod += cp.ProduccionTotal;
+                recon += cp.CapturaReconstruida;
+                bruta += cp.CapturaBruta;
+                desc += cp.DescarteKg;
+                ret += cp.CapturaRetenida;
+                dif += cp.DiferenciaKg;
+            }
+        }
+
+        TotalProduccionControl = prod;
+        TotalCapturaReconstruidaControl = recon;
+        TotalCapturaBrutaControl = bruta;
+        TotalDescarteControl = desc;
+        TotalRetenidaControl = ret;
+        TotalDiferenciaKgControl = dif;
     }
 }
