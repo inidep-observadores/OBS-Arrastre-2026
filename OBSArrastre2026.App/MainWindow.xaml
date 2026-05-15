@@ -568,6 +568,30 @@
                         </Button.Style>
                     </Button>
 
+                    <Button Command="{Binding ExportProduccionPorEspeciePdfCommand}" 
+                            Margin="32,0,0,0"
+                            VerticalAlignment="Bottom"
+                            Padding="16,10"
+                            ToolTip="Generar reporte PDF del detalle por especie">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📄" Margin="0,0,8,0" VerticalAlignment="Center" FontSize="16"/>
+                            <TextBlock Text="EXPORTAR DETALLE" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        </StackPanel>
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsControlProduccionDetailVisible}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
                     <!-- Nuevo Botón de Acción para Crear Registro -->
                     <Button Command="{Binding PrimaryActionCommand}"
                             Margin="24,0,0,0"
@@ -1297,6 +1321,7 @@
                                     <TextBlock Grid.Column="4" Text="{Binding TotalDescarteControl, StringFormat={}{0:N1}}" VerticalAlignment="Center" FontWeight="Bold" Foreground="{DynamicResource SidebarSecondaryForegroundBrush}" HorizontalAlignment="Right" />
                                     <TextBlock Grid.Column="5" Text="{Binding TotalRetenidaControl, StringFormat={}{0:N1}}" VerticalAlignment="Center" FontWeight="Bold" Foreground="{DynamicResource SidebarSecondaryForegroundBrush}" HorizontalAlignment="Right" />
                                     <TextBlock Grid.Column="6" Text="{Binding TotalDiferenciaKgControl, StringFormat={}{0:N1}}" VerticalAlignment="Center" FontWeight="Bold" Foreground="{DynamicResource SidebarSecondaryForegroundBrush}" HorizontalAlignment="Right" />
+                                     <TextBlock Grid.Column="7" Text="{Binding TotalDiferenciaPorcentajeControl, StringFormat={}{0:N2}%}" VerticalAlignment="Center" FontWeight="Bold" Foreground="{DynamicResource SidebarSecondaryForegroundBrush}" HorizontalAlignment="Right" />
 
 
                                 </Grid>

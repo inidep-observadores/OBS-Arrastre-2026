@@ -175,6 +175,13 @@ public class MainWindowViewModel : ObservableObject
         get => _totalDiferenciaKgControl;
         private set => SetProperty(ref _totalDiferenciaKgControl, value);
     }
+    
+    private double _totalDiferenciaPorcentajeControl;
+    public double TotalDiferenciaPorcentajeControl
+    {
+        get => _totalDiferenciaPorcentajeControl;
+        private set => SetProperty(ref _totalDiferenciaPorcentajeControl, value);
+    }
 
 
     // Filtros de Mareas
@@ -414,6 +421,7 @@ public class MainWindowViewModel : ObservableObject
         BackControlProduccionCommand = new RelayCommand(BackToControlProduccionSummary);
         EditLanceFromDetailCommand = new RelayCommand<ControlLanceDetailViewModel>(OpenEditLanceFromDetail);
         ExportControlProduccionPdfCommand = new AsyncRelayCommand(ExportControlProduccionPdfAsync);
+        ExportProduccionPorEspeciePdfCommand = new AsyncRelayCommand(ExportProduccionPorEspeciePdfAsync);
 
         var settings = _userSettingsService.GetSettings();
         _mareasFilterAnio = settings.LastSelectedMareaAnio ?? DateTime.Today.Year;
@@ -530,6 +538,7 @@ public class MainWindowViewModel : ObservableObject
     public ICommand BackControlProduccionCommand { get; }
     public ICommand EditLanceFromDetailCommand { get; }
     public ICommand ExportControlProduccionPdfCommand { get; }
+    public ICommand ExportProduccionPorEspeciePdfCommand { get; }
     
     public ICommand PlayCommand { get; }
     public ICommand PauseCommand { get; }
@@ -2490,6 +2499,81 @@ public class MainWindowViewModel : ObservableObject
         }
     }
 
+    private async Task ExportProduccionPorEspeciePdfAsync()
+    {
+        if (_activeMareaManager.ActiveMarea == null || ControlProduccionSelectedEspecie == null) return;
+        
+        try
+        {
+            var meta = MareaMetadataHelper.GetMetadata(_activeMareaManager.ActiveMarea);
+            
+            // Obtener los datos de la lista actual (que son ControlProduccionListItemViewModel agrupados por fecha)
+            var listItems = Records.OfType<ControlProduccionListItemViewModel>()
+                .Where(x => !x.IsSummaryView)
+                .OrderBy(x => x.Fecha)
+                .ToList();
+
+            var report = new ControlProduccionDetalleEspecieReport
+            {
+                Barco = _activeMareaManager.ActiveMarea.Buque?.Nombre ?? "S/D",
+                Marea = _activeMareaManager.ActiveMarea.NumeroInidep.ToString(),
+                Anio = _activeMareaManager.ActiveMarea.AnioInidep,
+                BuqueCodigo = meta.BuqueCodigo,
+                ObservadorNombre = meta.ObservadorNombre,
+                ObservadorApellido = meta.ObservadorApellido,
+                ObservadorCodigo = meta.ObservadorCodigo,
+                FechaInicioMarea = _activeMareaManager.ActiveMarea.FechaInicio,
+                FechaFinMarea = _activeMareaManager.ActiveMarea.FechaFin,
+                Especie = ControlProduccionSelectedEspecie.FullDisplayName,
+                TotalCaptura = TotalCapturaKg,
+                TotalDescarte = TotalDescarteKg,
+                TotalRetenida = TotalRetenidaKg,
+                Items = listItems.Select(l => new ControlProduccionDetalleEspecieItem
+                {
+                    Fecha = l.Fecha,
+                    ProduccionTotal = l.ProduccionTotal,
+                    CapturaReconstruida = l.CapturaReconstruida,
+                    CapturaBruta = l.CapturaBruta,
+                    DescarteKg = l.DescarteKg,
+                    CapturaRetenida = l.CapturaRetenida,
+                    DiferenciaKg = l.DiferenciaKg,
+                    DiferenciaPorcentaje = l.DiferenciaPorcentajeDisplay
+                }).ToList()
+            };
+
+            var pdfBytes = await _reportService.GenerateControlProduccionDetalleEspeciePdfAsync(report);
+            
+            // Sanitizar nombre de archivo
+            string especieSanitizada = string.Join("_", report.Especie.Split(Path.GetInvalidFileNameChars()));
+            string fileName = $"Detalle_Produccion_{especieSanitizada}_{report.Barco}_{report.Marea}_{report.Anio}.pdf";
+            
+            string importFolder = MareaMetadataHelper.GetImportFolder(_activeMareaManager.ActiveMarea.Metadata);
+            string savePath;
+
+            if (!string.IsNullOrEmpty(importFolder))
+            {
+                savePath = Path.Combine(importFolder, "reportes", fileName);
+                Directory.CreateDirectory(Path.GetDirectoryName(savePath)!);
+            }
+            else
+            {
+                savePath = Path.Combine(Path.GetTempPath(), fileName);
+            }
+
+            await File.WriteAllBytesAsync(savePath, pdfBytes);
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = savePath,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"Error al generar el PDF de detalle: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
+    }
+
     private async Task LoadControlProduccionAsync()
     {
         try
@@ -2835,5 +2919,9 @@ public class MainWindowViewModel : ObservableObject
         TotalDescarteControl = desc;
         TotalRetenidaControl = ret;
         TotalDiferenciaKgControl = dif;
+        
+        TotalDiferenciaPorcentajeControl = ret > 0 
+            ? (dif * 100.0 / ret) 
+            : (recon > 0 ? -100.0 : 0);
     }
 }

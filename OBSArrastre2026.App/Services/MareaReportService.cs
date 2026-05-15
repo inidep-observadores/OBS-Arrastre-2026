@@ -24,6 +24,7 @@ public interface IMareaReportService
     Task<byte[]> GenerateFullMareaReportWordAsync(Marea marea, List<Lance> lances, List<RegistroProduccion> produccion, MareaSummaryReport summary);
     Task<byte[]> GenerateMareaReportTemplateAsync(Marea marea, List<Lance> lances, List<RegistroProduccion> produccion, MareaSummaryReport summary);
     Task<byte[]> GenerateRecibiProyectoPdfAsync(RecibiProyectoReport report);
+    Task<byte[]> GenerateControlProduccionDetalleEspeciePdfAsync(ControlProduccionDetalleEspecieReport report);
 }
 
 public class MareaReportService : IMareaReportService
@@ -449,6 +450,95 @@ public class MareaReportService : IMareaReportService
                         ComposeProductionDetailContent(col, etapa);
                         col.Item().PaddingBottom(30);
                     }
+                });
+
+                ComposeFooter(page.Footer());
+            });
+        }).GeneratePdf());
+    }
+
+    public async Task<byte[]> GenerateControlProduccionDetalleEspeciePdfAsync(ControlProduccionDetalleEspecieReport report)
+    {
+        return await Task.Run(() => QuestPDF.Fluent.Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(1, Unit.Centimetre);
+                page.PageColor(Colors.White);
+                page.DefaultTextStyle(x => x.FontSize(8).FontFamily(Fonts.Verdana));
+
+                ComposeHeader(page.Header(), report.Barco, report.Marea, report.Anio, report.FechaInicioMarea, report.FechaFinMarea, "DETALLE DE CAPTURA POR LANCE",
+                    report.BuqueCodigo, report.ObservadorNombre, report.ObservadorApellido, report.ObservadorCodigo);
+                
+                page.Content().PaddingVertical(10).Column(col => 
+                {
+                    col.Item().PaddingBottom(10).Row(row => 
+                    {
+                        row.RelativeItem().Text(text => 
+                        {
+                            text.Span("ESPECIE: ").SemiBold();
+                            text.Span(report.Especie).SemiBold().FontColor(Colors.Blue.Darken3).FontSize(11);
+                        });
+                    });
+
+                    col.Item().Table(table =>
+                    {
+                        table.ColumnsDefinition(columns =>
+                        {
+                            columns.ConstantColumn(70);  // Fecha
+                            columns.RelativeColumn();   // Prod. Total
+                            columns.RelativeColumn();   // Capt. Recon.
+                            columns.RelativeColumn();   // Captura
+                            columns.RelativeColumn();   // Descarte
+                            columns.RelativeColumn();   // Capt. Retenida
+                            columns.RelativeColumn();   // Dif. Kg
+                            columns.RelativeColumn();   // Dif. %
+                        });
+
+                        table.Header(header =>
+                        {
+                            header.Cell().Element(HeaderStyle).Text("FECHA");
+                            header.Cell().Element(HeaderStyle).AlignRight().Text("PROD. TOTAL");
+                            header.Cell().Element(HeaderStyle).AlignRight().Text("CAPT. RECON.");
+                            header.Cell().Element(HeaderStyle).AlignRight().Text("CAPTURA");
+                            header.Cell().Element(HeaderStyle).AlignRight().Text("DESCARTE");
+                            header.Cell().Element(HeaderStyle).AlignRight().Text("CAPT. RET.");
+                            header.Cell().Element(HeaderStyle).AlignRight().Text("DIF. KG");
+                            header.Cell().Element(HeaderStyle).AlignRight().Text("DIF. %");
+                        });
+
+                        foreach (var item in report.Items)
+                        {
+                            table.Cell().Element(CellStyle).Text(item.Fecha.ToString("dd/MM/yyyy"));
+                            table.Cell().Element(CellStyle).AlignRight().Text(item.ProduccionTotal.ToString("N1"));
+                            table.Cell().Element(CellStyle).AlignRight().Text(item.CapturaReconstruida.ToString("N1"));
+                            table.Cell().Element(CellStyle).AlignRight().Text(item.CapturaBruta.ToString("N1"));
+                            table.Cell().Element(CellStyle).AlignRight().Text(item.DescarteKg.ToString("N1"));
+                            table.Cell().Element(CellStyle).AlignRight().Text(item.CapturaRetenida.ToString("N1"));
+                            table.Cell().Element(CellStyle).AlignRight().Text(item.DiferenciaKg.ToString("N1"));
+                            table.Cell().Element(CellStyle).AlignRight().Text(item.DiferenciaPorcentaje);
+                        }
+
+                        // Totales
+                        table.Cell().Element(FooterStyle).Text("TOTALES").SemiBold();
+                        table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.ProduccionTotal).ToString("N1")).SemiBold();
+                        table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.CapturaReconstruida).ToString("N1")).SemiBold();
+                        table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.CapturaBruta).ToString("N1")).SemiBold();
+                        table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.DescarteKg).ToString("N1")).SemiBold();
+                        table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.CapturaRetenida).ToString("N1")).SemiBold();
+                        
+                        var totalDifKg = report.Items.Sum(i => i.DiferenciaKg);
+                        var totalRet = report.Items.Sum(i => i.CapturaRetenida);
+                        var totalRecon = report.Items.Sum(i => i.CapturaReconstruida);
+                        var totalDifPct = totalRet > 0 ? (totalDifKg * 100.0 / totalRet) : (totalRecon > 0 ? -100.0 : 0);
+                        
+                        table.Cell().Element(FooterStyle).AlignRight().Text(totalDifKg.ToString("N1")).SemiBold();
+                        table.Cell().Element(FooterStyle).AlignRight().Text(totalDifPct.ToString("N2") + "%").SemiBold();
+
+                        IContainer CellStyle(IContainer container) => container.PaddingVertical(3).BorderBottom(1).BorderColor(Colors.Grey.Lighten4);
+                        IContainer FooterStyle(IContainer container) => container.PaddingVertical(8).BorderTop(2).BorderColor(Colors.Black);
+                    });
                 });
 
                 ComposeFooter(page.Footer());

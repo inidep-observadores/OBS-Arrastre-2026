@@ -61,3 +61,35 @@ public class ControlProduccionReport
     public List<ControlProduccionEtapaReport> Etapas { get; set; } = new();
     public DateTime FechaGeneracion { get; set; } = DateTime.Now;
 }
+public class ControlProduccionDetalleEspecieItem
+{
+    public DateTime Fecha { get; set; }
+    public double ProduccionTotal { get; set; }
+    public double CapturaReconstruida { get; set; }
+    public double CapturaBruta { get; set; }
+    public double DescarteKg { get; set; }
+    public double CapturaRetenida { get; set; }
+    public double DiferenciaKg { get; set; }
+    public string DiferenciaPorcentaje { get; set; } = string.Empty;
+}
+
+public class ControlProduccionDetalleEspecieReport
+{
+    public string Barco { get; set; } = string.Empty;
+    public string Marea { get; set; } = string.Empty;
+    public int Anio { get; set; }
+    public int? BuqueCodigo { get; set; }
+    public string? ObservadorNombre { get; set; }
+    public string? ObservadorApellido { get; set; }
+    public int? ObservadorCodigo { get; set; }
+    public DateTime? FechaInicioMarea { get; set; }
+    public DateTime? FechaFinMarea { get; set; }
+
+    public string Especie { get; set; } = string.Empty;
+    public List<ControlProduccionDetalleEspecieItem> Items { get; set; } = new();
+
+    public double TotalCaptura { get; set; }
+    public double TotalDescarte { get; set; }
+    public double TotalRetenida { get; set; }
+    public DateTime FechaGeneracion { get; set; } = DateTime.Now;
+}
