@@ -153,6 +153,7 @@ public sealed partial class ProduccionEditViewModel : ValidatableViewModelBase<P
                 {
                     ProductSearchText = value.Codigo;
                 }
+                ValidatePropertyWithFluent(value, nameof(SelectedProducto));
             }
         }
     }
@@ -160,7 +161,13 @@ public sealed partial class ProduccionEditViewModel : ValidatableViewModelBase<P
     public string ProductSearchText
     {
         get => _productSearchText;
-        set => SetProperty(ref _productSearchText, value);
+        set
+        {
+            if (SetProperty(ref _productSearchText, value))
+            {
+                ValidatePropertyWithFluent(SelectedProducto, nameof(SelectedProducto));
+            }
+        }
     }
 
     public Func<string, string, Task<bool>>? ShowConfirmation { get; set; }

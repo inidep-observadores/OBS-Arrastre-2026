@@ -10,7 +10,9 @@ public sealed class ProduccionEditViewModelValidator : AbstractValidator<Producc
             .NotEmpty().WithMessage("La fecha es obligatoria.");
 
         RuleFor(x => x.SelectedProducto)
-            .NotNull().WithMessage("Debe seleccionar un producto.");
+            .NotNull()
+            .When(x => string.IsNullOrWhiteSpace(x.ProductSearchText))
+            .WithMessage("Debe seleccionar un producto o ingresar uno nuevo.");
 
         RuleFor(x => x.SelectedEtapa)
             .NotNull().WithMessage("Debe seleccionar una etapa de marea.");
