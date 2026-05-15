@@ -330,7 +330,7 @@ public sealed class MareaValidationEngine
             if (bDbf.Length > 20) bDbf = bDbf.Substring(0, 20);
 
             if (bDbf != bActual)
-                report.AddIssue(ValidationLevel.Fatal, "Consistencia", $"Barco en muestra ({m.Barco}) no coincide con marea activa ({barcoActual})", $"Lance {m.Lance}");
+                report.AddIssue(ValidationLevel.Fatal, "Consistencia", $"Barco en muestra ({m.Barco}) no coincide con marea activa ({barcoActual}) en lance {m.Lance} del {m.Fecha:dd/MM/yyyy}", $"Lance {m.Lance}");
             
             if ((int)m.Marea != mareaActual)
             {
@@ -338,11 +338,11 @@ public sealed class MareaValidationEngine
                 {
                     string oldMarea = m.Marea.ToString();
                     m.Marea = mareaActual;
-                    report.AddIssue(ValidationLevel.AutoFixed, "Consistencia", $"Nro Marea en muestra era 0. Se corrige a {mareaActual}.", $"Lance {m.Lance} Especie {m.Especie}", oldMarea, mareaActual.ToString());
+                    report.AddIssue(ValidationLevel.AutoFixed, "Consistencia", $"Nro Marea en muestra era 0 (Lance {m.Lance} del {m.Fecha:dd/MM/yyyy}). Se corrige a {mareaActual}.", $"Lance {m.Lance} Especie {m.Especie}", oldMarea, mareaActual.ToString());
                 }
                 else
                 {
-                    report.AddIssue(ValidationLevel.Error, "Consistencia", $"Nro Marea en muestra ({m.Marea}) no coincide con marea activa ({mareaActual})", $"Lance {m.Lance} Especie {m.Especie}");
+                    report.AddIssue(ValidationLevel.Error, "Consistencia", $"Nro Marea en muestra ({m.Marea}) no coincide con marea activa ({mareaActual}) en lance {m.Lance} del {m.Fecha:dd/MM/yyyy}", $"Lance {m.Lance} Especie {m.Especie}");
                 }
             }
         }
@@ -354,7 +354,7 @@ public sealed class MareaValidationEngine
             if (bDbf.Length > 20) bDbf = bDbf.Substring(0, 20);
 
             if (bDbf != bActual)
-                report.AddIssue(ValidationLevel.Fatal, "Consistencia", $"Barco en submuestra ({s.Barco}) no coincide con marea activa ({barcoActual})", $"Lance {s.Lance} Ej {s.NEjemplar}");
+                report.AddIssue(ValidationLevel.Fatal, "Consistencia", $"Barco en submuestra ({s.Barco}) no coincide con marea activa ({barcoActual}) en lance {s.Lance} del {s.Fecha:dd/MM/yyyy}", $"Lance {s.Lance} Ej {s.NEjemplar}");
 
             if ((int)s.Marea != mareaActual)
             {
@@ -362,11 +362,11 @@ public sealed class MareaValidationEngine
                 {
                     string oldMarea = s.Marea.ToString();
                     s.Marea = mareaActual;
-                    report.AddIssue(ValidationLevel.AutoFixed, "Consistencia", $"Nro Marea en submuestra era 0. Se corrige a {mareaActual}.", $"Lance {s.Lance} Ej {s.NEjemplar}", oldMarea, mareaActual.ToString());
+                    report.AddIssue(ValidationLevel.AutoFixed, "Consistencia", $"Nro Marea en submuestra era 0 (Lance {s.Lance} del {s.Fecha:dd/MM/yyyy}). Se corrige a {mareaActual}.", $"Lance {s.Lance} Ej {s.NEjemplar}", oldMarea, mareaActual.ToString());
                 }
                 else
                 {
-                    report.AddIssue(ValidationLevel.Error, "Consistencia", $"Nro Marea en submuestra ({s.Marea}) no coincide con marea activa ({mareaActual})", $"Lance {s.Lance} Ej {s.NEjemplar}");
+                    report.AddIssue(ValidationLevel.Error, "Consistencia", $"Nro Marea en submuestra ({s.Marea}) no coincide con marea activa ({mareaActual}) en lance {s.Lance} del {s.Fecha:dd/MM/yyyy}", $"Lance {s.Lance} Ej {s.NEjemplar}");
                 }
             }
         }
@@ -617,14 +617,14 @@ public sealed class MareaValidationEngine
 
             // REQ-4.1.1: Verificar existencia de lance en captura
             if (!capturas.Any(c => (int)c.Lance == (int)m.Lance))
-                report.AddIssue(ValidationLevel.Error, "Integridad", $"Muestra de lance {m.Lance} no tiene lance correspondiente en CAPTURA", ctx);
+                report.AddIssue(ValidationLevel.Error, "Integridad", $"Muestra de lance {m.Lance} ({m.Fecha:dd/MM/yyyy}) no tiene lance correspondiente en CAPTURA", ctx);
 
             // REQ-4.3.1: Verificar Rangos de Talla
             if (m.UltTalla <= m.PrimTalla)
-                report.AddIssue(ValidationLevel.Error, "Biometría", $"Última talla ({m.UltTalla}) no es mayor que primera talla ({m.PrimTalla})", ctx);
+                report.AddIssue(ValidationLevel.Error, "Biometría", $"Última talla ({m.UltTalla}) no es mayor que primera talla ({m.PrimTalla}) en lance {m.Lance} ({m.Fecha:dd/MM/yyyy})", ctx);
 
             if (m.Intervalo <= 0)
-                report.AddIssue(ValidationLevel.Error, "Biometría", "Intervalo de tallas inválido (<= 0)", ctx);
+                report.AddIssue(ValidationLevel.Error, "Biometría", $"Intervalo de tallas inválido (<= 0) en lance {m.Lance} ({m.Fecha:dd/MM/yyyy})", ctx);
 
             // --- NUEVAS VALIDACIONES DE INTEGRIDAD (Punto 2) ---
 
@@ -639,7 +639,7 @@ public sealed class MareaValidationEngine
                     string oldFecha = m.Fecha.ToString("dd/MM/yyyy");
                     string newFecha = lanceCorrespondiente.Fecha.ToString("dd/MM/yyyy");
                     m.Fecha = lanceCorrespondiente.Fecha; // Auto-corrección como en pcorrecc.PRG
-                    report.AddIssue(ValidationLevel.AutoFixed, "Integridad", $"Fecha de muestra ({oldFecha}) no coincide con fecha de lance ({newFecha}). Corregido.", ctx, oldFecha, newFecha);
+                    report.AddIssue(ValidationLevel.AutoFixed, "Integridad", $"Fecha de muestra ({oldFecha}) no coincide con fecha de lance {m.Lance} ({newFecha}). Corregido.", ctx, oldFecha, newFecha);
                 }
 
 
@@ -700,7 +700,7 @@ public sealed class MareaValidationEngine
                     bool capturada = lanceCorrespondiente.Especies.ContainsKey(codEspecieMuestra) && lanceCorrespondiente.Especies[codEspecieMuestra] > 0;
                     if (!capturada)
                     {
-                        report.AddIssue(ValidationLevel.Warning, "Integridad", $"Se registró una muestra de '{m.Especie}' (Cod: {codEspecieMuestra}) pero esta especie no figura con kilos capturados en el lance {m.Lance}.", ctx);
+                        report.AddIssue(ValidationLevel.Warning, "Integridad", $"Se registró una muestra de '{m.Especie}' (Cod: {codEspecieMuestra}) pero esta especie no figura con kilos capturados en el lance {m.Lance} del {m.Fecha:dd/MM/yyyy}.", ctx);
                     }
                 }
             }
@@ -950,7 +950,7 @@ public sealed class MareaValidationEngine
                 if (sumSubWeights > parent.PesoMues + 0.05)
                 {
                     report.AddIssue(ValidationLevel.Error, "Integridad", 
-                        $"Inconsistencia: La suma de pesos de los ejemplares ({sumSubWeights:F2} kg) excede el peso total de la muestra ({parent.PesoMues:F2} kg).", 
+                        $"Inconsistencia en Lance {group.Key.Lance} ({group.First().Fecha:dd/MM/yyyy}): La suma de pesos de los ejemplares ({sumSubWeights:F2} kg) excede el peso total de la muestra ({parent.PesoMues:F2} kg).", 
                         $"Lance {group.Key.Lance} - Especie {group.Key.Especie}");
                 }
             }
@@ -963,7 +963,7 @@ public sealed class MareaValidationEngine
         foreach (var group in subDuplicates)
         {
             report.AddIssue(ValidationLevel.Error, "Estructura", 
-                $"El ejemplar {group.Key.NEjemplar} de '{group.Key.Especie}' aparece duplicado {group.Count()} veces en el lance {group.Key.Lance}.");
+                $"El ejemplar {group.Key.NEjemplar} de '{group.Key.Especie}' aparece duplicado {group.Count()} veces en el lance {group.Key.Lance} del {group.First().Fecha:dd/MM/yyyy}.");
         }
 
         foreach (var s in submuestras)
@@ -974,7 +974,7 @@ public sealed class MareaValidationEngine
             var parent = muestras.FirstOrDefault(m => m.Lance == s.Lance && m.Especie?.Trim().ToUpper() == s.Especie?.Trim().ToUpper());
             if (parent == null)
             {
-                report.AddIssue(ValidationLevel.Error, "Integridad", $"Submuestra huerfana: No existe muestra padre para la especie {s.Especie} en el lance {s.Lance}.", ctx);
+                report.AddIssue(ValidationLevel.Error, "Integridad", $"Submuestra huérfana: No existe muestra padre para la especie {s.Especie} en el lance {s.Lance} del {s.Fecha:dd/MM/yyyy}.", ctx);
             }
             else
             {
@@ -991,11 +991,11 @@ public sealed class MareaValidationEngine
 
             // REQ-4.2.1: Verificar Largo Total Atípico
             if (s.LargoTot > 250)
-                report.AddIssue(ValidationLevel.Warning, "Biometría", $"Largo total atípico ({s.LargoTot}mm > 250mm). Requiere revisión.", ctx);
+                report.AddIssue(ValidationLevel.Warning, "Biometría", $"Largo total atípico ({s.LargoTot}mm > 250mm) en lance {s.Lance} ({s.Fecha:dd/MM/yyyy}). Requiere revisión.", ctx);
 
             // REQ-4.2.2: Largo estándar vs total
             if (s.LargoSta > s.LargoTot)
-                report.AddIssue(ValidationLevel.Error, "Biometría", $"Largo estándar ({s.LargoSta}) mayor que largo total ({s.LargoTot})", ctx);
+                report.AddIssue(ValidationLevel.Error, "Biometría", $"Largo estándar ({s.LargoSta}) mayor que largo total ({s.LargoTot}) en lance {s.Lance} ({s.Fecha:dd/MM/yyyy})", ctx);
         }
     }
 
