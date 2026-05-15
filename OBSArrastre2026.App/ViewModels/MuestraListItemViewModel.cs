@@ -29,5 +29,12 @@ public sealed class MuestraListItemViewModel(Muestra muestra)
         ? $"{(Muestra.PesoMuestra_PesoGramos.Value / 1000.0):N2} kg" 
         : "-";
 
+    public string TipoMuestraDisplay => Muestra.TipoMuestra switch
+    {
+        1 => "Estándar",
+        2 => "Descarte",
+        _ => $"Tipo {Muestra.TipoMuestra}"
+    };
+
     public string ID => Muestra.ID;
 }

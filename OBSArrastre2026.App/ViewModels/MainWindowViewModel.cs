@@ -1433,7 +1433,8 @@ public class MainWindowViewModel : ObservableObject
                 "Fecha",
                 "Hora Virada",
                 "Especie",
-                "Peso");
+                "Peso",
+                "Tipo");
 
             return;
         }

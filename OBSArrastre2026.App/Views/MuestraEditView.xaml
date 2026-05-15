@@ -57,8 +57,10 @@
                         <StackPanel Grid.Row="0">
                             <Grid>
                                 <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*" />
+                                    <ColumnDefinition Width="20" />
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="24" />
+                                    <ColumnDefinition Width="20" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
 
@@ -84,6 +86,15 @@
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="2">
+                                    <Label Content="Tipo de Muestra" Style="{StaticResource FormLabelStyle}" />
+                                    <ComboBox ItemsSource="{Binding SampleTypes}"
+                                              SelectedValue="{Binding TipoMuestra}"
+                                              SelectedValuePath="Key"
+                                              DisplayMemberPath="Value"
+                                              Style="{StaticResource PremiumComboBoxStyle}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="4">
                                     <Label Content="Peso Muestra (gramos)" Style="{StaticResource FormLabelStyle}" />
                                     <TextBox Text="{Binding PesoMuestraGramos}" Style="{StaticResource PremiumTextBoxStyle}" />
                                 </StackPanel>

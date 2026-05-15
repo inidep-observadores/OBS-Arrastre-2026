@@ -258,6 +258,7 @@ public sealed partial class ImportDbfViewModel : ObservableObject, IDisposable
         if (SelectedFiles.Count == 0) return;
 
         IsBusy = true;
+        bool isNewMareaCreated = false;
         try
         {
             // 0. Si no hay ID de marea, intentar buscar una existente o crear una nueva
@@ -283,6 +284,7 @@ public sealed partial class ImportDbfViewModel : ObservableObject, IDisposable
                     };
                     await _mareaService.SaveMareaAsync(marea);
                     _mareaId = marea.ID;
+                    isNewMareaCreated = true;
                 }
             }
 
@@ -326,6 +328,14 @@ public sealed partial class ImportDbfViewModel : ObservableObject, IDisposable
 
             if (report.HasFatalErrors)
             {
+                // REQ: Si la importación falla por error grave, eliminar la marea (si fue creada en este proceso)
+                if (isNewMareaCreated && !string.IsNullOrEmpty(_mareaId))
+                {
+                    BusyMessage = "Cancelando importación por errores graves...";
+                    await _mareaService.DeleteMareaAsync(_mareaId);
+                    _mareaId = null;
+                }
+
                 TryOpenAuditReport(basePath);
                 if (ShowMessage != null) await ShowMessage("Errores de Validación", "Se detectaron errores graves que impiden la importación. Se ha abierto el reporte PDF con el detalle.", null, MessageDialogType.Error);
                 _onFinished(null, null);

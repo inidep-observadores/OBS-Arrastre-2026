@@ -941,7 +941,8 @@ public sealed class MareaValidationEngine
         {
             var parent = muestras.FirstOrDefault(m => 
                 (int)m.Lance == (int)group.Key.Lance && 
-                m.Especie?.Trim().ToUpper() == group.Key.Especie);
+                m.Especie?.Trim().ToUpper() == group.Key.Especie &&
+                m.TipoMuestra == 1);
 
             if (parent != null && parent.PesoMues > 0)
             {
@@ -970,11 +971,21 @@ public sealed class MareaValidationEngine
         {
             string ctx = $"Lance {s.Lance} - Ejemplar {s.NEjemplar}";
 
-            // Integridad: Verificar existencia de muestra padre
-            var parent = muestras.FirstOrDefault(m => m.Lance == s.Lance && m.Especie?.Trim().ToUpper() == s.Especie?.Trim().ToUpper());
+            // Integridad: Verificar existencia de muestra padre estándar
+            var allParents = muestras.Where(m => (int)m.Lance == (int)s.Lance && m.Especie?.Trim().ToUpper() == s.Especie?.Trim().ToUpper()).ToList();
+            var parent = allParents.FirstOrDefault(m => m.TipoMuestra == 1); // Preferencia Estándar
+            
             if (parent == null)
             {
-                report.AddIssue(ValidationLevel.Error, "Integridad", $"Submuestra huérfana: No existe muestra padre para la especie {s.Especie} en el lance {s.Lance} del {s.Fecha:dd/MM/yyyy}.", ctx);
+                var discardParent = allParents.FirstOrDefault(m => m.TipoMuestra == 2);
+                if (discardParent != null)
+                {
+                    report.AddIssue(ValidationLevel.Fatal, "Integridad", $"La submuestra de la especie {s.Especie} en el lance {s.Lance} está vinculada a una muestra de descarte, lo cual no es permitido. Debe existir una muestra estándar para procesar biometría individual.", ctx);
+                }
+                else
+                {
+                    report.AddIssue(ValidationLevel.Fatal, "Integridad", $"Submuestra huérfana: No existe una muestra estándar para la especie {s.Especie} en el lance {s.Lance} del {s.Fecha:dd/MM/yyyy}.", ctx);
+                }
             }
             else
             {
@@ -986,7 +997,6 @@ public sealed class MareaValidationEngine
                     s.Fecha = parent.Fecha;
                     report.AddIssue(ValidationLevel.AutoFixed, "Integridad", $"Fecha de submuestra ({oldFecha}) no coincide con muestra padre. Corregido.", ctx, oldFecha, newFecha);
                 }
-
             }
 
             // REQ-4.2.1: Verificar Largo Total Atípico

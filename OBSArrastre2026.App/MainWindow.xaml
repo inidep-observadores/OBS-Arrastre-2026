@@ -240,6 +240,20 @@
                     <TextBlock Grid.Column="2" Style="{StaticResource BodySecondaryStyle}" Text="{Binding LanceHora}" HorizontalAlignment="Center" />
                     <TextBlock Grid.Column="3" Style="{StaticResource BodySecondaryStyle}" Text="{Binding EspecieDisplay}" HorizontalAlignment="Left" />
                     <TextBlock Grid.Column="4" Style="{StaticResource BodySecondaryStyle}" Text="{Binding PesoDisplay}" HorizontalAlignment="Right" />
+                    
+                    <TextBlock Grid.Column="5" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="11" FontWeight="SemiBold">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Text" Value="{Binding TipoMuestraDisplay}" />
+                                <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Muestra.TipoMuestra}" Value="2">
+                                        <Setter Property="Foreground" Value="{DynamicResource WarningForegroundBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
 
                     <Button Grid.Column="8"
                             Command="{Binding DataContext.DeleteRecordCommand, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -1152,6 +1166,9 @@
                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource HeaderLabelStyle}">
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Lances}">
+                                                            <Setter Property="HorizontalAlignment" Value="Center" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Muestras}">
                                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                                         </DataTrigger>
                                                         <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.ControlProduccion}">

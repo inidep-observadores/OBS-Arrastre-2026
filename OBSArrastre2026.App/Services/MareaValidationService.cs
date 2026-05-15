@@ -168,6 +168,7 @@ public class MareaValidationService : IMareaValidationService
                         CodEspec = m.Especie?.CodigoInidep ?? m.Especie?.ID ?? "",
                         Intervalo = (int)m.Intervalo,
                         PesoMues = Math.Round((m.PesoMuestra_PesoGramos ?? 0) / 1000.0, 2),
+                        TipoMuestra = m.TipoMuestra,
                         Area = _validator.CalculateArea(lance.LatitudInicioDecimal ?? 0, lance.LongitudInicioDecimal ?? 0)
                     };
 

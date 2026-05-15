@@ -515,7 +515,13 @@ public class MareaImportService : IMareaImportService
                     // ya que es el único campo confiable en ambos archivos (M y S) según el usuario.
                     string speciesKey = rm.Especie.Trim().ToUpper().Normalize(NormalizationForm.FormC);
                     string key = $"{rm.Lance}_{speciesKey}";
-                    muestraMap[key] = muestra;
+                    
+                    // Priorizar muestras estándar para el vínculo con submuestras. 
+                    // Si ya existe una (estándar), no la sobrescribimos con una de descarte.
+                    if (rm.TipoMuestra == 1 || !muestraMap.ContainsKey(key))
+                    {
+                        muestraMap[key] = muestra;
+                    }
                     
                     // Mapa adicional para búsqueda por ID de especie (usado por archivos L*)
                     muestraByIdMap[$"{rm.Lance}_{especieId}"] = muestra;

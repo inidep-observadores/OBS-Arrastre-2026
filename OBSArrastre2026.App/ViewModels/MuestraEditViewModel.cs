@@ -27,6 +27,7 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
     private bool _isExpanded;
     private string _searchText = string.Empty;
     private Especie? _selectedEspecie;
+    private int _tipoMuestra = 1;
     private FrecuenciaTallaViewModel? _selectedFrecuencia;
 
     public MuestraEditViewModel(
@@ -141,6 +142,14 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
         }
     }
 
+    public int TipoMuestra { get => _tipoMuestra; set => SetProperty(ref _tipoMuestra, value); }
+
+    public List<KeyValuePair<int, string>> SampleTypes { get; } = new()
+    {
+        new(1, "Estándar"),
+        new(2, "Descarte")
+    };
+
     public bool EsLangostino => SelectedEspecie?.CodigoInidep == "5139030101";
 
     public IEnumerable<Especie> FilteredEspecies
@@ -188,6 +197,7 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
                 {
                     EspecieId = muestra.EspecieID;
                     PesoMuestraGramos = muestra.PesoMuestra_PesoGramos;
+                    TipoMuestra = muestra.TipoMuestra;
 
                     FrecuenciasTallas.Clear();
                     foreach (var f in muestra.FrecuenciasTallas.OrderBy(x => x.Talla))
@@ -259,7 +269,8 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
                     ID = _muestraId ?? Guid.NewGuid().ToString(),
                     LanceID = _lanceId,
                     EspecieID = EspecieId,
-                    PesoMuestra_PesoGramos = PesoMuestraGramos
+                    PesoMuestra_PesoGramos = PesoMuestraGramos,
+                    TipoMuestra = TipoMuestra
                 };
 
                 foreach (var fVm in FrecuenciasTallas)
