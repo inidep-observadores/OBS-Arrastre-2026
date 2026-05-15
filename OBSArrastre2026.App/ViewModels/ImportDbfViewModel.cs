@@ -141,7 +141,7 @@ public sealed partial class ImportDbfViewModel : ObservableObject, IDisposable
     public ICommand CancelCommand { get; }
 
     public Func<string, string, string?, MessageDialogType, Task>? ShowMessage { get; set; }
-    public Func<string, string, Task<bool>>? ShowConfirmation { get; set; }
+    public Func<string, string, Task<bool?>>? ShowConfirmation { get; set; }
 
     private void AddFiles()
     {
@@ -292,11 +292,11 @@ public sealed partial class ImportDbfViewModel : ObservableObject, IDisposable
             if (jsonFile != null)
             {
                 BusyMessage = "Importando metadatos de marea desde JSON...";
-                bool confirmMetadata = await (ShowConfirmation?.Invoke(
+                bool? confirmMetadata = await (ShowConfirmation?.Invoke(
                     "Importar Metadatos", 
-                    "Se ha detectado un archivo JSON de metadatos. ¿Deseas actualizar el Buque, Fechas y Etapas de la marea con la información del JSON?") ?? Task.FromResult(false));
+                    "Se ha detectado un archivo JSON de metadatos. ¿Deseas actualizar el Buque, Fechas y Etapas de la marea con la información del JSON?") ?? Task.FromResult<bool?>(false));
                 
-                if (confirmMetadata)
+                if (confirmMetadata == true)
                 {
                     await _jsonImportService.UpdateMareaMetadataAsync(_mareaId, jsonFile.FullPath);
                 }
@@ -337,11 +337,11 @@ public sealed partial class ImportDbfViewModel : ObservableObject, IDisposable
             if (await _importService.HasDataAsync(_mareaId))
             {
                 IsBusy = false; // Ocultamos spinner para mostrar confirmación
-                bool confirm = await (ShowConfirmation?.Invoke(
+                bool? confirm = await (ShowConfirmation?.Invoke(
                     "Sobreescribir Datos", 
-                    "Esta marea ya contiene lances, muestras o producción cargada. Si continúas, todos los datos existentes serán eliminados para realizar una importación limpia. ¿Deseas continuar?") ?? Task.FromResult(false));
+                    "Esta marea ya contiene lances, muestras o producción cargada. Si continúas, todos los datos existentes serán eliminados para realizar una importación limpia. ¿Deseas continuar?") ?? Task.FromResult<bool?>(false));
                 
-                if (!confirm) return;
+                if (confirm != true) return;
                 
                 IsBusy = true;
                 BusyMessage = "Eliminando datos previos de la marea...";

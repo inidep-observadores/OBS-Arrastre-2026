@@ -822,23 +822,44 @@
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Button Content="Cancelar" 
+                            <Button x:Name="BtnCancel"
+                                    Content="Cancelar" 
                                     Command="{Binding CancelCommand}"
                                     Style="{StaticResource ThemeButtonStyle}"
                                     Height="48"
-                                    Margin="0,0,8,0"/>
-                            <Button Grid.Column="1"
+                                    Margin="0,0,4,0"/>
+                            
+                            <Button x:Name="BtnNo"
+                                    Grid.Column="1"
+                                    Content="No Guardar" 
+                                    Command="{Binding NoCommand}"
+                                    Style="{StaticResource ThemeButtonStyle}"
+                                    Foreground="{DynamicResource DangerForegroundBrush}"
+                                    Height="48"
+                                    Margin="4,0,4,0"
+                                    Visibility="Collapsed"/>
+
+                            <Button x:Name="BtnConfirm"
+                                    Grid.Column="2"
                                     Content="Confirmar" 
                                     Command="{Binding ConfirmCommand}"
                                     Style="{StaticResource PrimaryButtonStyle}"
                                     Height="48"
-                                    Margin="8,0,0,0"/>
+                                    Margin="4,0,0,0"/>
                         </Grid>
                     </Border>
                 </Grid>
             </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding ShowNoButton}" Value="True">
+                    <Setter TargetName="BtnNo" Property="Visibility" Value="Visible" />
+                    <Setter TargetName="BtnConfirm" Property="Content" Value="Guardar" />
+                    <Setter TargetName="BtnCancel" Property="Content" Value="Volver" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
         </DataTemplate>
 
         <!-- Diálogo de Configuración de Unidad de Descarte -->

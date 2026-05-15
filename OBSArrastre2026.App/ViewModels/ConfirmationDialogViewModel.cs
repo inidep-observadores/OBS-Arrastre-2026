@@ -8,16 +8,19 @@ public sealed partial class ConfirmationDialogViewModel : ObservableObject
 {
     private string _title = string.Empty;
     private string _message = string.Empty;
-    private readonly Action<bool> _onResult;
+    private readonly Action<bool?> _onResult;
+    private bool _showNoButton;
 
-    public ConfirmationDialogViewModel(string title, string message, Action<bool> onResult)
+    public ConfirmationDialogViewModel(string title, string message, Action<bool?> onResult, bool showNoButton = false)
     {
         _title = title;
         _message = message;
         _onResult = onResult;
+        _showNoButton = showNoButton;
         
         ConfirmCommand = new RelayCommand(() => _onResult(true));
-        CancelCommand = new RelayCommand(() => _onResult(false));
+        NoCommand = new RelayCommand(() => _onResult(false));
+        CancelCommand = new RelayCommand(() => _onResult(null));
     }
 
     public string Title
@@ -32,6 +35,13 @@ public sealed partial class ConfirmationDialogViewModel : ObservableObject
         set => SetProperty(ref _message, value);
     }
 
+    public bool ShowNoButton
+    {
+        get => _showNoButton;
+        set => SetProperty(ref _showNoButton, value);
+    }
+
     public ICommand ConfirmCommand { get; }
+    public ICommand NoCommand { get; }
     public ICommand CancelCommand { get; }
 }

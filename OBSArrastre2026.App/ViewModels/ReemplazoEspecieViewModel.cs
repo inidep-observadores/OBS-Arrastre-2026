@@ -47,7 +47,7 @@ public partial class ReemplazoEspecieViewModel : ObservableObject
     private readonly Action? _onClose;
 
     public Action<string, string, string?, MessageDialogType>? ShowMessage { get; set; }
-    public Func<string, string, Task<bool>>? ShowConfirmation { get; set; }
+    public Func<string, string, Task<bool?>>? ShowConfirmation { get; set; }
 
     public ReemplazoEspecieViewModel(
         IDbContextFactory<AppDbContext> dbContextFactory,
@@ -155,10 +155,10 @@ public partial class ReemplazoEspecieViewModel : ObservableObject
             return;
         }
 
-        bool confirm = await (ShowConfirmation?.Invoke("Confirmar reemplazo", 
-            $"Se procederá a reemplazar {aReemplazar.Count} especies en todos los registros de la marea actual. Esta acción es irreversible. ¿Desea continuar?") ?? Task.FromResult(false));
+        bool? confirm = await (ShowConfirmation?.Invoke("Confirmar reemplazo", 
+            $"Se procederá a reemplazar {aReemplazar.Count} especies en todos los registros de la marea actual. Esta acción es irreversible. ¿Desea continuar?") ?? Task.FromResult<bool?>(false));
 
-        if (!confirm) return;
+        if (confirm != true) return;
 
         IsLoading = true;
         try

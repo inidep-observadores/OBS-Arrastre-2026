@@ -79,7 +79,7 @@ public class ExportarRecursosViewModel : ObservableObject
     public ICommand BrowseCommand { get; }
 
     public Func<string, string, string?, MessageDialogType, Task>? ShowMessage { get; set; }
-    public Func<string, string, Task<bool>>? ShowConfirmation { get; set; }
+    public Func<string, string, Task<bool?>>? ShowConfirmation { get; set; }
 
     public TaskCompletionSource<bool> DialogResult { get; } = new();
 

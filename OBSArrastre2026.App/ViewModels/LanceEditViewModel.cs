@@ -97,7 +97,7 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
         _fecha = DateTime.Today;
 
         SaveCommand = new AsyncRelayCommand(SaveAsync);
-        CancelCommand = new RelayCommand(Cancel);
+        CancelCommand = new AsyncRelayCommand(CancelAsync);
         AddCatchItemCommand = new RelayCommand(AddCatchItem);
         MovePreviousCommand = new AsyncRelayCommand(MovePreviousAsync, () => CanMovePrevious);
         MoveNextCommand = new AsyncRelayCommand(MoveNextAsync, () => CanMoveNext);
@@ -197,7 +197,8 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
     public IEnumerable<Especie> AllEspecies => _allEspecies;
 
     public Action<object?>? ShowCustomDialog { get; set; }
-    public Func<string, string, Task<bool>>? ShowConfirmation { get; set; }
+    public Func<string, string, Task<bool?>>? ShowConfirmation { get; set; }
+    public Func<string, string, Task<bool?>>? ShowChoice { get; set; }
     public Action<string, string, string?, MessageDialogType>? ShowMessage { get; set; }
 
     private async Task InitializeAsync()
@@ -420,8 +421,8 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
     {
         if (!HasChanges()) return true;
 
-        var confirm = await (ShowConfirmation?.Invoke("Cambios pendientes", "El lance actual tiene cambios sin guardar. ¿Desea guardarlos antes de cambiar de registro?") ?? Task.FromResult(false));
-        if (confirm)
+        var confirm = await (ShowConfirmation?.Invoke("Cambios pendientes", "El lance actual tiene cambios sin guardar. ¿Desea guardarlos antes de cambiar de registro?") ?? Task.FromResult<bool?>(false));
+        if (confirm == true)
         {
             return await SaveInternalAsync();
         }
@@ -548,5 +549,28 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
         return false;
     }
 
-    private void Cancel() => _onClose();
+    private async Task CancelAsync()
+    {
+        if (HasChanges())
+        {
+            var result = await (ShowChoice?.Invoke("Cambios pendientes", "¿Desea guardar los cambios realizados en el lance antes de salir?") ?? Task.FromResult<bool?>(null));
+            
+            if (result == true) // Guardar
+            {
+                if (await SaveInternalAsync())
+                {
+                    _onClose();
+                }
+            }
+            else if (result == false) // No Guardar
+            {
+                _onClose();
+            }
+            // else (null) -> Volver, no hacer nada
+        }
+        else
+        {
+            _onClose();
+        }
+    }
 }

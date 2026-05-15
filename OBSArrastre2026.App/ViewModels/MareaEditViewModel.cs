@@ -147,7 +147,7 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
     public AsyncRelayCommand ImportDbfCommand { get; }
 
     public Action<object?>? ShowCustomDialog { get; set; }
-    public Func<string, string, Task<bool>>? ShowConfirmation { get; set; }
+    public Func<string, string, Task<bool?>>? ShowConfirmation { get; set; }
 
     private async Task ImportDbf()
     {
@@ -178,10 +178,10 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
         bool hasData = await _mareaService.HasExistingDataAsync(_mareaId);
         if (hasData)
         {
-            bool confirm = await (ShowConfirmation?.Invoke("Datos Existentes", 
-                "Esta marea ya tiene lances o producción cargada. Si continúa, estos datos se borrarán para realizar una importación limpia. ¿Desea proceder?") ?? Task.FromResult(false));
+            bool? confirm = await (ShowConfirmation?.Invoke("Datos Existentes", 
+                "Esta marea ya tiene lances o producción cargada. Si continúa, estos datos se borrarán para realizar una importación limpia. ¿Desea proceder?") ?? Task.FromResult<bool?>(false));
             
-            if (!confirm) return;
+            if (confirm != true) return;
 
             // 2. Limpiar datos
             try 
@@ -246,7 +246,7 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
             });
 
         importVm.ShowMessage = (title, msg, details, type) => ShowMessage != null ? ShowMessage(title, msg, details, type) : Task.CompletedTask;
-        importVm.ShowConfirmation = (title, msg) => ShowConfirmation?.Invoke(title, msg) ?? Task.FromResult(false);
+        importVm.ShowConfirmation = (title, msg) => ShowConfirmation?.Invoke(title, msg) ?? Task.FromResult<bool?>(false);
         ShowCustomDialog?.Invoke(importVm);
     }
 

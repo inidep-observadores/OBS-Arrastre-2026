@@ -1004,14 +1004,25 @@ public class MainWindowViewModel : ObservableObject
         return tcs.Task;
     }
 
-    public Task<bool> ShowConfirmationAsync(string title, string message)
+    public Task<bool?> ShowConfirmationAsync(string title, string message)
     {
-        var tcs = new TaskCompletionSource<bool>();
+        var tcs = new TaskCompletionSource<bool?>();
         ActiveDialog = new ConfirmationDialogViewModel(title, message, result => 
         {
             ActiveDialog = null;
             tcs.SetResult(result);
         });
+        return tcs.Task;
+    }
+
+    public Task<bool?> ShowChoiceAsync(string title, string message)
+    {
+        var tcs = new TaskCompletionSource<bool?>();
+        ActiveDialog = new ConfirmationDialogViewModel(title, message, result => 
+        {
+            ActiveDialog = null;
+            tcs.SetResult(result);
+        }, showNoButton: true);
         return tcs.Task;
     }
 
@@ -1083,8 +1094,8 @@ public class MainWindowViewModel : ObservableObject
 
         if (result)
         {
-            bool openFolder = await ShowConfirmationAsync("Exportación completada", "¿Desea abrir la carpeta donde se generaron los archivos?");
-            if (openFolder)
+            bool? openFolder = await ShowConfirmationAsync("Exportación completada", "¿Desea abrir la carpeta donde se generaron los archivos?");
+            if (openFolder == true)
             {
                 try
                 {
@@ -1208,8 +1219,8 @@ public class MainWindowViewModel : ObservableObject
             timeDetails.AppendLine();
             timeDetails.AppendLine("¿Desea abrir la carpeta de destino?");
 
-            bool openFolder = await ShowConfirmationAsync("Exportación completada", timeDetails.ToString());
-            if (openFolder)
+            bool? openFolder = await ShowConfirmationAsync("Exportación completada", timeDetails.ToString());
+            if (openFolder == true)
             {
                 try
                 {
@@ -1828,8 +1839,9 @@ public class MainWindowViewModel : ObservableObject
         }, item.Lance.MareaEtapaId, item.ID);
         
         vm.ShowCustomDialog = diag => ActiveDialog = diag;
-        vm.ShowMessage = (t, m, d, type) => ShowMessage(t, m, d, type);
+        vm.ShowMessage = (t, m, d, type) => ShowMessageAsync(t, m, d, type);
         vm.ShowConfirmation = (t, m) => ShowConfirmationAsync(t, m);
+        vm.ShowChoice = (t, m) => ShowChoiceAsync(t, m);
         CurrentEditViewModel = vm;
     }
 
@@ -1843,11 +1855,13 @@ public class MainWindowViewModel : ObservableObject
             // Refrescamos la lista principal, lo cual disparará también el refresco del detalle
             // si logramos preservar la selección.
             _ = LoadControlProduccionAsync();
+            _ = UpdateMapDataAsync();
         }, vm.MareaEtapaId, vm.LanceId);
         
         editVm.ShowCustomDialog = diag => ActiveDialog = diag;
-        editVm.ShowMessage = (t, m, d, type) => ShowMessage(t, m, d, type);
+        editVm.ShowMessage = (t, m, d, type) => ShowMessageAsync(t, m, d, type);
         editVm.ShowConfirmation = (t, m) => ShowConfirmationAsync(t, m);
+        editVm.ShowChoice = (t, m) => ShowChoiceAsync(t, m);
         CurrentEditViewModel = editVm;
     }
 
@@ -2056,7 +2070,7 @@ public class MainWindowViewModel : ObservableObject
             "Confirmar Borrado",
             $"¿Está seguro de que desea eliminar {entityName} '{identifier}'?\n\nEsta acción es permanente y eliminará todos los datos asociados en cascada.");
 
-        if (!result) return;
+        if (result != true) return;
 
         try
         {
