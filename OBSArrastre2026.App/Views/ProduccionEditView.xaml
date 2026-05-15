@@ -58,8 +58,21 @@
                                 <Label Content="Etapa de Marea" Style="{StaticResource FormLabelStyle}" />
                                 <ComboBox ItemsSource="{Binding Etapas}"
                                           SelectedItem="{Binding SelectedEtapa}"
-                                          DisplayMemberPath="FechaZarpada"
-                                          Style="{StaticResource PremiumComboBoxStyle}" />
+                                          Style="{StaticResource PremiumComboBoxStyle}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="Viaje " Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                <TextBlock Text="{Binding NumeroEtapa}" FontWeight="Bold" Margin="0,0,5,0" />
+                                                <TextBlock Text=" (" Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                <TextBlock Text="{Binding FechaZarpada, StringFormat=dd/MM/yyyy}" />
+                                                <TextBlock Text=" - " Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                <TextBlock Text="{Binding FechaArribo, StringFormat=dd/MM/yyyy, TargetNullValue='...'}" />
+                                                <TextBlock Text=")" Foreground="{DynamicResource SecondaryTextBrush}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
                             </StackPanel>
                         </Grid>
 

@@ -60,16 +60,13 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
         // 2. Resumen por Etapa (si hay más de una)
         if (marea.Etapas.Count > 1)
         {
-            var sortedEtapas = marea.Etapas.OrderBy(e => e.FechaZarpada).ToList();
-            for (int i = 0; i < sortedEtapas.Count; i++)
+            foreach (var etapa in marea.Etapas.OrderBy(e => e.FechaZarpada))
             {
-                var etapa = sortedEtapas[i];
-                int nroEtapa = i + 1;
                 var lancesEtapa = lances.Where(l => l.MareaEtapaId == etapa.ID).ToList();
                 var produccionEtapa = produccion.Where(p => p.MareaEtapaId == etapa.ID).ToList();
-                var section = CreateSection($"RESUMEN ETAPA {nroEtapa}", lancesEtapa, produccionEtapa, new List<MareaEtapa> { etapa });
+                var section = CreateSection($"RESUMEN ETAPA {etapa.NumeroEtapa}", lancesEtapa, produccionEtapa, new List<MareaEtapa> { etapa });
                 section.EsEtapa = true;
-                section.NumeroEtapa = nroEtapa;
+                section.NumeroEtapa = etapa.NumeroEtapa;
                 report.ResumenEtapas.Add(section);
             }
         }
@@ -187,7 +184,7 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
 
             var narrativaEtapa = new NarrativaEtapa
             {
-                Numero = i + 1,
+                Numero = etapa.NumeroEtapa,
                 FechaInicio = etapa.FechaZarpada,
                 FechaFin = etapa.FechaArribo ?? etapa.FechaZarpada,
                 TotalLances = lancesEtapa.Count,

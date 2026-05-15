@@ -12,6 +12,7 @@ public sealed class MareaEtapaItemViewModel : ObservableObject
     private string? _nombreCapitan;
     private string? _nombreOficialCubierta;
     private string? _nombreOficialPesca;
+    private int _numeroEtapa;
 
     public MareaEtapaItemViewModel(MareaEtapa mareaEtapa)
     {
@@ -21,6 +22,7 @@ public sealed class MareaEtapaItemViewModel : ObservableObject
         _nombreCapitan = mareaEtapa.NombreCapitan;
         _nombreOficialCubierta = mareaEtapa.NombreOficialCubierta;
         _nombreOficialPesca = mareaEtapa.NombreOficialPesca;
+        _numeroEtapa = mareaEtapa.NumeroEtapa;
 
         ToggleExpandedCommand = new RelayCommand(() => IsExpanded = !IsExpanded);
         RemoveCommand = new RelayCommand(() => RequestDeletion?.Invoke(this));
@@ -86,7 +88,19 @@ public sealed class MareaEtapaItemViewModel : ObservableObject
         set => SetProperty(ref _nombreOficialPesca, value);
     }
 
-    public string SummaryText => $"{FechaZarpada:dd/MM/yyyy} - {(FechaArribo.HasValue ? FechaArribo.Value.ToString("dd/MM/yyyy") : "En curso")} | Cap. {NombreCapitan ?? "S/D"}";
+    public int NumeroEtapa
+    {
+        get => _numeroEtapa;
+        set 
+        {
+            if (SetProperty(ref _numeroEtapa, value))
+            {
+                OnPropertyChanged(nameof(SummaryText));
+            }
+        }
+    }
+
+    public string SummaryText => $"Etapa {NumeroEtapa}: {FechaZarpada:dd/MM/yyyy} - {(FechaArribo.HasValue ? FechaArribo.Value.ToString("dd/MM/yyyy") : "En curso")} | Cap. {NombreCapitan ?? "S/D"}";
 
     public ICommand ToggleExpandedCommand { get; }
 

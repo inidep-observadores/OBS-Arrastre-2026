@@ -989,7 +989,7 @@ public class MareaReportService : IMareaReportService
 
             if (multipleEtapas)
             {
-                doc.InsertParagraph($"VIAJE {i + 1}").Font("Times New Roman").FontSize(16).Bold().Alignment = Alignment.center;
+                doc.InsertParagraph($"VIAJE {etapa.NumeroEtapa}").Font("Times New Roman").FontSize(16).Bold().Alignment = Alignment.center;
                 doc.InsertParagraph().SpacingAfter(10);
             }
 

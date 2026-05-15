@@ -186,7 +186,11 @@ public sealed partial class ProduccionEditViewModel : ValidatableViewModelBase<P
             var activeMarea = _activeMareaManager.ActiveMarea;
             if (activeMarea != null)
             {
-                foreach (var e in activeMarea.Etapas) Etapas.Add(e);
+                foreach (var e in activeMarea.Etapas)
+                {
+                    e.Marea = activeMarea; // Asegurar referencia para NumeroEtapa
+                    Etapas.Add(e);
+                }
                 SelectedEtapa = Etapas.FirstOrDefault();
             }
 

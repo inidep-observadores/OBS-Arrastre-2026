@@ -286,8 +286,10 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
                     {
                         var vm = new MareaEtapaItemViewModel(etapa);
                         vm.RequestDeletion = HandleEtapaDeletion;
+                        vm.PropertyChanged += OnEtapaPropertyChanged;
                         Etapas.Add(vm);
                     }
+                    RecalculateEtapaNumbers();
                 }
             }
             else
@@ -317,12 +319,33 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
             IsExpanded = true,
             RequestDeletion = HandleEtapaDeletion
         };
+        vm.PropertyChanged += OnEtapaPropertyChanged;
         Etapas.Add(vm);
+        RecalculateEtapaNumbers();
+    }
+
+    private void OnEtapaPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(MareaEtapaItemViewModel.FechaZarpada))
+        {
+            RecalculateEtapaNumbers();
+        }
+    }
+
+    private void RecalculateEtapaNumbers()
+    {
+        var sorted = Etapas.OrderBy(e => e.FechaZarpada).ToList();
+        for (int i = 0; i < sorted.Count; i++)
+        {
+            sorted[i].NumeroEtapa = i + 1;
+        }
     }
 
     private void HandleEtapaDeletion(MareaEtapaItemViewModel vm)
     {
+        vm.PropertyChanged -= OnEtapaPropertyChanged;
         Etapas.Remove(vm);
+        RecalculateEtapaNumbers();
     }
 
     private async Task SaveAsync()

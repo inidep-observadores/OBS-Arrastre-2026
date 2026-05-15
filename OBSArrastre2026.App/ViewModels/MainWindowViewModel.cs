@@ -2301,7 +2301,7 @@ public class MainWindowViewModel : ObservableObject
 
                 var etapaReport = new ControlProduccionEtapaReport
                 {
-                    NumeroEtapa = i + 1,
+                    NumeroEtapa = etapa.NumeroEtapa,
                     FechaInicio = etapa.FechaZarpada,
                     FechaFin = etapa.FechaArribo ?? DateTime.Now,
                     Lats = etapaLances.Where(l => l.LatitudInicioDecimal.HasValue).Select(l => l.LatitudInicioDecimal!.Value).ToList(),
@@ -2560,7 +2560,7 @@ public class MainWindowViewModel : ObservableObject
                         var etapa = etapasOrdenadas[i];
                         var etapaLances = lances.Where(l => l.MareaEtapaId == etapa.ID).ToList();
                         var etapaProduccion = produccion.Where(p => p.MareaEtapaId == etapa.ID).ToList();
-                        var etapaNombre = $"Etapa {i + 1} ({etapa.FechaZarpada:dd/MM} - {etapa.FechaArribo?.ToString("dd/MM") ?? "Act."})";
+                        var etapaNombre = $"Etapa {etapa.NumeroEtapa} ({etapa.FechaZarpada:dd/MM} - {etapa.FechaArribo?.ToString("dd/MM") ?? "Act."})";
 
                         // Agrupar producción de la etapa
                         var prodSummary = etapaProduccion
@@ -2595,7 +2595,7 @@ public class MainWindowViewModel : ObservableObject
 
                             Records.Add(new ControlProduccionListItemViewModel
                             {
-                                NumeroEtapa = i + 1,
+                                NumeroEtapa = etapa.NumeroEtapa,
                                 EtapaDisplay = etapaNombre,
                                 Especie = pData?.EspecieNombre ?? cData?.EspecieNombre ?? "Desconocida",
                                 EspecieId = spId,
