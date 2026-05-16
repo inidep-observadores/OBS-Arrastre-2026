@@ -211,9 +211,10 @@ public sealed class DbfExporterService : IDbfExporterService
                     if (i < items.Count)
                     {
                         var item = items[i];
+                        item.Lance = lance; // Asegurar back-reference para el correcto cálculo de kilogramos
                         row[idx++] = double.TryParse(item.Especie?.CodigoInidep ?? item.EspecieOriginal, out double spCode) ? spCode : null;
-                        row[idx++] = item.DatoCaptura;
-                        row[idx++] = item.DatoDescarte;
+                        row[idx++] = item.CapturaTotalKgCalculado;
+                        row[idx++] = item.PesoDescarteCalculado;
                     }
                     else
                     {
