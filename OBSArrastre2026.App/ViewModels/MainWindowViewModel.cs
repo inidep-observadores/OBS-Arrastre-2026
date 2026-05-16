@@ -1488,8 +1488,18 @@ public class MainWindowViewModel : ObservableObject
             var controlSection = _mockShellDataService.GetListSection(section);
             PageEyebrow = controlSection.Eyebrow;
             PageTitle = controlSection.Title;
-            PageDescription = controlSection.Description;
-            PageEyebrow = controlSection.Eyebrow;
+            
+            if (string.IsNullOrEmpty(ControlProduccionSelectedEspecieId))
+            {
+                PageDescription = _controlAgruparPorEtapas 
+                    ? "Balance de masa por etapa para la marea activa." 
+                    : "Balance de masa global para la marea activa.";
+            }
+            else
+            {
+                PageDescription = "Evolución diaria del balance de masa para la especie seleccionada.";
+            }
+            
             PrimaryActionLabel = controlSection.PrimaryActionLabel;
             PrimaryActionCommand = new AsyncCommand(LoadControlProduccionAsync);
 
@@ -2327,33 +2337,74 @@ public class MainWindowViewModel : ObservableObject
 
             var commonRayaIdsMarea = rayaIdsEnMareaProd.Intersect(rayaIdsEnMareaCatch).ToHashSet();
 
-            for (int i = 0; i < etapasOrdenadas.Count; i++)
+            // Determinar qué bloques (etapas individuales o marea global) procesaremos en el PDF según lo indicado en la UI
+            var bloquesParaReporte = new List<(int? NumeroEtapa, DateTime FechaInicio, DateTime FechaFin, List<Lance> Lances, List<RegistroProduccion> Produccion)>();
+
+            if (_controlAgruparPorEtapas)
             {
-                var etapa = etapasOrdenadas[i];
-                // 1. Obtener lances de la etapa
-                var etapaLances = await dbContext.Lances
+                // Separado por etapas
+                for (int i = 0; i < etapasOrdenadas.Count; i++)
+                {
+                    var etapa = etapasOrdenadas[i];
+                    var etapaLances = await dbContext.Lances
+                        .Include(l => l.ItemsCaptura)
+                            .ThenInclude(ic => ic.Especie)
+                        .Where(l => l.MareaEtapaId == etapa.ID)
+                        .ToListAsync();
+
+                    foreach (var lance in etapaLances)
+                    {
+                        foreach (var item in lance.ItemsCaptura) item.Lance = lance;
+                    }
+
+                    var etapaProduccion = await dbContext.RegistrosProduccion
+                        .Include(rp => rp.Especie)
+                        .Include(rp => rp.Producto)
+                        .Where(rp => rp.MareaEtapaId == etapa.ID)
+                        .ToListAsync();
+
+                    bloquesParaReporte.Add((etapa.NumeroEtapa, etapa.FechaZarpada, etapa.FechaArribo ?? DateTime.Now, etapaLances, etapaProduccion));
+                }
+            }
+            else
+            {
+                // Global (Toda la marea junta)
+                var todosLancesConDetalles = await dbContext.Lances
                     .Include(l => l.ItemsCaptura)
                         .ThenInclude(ic => ic.Especie)
-                    .Where(l => string.Equals(l.MareaEtapaId, etapa.ID, StringComparison.OrdinalIgnoreCase))
+                    .Where(l => todasEtapaIds.Contains(l.MareaEtapaId))
                     .ToListAsync();
 
-                foreach (var lance in etapaLances)
+                foreach (var lance in todosLancesConDetalles)
                 {
                     foreach (var item in lance.ItemsCaptura) item.Lance = lance;
                 }
 
-                // 2. Obtener producción de la etapa
-                var etapaProduccion = await dbContext.RegistrosProduccion
+                var todaProduccionConDetalles = await dbContext.RegistrosProduccion
                     .Include(rp => rp.Especie)
                     .Include(rp => rp.Producto)
-                    .Where(rp => string.Equals(rp.MareaEtapaId, etapa.ID, StringComparison.OrdinalIgnoreCase))
+                    .Where(rp => todasEtapaIds.Contains(rp.MareaEtapaId))
                     .ToListAsync();
+
+                bloquesParaReporte.Add((
+                    null,
+                    _activeMareaManager.ActiveMarea.FechaInicio,
+                    _activeMareaManager.ActiveMarea.FechaFin ?? DateTime.Now,
+                    todosLancesConDetalles,
+                    todaProduccionConDetalles
+                ));
+            }
+
+            foreach (var bloque in bloquesParaReporte)
+            {
+                var etapaLances = bloque.Lances;
+                var etapaProduccion = bloque.Produccion;
 
                 var etapaReport = new ControlProduccionEtapaReport
                 {
-                    NumeroEtapa = etapa.NumeroEtapa,
-                    FechaInicio = etapa.FechaZarpada,
-                    FechaFin = etapa.FechaArribo ?? DateTime.Now,
+                    NumeroEtapa = bloque.NumeroEtapa ?? 0,
+                    FechaInicio = bloque.FechaInicio,
+                    FechaFin = bloque.FechaFin,
                     Lats = etapaLances.Where(l => l.LatitudInicioDecimal.HasValue).Select(l => l.LatitudInicioDecimal!.Value).ToList(),
                     Lons = etapaLances.Where(l => l.LongitudInicioDecimal.HasValue).Select(l => l.LongitudInicioDecimal!.Value).ToList()
                 };
@@ -2662,7 +2713,9 @@ public class MainWindowViewModel : ObservableObject
             {
                 // VISTA AGRUPADA POR ETAPA Y ESPECIE
                 PageTitle = "Control Capt./Prod.";
-                PageDescription = "Balance de masa por etapa para la marea activa.";
+                PageDescription = _controlAgruparPorEtapas 
+                    ? "Balance de masa por etapa para la marea activa." 
+                    : "Balance de masa global para la marea activa.";
                 
                 SetColumnHeaders(
                     "Especie",

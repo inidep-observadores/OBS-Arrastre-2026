@@ -570,7 +570,10 @@ public class MareaReportService : IMareaReportService
                 {
                     c.Item().Text(titulo).FontSize(14).SemiBold().FontColor(Colors.Blue.Darken3);
                     
-                    var buqueInfo = buqueCodigo.HasValue ? $"{barco} ({buqueCodigo})" : barco;
+                    var barcoConPrefijo = barco.StartsWith("B/P ", StringComparison.OrdinalIgnoreCase) || barco.StartsWith("B/P", StringComparison.OrdinalIgnoreCase)
+                        ? barco 
+                        : $"B/P {barco}";
+                    var buqueInfo = buqueCodigo.HasValue ? $"{barcoConPrefijo} ({buqueCodigo})" : barcoConPrefijo;
                     var mareaInfo = $"{buqueInfo} - Marea {marea} ({anio})";
                     
                     if (fechaInicio.HasValue && fechaFin.HasValue)
@@ -584,7 +587,6 @@ public class MareaReportService : IMareaReportService
                         var obsInfo = "Observador: ";
                         if (!string.IsNullOrEmpty(obsApellido)) obsInfo += obsApellido;
                         if (!string.IsNullOrEmpty(obsNombre)) obsInfo += (string.IsNullOrEmpty(obsApellido) ? "" : ", ") + obsNombre;
-                        if (obsCodigo.HasValue) obsInfo += $" ({obsCodigo})";
                         c.Item().Text(obsInfo).FontSize(8).Italic().FontColor(Colors.Grey.Darken2);
                     }
                 });
@@ -835,14 +837,14 @@ public class MareaReportService : IMareaReportService
             {
                 table.ColumnsDefinition(columns =>
                 {
-                    columns.RelativeColumn(3); // Especie
-                    columns.RelativeColumn(2); // Prod. Total
-                    columns.RelativeColumn(2); // Capt. Recon.
-                    columns.RelativeColumn(2); // Captura
-                    columns.RelativeColumn(2); // Descarte
-                    columns.RelativeColumn(2); // Capt. Retenida
-                    columns.RelativeColumn(2); // Dif. Kg
-                    columns.RelativeColumn(1.5f); // Dif. %
+                    columns.RelativeColumn(6); // Especie
+                    columns.RelativeColumn(1.5f); // Prod. Total
+                    columns.RelativeColumn(1.5f); // Capt. Recon.
+                    columns.RelativeColumn(1.5f); // Captura
+                    columns.RelativeColumn(1.5f); // Descarte
+                    columns.RelativeColumn(1.5f); // Capt. Retenida
+                    columns.RelativeColumn(1.5f); // Dif. Kg
+                    columns.RelativeColumn(1.2f); // Dif. %
                 });
 
                 table.Header(header =>

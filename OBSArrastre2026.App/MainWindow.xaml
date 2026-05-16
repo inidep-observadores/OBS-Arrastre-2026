@@ -116,7 +116,18 @@
                                     </Style.Triggers>
                                 </Style>
                             </Button.Style>
-                            <TextBlock Text="★" FontSize="18" VerticalAlignment="Center" />
+                            <TextBlock FontSize="18" VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="☆" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                <Setter Property="Text" Value="★" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                         </Button>
 
                         <Button Command="{Binding GenerateSummaryCommand}"
@@ -1016,7 +1027,7 @@
                                               VerticalAlignment="Center"
                                               FontWeight="SemiBold"
                                               Foreground="{DynamicResource PrimaryTextBrush}" />
-                                    <CheckBox Content="Agrupar por etapas" 
+                                    <CheckBox Content="Separar por etapas" 
                                               IsChecked="{Binding ControlAgruparPorEtapas}"
                                               VerticalAlignment="Center"
                                               FontWeight="SemiBold"
