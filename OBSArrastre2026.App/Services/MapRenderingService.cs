@@ -145,20 +145,21 @@ namespace OBSArrastre2026.App.Services
             double south = minLat - latMargin;
             double north = maxLat + latMargin;
 
-            // Forzar límites de la costa argentina si estamos muy cerca
-            if (west > -68.0 && minLon < -60) west = -68.0;
-
             // Alineación a grados PARES hacia afuera para una estética limpia
-            double westAligned = Math.Floor(west / 2.0) * 2.0;
+            // Y aplicación de límites solicitados: -66 base a la izquierda y amplitud mínima de 8º
+            double westAligned = Math.Min(Math.Floor(west / 2.0) * 2.0, -66.0);
             double eastAligned = Math.Ceiling(east / 2.0) * 2.0;
+
+            // Asegurar un ancho mínimo de 8 grados (dinámico)
+            if (eastAligned - westAligned < 8.0) 
+            {
+                eastAligned = westAligned + 8.0;
+            }
+            
             double southAligned = Math.Floor(south / 2.0) * 2.0;
             double northAligned = Math.Ceiling(north / 2.0) * 2.0;
 
-            // Asegurar un tamaño mínimo de ventana (4 grados para mantener la alineación par)
-            if (eastAligned - westAligned < 4) 
-            {
-                eastAligned = westAligned + 4;
-            }
+            // Asegurar un tamaño mínimo de ventana vertical (4 grados para mantener la alineación par)
             if (northAligned - southAligned < 4) 
             {
                 northAligned = southAligned + 4;
