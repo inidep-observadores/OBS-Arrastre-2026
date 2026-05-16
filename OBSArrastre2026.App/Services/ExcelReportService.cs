@@ -93,14 +93,18 @@ namespace OBSArrastre2026.App.Services
         private void GenerateFrequencySheets(XLWorkbook workbook, List<Lance> lancesList)
         {
             var todasMuestras = lancesList.SelectMany(l => l.Muestras).ToList();
-            var muestrasAgrupadas = todasMuestras
+            
+            var muestrasValidas = todasMuestras
+                .Where(m => m.FrecuenciasTallas.Sum(f => f.NroTotal) >= 3)
+                .ToList();
+
+            var grupos = muestrasValidas
                 .GroupBy(m => new { m.EspecieID, m.TipoMuestra })
-                .Where(g => g.Count() > 2)
                 .OrderBy(g => g.First().Especie?.NombreCientifico)
                 .ThenBy(g => g.Key.TipoMuestra)
                 .ToList();
 
-            foreach (var grupo in muestrasAgrupadas)
+            foreach (var grupo in grupos)
             {
                 var especie = grupo.First().Especie;
                 if (especie == null) continue;

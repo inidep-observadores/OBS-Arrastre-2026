@@ -190,7 +190,7 @@ public class ExportarRecursosViewModel : ObservableObject
     {
         if (etapa == null) return;
 
-        var etapaLances = _lances.Where(l => l.MareaEtapaId == etapa.ID).ToList();
+        var etapaLances = _lances.Where(l => string.Equals(l.MareaEtapaId, etapa.ID, StringComparison.OrdinalIgnoreCase)).ToList();
         if (!etapaLances.Any()) return;
 
         // 1. Obtener mapa para Excel (ya no se guarda como archivo separado)

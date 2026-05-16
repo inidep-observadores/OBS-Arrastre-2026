@@ -1078,8 +1078,8 @@ public class MareaReportService : IMareaReportService
         for (int i = 0; i < etapas.Count; i++)
         {
             var etapa = etapas[i];
-            var etapaLances = lances.Where(l => l.MareaEtapaId == etapa.ID).ToList();
-            var etapaProduccion = produccion.Where(p => p.MareaEtapaId == etapa.ID).ToList();
+            var etapaLances = lances.Where(l => string.Equals(l.MareaEtapaId, etapa.ID, StringComparison.OrdinalIgnoreCase)).ToList();
+            var etapaProduccion = produccion.Where(p => string.Equals(p.MareaEtapaId, etapa.ID, StringComparison.OrdinalIgnoreCase)).ToList();
 
             if (multipleEtapas)
             {
@@ -1318,8 +1318,8 @@ public class MareaReportService : IMareaReportService
     {
         var muestras = lances.SelectMany(l => l.Muestras).ToList();
         var grupos = muestras
+            .Where(m => m.FrecuenciasTallas.Sum(f => f.NroTotal) >= 3)
             .GroupBy(m => new { m.EspecieID, m.TipoMuestra })
-            .Where(g => g.Count() >= 3)
             .OrderBy(g => g.First().Especie?.NombreCientifico)
             .ThenBy(g => g.Key.TipoMuestra)
             .ToList();

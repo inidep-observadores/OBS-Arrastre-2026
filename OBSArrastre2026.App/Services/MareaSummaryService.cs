@@ -62,8 +62,8 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
         {
             foreach (var etapa in marea.Etapas.OrderBy(e => e.FechaZarpada))
             {
-                var lancesEtapa = lances.Where(l => l.MareaEtapaId == etapa.ID).ToList();
-                var produccionEtapa = produccion.Where(p => p.MareaEtapaId == etapa.ID).ToList();
+                var lancesEtapa = lances.Where(l => string.Equals(l.MareaEtapaId, etapa.ID, StringComparison.OrdinalIgnoreCase)).ToList();
+                var produccionEtapa = produccion.Where(p => string.Equals(p.MareaEtapaId, etapa.ID, StringComparison.OrdinalIgnoreCase)).ToList();
                 var section = CreateSection($"RESUMEN ETAPA {etapa.NumeroEtapa}", lancesEtapa, produccionEtapa, new List<MareaEtapa> { etapa });
                 section.EsEtapa = true;
                 section.NumeroEtapa = etapa.NumeroEtapa;
@@ -98,7 +98,7 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
         for (int i = 0; i < sortedEtapas.Count; i++)
         {
             var etapa = sortedEtapas[i];
-            var lancesEtapa = lances.Where(l => l.MareaEtapaId == etapa.ID).ToList();
+            var lancesEtapa = lances.Where(l => string.Equals(l.MareaEtapaId, etapa.ID, StringComparison.OrdinalIgnoreCase)).ToList();
 
             // Cuadrados estadísticos (ordenados, sin repetición)
             var cuadradoGroups = lancesEtapa
@@ -137,7 +137,7 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
             }
 
             // Producción de la etapa (para calcular el umbral del 20%)
-            var produccionEtapa = produccion.Where(p => p.MareaEtapaId == etapa.ID).ToList();
+            var produccionEtapa = produccion.Where(p => string.Equals(p.MareaEtapaId, etapa.ID, StringComparison.OrdinalIgnoreCase)).ToList();
             double prodTotalEtapa = produccionEtapa.Sum(p => p.Kg ?? 0);
 
             // Códigos INIDEP relevantes para la regla de negocio narrativa

@@ -2334,7 +2334,7 @@ public class MainWindowViewModel : ObservableObject
                 var etapaLances = await dbContext.Lances
                     .Include(l => l.ItemsCaptura)
                         .ThenInclude(ic => ic.Especie)
-                    .Where(l => l.MareaEtapaId == etapa.ID)
+                    .Where(l => string.Equals(l.MareaEtapaId, etapa.ID, StringComparison.OrdinalIgnoreCase))
                     .ToListAsync();
 
                 foreach (var lance in etapaLances)
@@ -2346,7 +2346,7 @@ public class MainWindowViewModel : ObservableObject
                 var etapaProduccion = await dbContext.RegistrosProduccion
                     .Include(rp => rp.Especie)
                     .Include(rp => rp.Producto)
-                    .Where(rp => rp.MareaEtapaId == etapa.ID)
+                    .Where(rp => string.Equals(rp.MareaEtapaId, etapa.ID, StringComparison.OrdinalIgnoreCase))
                     .ToListAsync();
 
                 var etapaReport = new ControlProduccionEtapaReport
@@ -2685,8 +2685,8 @@ public class MainWindowViewModel : ObservableObject
                     for (int i = 0; i < etapasOrdenadas.Count; i++)
                     {
                         var etapa = etapasOrdenadas[i];
-                        var etapaLances = lances.Where(l => l.MareaEtapaId == etapa.ID).ToList();
-                        var etapaProduccion = produccion.Where(p => p.MareaEtapaId == etapa.ID).ToList();
+                        var etapaLances = lances.Where(l => string.Equals(l.MareaEtapaId, etapa.ID, StringComparison.OrdinalIgnoreCase)).ToList();
+                        var etapaProduccion = produccion.Where(p => string.Equals(p.MareaEtapaId, etapa.ID, StringComparison.OrdinalIgnoreCase)).ToList();
                         var etapaNombre = $"Etapa {etapa.NumeroEtapa} ({etapa.FechaZarpada:dd/MM} - {etapa.FechaArribo?.ToString("dd/MM") ?? "Act."})";
 
                         // Agrupar producción de la etapa
