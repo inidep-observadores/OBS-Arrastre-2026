@@ -313,8 +313,11 @@ namespace OBSArrastre2026.App.Services
 
             var axisPaint = new SKPaint { Color = SKColors.Black, StrokeWidth = 1.5f, IsAntialias = true };
             var gridPaint = new SKPaint { Color = SKColors.Gray, StrokeWidth = 1.0f, IsAntialias = true };
-            var textPaint = new SKPaint { Color = SKColors.Black, TextSize = 14, IsAntialias = true, Typeface = SKTypeface.FromFamilyName("Times New Roman") };
-            var labelCenterPaint = new SKPaint { Color = SKColors.Black, TextSize = 16, IsAntialias = true, FakeBoldText = true, Typeface = SKTypeface.FromFamilyName("Times New Roman"), TextAlign = SKTextAlign.Center };
+            var textPaint = new SKPaint { Color = SKColors.Black, IsAntialias = true };
+            var labelCenterPaint = new SKPaint { Color = SKColors.Black, IsAntialias = true };
+            var textFont = new SKFont(SKTypeface.FromFamilyName("Times New Roman"), 14);
+            var labelFont = new SKFont(SKTypeface.FromFamilyName("Times New Roman"), 16) { Edging = SKFontEdging.SubpixelAntialias };
+            var axisFont = new SKFont(SKTypeface.FromFamilyName("Times New Roman"), 12);
 
             for (double yVal = 0; yVal <= maxY + (step/10.0); yVal += step)
             {
@@ -322,27 +325,33 @@ namespace OBSArrastre2026.App.Services
                 canvas.DrawLine(margin, yPos, width - margin, yPos, gridPaint);
                 // Si el paso tiene decimales, mostramos 1 decimal. Si no, ninguno.
                 string format = (step % 1 == 0) ? "0" : "0.0";
-                canvas.DrawText(yVal.ToString(format), margin - 10, yPos + 5, new SKPaint { Color = SKColors.Black, TextSize = 12, TextAlign = SKTextAlign.Right, IsAntialias = true });
+                using var yAxisPaint = new SKPaint { Color = SKColors.Black, IsAntialias = true };
+                canvas.DrawText(yVal.ToString(format), margin - 10, yPos + 5, axisFont, yAxisPaint);
             }
 
             double xInterval = 4;
             for (double xVal = minX; xVal <= maxX; xVal += xInterval)
             {
                 float xPos = margin + (float)(((xVal - minX) / (maxX - minX)) * chartWidth);
-                canvas.DrawText(xVal.ToString("0"), xPos, height - margin - 20, new SKPaint { Color = SKColors.Black, TextSize = 12, TextAlign = SKTextAlign.Center, IsAntialias = true });
+                using var xAxisPaint = new SKPaint { Color = SKColors.Black, IsAntialias = true };
+                canvas.DrawText(xVal.ToString("0"), xPos, height - margin - 20, axisFont, xAxisPaint);
                 canvas.DrawLine(xPos, height - margin - 40, xPos, height - margin - 35, axisPaint);
             }
 
             canvas.DrawLine(margin, height - margin - 40, width - margin, height - margin - 40, axisPaint);
             canvas.DrawLine(margin, margin, margin, height - margin - 40, axisPaint);
-            canvas.DrawText("Talla (cm)", width / 2, height - margin + 15, labelCenterPaint);
-            
+            canvas.DrawText("Talla (cm)", width / 2, height - margin + 15, labelFont, labelCenterPaint);
+
             canvas.Save();
             canvas.RotateDegrees(-90, 25, height / 2);
-            canvas.DrawText("Frecuencia relativa (%)", 25, height / 2, labelCenterPaint);
+            canvas.DrawText("Frecuencia relativa (%)", 25, height / 2, labelFont, labelCenterPaint);
             canvas.Restore();
 
-            void DrawSeries(Func<(double Talla, double Machos, double Hembras, double Indet, double Total), double> selector, SKColor color, float[] dashPattern = null, float strokeWidth = 2.5f)
+            textFont.Dispose();
+            labelFont.Dispose();
+            axisFont.Dispose();
+
+            void DrawSeries(Func<(double Talla, double Machos, double Hembras, double Indet, double Total), double> selector, SKColor color, float[]? dashPattern = null, float strokeWidth = 2.5f)
             {
                 var points = dataPoints.Select(p => new SKPoint(
                     margin + (float)(((p.Talla - minX) / (maxX - minX)) * chartWidth),
@@ -399,14 +408,14 @@ namespace OBSArrastre2026.App.Services
 
             float legendX = margin;
             float legendY = height - 15;
-            if (hasMachos) { canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Black, StrokeWidth = 2.0f }); canvas.DrawText("Machos", legendX + 35, legendY, textPaint); legendX += 130; }
-            if (hasHembras) { canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Black, StrokeWidth = 2.0f, PathEffect = SKPathEffect.CreateDash(new float[] { 10, 5, 2, 5 }, 0) }); canvas.DrawText("Hembras", legendX + 35, legendY, textPaint); legendX += 130; }
-            
+            if (hasMachos) { canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Black, StrokeWidth = 2.0f }); canvas.DrawText("Machos", legendX + 35, legendY, textFont, textPaint); legendX += 130; }
+            if (hasHembras) { canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Black, StrokeWidth = 2.0f, PathEffect = SKPathEffect.CreateDash(new float[] { 10, 5, 2, 5 }, 0) }); canvas.DrawText("Hembras", legendX + 35, legendY, textFont, textPaint); legendX += 130; }
+
             if (plotTotal && hasTotal)
             {
                 float tWidth = (hasMachos || hasHembras || hasIndet) ? 3.2f : 2.2f;
                 canvas.DrawLine(legendX, legendY - 5, legendX + 30, legendY - 5, new SKPaint { Color = SKColors.Black, StrokeWidth = tWidth });
-                canvas.DrawText("Total", legendX + 35, legendY, textPaint);
+                canvas.DrawText("Total", legendX + 35, legendY, textFont, textPaint);
             }
 
             using var image = surface.Snapshot();

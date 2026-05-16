@@ -105,7 +105,7 @@ public class ExportarRecursosViewModel : ObservableObject
         string importFolder = MareaMetadataHelper.GetImportFolder(_marea.Metadata);
         if (!string.IsNullOrEmpty(importFolder))
         {
-            ExportPath = Path.Combine(importFolder, "informe");
+            ExportPath = Path.Combine(importFolder, "Informe");
         }
     }
 

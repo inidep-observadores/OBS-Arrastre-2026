@@ -1243,7 +1243,7 @@ public class MainWindowViewModel : ObservableObject
 
                 if (!string.IsNullOrEmpty(importFolder))
                 {
-                    savePath = Path.Combine(importFolder, "reportes", fileName);
+                    savePath = Path.Combine(importFolder, "Reportes", fileName);
                     Directory.CreateDirectory(Path.GetDirectoryName(savePath)!);
                 }
                 else
@@ -2498,7 +2498,7 @@ public class MainWindowViewModel : ObservableObject
 
             if (!string.IsNullOrEmpty(importFolder))
             {
-                savePath = Path.Combine(importFolder, "reportes", fileName);
+                savePath = Path.Combine(importFolder, "Reportes", fileName);
                 Directory.CreateDirectory(Path.GetDirectoryName(savePath)!);
             }
             else
@@ -2574,7 +2574,7 @@ public class MainWindowViewModel : ObservableObject
 
             if (!string.IsNullOrEmpty(importFolder))
             {
-                savePath = Path.Combine(importFolder, "reportes", fileName);
+                savePath = Path.Combine(importFolder, "Reportes", fileName);
                 Directory.CreateDirectory(Path.GetDirectoryName(savePath)!);
             }
             else

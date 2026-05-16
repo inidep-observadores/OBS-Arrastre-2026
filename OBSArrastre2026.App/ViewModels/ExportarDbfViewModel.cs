@@ -83,7 +83,7 @@ public class ExportarDbfViewModel : ObservableObject
         string importFolder = MareaMetadataHelper.GetImportFolder(_marea.Metadata);
         if (!string.IsNullOrEmpty(importFolder))
         {
-            ExportPath = Path.Combine(importFolder, "corregido");
+            ExportPath = Path.Combine(importFolder, "Corregido");
         }
         else
         {
@@ -102,7 +102,7 @@ public class ExportarDbfViewModel : ObservableObject
             }
             else
             {
-                // Si la carpeta no existe aún (ej: subcarpeta 'corregido'), intentamos con el padre
+                // Si la carpeta no existe aún (ej: subcarpeta 'Corregido'), intentamos con el padre
                 try { initialDir = Path.GetDirectoryName(ExportPath); } catch { }
             }
         }

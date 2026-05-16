@@ -1,3 +1,7 @@
+using System;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Controls;
@@ -179,8 +183,47 @@ public partial class App : Application
         }
     }
 
+    private static Mutex? _mutex;
+    private const string MutexName = @"Global\OBSArrastre2026_SingleInstanceMutex_7B8D9F2C-6D3E-4B02-8367-CF3585F72A52";
+    private bool _isHostStarted;
+
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    private const int SW_RESTORE = 9;
+
+    private void ActivateExistingWindow()
+    {
+        using var currentProcess = Process.GetCurrentProcess();
+        var processes = Process.GetProcessesByName(currentProcess.ProcessName);
+
+        foreach (var process in processes)
+        {
+            if (process.Id != currentProcess.Id && process.MainWindowHandle != IntPtr.Zero)
+            {
+                // Restaurar la ventana por si estuviera minimizada
+                ShowWindow(process.MainWindowHandle, SW_RESTORE);
+                // Traer al frente
+                SetForegroundWindow(process.MainWindowHandle);
+                break;
+            }
+        }
+    }
+
     protected override async void OnStartup(StartupEventArgs e)
     {
+        _mutex = new Mutex(true, MutexName, out bool createdNew);
+        if (!createdNew)
+        {
+            // Ya hay otra instancia en ejecución: activar y salir de inmediato
+            ActivateExistingWindow();
+            Shutdown();
+            return;
+        }
+
         // Cargar preferencias de usuario y aplicar tema lo antes posible
         var settingsService = _host.Services.GetRequiredService<IUserSettingsService>();
         var settings = settingsService.GetSettings();
@@ -198,6 +241,7 @@ public partial class App : Application
 
         splash.UpdateStatus("Iniciando servicios del sistema...");
         await _host.StartAsync();
+        _isHostStarted = true;
 
         // Inicializar base de datos (migraciones)
         splash.UpdateStatus("Inicializando base de datos...");
@@ -228,8 +272,28 @@ public partial class App : Application
 
     protected override async void OnExit(ExitEventArgs e)
     {
-        await _host.StopAsync();
-        _host.Dispose();
+        if (_isHostStarted && _host != null)
+        {
+            try
+            {
+                await _host.StopAsync();
+            }
+            catch (Exception) { }
+        }
+
+        _host?.Dispose();
+
+        if (_mutex != null)
+        {
+            try
+            {
+                _mutex.ReleaseMutex();
+            }
+            catch (ObjectDisposedException) { }
+            catch (ApplicationException) { }
+            _mutex.Dispose();
+            _mutex = null;
+        }
 
         base.OnExit(e);
     }

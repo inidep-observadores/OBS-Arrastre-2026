@@ -92,7 +92,7 @@ public sealed class MareaListItemViewModel : ObservableObject
 
             if (!string.IsNullOrEmpty(importFolder))
             {
-                savePath = System.IO.Path.Combine(importFolder, "reportes", fileName);
+                savePath = System.IO.Path.Combine(importFolder, "Reportes", fileName);
                 System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(savePath)!);
             }
             else
@@ -154,7 +154,7 @@ public sealed class MareaListItemViewModel : ObservableObject
 
             if (!string.IsNullOrEmpty(importFolder))
             {
-                savePath = System.IO.Path.Combine(importFolder, "reportes", fileName);
+                savePath = System.IO.Path.Combine(importFolder, "Reportes", fileName);
                 System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(savePath)!);
             }
             else

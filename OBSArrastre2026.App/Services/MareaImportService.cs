@@ -322,7 +322,7 @@ public class MareaImportService : IMareaImportService
         // 6. Generar Reporte PDF
         var pdfBytes = await _reporter.GenerateValidationPdfAsync(report);
         string safeBarco = barco.Replace("/", "-").Replace("\\", "-");
-        string reportPath = Path.Combine(basePath, "reportes", $"Audit_{safeBarco}_{mareaNum}_{anio}.pdf");
+        string reportPath = Path.Combine(basePath, "Reportes", $"Audit_{safeBarco}_{mareaNum}_{anio}.pdf");
         Directory.CreateDirectory(Path.GetDirectoryName(reportPath)!);
         await File.WriteAllBytesAsync(reportPath, pdfBytes);
 
