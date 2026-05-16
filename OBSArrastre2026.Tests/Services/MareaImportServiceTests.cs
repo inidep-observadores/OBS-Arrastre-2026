@@ -62,7 +62,8 @@ public class MareaImportServiceTests
             AnioInidep = 2026,
             Etapas = new List<MareaEtapa>()
         };
-        var result = await _service.ProcessMareaImportAsync(tempDir, marea);
+        var selectedFiles = Directory.GetFiles(tempDir);
+        var result = await _service.ProcessMareaImportAsync(tempDir, selectedFiles, marea);
 
         // Assert
         result.Should().NotBeNull();

@@ -129,7 +129,8 @@ public class IntegrityAuditTests
             await db.SaveChangesAsync();
         }
 
-        var report = await importer.ProcessMareaImportAsync(EntradaPath, marea);
+        var selectedFiles = Directory.GetFiles(EntradaPath);
+        var report = await importer.ProcessMareaImportAsync(EntradaPath, selectedFiles, marea);
         await importer.ImportAsync(marea.ID, report);
 
         // 4. Export

@@ -174,31 +174,6 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
             }
         }
 
-        // 1. Verificar si hay datos
-        bool hasData = await _mareaService.HasExistingDataAsync(_mareaId);
-        if (hasData)
-        {
-            bool? confirm = await (ShowConfirmation?.Invoke("Datos Existentes", 
-                "Esta marea ya tiene lances o producción cargada. Si continúa, estos datos se borrarán para realizar una importación limpia. ¿Desea proceder?") ?? Task.FromResult<bool?>(false));
-            
-            if (confirm != true) return;
-
-            // 2. Limpiar datos
-            try 
-            {
-                IsLoading = true;
-                await _mareaService.ClearMareaDataAsync(_mareaId);
-            }
-            catch (Exception ex)
-            {
-                if (ShowMessage != null) await ShowMessage("Error", $"No se pudo limpiar la marea: {ex.Message}", ex.ToString(), MessageDialogType.Error);
-                return;
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
 
         // 3. Obtener datos de la marea para validación de etapas
         var mareaFull = await _mareaService.GetMareaAsync(_mareaId);

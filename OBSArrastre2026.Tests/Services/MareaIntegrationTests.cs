@@ -81,7 +81,8 @@ public class MareaIntegrationTests
                 AnioInidep = 2026,
                 Etapas = new List<MareaEtapa>()
             };
-            var result = await _importService.ProcessMareaImportAsync(tempPath, marea);
+            var selectedFiles = Directory.GetFiles(tempPath);
+            var result = await _importService.ProcessMareaImportAsync(tempPath, selectedFiles, marea);
 
 
             // Assert
@@ -130,7 +131,8 @@ public class MareaIntegrationTests
                 AnioInidep = 2026,
                 Etapas = new List<MareaEtapa>()
             };
-            var result = await _importService.ProcessMareaImportAsync(tempPath, marea);
+            var selectedFiles = Directory.GetFiles(tempPath);
+            var result = await _importService.ProcessMareaImportAsync(tempPath, selectedFiles, marea);
 
 
             // Assert

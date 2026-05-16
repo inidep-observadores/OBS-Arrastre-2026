@@ -286,6 +286,19 @@ public sealed class JsonImportService : IJsonImportService
         var marea = await context.Mareas.Include(m => m.Etapas).FirstOrDefaultAsync(m => m.ID == mareaId);
         if (marea == null) return;
 
+        await UpdateMareaMetadataInternalAsync(context, marea, jsonPath);
+
+        await context.SaveChangesAsync();
+    }
+
+    public async Task UpdateMareaMetadataInMemoryAsync(Marea marea, string jsonPath)
+    {
+        using var context = await _dbContextFactory.CreateDbContextAsync();
+        await UpdateMareaMetadataInternalAsync(context, marea, jsonPath);
+    }
+
+    private async Task UpdateMareaMetadataInternalAsync(AppDbContext context, Marea marea, string jsonPath)
+    {
         var json = await File.ReadAllTextAsync(jsonPath);
         var dto = JsonSerializer.Deserialize<PortableMareaDto>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         if (dto == null) return;
@@ -296,6 +309,7 @@ public sealed class JsonImportService : IJsonImportService
             throw new InvalidOperationException($"El buque '{dto.BuqueNombre}' especificado en la metadata JSON no se encuentra en el catálogo local. Debe darlo de alta antes de importar.");
         
         marea.BuqueID = buque.Id;
+        marea.Buque = buque;
 
         marea.AnioInidep = dto.Anio;
         marea.NumeroInidep = dto.Numero;
@@ -306,25 +320,58 @@ public sealed class JsonImportService : IJsonImportService
             dto.BuqueCodigo, dto.ObservadorNombre, dto.ObservadorApellido, dto.ObservadorCodigo,
             dto.BuqueEslora, dto.BuquePotencia, dto.TipoBuque, dto.Pesqueria, dto.ArtePesca);
 
-        // Reemplazar etapas (Borrado físico seguido de inserción)
-        context.MareaEtapas.RemoveRange(marea.Etapas);
-        marea.Etapas.Clear();
+        // Actualizar etapas in-place (en su lugar) para preservar los IDs y evitar cascadas de borrado
+        var existingEtapas = marea.Etapas
+            .OrderBy(e => e.FechaZarpada)
+            .ThenBy(e => e.ID)
+            .ToList();
 
-        foreach (var eDto in dto.Etapas)
+        var incomingEtapas = dto.Etapas
+            .OrderBy(e => e.FechaZarpada)
+            .ToList();
+
+        int existingCount = existingEtapas.Count;
+        int incomingCount = incomingEtapas.Count;
+
+        for (int i = 0; i < incomingCount; i++)
         {
-            marea.Etapas.Add(new MareaEtapa
+            var eDto = incomingEtapas[i];
+            if (i < existingCount)
             {
-                ID = Guid.NewGuid().ToString(),
-                MareaID = marea.ID,
-                FechaZarpada = eDto.FechaZarpada,
-                FechaArribo = eDto.FechaArribo,
-                NombreCapitan = eDto.NombreCapitan,
-                AnioMareaBuque = eDto.AnioMareaBuque,
-                NumeroMareaBuque = eDto.NumeroMareaBuque
-            });
+                // Actualizar etapa existente en su lugar
+                var existing = existingEtapas[i];
+                existing.FechaZarpada = eDto.FechaZarpada;
+                existing.FechaArribo = eDto.FechaArribo;
+                existing.NombreCapitan = eDto.NombreCapitan;
+                existing.AnioMareaBuque = eDto.AnioMareaBuque;
+                existing.NumeroMareaBuque = eDto.NumeroMareaBuque;
+            }
+            else
+            {
+                // Agregar nueva etapa
+                marea.Etapas.Add(new MareaEtapa
+                {
+                    ID = Guid.NewGuid().ToString(),
+                    MareaID = marea.ID,
+                    FechaZarpada = eDto.FechaZarpada,
+                    FechaArribo = eDto.FechaArribo,
+                    NombreCapitan = eDto.NombreCapitan,
+                    AnioMareaBuque = eDto.AnioMareaBuque,
+                    NumeroMareaBuque = eDto.NumeroMareaBuque
+                });
+            }
         }
 
-        await context.SaveChangesAsync();
+        // Eliminar sobrantes si las entrantes son menos
+        if (existingCount > incomingCount)
+        {
+            for (int i = incomingCount; i < existingCount; i++)
+            {
+                var extra = existingEtapas[i];
+                context.MareaEtapas.Remove(extra);
+                marea.Etapas.Remove(extra);
+            }
+        }
     }
 
     private class PortableMareaDto

@@ -23,6 +23,7 @@ public class MareaValidationReport
 {
     public string? MareaMetadata { get; set; }
     public string? ImportPath { get; set; }
+    public bool IsTrackingOnly { get; set; }
     public string Barco { get; set; } = string.Empty;
     public string Marea { get; set; } = string.Empty;
     public int Año { get; set; }

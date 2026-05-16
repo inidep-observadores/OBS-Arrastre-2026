@@ -11,10 +11,11 @@ namespace OBSArrastre2026.App.Services;
 
 public interface IMareaImportService
 {
-    Task<MareaValidationReport> ProcessMareaImportAsync(string basePath, Marea marea);
+    Task<MareaValidationReport> ProcessMareaImportAsync(string basePath, IEnumerable<string> selectedFiles, Marea marea);
     Task ImportAsync(string mareaId, MareaValidationReport report);
     Task<bool> HasDataAsync(string mareaId);
     Task ClearMareaDataAsync(string mareaId);
+    Task ClearTrackingDataAsync(string mareaId);
 }
 
 public class MareaImportService : IMareaImportService
@@ -35,18 +36,19 @@ public class MareaImportService : IMareaImportService
         _dbContextFactory = dbContextFactory;
     }
 
-    private string? ResolveFilePath(string basePath, string prefix, int marea, int anio)
+    private string? ResolveFilePath(IEnumerable<string> selectedFiles, string prefix, int marea, int anio)
     {
-        if (!Directory.Exists(basePath)) return null;
+        if (selectedFiles == null) return null;
 
         string yearSuffix = $"{(anio % 100):D2}.DBF";
         string mareaStr = marea.ToString();
 
-        // Buscar todos los archivos que empiecen con el prefijo y terminen con el año
-        var candidateFiles = Directory.GetFiles(basePath, $"{prefix}*.DBF");
-
-        foreach (var path in candidateFiles)
+        // Buscar todos los archivos en la lista seleccionada
+        foreach (var path in selectedFiles)
         {
+            string extension = Path.GetExtension(path).ToUpper();
+            if (extension != ".DBF") continue;
+
             string fileName = Path.GetFileNameWithoutExtension(path).ToUpper();
             if (fileName.Length < prefix.Length + 2) continue; 
 
@@ -67,32 +69,44 @@ public class MareaImportService : IMareaImportService
         return null;
     }
 
-    public async Task<MareaValidationReport> ProcessMareaImportAsync(string basePath, Marea marea)
+    public async Task<MareaValidationReport> ProcessMareaImportAsync(string basePath, IEnumerable<string> selectedFiles, Marea marea)
     {
         string barco = marea.Buque?.Nombre ?? "S/D";
         int mareaNum = marea.NumeroInidep;
         int anio = marea.AnioInidep;
         var etapas = marea.Etapas;
 
-        // 1. Resolver rutas de forma flexible (Marea 3 Año 2026 -> S326, S0326, S00326, etc.)
-        string? cPath = ResolveFilePath(basePath, "C", mareaNum, anio);
-        string? mPath = ResolveFilePath(basePath, "M", mareaNum, anio);
-        string? mdPath = ResolveFilePath(basePath, "MD", mareaNum, anio); // Tallas de descarte
-        string? xPath = ResolveFilePath(basePath, "X", mareaNum, anio);
-        string? sPath = ResolveFilePath(basePath, "S", mareaNum, anio);
-        string? lPath = ResolveFilePath(basePath, "L", mareaNum, anio);
-        string? tPath = ResolveFilePath(basePath, "T", mareaNum, anio);
-        string? pPath = ResolveFilePath(basePath, "P", mareaNum, anio);
+        // 1. Resolver rutas de forma flexible (Marea 3 Año 2026 -> S326, S0326, S00326, etc.) limitando a los archivos seleccionados
+        string? cPath = ResolveFilePath(selectedFiles, "C", mareaNum, anio);
+        string? mPath = ResolveFilePath(selectedFiles, "M", mareaNum, anio);
+        string? mdPath = ResolveFilePath(selectedFiles, "MD", mareaNum, anio); // Tallas de descarte
+        string? xPath = ResolveFilePath(selectedFiles, "X", mareaNum, anio);
+        string? sPath = ResolveFilePath(selectedFiles, "S", mareaNum, anio);
+        string? lPath = ResolveFilePath(selectedFiles, "L", mareaNum, anio);
+        string? tPath = ResolveFilePath(selectedFiles, "T", mareaNum, anio);
+        string? pPath = ResolveFilePath(selectedFiles, "P", mareaNum, anio);
 
         var report = new MareaValidationReport();
+        bool isTrackingOnly = (tPath != null || cPath == null) && cPath == null && mPath == null && pPath == null;
+        report.IsTrackingOnly = isTrackingOnly;
+        
+        var initialIssues = new List<ValidationIssue>();
 
         // Verificar archivos obligatorios (usando nombres amigables para el reporte si no se encuentran)
         string suffix = $"{mareaNum:D2}{anio % 100:D2}.DBF"; // Nombre sugerido para el error
-        if (cPath == null) report.AddIssue(ValidationLevel.Fatal, "Sistema", $"El archivo de CAPTURA obligatorio no se encuentra (esperado C*{suffix})");
-        if (mPath == null) report.AddIssue(ValidationLevel.Fatal, "Sistema", $"El archivo de MUESTRA obligatorio no se encuentra (esperado M*{suffix})");
-        if (sPath == null) report.AddIssue(ValidationLevel.Warning, "Sistema", $"El archivo de SUBMUESTRA no se encuentra (esperado S*{suffix})");
-        if (pPath == null) report.AddIssue(ValidationLevel.Fatal, "Sistema", $"El archivo de PRODUCCIÓN obligatorio no se encuentra (esperado P*{suffix})");
+        if (!isTrackingOnly)
+        {
+            if (cPath == null) initialIssues.Add(new ValidationIssue(ValidationLevel.Fatal, "Sistema", $"El archivo de CAPTURA obligatorio no se encuentra (esperado C*{suffix})"));
+            if (mPath == null) initialIssues.Add(new ValidationIssue(ValidationLevel.Fatal, "Sistema", $"El archivo de MUESTRA obligatorio no se encuentra (esperado M*{suffix})"));
+            if (sPath == null) initialIssues.Add(new ValidationIssue(ValidationLevel.Warning, "Sistema", $"El archivo de SUBMUESTRA no se encuentra (esperado S*{suffix})"));
+            if (pPath == null) initialIssues.Add(new ValidationIssue(ValidationLevel.Fatal, "Sistema", $"El archivo de PRODUCCIÓN obligatorio no se encuentra (esperado P*{suffix})"));
+        }
+        else
+        {
+            initialIssues.Add(new ValidationIssue(ValidationLevel.Info, "Sistema", "Importación parcial detectada: Sólo se actualizarán metadatos y seguimiento satelital."));
+        }
         
+        foreach (var issue in initialIssues) { report.Issues.Add(issue); }
         // 1.5 Guardar metadatos (carpeta de importación y encoding detectado)
         var meta = MareaMetadataHelper.GetMetadata(marea.Metadata);
         meta.ImportFolder = basePath;
@@ -295,8 +309,15 @@ public class MareaImportService : IMareaImportService
             especiesViejasDict, 
             especiesCodigosValidos, 
             largoPesoCatalogo);
+            
+        // Restaurar atributos del reporte original que se perdían al instanciar uno nuevo
+        report.IsTrackingOnly = isTrackingOnly;
         report.ArchivosProcesados = archivosEncontrados;
         report.ImportPath = basePath;
+        foreach (var issue in initialIssues) 
+        { 
+            report.Issues.Insert(0, issue); 
+        }
 
         // 6. Generar Reporte PDF
         var pdfBytes = await _reporter.GenerateValidationPdfAsync(report);
@@ -748,6 +769,18 @@ public class MareaImportService : IMareaImportService
             .ToListAsync();
         dbContext.TrackingPoints.RemoveRange(tracking);
 
+        await dbContext.SaveChangesAsync();
+    }
+
+    public async Task ClearTrackingDataAsync(string mareaId)
+    {
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+        
+        var tracking = await dbContext.TrackingPoints
+            .Where(t => t.MareaID == mareaId)
+            .ToListAsync();
+            
+        dbContext.TrackingPoints.RemoveRange(tracking);
         await dbContext.SaveChangesAsync();
     }
 
