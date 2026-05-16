@@ -21,6 +21,9 @@ public sealed class SubmuestraService : ISubmuestraService
         using var context = await _contextFactory.CreateDbContextAsync();
         return await context.Muestras
             .Include(m => m.Lance)
+                .ThenInclude(l => l.MareaEtapa)
+                    .ThenInclude(e => e.Marea)
+                        .ThenInclude(m => m!.Etapas)
             .Include(m => m.Especie)
             .Include(m => m.ItemsSubmuestras)
             .Where(m => m.Lance!.MareaEtapa.MareaID == mareaId && m.ItemsSubmuestras.Any())

@@ -18,8 +18,10 @@ public sealed class MuestraService(IDbContextFactory<AppDbContext> dbContextFact
         return await dbContext.Muestras
             .Include(m => m.Especie)
             .Include(m => m.Lance)
+                .ThenInclude(l => l.MareaEtapa)
+                    .ThenInclude(e => e.Marea)
+                        .ThenInclude(m => m!.Etapas)
             .Where(m => m.Lance!.MareaEtapa!.MareaID == mareaId)
-            .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
 
@@ -30,8 +32,10 @@ public sealed class MuestraService(IDbContextFactory<AppDbContext> dbContextFact
         return await dbContext.Muestras
             .Include(m => m.Especie)
             .Include(m => m.Lance)
+                .ThenInclude(l => l.MareaEtapa)
+                    .ThenInclude(e => e.Marea)
+                        .ThenInclude(m => m!.Etapas)
             .Where(m => m.LanceID == lanceId)
-            .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
 

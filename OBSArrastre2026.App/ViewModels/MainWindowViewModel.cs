@@ -1429,6 +1429,7 @@ public class MainWindowViewModel : ObservableObject
             PrimaryActionCommand = new RelayCommand(OpenCreateMuestraForm);
             
             SetColumnHeaders(
+                "Etapa",
                 "Nro. Lance",
                 "Fecha",
                 "Hora Virada",
@@ -1450,6 +1451,7 @@ public class MainWindowViewModel : ObservableObject
             PrimaryActionCommand = new RelayCommand(OpenCreateSubmuestraForm);
 
             SetColumnHeaders(
+                "Etapa",
                 "Nro. Lance",
                 "Fecha",
                 "Hora Virada",

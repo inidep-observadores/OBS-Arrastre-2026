@@ -226,6 +226,7 @@
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1.0*" />
+                        <ColumnDefinition Width="1.0*" />
                         <ColumnDefinition Width="1.8*" />
                         <ColumnDefinition Width="1.1*" />
                         <ColumnDefinition Width="1.8*" />
@@ -235,13 +236,14 @@
                         <ColumnDefinition Width="0.5*" />
                         <ColumnDefinition Width="0.5*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Text="{Binding LanceNro}" HorizontalAlignment="Right" />
-                    <TextBlock Grid.Column="1" Style="{StaticResource BodySecondaryStyle}" Text="{Binding LanceFecha}" HorizontalAlignment="Center" />
-                    <TextBlock Grid.Column="2" Style="{StaticResource BodySecondaryStyle}" Text="{Binding LanceHora}" HorizontalAlignment="Center" />
-                    <TextBlock Grid.Column="3" Style="{StaticResource BodySecondaryStyle}" Text="{Binding EspecieDisplay}" HorizontalAlignment="Left" />
-                    <TextBlock Grid.Column="4" Style="{StaticResource BodySecondaryStyle}" Text="{Binding PesoDisplay}" HorizontalAlignment="Right" />
+                    <TextBlock Style="{StaticResource BodySecondaryStyle}" Text="{Binding EtapaDisplay}" HorizontalAlignment="Center" />
+                    <TextBlock Grid.Column="1" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Text="{Binding LanceNro}" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="2" Style="{StaticResource BodySecondaryStyle}" Text="{Binding LanceFecha}" HorizontalAlignment="Center" />
+                    <TextBlock Grid.Column="3" Style="{StaticResource BodySecondaryStyle}" Text="{Binding LanceHora}" HorizontalAlignment="Center" />
+                    <TextBlock Grid.Column="4" Style="{StaticResource BodySecondaryStyle}" Text="{Binding EspecieDisplay}" HorizontalAlignment="Left" />
+                    <TextBlock Grid.Column="5" Style="{StaticResource BodySecondaryStyle}" Text="{Binding PesoDisplay}" HorizontalAlignment="Right" />
                     
-                    <TextBlock Grid.Column="5" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="11" FontWeight="SemiBold">
+                    <TextBlock Grid.Column="6" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="11" FontWeight="SemiBold">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
                                 <Setter Property="Text" Value="{Binding TipoMuestraDisplay}" />
@@ -255,7 +257,7 @@
                         </TextBlock.Style>
                     </TextBlock>
 
-                    <Button Grid.Column="8"
+                    <Button Grid.Column="9"
                             Command="{Binding DataContext.DeleteRecordCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                             CommandParameter="{Binding}"
                             ToolTip="Eliminar muestra y submuestras"
@@ -1041,12 +1043,6 @@
                                                     <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Lances}">
                                                         <Setter Property="Visibility" Value="Visible" />
                                                     </DataTrigger>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Muestras}">
-                                                        <Setter Property="Visibility" Value="Visible" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Submuestras}">
-                                                        <Setter Property="Visibility" Value="Visible" />
-                                                    </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </Grid.Style>
@@ -1207,6 +1203,42 @@
                                             </TextBlock.Style>
                                         </TextBlock>
                                         <TextBlock Grid.Column="8" Style="{StaticResource HeaderLabelStyle}" Text="{Binding Column9Header}" />
+                                    </Grid>
+
+                                    <!-- Encabezados Especializados para Muestras y Submuestras (Con columna Etapa) -->
+                                    <Grid>
+                                        <Grid.Style>
+                                            <Style TargetType="Grid">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Muestras}">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Submuestras}">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Grid.Style>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="0.7*" />
+                                            <ColumnDefinition Width="1.0*" />
+                                            <ColumnDefinition Width="1.8*" />
+                                            <ColumnDefinition Width="1.1*" />
+                                            <ColumnDefinition Width="1.8*" />
+                                            <ColumnDefinition Width="1.1*" />
+                                            <ColumnDefinition Width="1.1*" />
+                                            <ColumnDefinition Width="1.2*" />
+                                            <ColumnDefinition Width="0.5*" />
+                                            <ColumnDefinition Width="0.5*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Column1Header}" Style="{StaticResource HeaderLabelStyle}" HorizontalAlignment="Right" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Column2Header}" Style="{StaticResource HeaderLabelStyle}" HorizontalAlignment="Right" />
+                                        <TextBlock Grid.Column="2" Text="{Binding Column3Header}" Style="{StaticResource HeaderLabelStyle}" HorizontalAlignment="Center" />
+                                        <TextBlock Grid.Column="3" Text="{Binding Column4Header}" Style="{StaticResource HeaderLabelStyle}" HorizontalAlignment="Center" />
+                                        <TextBlock Grid.Column="4" Text="{Binding Column5Header}" Style="{StaticResource HeaderLabelStyle}" HorizontalAlignment="Left" />
+                                        <TextBlock Grid.Column="5" Text="{Binding Column6Header}" Style="{StaticResource HeaderLabelStyle}" HorizontalAlignment="Right" />
+                                        <TextBlock Grid.Column="6" Text="{Binding Column7Header}" Style="{StaticResource HeaderLabelStyle}" HorizontalAlignment="Center" />
                                     </Grid>
 
                                     <!-- Encabezados Especializados para ControlProduccion (Mayor ancho para Especie) -->

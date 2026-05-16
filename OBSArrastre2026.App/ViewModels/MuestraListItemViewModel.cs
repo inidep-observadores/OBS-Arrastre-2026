@@ -8,6 +8,10 @@ public sealed class MuestraListItemViewModel(Muestra muestra)
     public Muestra Muestra { get; } = muestra;
 
     public string LanceNro => Muestra.Lance?.NroLance.ToString() ?? "-";
+
+    public string EtapaDisplay => Muestra.Lance?.MareaEtapa != null 
+        ? $"Etapa {Muestra.Lance.MareaEtapa.NumeroEtapa}" 
+        : "-";
     
     public string LanceFecha 
     {
