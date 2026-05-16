@@ -38,8 +38,6 @@ public sealed class SubmuestraEditViewModel : ValidatableViewModelBase<Submuestr
         _submuestraService = submuestraService;
         _muestraService = muestraService;
         _activeMareaManager = activeMareaManager;
-        _selectedMuestraId = muestraId;
-
         SaveCommand = new AsyncRelayCommand(SaveAsync);
         CancelCommand = new RelayCommand(Cancel);
         AddItemCommand = new RelayCommand(AddItem, () => !string.IsNullOrEmpty(SelectedMuestraId));
@@ -47,7 +45,7 @@ public sealed class SubmuestraEditViewModel : ValidatableViewModelBase<Submuestr
         GoToNextCommand = new RelayCommand(GoToNext, () => CanGoToNext);
         GoToPreviousCommand = new RelayCommand(GoToPrevious, () => CanGoToPrevious);
 
-        _ = InitializeAsync();
+        _ = InitializeAsync(muestraId);
     }
 
     public ObservableCollection<ItemSubmuestraRowViewModel> Submuestras { get; } = new();
@@ -99,7 +97,7 @@ public sealed class SubmuestraEditViewModel : ValidatableViewModelBase<Submuestr
     public ICommand GoToNextCommand { get; }
     public ICommand GoToPreviousCommand { get; }
 
-    private async Task InitializeAsync()
+    private async Task InitializeAsync(string? initialMuestraId)
     {
         IsLoading = true;
         try
@@ -117,9 +115,9 @@ public sealed class SubmuestraEditViewModel : ValidatableViewModelBase<Submuestr
                 }
             }
 
-            if (!string.IsNullOrEmpty(_selectedMuestraId))
+            if (!string.IsNullOrEmpty(initialMuestraId))
             {
-                SelectedMuestraId = _selectedMuestraId;
+                SelectedMuestraId = initialMuestraId;
             }
         }
         finally
