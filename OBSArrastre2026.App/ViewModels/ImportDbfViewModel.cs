@@ -252,8 +252,13 @@ public sealed partial class ImportDbfViewModel : ObservableObject, IDisposable
         bool isNewMareaCreated = false;
         try
         {
-            // 0. Si no hay ID de marea, intentar buscar una existente o crear una nueva
-            if (string.IsNullOrEmpty(_mareaId))
+            // 0. Si no hay ID de marea, intentar buscar una existente
+            bool mareaExiste = false;
+            if (!string.IsNullOrEmpty(_mareaId))
+            {
+                mareaExiste = true;
+            }
+            else
             {
                 BusyMessage = "Verificando si la marea ya existe...";
                 var existing = await _mareaService.FindMareaAsync(_mareaNum, _anio);
@@ -262,35 +267,63 @@ public sealed partial class ImportDbfViewModel : ObservableObject, IDisposable
                     _mareaId = existing.ID;
                     _etapas = existing.Etapas;
                     _barco = existing.Buque?.Nombre ?? _barco;
+                    mareaExiste = true;
                 }
-                else
+            }
+
+            // Si la marea es nueva (no existe en SQLite), es obligatorio contar con el archivo de metadata (.json)
+            var jsonFile = SelectedFiles.FirstOrDefault(f => f.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase));
+            if (!mareaExiste && jsonFile == null)
+            {
+                IsBusy = false;
+                if (ShowMessage != null)
                 {
-                    BusyMessage = "Creando nueva marea...";
-                    var marea = new Marea
-                    {
-                        ID = Guid.NewGuid().ToString(),
-                        NumeroInidep = _mareaNum,
-                        AnioInidep = _anio,
-                        FechaInicio = DateTime.Today
-                    };
-                    await _mareaService.SaveMareaAsync(marea);
-                    _mareaId = marea.ID;
-                    isNewMareaCreated = true;
+                    await ShowMessage(
+                        "Falta Metadata Obligatoria", 
+                        "La marea que intentas importar no existe en la base de datos local y no se incluyó el archivo JSON de metadatos (.json).\n\n" +
+                        "Para registrar una marea nueva es obligatorio incluir dicho archivo, ya que contiene la información de etapas (zarpada/arribo) requerida para vincular correctamente los lances.", 
+                        null, 
+                        MessageDialogType.Error);
                 }
+                _onFinished(null, null);
+                return;
+            }
+
+            // Si es marea nueva, se crea en la base de datos
+            if (!mareaExiste)
+            {
+                BusyMessage = "Creando nueva marea...";
+                var marea = new Marea
+                {
+                    ID = Guid.NewGuid().ToString(),
+                    NumeroInidep = _mareaNum,
+                    AnioInidep = _anio,
+                    FechaInicio = DateTime.Today
+                };
+                await _mareaService.SaveMareaAsync(marea);
+                _mareaId = marea.ID;
+                isNewMareaCreated = true;
             }
 
             BusyMessage = "Validando integridad de archivos...";
             // 0. Verificar si hay archivo JSON para metadatos (pero no guardar nada aún en la base de datos)
             bool importMetadata = false;
-            var jsonFile = SelectedFiles.FirstOrDefault(f => f.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase));
             if (jsonFile != null)
             {
-                BusyMessage = "Verificando metadatos de marea desde JSON...";
-                bool? confirmMetadata = await (ShowConfirmation?.Invoke(
-                    "Importar Metadatos", 
-                    "Se ha detectado un archivo JSON de metadatos. ¿Deseas actualizar el Buque, Fechas y Etapas de la marea con la información del JSON?") ?? Task.FromResult<bool?>(false));
-                
-                importMetadata = confirmMetadata == true;
+                if (!mareaExiste)
+                {
+                    // Si es marea nueva, la metadata es obligatoria
+                    importMetadata = true;
+                }
+                else
+                {
+                    BusyMessage = "Verificando metadatos de marea desde JSON...";
+                    bool? confirmMetadata = await (ShowConfirmation?.Invoke(
+                        "Importar Metadatos", 
+                        "Se ha detectado un archivo JSON de metadatos. ¿Deseas actualizar el Buque, Fechas y Etapas de la marea con la información del JSON?") ?? Task.FromResult<bool?>(false));
+                    
+                    importMetadata = confirmMetadata == true;
+                }
             }
 
             // Recargar marea actual de la base de datos (por si tiene datos ya cargados)
@@ -337,7 +370,7 @@ public sealed partial class ImportDbfViewModel : ObservableObject, IDisposable
                 // Limpiar archivos extraídos del ZIP
                 Dispose();
 
-                TryOpenAuditReport(basePath);
+                TryOpenAuditReport(basePath, report);
                 if (ShowMessage != null) await ShowMessage("Errores de Validación", "Se detectaron errores graves que impiden la importación. Se ha abierto el reporte PDF con el detalle.", null, MessageDialogType.Error);
                 _onFinished(null, null);
                 return;
@@ -404,7 +437,7 @@ public sealed partial class ImportDbfViewModel : ObservableObject, IDisposable
             
             if (report.Issues.Any())
             {
-                TryOpenAuditReport(basePath);
+                TryOpenAuditReport(basePath, report);
             }
 
             _onFinished(SelectedFiles.Select(f => f.FullPath), _mareaId);
@@ -431,10 +464,26 @@ public sealed partial class ImportDbfViewModel : ObservableObject, IDisposable
         }
     }
 
-    private void TryOpenAuditReport(string basePath)
+    private void TryOpenAuditReport(string basePath, MareaValidationReport? report = null)
     {
-        string safeBarco = (_barco ?? "S-D").Replace("/", "-").Replace("\\", "-");
-        string reportPath = Path.Combine(basePath, "Reportes", $"Audit_{safeBarco}_{_mareaNum}_{_anio}.pdf");
+        string safeBarco;
+        string mareaNumStr;
+        string anioStr;
+
+        if (report != null)
+        {
+            safeBarco = (report.Barco ?? "S-D").Replace("/", "-").Replace("\\", "-");
+            mareaNumStr = report.Marea;
+            anioStr = report.Año.ToString();
+        }
+        else
+        {
+            safeBarco = (_barco ?? "S-D").Replace("/", "-").Replace("\\", "-");
+            mareaNumStr = _mareaNum.ToString();
+            anioStr = _anio.ToString();
+        }
+        
+        string reportPath = Path.Combine(basePath, "Reportes", $"Audit_{safeBarco}_{mareaNumStr}_{anioStr}.pdf");
         
         if (File.Exists(reportPath))
         {
