@@ -30,7 +30,6 @@ public sealed class EspecieViejaConfiguration : IEntityTypeConfiguration<Especie
 
         builder.Property(x => x.Frecuente)
             .HasColumnName("Frecuente")
-            .HasConversion<int>()
             .IsRequired();
 
         builder.Property(x => x.Genero)

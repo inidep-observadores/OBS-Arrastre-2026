@@ -9,7 +9,7 @@ public sealed class EspecieVieja
     public string? DocumentoInformativo { get; set; }
     public string? Especifico { get; set; }
     public string? Familia { get; set; }
-    public bool Frecuente { get; set; }
+    public int Frecuente { get; set; }
     public string? Genero { get; set; }
     public string? NombreCientifico { get; set; }
     public string? NombreVulgar { get; set; }

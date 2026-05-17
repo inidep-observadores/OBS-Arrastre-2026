@@ -7,13 +7,13 @@ namespace OBSArrastre2026.Tests.ViewModels;
 
 public sealed class CatchItemViewModelTests
 {
-    private static Especie CrearEspecie(string id, string vulgar, string cientifico, bool frecuente = false) =>
+    private static Especie CrearEspecie(string id, string vulgar, string cientifico, int frecuente = 0) =>
         new() { ID = id, NombreVulgar = vulgar, NombreCientifico = cientifico, Frecuente = frecuente };
 
     private static List<Especie> EspeciesBase() =>
     [
-        CrearEspecie("1", "Merluza común", "Merluccius hubbsi", frecuente: true),
-        CrearEspecie("2", "Langostino", "Pleoticus muelleri", frecuente: true),
+        CrearEspecie("1", "Merluza común", "Merluccius hubbsi", frecuente: 1),
+        CrearEspecie("2", "Langostino", "Pleoticus muelleri", frecuente: 1),
         CrearEspecie("3", "Calamar illex", "Illex argentinus"),
         CrearEspecie("4", "Abadejo", "Genypterus blacodes")
     ];
@@ -28,7 +28,7 @@ public sealed class CatchItemViewModelTests
         var filtered = vm.FilteredEspecies.ToList();
 
         filtered.Should().HaveCount(4);
-        filtered.First().Frecuente.Should().BeTrue();
+        filtered.First().Frecuente.Should().BeGreaterThan(0);
     }
 
     [Fact]

@@ -194,6 +194,13 @@ public partial class ReemplazoEspecieViewModel : ObservableObject
                     .Where(e => e.MareaID == activeMareaId && e.EspecieObjetivoID == idViejo)
                     .ToListAsync();
                 foreach (var e in etapas) e.EspecieObjetivoID = idNuevo;
+
+                // Incrementar contador de frecuencia en la especie destino
+                var especieDestino = await context.Especies.FirstOrDefaultAsync(e => e.ID == idNuevo);
+                if (especieDestino != null)
+                {
+                    especieDestino.Frecuente++;
+                }
             }
 
             await context.SaveChangesAsync();

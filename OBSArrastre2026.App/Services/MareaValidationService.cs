@@ -68,9 +68,10 @@ public class MareaValidationService : IMareaValidationService
             p.FechaHora = p.FechaHora.AddHours(-3);
         }
 
-        // Obtener catálogo de especies para validación de producción
+        // Obtener catálogo de especies para validación de producción ordenado por Frecuente descendente
         var especiesDB = await dbContext.Especies
             .Where(e => e.CodigoInidep != null && (e.NombreVulgar != null || e.NombreCientifico != null))
+            .OrderByDescending(e => e.Frecuente)
             .ToListAsync();
 
         var especiesDict = new Dictionary<string, string>();
@@ -78,13 +79,15 @@ public class MareaValidationService : IMareaValidationService
         {
             string code = esp.CodigoInidep ?? esp.ID; // Usar código si existe, sino ID interno
             if (!string.IsNullOrEmpty(esp.NombreVulgar))
-                especiesDict[esp.NombreVulgar.Trim().ToUpper()] = code;
+                especiesDict.TryAdd(esp.NombreVulgar.Trim().ToUpper(), code);
             if (!string.IsNullOrEmpty(esp.NombreCientifico))
-                especiesDict[esp.NombreCientifico.Trim().ToUpper()] = code;
+                especiesDict.TryAdd(esp.NombreCientifico.Trim().ToUpper(), code);
         }
 
+        // También para especies viejas ordenado por Frecuente descendente
         var especiesViejasDB = await dbContext.EspeciesViejas
             .Where(e => e.CodigoInidep != null)
+            .OrderByDescending(e => e.Frecuente)
             .ToListAsync();
 
         var especiesViejasDict = new Dictionary<string, string>();
@@ -92,9 +95,9 @@ public class MareaValidationService : IMareaValidationService
         {
             string code = esp.CodigoInidep ?? esp.ID;
             if (!string.IsNullOrEmpty(esp.NombreVulgar))
-                especiesViejasDict[esp.NombreVulgar.Trim().ToUpper()] = code;
+                especiesViejasDict.TryAdd(esp.NombreVulgar.Trim().ToUpper(), code);
             if (!string.IsNullOrEmpty(esp.NombreCientifico))
-                especiesViejasDict[esp.NombreCientifico.Trim().ToUpper()] = code;
+                especiesViejasDict.TryAdd(esp.NombreCientifico.Trim().ToUpper(), code);
         }
 
         var especiesCodigosValidos = new HashSet<string>(especiesDict.Values);

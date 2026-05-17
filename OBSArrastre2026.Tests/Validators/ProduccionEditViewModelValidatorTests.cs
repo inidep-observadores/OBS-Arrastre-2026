@@ -108,10 +108,10 @@ public sealed class ProduccionEditViewModelValidatorTests
     }
 
     [Fact]
-    public void Factor_Cero_CuandoEstaPresente_FallaValidacion()
+    public void Factor_Negativo_CuandoEstaPresente_FallaValidacion()
     {
         var vm = CrearVm();
-        vm.Factor = 0;
+        vm.Factor = -0.5;
 
         var result = _validator.Validate(vm);
 

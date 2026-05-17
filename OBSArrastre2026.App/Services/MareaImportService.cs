@@ -125,6 +125,17 @@ public class MareaImportService : IMareaImportService
 
         // 2. Extraer datos (si los paths fueron resueltos)
         var capturas = cPath != null ? await _extractor.ReadCapturasAsync(cPath) ?? new() : new();
+
+        // Si el buque de la marea es "S/D" (marea nueva) y tenemos lances extraídos del DBF,
+        // intentamos usar el nombre del barco real registrado por el observador en el archivo.
+        if ((barco == "S/D" || string.IsNullOrWhiteSpace(barco) || barco == "Sin Nombre") && capturas.Any())
+        {
+            var primerCapturaBarco = capturas.FirstOrDefault(c => !string.IsNullOrWhiteSpace(c.Barco))?.Barco;
+            if (!string.IsNullOrWhiteSpace(primerCapturaBarco))
+            {
+                barco = primerCapturaBarco.Trim().ToUpper();
+            }
+        }
         var muestras = mPath != null ? await _extractor.ReadMuestrasAsync(mPath) ?? new() : new();
         var submuestras = sPath != null ? await _extractor.ReadSubmuestrasAsync(sPath) ?? new() : new();
         var lgs = lPath != null ? await _extractor.ReadLgAsync(lPath) ?? new() : new();
@@ -193,6 +204,7 @@ public class MareaImportService : IMareaImportService
 
         var especiesDB = await dbContext.Especies
             .Where(e => e.CodigoInidep != null && (e.NombreVulgar != null || e.NombreCientifico != null))
+            .OrderByDescending(e => e.Frecuente)
             .ToListAsync();
 
         var productos = await dbContext.Productos.ToListAsync();
@@ -207,14 +219,14 @@ public class MareaImportService : IMareaImportService
                 if (!string.IsNullOrEmpty(esp.NombreVulgar))
                 {
                     var name = esp.NombreVulgar.Trim().ToUpper().Normalize(NormalizationForm.FormC);
-                    especiesDict[name] = codeStr;
-                    especiesSinAcentosDict[RemoveAccents(name)] = codeStr;
+                    especiesDict.TryAdd(name, codeStr);
+                    especiesSinAcentosDict.TryAdd(RemoveAccents(name), codeStr);
                 }
                 if (!string.IsNullOrEmpty(esp.NombreCientifico))
                 {
                     var name = esp.NombreCientifico.Trim().ToUpper().Normalize(NormalizationForm.FormC);
-                    especiesDict[name] = codeStr;
-                    especiesSinAcentosDict[RemoveAccents(name)] = codeStr;
+                    especiesDict.TryAdd(name, codeStr);
+                    especiesSinAcentosDict.TryAdd(RemoveAccents(name), codeStr);
                 }
             }
         }
@@ -351,23 +363,31 @@ public class MareaImportService : IMareaImportService
             marea.Metadata = MareaMetadataHelper.SetImportFolder(marea.Metadata, report.ImportPath);
         }
 
-        // Cargar catálogo de especies con múltiples índices para resolución flexible
-        var especiesCatalogo = await dbContext.Especies.ToListAsync();
+        // Cargar catálogo de especies con múltiples índices para resolución flexible ordenado por Frecuente descendente
+        var especiesCatalogo = await dbContext.Especies
+            .OrderByDescending(e => e.Frecuente)
+            .ToListAsync();
         
         var especieByCodigoMap = especiesCatalogo
             .Where(e => !string.IsNullOrEmpty(e.CodigoInidep))
             .GroupBy(e => NormalizeInidepCode(e.CodigoInidep))
             .ToDictionary(g => g.Key, g => g.First().ID);
 
-        var especieByNombreMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        // Construir lista unificada de todos los candidatos de especies ordenados por frecuencia de manera determinista y estricta
+        var candidatosEspecies = new List<EspecieMatchCandidate>();
         foreach (var e in especiesCatalogo)
         {
-            if (!string.IsNullOrEmpty(e.NombreVulgar))
-                especieByNombreMap[e.NombreVulgar.Trim().ToUpper().Normalize(NormalizationForm.FormC)] = e.ID;
-            if (!string.IsNullOrEmpty(e.NombreCientifico))
-                especieByNombreMap[e.NombreCientifico.Trim().ToUpper().Normalize(NormalizationForm.FormC)] = e.ID;
+            candidatosEspecies.Add(new EspecieMatchCandidate
+            {
+                Id = e.ID,
+                CodigoInidep = NormalizeInidepCode(e.CodigoInidep),
+                NombreVulgar = e.NombreVulgar?.Trim().ToUpper().Normalize(NormalizationForm.FormC) ?? string.Empty,
+                NombreCientifico = e.NombreCientifico?.Trim().ToUpper().Normalize(NormalizationForm.FormC) ?? string.Empty,
+                Frecuente = e.Frecuente,
+                EsVieja = false
+            });
         }
- 
+
         // Usamos la tabla especies_viejas como puente para encontrar el código que mapea a la tabla especies actual.
         var especiesViejasCatalogo = await dbContext.EspeciesViejas.ToListAsync();
         foreach (var ev in especiesViejasCatalogo)
@@ -375,15 +395,29 @@ public class MareaImportService : IMareaImportService
             var code = NormalizeInidepCode(ev.CodigoInidep);
             if (string.IsNullOrEmpty(code)) continue;
 
-            // Si el código de la vieja existe en la nueva, mapeamos los nombres viejos al ID de la nueva
+            // Si el código de la vieja existe en la nueva, mapeamos al ID de la nueva
             if (especieByCodigoMap.TryGetValue(code, out var newId))
             {
-                if (!string.IsNullOrEmpty(ev.NombreVulgar))
-                    especieByNombreMap.TryAdd(ev.NombreVulgar.Trim().ToUpper().Normalize(NormalizationForm.FormC), newId);
-                if (!string.IsNullOrEmpty(ev.NombreCientifico))
-                    especieByNombreMap.TryAdd(ev.NombreCientifico.Trim().ToUpper().Normalize(NormalizationForm.FormC), newId);
+                var frecuenteActual = especiesCatalogo.FirstOrDefault(e => e.ID == newId)?.Frecuente ?? 0;
+                candidatosEspecies.Add(new EspecieMatchCandidate
+                {
+                    Id = newId,
+                    CodigoInidep = code,
+                    NombreVulgar = ev.NombreVulgar?.Trim().ToUpper().Normalize(NormalizationForm.FormC) ?? string.Empty,
+                    NombreCientifico = ev.NombreCientifico?.Trim().ToUpper().Normalize(NormalizationForm.FormC) ?? string.Empty,
+                    Frecuente = frecuenteActual,
+                    EsVieja = true
+                });
             }
         }
+
+        // Ordenar candidatos determinísticamente
+        candidatosEspecies = candidatosEspecies
+            .OrderByDescending(c => c.Frecuente)
+            .ThenBy(c => c.EsVieja ? 1 : 0) // Preferir actuales
+            .ThenBy(c => c.CodigoInidep)
+            .ToList();
+
 
 
         // Map Capturas -> Lances
@@ -475,15 +509,35 @@ public class MareaImportService : IMareaImportService
         {
             if (lanceMap.TryGetValue(rm.Lance, out var lance))
             {
-                // Resolución de especie: Priorizar código, luego nombre (con puente incluido en especieByNombreMap)
+                // Resolución de especie: Priorizar código, luego nombre (con puente incluido)
                 string? especieId = null;
                 if (!string.IsNullOrEmpty(rm.CodEspec)) especieByCodigoMap.TryGetValue(rm.CodEspec.Trim(), out especieId);
                 
                 if (especieId == null && !string.IsNullOrEmpty(rm.Especie))
                 {
                     var normName = rm.Especie.Trim().ToUpper().Normalize(NormalizationForm.FormC);
-                    especieByNombreMap.TryGetValue(normName, out especieId);
+                    var exactMatch = candidatosEspecies.FirstOrDefault(c => 
+                        c.NombreVulgar == normName || 
+                        c.NombreCientifico == normName);
+                    
+                    if (exactMatch != null)
+                    {
+                        especieId = exactMatch.Id;
+                    }
+                    else
+                    {
+                        var normNameNoAccents = RemoveAccents(normName);
+                        var accentMatch = candidatosEspecies.FirstOrDefault(c => 
+                            RemoveAccents(c.NombreVulgar) == normNameNoAccents || 
+                            RemoveAccents(c.NombreCientifico) == normNameNoAccents);
+                        
+                        if (accentMatch != null)
+                        {
+                            especieId = accentMatch.Id;
+                        }
+                    }
                 }
+
 
                 if (especieId != null)
                 {
@@ -678,27 +732,40 @@ public class MareaImportService : IMareaImportService
                         {
                             especieByCodigoMap.TryGetValue("7210090401", out speciesId);
                         }
-                        else if (!especieByNombreMap.TryGetValue(searchName, out speciesId))
+                        else
                         {
-                            // Nuevo Fallback: Intentar búsqueda sin acentos
-                            var searchNameNoAccents = RemoveAccents(searchName);
-                            foreach (var kvp in especieByNombreMap)
+                            // Intentar resolución determinista priorizada
+                            // 1. Coincidencia exacta de NombreVulgar o NombreCientifico
+                            var exactMatch = candidatosEspecies.FirstOrDefault(c => 
+                                c.NombreVulgar == searchName || 
+                                c.NombreCientifico == searchName);
+                            
+                            if (exactMatch != null)
                             {
-                                if (RemoveAccents(kvp.Key) == searchNameNoAccents)
-                                {
-                                    speciesId = kvp.Value;
-                                    break;
-                                }
+                                speciesId = exactMatch.Id;
                             }
-
-                            if (speciesId == null)
+                            else
                             {
-                                // Fallback anterior: Probar si el campo Especie trae el código INIDEP directamente (normalizado)
-                                var searchCode = NormalizeInidepCode(rp.Especie);
-                                especieByCodigoMap.TryGetValue(searchCode, out speciesId);
+                                // 2. Coincidencia sin acentos
+                                var searchNameNoAccents = RemoveAccents(searchName);
+                                var accentMatch = candidatosEspecies.FirstOrDefault(c => 
+                                    RemoveAccents(c.NombreVulgar) == searchNameNoAccents || 
+                                    RemoveAccents(c.NombreCientifico) == searchNameNoAccents);
+                                
+                                if (accentMatch != null)
+                                {
+                                    speciesId = accentMatch.Id;
+                                }
+                                else
+                                {
+                                    // 3. Fallback: Probar si el campo Especie trae el código INIDEP directamente (normalizado)
+                                    var searchCode = NormalizeInidepCode(rp.Especie);
+                                    especieByCodigoMap.TryGetValue(searchCode, out speciesId);
+                                }
                             }
                         }
                     }
+
 
                     dbContext.RegistrosProduccion.Add(new RegistroProduccion
                     {
@@ -825,4 +892,15 @@ public class MareaImportService : IMareaImportService
 
         return stringBuilder.ToString().Normalize(NormalizationForm.FormC);
     }
+
+    private class EspecieMatchCandidate
+    {
+        public string Id { get; set; } = string.Empty;
+        public string CodigoInidep { get; set; } = string.Empty;
+        public string NombreVulgar { get; set; } = string.Empty;
+        public string NombreCientifico { get; set; } = string.Empty;
+        public int Frecuente { get; set; }
+        public bool EsVieja { get; set; }
+    }
 }
+

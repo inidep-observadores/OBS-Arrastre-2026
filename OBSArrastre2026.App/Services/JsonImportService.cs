@@ -189,7 +189,11 @@ public sealed class JsonImportService : IJsonImportService
         target.DocumentoInformativo = GetStringValue(source, "DocumentoInformativo");
         
         if (source.TryGetProperty("Frecuente", out var fr) && fr.ValueKind != JsonValueKind.Null) 
-            target.Frecuente = fr.GetBoolean();
+        {
+            if (fr.ValueKind == JsonValueKind.True) target.Frecuente = 1;
+            else if (fr.ValueKind == JsonValueKind.False) target.Frecuente = 0;
+            else if (fr.ValueKind == JsonValueKind.Number) target.Frecuente = fr.GetInt32();
+        }
     }
 
     private void UpdateEspecieVieja(EspecieVieja target, JsonElement source)
@@ -203,7 +207,11 @@ public sealed class JsonImportService : IJsonImportService
         target.DocumentoInformativo = GetStringValue(source, "DocumentoInformativo");
         
         if (source.TryGetProperty("Frecuente", out var fr) && fr.ValueKind != JsonValueKind.Null) 
-            target.Frecuente = fr.GetBoolean();
+        {
+            if (fr.ValueKind == JsonValueKind.True) target.Frecuente = 1;
+            else if (fr.ValueKind == JsonValueKind.False) target.Frecuente = 0;
+            else if (fr.ValueKind == JsonValueKind.Number) target.Frecuente = fr.GetInt32();
+        }
     }
 
     public async Task<(int Imported, int Ignored)> ImportMareasAsync(string[] filePaths)
