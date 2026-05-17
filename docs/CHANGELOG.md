@@ -1,11 +1,12 @@
 # Historial de Versiones
 
 Documentación histórica del desarrollo del proyecto OBSArrastre2026.
+Período documentado: 2026-04-09 a 2026-05-16 (39 días de desarrollo).
 Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 1.0.0.
 
 ---
 
-## [v1.5.0] - 2026-05-17
+## [v1.5.0] - 2026-05-16
 
 **Descripción**: Optimizaciones finales, soporte dinámico de etapas y mejora de flujos de importación.
 
@@ -23,7 +24,7 @@ Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 
 
 ---
 
-## [v1.4.0] - 2026-04-25
+## [v1.4.0] - 2026-05-15
 
 **Descripción**: Mejoras en UI, reportes y navegación avanzada.
 
@@ -64,7 +65,7 @@ Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 
 
 ---
 
-## [v1.3.0] - 2026-03-20
+## [v1.3.0] - 2026-05-12
 
 **Descripción**: Instalador NSIS, mejoras de distribución y cobertura de pruebas.
 
@@ -92,7 +93,7 @@ Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 
 
 ---
 
-## [v1.2.0] - 2026-02-15
+## [v1.2.0] - 2026-05-08
 
 **Descripción**: Exportación DBF round-trip y homologación total con formato institucional.
 
@@ -118,7 +119,7 @@ Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 
 
 ---
 
-## [v1.1.0] - 2026-01-10
+## [v1.1.0] - 2026-05-11
 
 **Descripción**: Suite completa de pruebas unitarias y validación integral.
 
@@ -135,7 +136,7 @@ Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 
 
 ---
 
-## [v1.0.0] - 2025-12-20
+## [v1.0.0] - 2026-05-11
 
 **Descripción**: Primera versión productiva estable del sistema completo.
 
@@ -251,7 +252,7 @@ Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 
 
 ---
 
-## [v0.9.0] - 2025-11-15
+## [v0.9.0] - 2026-05-06
 
 **Descripción**: Sistema completo de reportes multiformat (PDF, Excel, Word).
 
@@ -294,7 +295,7 @@ Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 
 
 ---
 
-## [v0.8.0] - 2025-10-10
+## [v0.8.0] - 2026-04-24
 
 **Descripción**: Sistema de mapas avanzado con Mapsui y tracking satelital.
 
@@ -317,7 +318,7 @@ Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 
 
 ---
 
-## [v0.7.0] - 2025-09-05
+## [v0.7.0] - 2026-04-27
 
 **Descripción**: Módulo completo de producción con biometría y cálculos alométricos.
 
@@ -345,7 +346,7 @@ Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 
 
 ---
 
-## [v0.6.0] - 2025-08-01
+## [v0.6.0] - 2026-04-27
 
 **Descripción**: Muestras biológicas con frecuencias de talla y análisis biométrico.
 
@@ -362,7 +363,7 @@ Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 
 
 ---
 
-## [v0.5.0] - 2025-07-01
+## [v0.5.0] - 2026-04-16
 
 **Descripción**: Gestión de lances y coordenadas geográficas con validación.
 
@@ -385,7 +386,7 @@ Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 
 
 ---
 
-## [v0.4.0] - 2025-06-01
+## [v0.4.0] - 2026-04-14
 
 **Descripción**: Módulo de mareas con filtrado avanzado y validación.
 
@@ -408,7 +409,7 @@ Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 
 
 ---
 
-## [v0.3.0] - 2025-05-01
+## [v0.3.0] - 2026-04-15
 
 **Descripción**: Importación DBF legacy con validación y transformación de datos.
 
@@ -425,7 +426,7 @@ Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 
 
 ---
 
-## [v0.2.0] - 2025-04-01
+## [v0.2.0] - 2026-04-13
 
 **Descripción**: Arquitectura de datos con Entity Framework Core y SQLite.
 
@@ -444,7 +445,7 @@ Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 
 
 ---
 
-## [v0.1.0] - 2025-03-15
+## [v0.1.0] - 2026-04-09
 
 **Descripción**: UI premium con diseño visual 2026 y arquitectura MVVM.
 
@@ -462,7 +463,7 @@ Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 
 
 ---
 
-## [v0.0.1] - 2025-02-15
+## [v0.0.1] - 2026-04-09
 
 **Descripción**: Commit inicial y setup base del proyecto.
 
@@ -507,6 +508,7 @@ Para generar changelog de cambios pendientes:
 
 ---
 
-**Última actualización**: 2026-05-17  
+**Última actualización**: 2026-05-17
+**Período de desarrollo**: 2026-04-09 a 2026-05-16 (39 días)
 **Total de commits documentados**: 270  
 **Versión actual**: v1.5.0
