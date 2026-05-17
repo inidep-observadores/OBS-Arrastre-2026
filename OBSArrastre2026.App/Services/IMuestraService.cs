@@ -12,4 +12,5 @@ public interface IMuestraService
     Task<Muestra?> GetMuestraAsync(string id, CancellationToken cancellationToken = default);
     Task SaveMuestraAsync(Muestra muestra, CancellationToken cancellationToken = default);
     Task DeleteMuestraAsync(string id, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<EspecieLargoPeso>> GetParametrosAlometricosAsync(string especieId, CancellationToken cancellationToken = default);
 }

@@ -21,8 +21,9 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
     private bool _isLoading;
 
     private string? _especieId;
-    private double? _pesoMuestraGramos;
+    private double? _pesoMuestraKg;
     private List<Especie> _allEspecies = new();
+    private IReadOnlyList<EspecieLargoPeso> _parametrosActuales = new List<EspecieLargoPeso>();
     
     private bool _isExpanded;
     private string _searchText = string.Empty;
@@ -124,8 +125,26 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
                     _searchText = value.NombreVulgar;
                     OnPropertyChanged(nameof(SearchText));
                     IsExpanded = false;
+                    _ = LoadParametrosAsync(value.ID);
                 }
             }
+        }
+    }
+
+    private async Task LoadParametrosAsync(string? especieId)
+    {
+        if (string.IsNullOrEmpty(especieId))
+        {
+            _parametrosActuales = new List<EspecieLargoPeso>();
+        }
+        else
+        {
+            _parametrosActuales = await _muestraService.GetParametrosAlometricosAsync(especieId);
+        }
+
+        foreach (var f in FrecuenciasTallas)
+        {
+            f.SetParametros(_parametrosActuales);
         }
     }
 
@@ -170,7 +189,7 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
         }
     }
 
-    public double? PesoMuestraGramos { get => _pesoMuestraGramos; set => SetProperty(ref _pesoMuestraGramos, value); }
+    public double? PesoMuestraKg { get => _pesoMuestraKg; set => SetProperty(ref _pesoMuestraKg, value); }
 
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
@@ -196,13 +215,15 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
                 if (muestra != null)
                 {
                     EspecieId = muestra.EspecieID;
-                    PesoMuestraGramos = muestra.PesoMuestra_PesoGramos;
+                    PesoMuestraKg = muestra.PesoMuestra_PesoGramos.HasValue ? Math.Round(muestra.PesoMuestra_PesoGramos.Value / 1000.0, 2) : null;
                     TipoMuestra = muestra.TipoMuestra;
 
                     FrecuenciasTallas.Clear();
                     foreach (var f in muestra.FrecuenciasTallas.OrderBy(x => x.Talla))
                     {
-                        FrecuenciasTallas.Add(new FrecuenciaTallaViewModel(f));
+                        var vm = new FrecuenciaTallaViewModel(f);
+                        vm.SetParametros(_parametrosActuales);
+                        FrecuenciasTallas.Add(vm);
                     }
                 }
             }
@@ -217,6 +238,7 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
     {
         var lastTalla = FrecuenciasTallas.LastOrDefault()?.Talla ?? 0;
         var next = new FrecuenciaTallaViewModel { Talla = lastTalla + 1 };
+        next.SetParametros(_parametrosActuales);
         FrecuenciasTallas.Add(next);
         SelectedFrecuencia = next;
     }
@@ -269,7 +291,7 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
                     ID = _muestraId ?? Guid.NewGuid().ToString(),
                     LanceID = _lanceId,
                     EspecieID = EspecieId,
-                    PesoMuestra_PesoGramos = PesoMuestraGramos,
+                    PesoMuestra_PesoGramos = PesoMuestraKg.HasValue ? Math.Round(PesoMuestraKg.Value * 1000.0, 2) : null,
                     TipoMuestra = TipoMuestra
                 };
 

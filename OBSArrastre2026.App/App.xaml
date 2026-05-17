@@ -1217,6 +1217,10 @@
             <Setter Property="HorizontalContentAlignment" Value="Right" />
         </Style>
 
+        <Style x:Key="PremiumDataGridColumnHeaderCenterStyle" TargetType="DataGridColumnHeader" BasedOn="{StaticResource PremiumDataGridColumnHeaderStyle}">
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
+
         <Style x:Key="PremiumDataGridCellStyle" TargetType="DataGridCell">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />

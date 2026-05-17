@@ -58,47 +58,47 @@ public sealed class MuestraEditViewModelValidatorTests
     }
 
     [Fact]
-    public void PesoMuestraGramos_Cero_CuandoEstaPresente_FallaValidacion()
+    public void PesoMuestraKg_Cero_CuandoEstaPresente_FallaValidacion()
     {
         var vm = CrearVm();
         vm.EspecieId = "esp-001";
-        vm.PesoMuestraGramos = 0;
+        vm.PesoMuestraKg = 0;
 
         var result = _validator.Validate(vm);
 
-        result.Errors.Should().Contain(e => e.PropertyName == nameof(vm.PesoMuestraGramos));
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(vm.PesoMuestraKg));
     }
 
     [Fact]
-    public void PesoMuestraGramos_Negativo_FallaValidacion()
+    public void PesoMuestraKg_Negativo_FallaValidacion()
     {
         var vm = CrearVm();
         vm.EspecieId = "esp-001";
-        vm.PesoMuestraGramos = -10;
+        vm.PesoMuestraKg = -10;
 
         var result = _validator.Validate(vm);
 
-        result.Errors.Should().Contain(e => e.PropertyName == nameof(vm.PesoMuestraGramos));
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(vm.PesoMuestraKg));
     }
 
     [Fact]
-    public void PesoMuestraGramos_Nulo_NoGeneraError()
+    public void PesoMuestraKg_Nulo_NoGeneraError()
     {
         var vm = CrearVm();
         vm.EspecieId = "esp-001";
-        vm.PesoMuestraGramos = null;
+        vm.PesoMuestraKg = null;
 
         var result = _validator.Validate(vm);
 
-        result.Errors.Should().NotContain(e => e.PropertyName == nameof(vm.PesoMuestraGramos));
+        result.Errors.Should().NotContain(e => e.PropertyName == nameof(vm.PesoMuestraKg));
     }
 
     [Fact]
-    public void PesoMuestraGramos_Positivo_Valido()
+    public void PesoMuestraKg_Positivo_Valido()
     {
         var vm = CrearVm();
         vm.EspecieId = "esp-001";
-        vm.PesoMuestraGramos = 500;
+        vm.PesoMuestraKg = 0.5;
 
         var result = _validator.Validate(vm);
 

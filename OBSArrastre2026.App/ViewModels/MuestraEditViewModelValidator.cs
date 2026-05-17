@@ -9,8 +9,8 @@ public sealed class MuestraEditViewModelValidator : AbstractValidator<MuestraEdi
         RuleFor(x => x.EspecieId)
             .NotEmpty().WithMessage("La especie es obligatoria.");
 
-        RuleFor(x => x.PesoMuestraGramos)
-            .GreaterThan(0).When(x => x.PesoMuestraGramos.HasValue)
+        RuleFor(x => x.PesoMuestraKg)
+            .GreaterThan(0).When(x => x.PesoMuestraKg.HasValue)
             .WithMessage("El peso debe ser mayor a 0.");
     }
 }

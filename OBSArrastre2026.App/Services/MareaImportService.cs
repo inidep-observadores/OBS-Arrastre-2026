@@ -825,8 +825,8 @@ public class MareaImportService : IMareaImportService
 
                                 if (foundAnyParams && totalWeightGramos > 0)
                                 {
-                                    muestraReconstruida.PesoMuestra_PesoGramos = totalWeightGramos;
-                                    double totalWeightKg = totalWeightGramos / 1000.0;
+                                    double totalWeightKg = Math.Round(totalWeightGramos / 1000.0, 2);
+                                    muestraReconstruida.PesoMuestra_PesoGramos = totalWeightKg * 1000.0;
                                     if (totalWeightKg > 0)
                                     {
                                         muestraReconstruida.EjemplaresPorKg = (int)Math.Round(totalEjemplares / totalWeightKg);

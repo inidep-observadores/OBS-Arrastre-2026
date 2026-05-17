@@ -105,4 +105,13 @@ public sealed class MuestraService(IDbContextFactory<AppDbContext> dbContextFact
             await dbContext.SaveChangesAsync(cancellationToken);
         }
     }
+
+    public async Task<IReadOnlyList<EspecieLargoPeso>> GetParametrosAlometricosAsync(string especieId, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        
+        return await dbContext.EspeciesLargoPeso
+            .Where(lp => lp.EspecieId == especieId)
+            .ToListAsync(cancellationToken);
+    }
 }

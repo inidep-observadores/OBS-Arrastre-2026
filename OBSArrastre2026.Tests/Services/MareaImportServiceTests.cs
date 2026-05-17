@@ -318,8 +318,9 @@ public class MareaImportServiceTests
         // Macho 35 cm: 0.005 * 35^3.1 = 306.359 gramos
         // Hembra 35 cm: 0.006 * 35^3.2 = 516.263 gramos
         // Macho 36 cm: 0.005 * 36^3.1 = 334.135 gramos
-        // El total estimado por EF Core e integración alométrica en gramos es ~1163.52
-        muestraReconstruida.PesoMuestra_PesoGramos.Should().BeApproximately(1163.52, 0.1);
+        // El total estimado en gramos es ~1163.52, pero se redondea a 2 decimales en KILOS (1.16 kg)
+        // Por lo tanto, el peso final en gramos es 1160.
+        muestraReconstruida.PesoMuestra_PesoGramos.Should().BeApproximately(1160.0, 0.1);
 
         // Ejemplares por kilogramo:
         // 3 ejemplares / (1156.757 / 1000) kg = 3 / 1.156757 kg = 2.59 ejemplares/kg -> redondeado a 3 ejemplares por kg

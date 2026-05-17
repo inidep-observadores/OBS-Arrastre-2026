@@ -95,8 +95,8 @@
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="4">
-                                    <Label Content="Peso Muestra (gramos)" Style="{StaticResource FormLabelStyle}" />
-                                    <TextBox Text="{Binding PesoMuestraGramos}" Style="{StaticResource PremiumTextBoxStyle}" />
+                                    <Label Content="Peso Muestra (kg)" Style="{StaticResource FormLabelStyle}" />
+                                    <TextBox Text="{Binding PesoMuestraKg, StringFormat={}{0:F2}}" Style="{StaticResource PremiumTextBoxStyle}" />
                                 </StackPanel>
                             </Grid>
                         </StackPanel>
@@ -140,35 +140,38 @@
                                                     CommandParameter="{Binding SelectedItem, ElementName=FrecuenciasGrid}" />
                                     </DataGrid.InputBindings>
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="TALLA" Binding="{Binding Talla}" Width="60" ElementStyle="{StaticResource DataGridTextLeft}" />
+                                        <DataGridTextColumn Header="TALLA" Binding="{Binding Talla}" Width="80" ElementStyle="{StaticResource DataGridTextCenter}" HeaderStyle="{StaticResource PremiumDataGridColumnHeaderCenterStyle}" />
                                         
                                         <DataGridTextColumn Header="M. MAD." 
                                                             Binding="{Binding NroLangostinosMachoMaduros}" 
-                                                            Width="65" 
+                                                            Width="90" 
                                                             ElementStyle="{StaticResource DataGridTextCenter}"
+                                                            HeaderStyle="{StaticResource PremiumDataGridColumnHeaderCenterStyle}"
                                                             Visibility="{Binding Data.EsLangostino, Source={StaticResource Proxy}, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                         
-                                        <DataGridTextColumn Header="MACHOS" Binding="{Binding NroMachos}" Width="65" ElementStyle="{StaticResource DataGridTextCenter}" />
+                                        <DataGridTextColumn Header="MACHOS" Binding="{Binding NroMachos}" Width="95" ElementStyle="{StaticResource DataGridTextCenter}" HeaderStyle="{StaticResource PremiumDataGridColumnHeaderCenterStyle}" />
                                         
-                                        <DataGridTextColumn Header="HEMBRAS" Binding="{Binding NroHembras}" Width="65" ElementStyle="{StaticResource DataGridTextCenter}" />
+                                        <DataGridTextColumn Header="HEMBRAS" Binding="{Binding NroHembras}" Width="95" ElementStyle="{StaticResource DataGridTextCenter}" HeaderStyle="{StaticResource PremiumDataGridColumnHeaderCenterStyle}" />
                                         
                                         <DataGridTextColumn Header="H. MAD." 
                                                             Binding="{Binding NroLangostinosHembraMaduras}" 
-                                                            Width="65" 
+                                                            Width="90" 
                                                             ElementStyle="{StaticResource DataGridTextCenter}"
+                                                            HeaderStyle="{StaticResource PremiumDataGridColumnHeaderCenterStyle}"
                                                             Visibility="{Binding Data.EsLangostino, Source={StaticResource Proxy}, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                         
                                         <DataGridTextColumn Header="H. IMP." 
                                                             Binding="{Binding NroLangostinosHembraImpregnadas}" 
-                                                            Width="65" 
+                                                            Width="90" 
                                                             ElementStyle="{StaticResource DataGridTextCenter}"
+                                                            HeaderStyle="{StaticResource PremiumDataGridColumnHeaderCenterStyle}"
                                                             Visibility="{Binding Data.EsLangostino, Source={StaticResource Proxy}, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
-                                        <DataGridTextColumn Header="INDET." Binding="{Binding NroIndeterminados}" Width="65" ElementStyle="{StaticResource DataGridTextCenter}" />
+                                        <DataGridTextColumn Header="INDET." Binding="{Binding NroIndeterminados}" Width="85" ElementStyle="{StaticResource DataGridTextCenter}" HeaderStyle="{StaticResource PremiumDataGridColumnHeaderCenterStyle}" />
+                                        <DataGridTextColumn Header="TOTAL" Binding="{Binding NroTotal, UpdateSourceTrigger=PropertyChanged}" Width="80" FontWeight="Bold" ElementStyle="{StaticResource DataGridTextRight}" HeaderStyle="{StaticResource PremiumDataGridColumnHeaderRightStyle}" />
                                         
-                                        <DataGridTextColumn Header="TOTAL" Binding="{Binding NroTotal, UpdateSourceTrigger=PropertyChanged}" Width="*" FontWeight="Bold" ElementStyle="{StaticResource DataGridTextRight}" />
-
-                                        <DataGridTemplateColumn Width="40">
+                                        <DataGridTextColumn Header="PESO (kg)" Binding="{Binding PesoCalculadoKg, StringFormat={}{0:F2}}" Width="*" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" ElementStyle="{StaticResource DataGridTextRight}" HeaderStyle="{StaticResource PremiumDataGridColumnHeaderRightStyle}" />
+                                        <DataGridTemplateColumn Width="50">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <Button Command="{Binding DataContext.RemoveFrecuenciaCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
