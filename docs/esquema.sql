@@ -183,6 +183,7 @@ CREATE TABLE muestras (
     PesoMuestra_PesoGramos REAL NULL,
     TipoMuestra INTEGER NOT NULL DEFAULT 1, -- 1=Estandar, 2=Descarte
     Metadata TEXT NULL,
+    automatica INTEGER NOT NULL DEFAULT 0,
     CONSTRAINT fk_muestras_especies_especie_id FOREIGN KEY (EspecieID) REFERENCES especies (ID) ON DELETE RESTRICT,
     CONSTRAINT fk_muestras_lances_lance_id FOREIGN KEY (LanceID) REFERENCES lances (ID) ON DELETE CASCADE
 );

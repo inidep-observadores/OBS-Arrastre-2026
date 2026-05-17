@@ -199,6 +199,34 @@ public class MainWindowViewModel : ObservableObject
     public bool IsTotalDiferenciaPorcentajeNegativo => TotalDiferenciaPorcentajeControl < -0.01;
 
 
+    // Filtros de Muestras Automáticas
+    private bool _tieneMuestrasAutomatica;
+    public bool TieneMuestrasAutomatica
+    {
+        get => _tieneMuestrasAutomatica;
+        private set => SetProperty(ref _tieneMuestrasAutomatica, value);
+    }
+
+    private string _filtroMuestras = "Todas";
+    public string FiltroMuestras
+    {
+        get => _filtroMuestras;
+        set
+        {
+            if (SetProperty(ref _filtroMuestras, value))
+            {
+                ApplyMuestrasFilter();
+                OnPropertyChanged(nameof(FiltroMuestrasTodas));
+                OnPropertyChanged(nameof(FiltroMuestrasManuales));
+                OnPropertyChanged(nameof(FiltroMuestrasAutomaticas));
+            }
+        }
+    }
+
+    public bool FiltroMuestrasTodas => FiltroMuestras == "Todas";
+    public bool FiltroMuestrasManuales => FiltroMuestras == "Manuales";
+    public bool FiltroMuestrasAutomaticas => FiltroMuestras == "Automaticas";
+
     // Filtros de Mareas
     private int? _mareasFilterAnio;
     private BuqueListItemViewModel? _mareasFilterBuque;
@@ -426,6 +454,10 @@ public class MainWindowViewModel : ObservableObject
         ApplyLanceFiltersCommand = new AsyncCommand(LoadLancesAsync);
         EditLanceCommand = new RelayCommand<LanceListItemViewModel>(OpenEditLanceForm);
         EditMuestraCommand = new RelayCommand<MuestraListItemViewModel>(OpenEditMuestraForm);
+        SetFiltroMuestrasCommand = new RelayCommand<string>(param =>
+        {
+            if (param != null) FiltroMuestras = param;
+        });
         EditSubmuestraCommand = new RelayCommand<MuestraListItemViewModel>(OpenEditSubmuestraForm);
         OpenSelectedRecordEditCommand = new RelayCommand(OpenSelectedRecordEdit);
         ClearMareaFiltersCommand = new AsyncCommand(ClearMareaFiltersAsync);
@@ -544,6 +576,7 @@ public class MainWindowViewModel : ObservableObject
     public ICommand ApplyLanceFiltersCommand { get; }
     public ICommand EditLanceCommand { get; }
     public ICommand EditMuestraCommand { get; }
+    public ICommand SetFiltroMuestrasCommand { get; }
     public ICommand EditSubmuestraCommand { get; }
     public ICommand OpenSelectedRecordEditCommand { get; }
     public ICommand ClearMareaFiltersCommand { get; }
@@ -643,6 +676,16 @@ public class MainWindowViewModel : ObservableObject
 
         var viewModels = samples.Select(m => new MuestraListItemViewModel(m)).ToList();
         
+        TieneMuestrasAutomatica = viewModels.Any(vm => vm.Automatica);
+        if (!TieneMuestrasAutomatica)
+        {
+            _filtroMuestras = "Todas";
+            OnPropertyChanged(nameof(FiltroMuestras));
+            OnPropertyChanged(nameof(FiltroMuestrasTodas));
+            OnPropertyChanged(nameof(FiltroMuestrasManuales));
+            OnPropertyChanged(nameof(FiltroMuestrasAutomaticas));
+        }
+
         RecordsView.GroupDescriptions.Clear();
         Records.Clear();
         foreach (var vm in viewModels)
@@ -650,6 +693,7 @@ public class MainWindowViewModel : ObservableObject
             Records.Add(vm);
         }
 
+        ApplyMuestrasFilter();
         RestoreSelection();
     }
 
@@ -3011,5 +3055,30 @@ public class MainWindowViewModel : ObservableObject
         TotalDiferenciaPorcentajeControl = ret > 0 
             ? (dif * 100.0 / ret) 
             : (recon > 0 ? -100.0 : 0);
+    }
+
+    private void ApplyMuestrasFilter()
+    {
+        if (RecordsView == null) return;
+        
+        if (SelectedNavigationItem?.Section == NavigationSection.Muestras)
+        {
+            if (FiltroMuestras == "Todas" || !TieneMuestrasAutomatica)
+            {
+                RecordsView.Filter = null;
+            }
+            else
+            {
+                RecordsView.Filter = item =>
+                {
+                    if (item is MuestraListItemViewModel vm)
+                    {
+                        if (FiltroMuestras == "Manuales") return !vm.Automatica;
+                        if (FiltroMuestras == "Automaticas") return vm.Automatica;
+                    }
+                    return true;
+                };
+            }
+        }
     }
 }

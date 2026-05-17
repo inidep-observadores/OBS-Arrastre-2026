@@ -24,6 +24,7 @@ public sealed class Muestra
     public double? PesoMuestra_PesoGramos { get; set; }
     public int TipoMuestra { get; set; } = 1; // 1=Estandar, 2=Descarte
     public string? Metadata { get; set; }
+    public bool Automatica { get; set; } = false;
 
     // Campos de Integridad 1:1
     public double? Fuente { get; set; }

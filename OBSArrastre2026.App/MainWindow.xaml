@@ -228,7 +228,16 @@
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type vm:MuestraListItemViewModel}">
-            <Border Style="{StaticResource TableRowStyle}" Cursor="Hand">
+            <Border Cursor="Hand">
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource TableRowStyle}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Automatica}" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource TableHeaderBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
                 <Border.InputBindings>
                     <MouseBinding MouseAction="LeftDoubleClick" 
                                   Command="{Binding DataContext.EditMuestraCommand, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -1034,6 +1043,102 @@
                                               Margin="24,0,0,0"
                                               Foreground="{DynamicResource PrimaryTextBrush}" />
                                 </StackPanel>
+                            </Border>
+
+                            <!-- Barra de Filtros Muestras Automáticas -->
+                            <Border Grid.Row="1" 
+                                    Padding="16,12"
+                                    Margin="0,0,0,16">
+                                <Border.Style>
+                                    <Style TargetType="Border" BasedOn="{StaticResource SurfaceBorderStyle}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding SelectedNavigationItem.Section}" Value="{x:Static models:NavigationSection.Muestras}" />
+                                                    <Condition Binding="{Binding TieneMuestrasAutomatica}" Value="True" />
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="Filtrar por origen de muestra:" 
+                                                   Style="{StaticResource BodySecondaryStyle}" 
+                                                   FontWeight="SemiBold"
+                                                   VerticalAlignment="Center" 
+                                                   Margin="0,0,16,0" />
+                                        <Border CornerRadius="8" 
+                                                Background="{DynamicResource SurfaceBackgroundBrush}" 
+                                                Padding="4"
+                                                BorderThickness="1"
+                                                BorderBrush="{DynamicResource SidebarBorderBrush}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <!-- Botón Todas -->
+                                                <Button Content="Todas" 
+                                                        Command="{Binding SetFiltroMuestrasCommand}" 
+                                                        CommandParameter="Todas"
+                                                        Margin="0,0,4,0"
+                                                        Padding="16,6">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button" BasedOn="{StaticResource ThemeButtonStyle}">
+                                                            <Setter Property="Background" Value="Transparent" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding FiltroMuestrasTodas}" Value="True"><Setter Property="Background" Value="{DynamicResource SelectionBackgroundBrush}" />
+                                                                    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+
+                                                <!-- Botón Manuales -->
+                                                <Button Content="Manuales" 
+                                                        Command="{Binding SetFiltroMuestrasCommand}" 
+                                                        CommandParameter="Manuales"
+                                                        Margin="0,0,4,0"
+                                                        Padding="16,6">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button" BasedOn="{StaticResource ThemeButtonStyle}">
+                                                            <Setter Property="Background" Value="Transparent" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding FiltroMuestrasManuales}" Value="True"><Setter Property="Background" Value="{DynamicResource SelectionBackgroundBrush}" />
+                                                                    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+
+                                                <!-- Botón Automáticas -->
+                                                <Button Content="Automáticas" 
+                                                        Command="{Binding SetFiltroMuestrasCommand}" 
+                                                        CommandParameter="Automaticas"
+                                                        Padding="16,6">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button" BasedOn="{StaticResource ThemeButtonStyle}">
+                                                            <Setter Property="Background" Value="Transparent" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding FiltroMuestrasAutomaticas}" Value="True"><Setter Property="Background" Value="{DynamicResource SelectionBackgroundBrush}" />
+                                                                    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </Grid>
                             </Border>
 
                             <Border Grid.Row="2"

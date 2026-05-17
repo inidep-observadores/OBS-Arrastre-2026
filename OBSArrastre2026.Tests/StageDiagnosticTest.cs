@@ -32,6 +32,7 @@ public class StageDiagnosticTest
             .Options;
 
         using var db = new AppDbContext(options);
+        await db.Database.MigrateAsync();
 
         var lances = await db.Lances.ToListAsync();
         using var sw = new StreamWriter(logPath, false);

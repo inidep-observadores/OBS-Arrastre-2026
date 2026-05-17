@@ -677,7 +677,8 @@ public class MareaImportService : IMareaImportService
                                     ? LegacyDecoder.CalculateGridArea(lance.LatitudInicioDecimal.Value, lance.LongitudInicioDecimal.Value)
                                     : muestraEjemplo.Area,
                                 PesoMuestra_PesoGramos = pesoGramos,
-                                Comentarios = "Muestra reconstruida automáticamente a partir de submuestra."
+                                Comentarios = "Muestra reconstruida automáticamente a partir de submuestra.",
+                                Automatica = true
                             };
 
                             var agrupacionesTalla = grupo

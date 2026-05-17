@@ -26,6 +26,7 @@ public sealed class MuestraConfiguration : IEntityTypeConfiguration<Muestra>
         builder.Property(x => x.PesoMuestra_PesoGramos).HasColumnName("PesoMuestra_PesoGramos");
         builder.Property(x => x.TipoMuestra).HasColumnName("TipoMuestra").HasDefaultValue(1);
         builder.Property(x => x.Metadata).HasColumnName("Metadata");
+        builder.Property(x => x.Automatica).HasColumnName("automatica").HasDefaultValue(false).IsRequired();
         builder.Property(x => x.NumeroOrden).HasColumnName("NumeroOrden").IsRequired();
         builder.Property(x => x.EspecieOriginal).HasColumnName("EspecieOriginal");
         builder.Property(x => x.Fuente).HasColumnName("Fuente");
