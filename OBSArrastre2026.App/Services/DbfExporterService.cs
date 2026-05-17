@@ -365,6 +365,11 @@ public sealed class DbfExporterService : IDbfExporterService
             var lance = m.Lance;
             if (lance == null) continue;
 
+            int baseTalla = m.PrimTalla ?? (m.FrecuenciasTallas.Any() ? (int)m.FrecuenciasTallas.Min(f => f.Talla) : 0);
+            int interval = (int)m.Intervalo;
+            if (interval <= 0) interval = 1;
+            bool requiereExtension = m.FrecuenciasTallas.Any(f => f.Talla > baseTalla + 89 * interval);
+
             var mRow = new object[mFields.Count];
             int mIdx = 0;
             mRow[mIdx++] = barco;
@@ -377,14 +382,17 @@ public sealed class DbfExporterService : IDbfExporterService
             mRow[mIdx++] = (object)m.Tarte ?? DBNull.Value;
             mRow[mIdx++] = (object)m.Area ?? DBNull.Value;
             mRow[mIdx++] = m.PrimTalla != null ? (double)m.PrimTalla : DBNull.Value;
-            mRow[mIdx++] = m.UltTalla != null ? (double)m.UltTalla : DBNull.Value;
+
+            double? ultTallaExportar = m.UltTalla;
+            if (requiereExtension && ultTallaExportar != null)
+            {
+                ultTallaExportar = baseTalla + 89 * interval; // En archivo M, ULT_TALLA corresponde a TALLA_90
+            }
+            mRow[mIdx++] = ultTallaExportar != null ? (double)ultTallaExportar : DBNull.Value;
+
             mRow[mIdx++] = (object)m.Intervalo ?? DBNull.Value;
             mRow[mIdx++] = (m.PesoMuestra_PesoGramos ?? 0) / 1000.0; // Kg
             mRow[mIdx++] = (object)m.FactPond ?? DBNull.Value;
-
-            int baseTalla = m.PrimTalla ?? (m.FrecuenciasTallas.Any() ? (int)m.FrecuenciasTallas.Min(f => f.Talla) : 0);
-            int interval = (int)m.Intervalo;
-            if (interval <= 0) interval = 1;
 
             var freqMap = m.FrecuenciasTallas.ToDictionary(f => (int)f.Talla, f => f);
             int prim = m.PrimTalla ?? baseTalla;
@@ -413,7 +421,6 @@ public sealed class DbfExporterService : IDbfExporterService
                 mWriter.WriteRecord(mRow);
 
             var freqs = m.FrecuenciasTallas.OrderBy(f => f.Talla).ToList();
-            bool requiereExtension = m.FrecuenciasTallas.Any(f => f.Talla > baseTalla + 89 * interval);
 
             if (requiereExtension)
             {
@@ -426,6 +433,7 @@ public sealed class DbfExporterService : IDbfExporterService
                 var xRow = new object[xFields.Count];
                 Array.Copy(mRow, xRow, 14);
                 xRow[9] = (double)(baseTalla + 90 * interval); // PRIM_TALLA en el archivo X corresponde a TALLA_91
+                xRow[10] = m.UltTalla != null ? (double)m.UltTalla : DBNull.Value; // ULT_TALLA en el archivo X conserva el valor real total
                 int xIdx = 14;
                 for (int i = 90; i < 150; i++)
                 {

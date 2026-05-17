@@ -319,11 +319,17 @@ public sealed class DbfExporterServiceTests : IDisposable
                 var mRecord = mReader.NextRecord();
 
                 int talla1Idx = -1;
+                int ultTallaMIdx = -1;
                 for (int i = 0; i < mReader.Fields.Length; i++)
                 {
                     if (mReader.Fields[i].Name == "TALLA_1") talla1Idx = i;
+                    if (mReader.Fields[i].Name == "ULT_TALLA") ultTallaMIdx = i;
                 }
                 talla1Idx.Should().BeGreaterThan(-1);
+                ultTallaMIdx.Should().BeGreaterThan(-1);
+
+                // En el archivo M, ULT_TALLA debe limitarse a la columna TALLA_90 (10 + 89 * 1 = 99)
+                Convert.ToDouble(mRecord[ultTallaMIdx]).Should().Be(99.0);
 
                 // Talla 10 codificada en TALLA_1: "010005002001008" -> 10005002001008
                 double expectedTalla1Value = 10005002001008.0;
@@ -337,11 +343,12 @@ public sealed class DbfExporterServiceTests : IDisposable
                 xReader.RecordCount.Should().Be(1);
                 var xRecord = xReader.NextRecord();
 
-                // Verificar campos de cabecera idénticos o actualizados (PRIM_TALLA)
+                // Verificar campos de cabecera idénticos o actualizados (PRIM_TALLA y ULT_TALLA)
                 int mareaIdx = -1;
                 int lanceIdx = -1;
                 int especIdx = -1;
                 int primTallaIdx = -1;
+                int ultTallaIdx = -1;
                 int talla96Idx = -1; // Corresponde al índice i = 95 -> Talla 105
                 int talla91Idx = -1; // Corresponde al índice i = 90 -> Talla 100
 
@@ -351,6 +358,7 @@ public sealed class DbfExporterServiceTests : IDisposable
                     if (xReader.Fields[i].Name == "LANCE") lanceIdx = i;
                     if (xReader.Fields[i].Name == "COD_ESPEC") especIdx = i;
                     if (xReader.Fields[i].Name == "PRIM_TALLA") primTallaIdx = i;
+                    if (xReader.Fields[i].Name == "ULT_TALLA") ultTallaIdx = i;
                     if (xReader.Fields[i].Name == "TALLA_91") talla91Idx = i;
                     if (xReader.Fields[i].Name == "TALLA_96") talla96Idx = i;
                 }
@@ -359,6 +367,7 @@ public sealed class DbfExporterServiceTests : IDisposable
                 lanceIdx.Should().BeGreaterThan(-1);
                 especIdx.Should().BeGreaterThan(-1);
                 primTallaIdx.Should().BeGreaterThan(-1);
+                ultTallaIdx.Should().BeGreaterThan(-1);
                 talla91Idx.Should().BeGreaterThan(-1);
                 talla96Idx.Should().BeGreaterThan(-1);
 
@@ -368,6 +377,9 @@ public sealed class DbfExporterServiceTests : IDisposable
                 
                 // PRIM_TALLA en el archivo X debe ser igual a la talla correspondiente a TALLA_91 (10 + 90 * 1 = 100)
                 Convert.ToDouble(xRecord[primTallaIdx]).Should().Be(100.0);
+
+                // ULT_TALLA en el archivo X conserva el valor real total de la muestra (110)
+                Convert.ToDouble(xRecord[ultTallaIdx]).Should().Be(110.0);
 
                 // Talla 100 (i = 90) no tiene frecuencia pero está dentro del rango observado [10, 110].
                 // Debe contener un tally con ceros: "100000000000000" -> 100000000000000
