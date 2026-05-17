@@ -413,7 +413,9 @@ public sealed class DbfExporterService : IDbfExporterService
                 mWriter.WriteRecord(mRow);
 
             var freqs = m.FrecuenciasTallas.OrderBy(f => f.Talla).ToList();
-            if (freqs.Count > 90)
+            bool requiereExtension = m.FrecuenciasTallas.Any(f => f.Talla > baseTalla + 89 * interval);
+
+            if (requiereExtension)
             {
                 if (xWriter == null)
                 {
@@ -426,12 +428,20 @@ public sealed class DbfExporterService : IDbfExporterService
                 int xIdx = 14;
                 for (int i = 90; i < 150; i++)
                 {
-                    if (i < freqs.Count)
+                    int currentTalla = baseTalla + (i * interval);
+                    if (freqMap.TryGetValue(currentTalla, out var ft))
                     {
-                        var f = freqs[i];
-                        xRow[xIdx++] = double.Parse(LegacyDecoder.EncodeTally((int)f.Talla, f.NroMachos, f.NroHembras, f.NroIndeterminados, f.NroTotal));
+                        xRow[xIdx++] = double.Parse(LegacyDecoder.EncodeTally((int)ft.Talla, ft.NroMachos, ft.NroHembras, ft.NroIndeterminados, ft.NroTotal));
                     }
-                    else xRow[xIdx++] = null;
+                    else if (currentTalla >= prim && currentTalla <= ult)
+                    {
+                        // Rellenar con ceros si cae dentro del rango original observado de la muestra
+                        xRow[xIdx++] = double.Parse(LegacyDecoder.EncodeTally(currentTalla, 0, 0, 0, 0));
+                    }
+                    else
+                    {
+                        xRow[xIdx++] = null;
+                    }
                 }
                 xWriter.WriteRecord(xRow);
             }
