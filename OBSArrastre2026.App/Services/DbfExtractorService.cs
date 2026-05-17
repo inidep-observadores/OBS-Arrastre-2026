@@ -379,7 +379,7 @@ public sealed class DbfExtractorService : IDbfExtractorService
                 FactPond = GetDoubleNullable(reader, colMap, "FACT_POND")
             };
 
-            for (int i = 1; i <= 90; i++)
+            for (int i = 1; i <= 150; i++)
             {
                 var val = GetValue(reader, colMap, $"TALLA_{i}");
                 if (val != null && val.ToString() != "0")

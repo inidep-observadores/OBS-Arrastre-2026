@@ -112,4 +112,43 @@ public class LegacyDecoderTests
         // -30.00 -> -30.0
         LegacyDecoder.DecodeCoordinate(30.00).Should().Be(-30.0);
     }
+
+    [Fact]
+    public void DecodeTally_With15DigitPaddedString_ShouldDecodeCorrectly()
+    {
+        // "84000003004007" se rellena a 15 dígitos -> "084000003004007"
+        // Talla: 84, Machos: 0, Hembras: 3, Indeterminados: 4, Total: 7
+        var result = LegacyDecoder.DecodeTally("84000003004007");
+        result.Size.Should().Be(84);
+        result.Males.Should().Be(0);
+        result.Females.Should().Be(3);
+        result.Indeterminate.Should().Be(4);
+        result.Total.Should().Be(7);
+    }
+
+    [Fact]
+    public void DecodeTally_WithOverflowPrevention_ShouldDecodeCorrectly()
+    {
+        // "174003004010017" (15 dígitos) -> supera int.MaxValue si se parseara completo
+        // Talla: 174, Machos: 3, Hembras: 4, Indeterminados: 10, Total: 17
+        var result = LegacyDecoder.DecodeTally("174003004010017");
+        result.Size.Should().Be(174);
+        result.Males.Should().Be(3);
+        result.Females.Should().Be(4);
+        result.Indeterminate.Should().Be(10);
+        result.Total.Should().Be(17);
+    }
+
+    [Fact]
+    public void DecodeTally_WithDecimalPointString_ShouldDecodeCorrectly()
+    {
+        // "84000003004007.0" con parte decimal residual de DBF
+        // Talla: 84, Machos: 0, Hembras: 3, Indeterminados: 4, Total: 7
+        var result = LegacyDecoder.DecodeTally("84000003004007.0");
+        result.Size.Should().Be(84);
+        result.Males.Should().Be(0);
+        result.Females.Should().Be(3);
+        result.Indeterminate.Should().Be(4);
+        result.Total.Should().Be(7);
+    }
 }

@@ -143,4 +143,79 @@ public class MareaIntegrationTests
             if (Directory.Exists(tempPath)) Directory.Delete(tempPath, true);
         }
     }
+
+    [Fact]
+    public async Task ImportScenario_MuestraConAmplitudGrandeMuestraX_ImportaTallasCompletasSinDesfasar()
+    {
+        string tempPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(tempPath);
+        
+        try
+        {
+            string suffix = "10026.DBF";
+            File.WriteAllText(Path.Combine(tempPath, $"C{suffix}"), "");
+            File.WriteAllText(Path.Combine(tempPath, $"M{suffix}"), "");
+            File.WriteAllText(Path.Combine(tempPath, $"X{suffix}"), "");
+            File.WriteAllText(Path.Combine(tempPath, $"S{suffix}"), "");
+
+            // Arrange
+            var capturas = new List<LegacyCaptura>
+            {
+                new() { Lance = 12, Barco = "TEST", Marea = 100, CaptTotal = 1500 }
+            };
+            capturas[0].Especies["7218280201"] = 1000; // Merluza Negra
+
+            // Muestra base (M): Rango 84 a 173 (con huecos y de 15 dígitos)
+            var muestras = new List<LegacyMuestra>
+            {
+                new() { Lance = 12, Barco = "TEST", Marea = 100, CodEspec = "7218280201", PrimTalla = 84, UltTalla = 173, Intervalo = 1 }
+            };
+            // Agregamos tallas empaquetadas
+            muestras[0].Tallies.Add(new DecodedTally(84, 0, 3, 4, 7));
+            muestras[0].Tallies.Add(new DecodedTally(161, 3, 4, 10, 17));
+            muestras[0].Tallies.Add(new DecodedTally(173, 1, 0, 0, 1));
+
+            // Muestra extendida (X): Rango 174 a 178
+            var muestrasX = new List<LegacyMuestra>
+            {
+                new() { Lance = 12, Barco = "TEST", Marea = 100, CodEspec = "7218280201", PrimTalla = 84, UltTalla = 178, Intervalo = 1 }
+            };
+            muestrasX[0].Tallies.Add(new DecodedTally(174, 0, 0, 2, 2));
+            muestrasX[0].Tallies.Add(new DecodedTally(178, 1, 0, 0, 1));
+
+            _extractor.ReadCapturasAsync(Arg.Any<string>()).Returns(capturas);
+            _extractor.ReadMuestrasAsync(Arg.Is<string>(s => s.Contains("M10026"))).Returns(muestras);
+            _extractor.ReadMuestrasAsync(Arg.Is<string>(s => s.Contains("X10026"))).Returns(muestrasX);
+            _extractor.ReadSubmuestrasAsync(Arg.Any<string>()).Returns(new List<LegacySubmuestra>());
+            _extractor.ReadLgAsync(Arg.Any<string>()).Returns(new List<LegacyLg>());
+
+            _reportService.GenerateValidationPdfAsync(Arg.Any<MareaValidationReport>()).Returns(Task.FromResult(new byte[] { 1, 2, 3 }));
+
+            // Act
+            var marea = new Marea 
+            { 
+                Buque = new Buque { Nombre = "TEST" }, 
+                NumeroInidep = 100, 
+                AnioInidep = 2026,
+                Etapas = new List<MareaEtapa>()
+            };
+            var selectedFiles = Directory.GetFiles(tempPath);
+            var result = await _importService.ProcessMareaImportAsync(tempPath, selectedFiles, marea);
+
+            // Assert
+            result.Should().NotBeNull();
+            
+            var muestraConsolidada = muestras.First(m => (int)m.Lance == 12);
+            muestraConsolidada.Tallies.Should().HaveCount(5); // 3 de M + 2 de X
+            muestraConsolidada.UltTalla.Should().Be(178); // Combinación exitosa y actualizada
+            muestraConsolidada.Tallies.Should().Contain(t => t.Size == 178 && t.Total == 1);
+            muestraConsolidada.Tallies.Should().Contain(t => t.Size == 174 && t.Total == 2);
+            
+            await _reportService.Received(1).GenerateValidationPdfAsync(Arg.Any<MareaValidationReport>());
+        }
+        finally
+        {
+            if (Directory.Exists(tempPath)) Directory.Delete(tempPath, true);
+        }
+    }
 }
