@@ -337,10 +337,11 @@ public sealed class DbfExporterServiceTests : IDisposable
                 xReader.RecordCount.Should().Be(1);
                 var xRecord = xReader.NextRecord();
 
-                // Verificar campos de cabecera idénticos
+                // Verificar campos de cabecera idénticos o actualizados (PRIM_TALLA)
                 int mareaIdx = -1;
                 int lanceIdx = -1;
                 int especIdx = -1;
+                int primTallaIdx = -1;
                 int talla96Idx = -1; // Corresponde al índice i = 95 -> Talla 105
                 int talla91Idx = -1; // Corresponde al índice i = 90 -> Talla 100
 
@@ -349,6 +350,7 @@ public sealed class DbfExporterServiceTests : IDisposable
                     if (xReader.Fields[i].Name == "MAREA") mareaIdx = i;
                     if (xReader.Fields[i].Name == "LANCE") lanceIdx = i;
                     if (xReader.Fields[i].Name == "COD_ESPEC") especIdx = i;
+                    if (xReader.Fields[i].Name == "PRIM_TALLA") primTallaIdx = i;
                     if (xReader.Fields[i].Name == "TALLA_91") talla91Idx = i;
                     if (xReader.Fields[i].Name == "TALLA_96") talla96Idx = i;
                 }
@@ -356,12 +358,16 @@ public sealed class DbfExporterServiceTests : IDisposable
                 mareaIdx.Should().BeGreaterThan(-1);
                 lanceIdx.Should().BeGreaterThan(-1);
                 especIdx.Should().BeGreaterThan(-1);
+                primTallaIdx.Should().BeGreaterThan(-1);
                 talla91Idx.Should().BeGreaterThan(-1);
                 talla96Idx.Should().BeGreaterThan(-1);
 
                 Convert.ToDouble(xRecord[mareaIdx]).Should().Be(43.0);
                 Convert.ToDouble(xRecord[lanceIdx]).Should().Be(2.0);
                 Convert.ToDouble(xRecord[especIdx]).Should().Be(34.0);
+                
+                // PRIM_TALLA en el archivo X debe ser igual a la talla correspondiente a TALLA_91 (10 + 90 * 1 = 100)
+                Convert.ToDouble(xRecord[primTallaIdx]).Should().Be(100.0);
 
                 // Talla 100 (i = 90) no tiene frecuencia pero está dentro del rango observado [10, 110].
                 // Debe contener un tally con ceros: "100000000000000" -> 100000000000000

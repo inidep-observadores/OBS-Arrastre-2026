@@ -425,6 +425,7 @@ public sealed class DbfExporterService : IDbfExporterService
                 }
                 var xRow = new object[xFields.Count];
                 Array.Copy(mRow, xRow, 14);
+                xRow[9] = (double)(baseTalla + 90 * interval); // PRIM_TALLA en el archivo X corresponde a TALLA_91
                 int xIdx = 14;
                 for (int i = 90; i < 150; i++)
                 {
