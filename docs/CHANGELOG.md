@@ -1,8 +1,28 @@
 # Historial de Versiones
 
 Documentación histórica del desarrollo del proyecto OBSArrastre2026.
-Período documentado: 2026-04-09 a 2026-05-16 (39 días de desarrollo).
+Período documentado: 2026-04-09 a 2026-05-17 (40 días de desarrollo).
 Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 1.0.0.
+
+---
+
+## [v1.6.0] - 2026-05-17
+
+**Descripción**: Redondeo y visualización de biometría en kilogramos, y optimización de flujos de validación de muestras.
+
+### Added (Características nuevas)
+- feat(biometria): mostrar pesos de muestra en kg en formulario e incluir peso en kg en tabla de frecuencias
+- feat(importacion): calcular peso de muestra automatica usando relacion largo-peso
+- feat(validaciones): indicar especies involucradas en conflicto de descarte superior a captura
+- feat(muestras): agregar soporte para muestras automaticas y filtros por origen con diseno premium
+- feat(importacion): permitir procesar submuestras sin muestra de talla
+- feat(importacion): requerir metadatos JSON para mareas nuevas y robustecer reporte de auditoría
+- feat(especies): cambiar frecuencia a entero y optimizar resolución determinista de especies
+
+### Fixed (Correcciones)
+- fix(biometria): corregir coeficientes alometricos, persistencia async de siembra y calculo de muestras no sexadas
+- fix(biometria): permitir que la ultima talla sea igual o mayor que la primera talla en validaciones
+- fix(changelog): corregir fechas reales de versiones basadas en commits
 
 ---
 
@@ -509,6 +529,6 @@ Para generar changelog de cambios pendientes:
 ---
 
 **Última actualización**: 2026-05-17
-**Período de desarrollo**: 2026-04-09 a 2026-05-16 (39 días)
-**Total de commits documentados**: 270  
-**Versión actual**: v1.5.0
+**Período de desarrollo**: 2026-04-09 a 2026-05-17 (40 días)
+**Total de commits documentados**: 282  
+**Versión actual**: v1.6.0
