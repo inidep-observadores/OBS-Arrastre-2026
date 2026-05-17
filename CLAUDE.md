@@ -96,9 +96,43 @@ Cuando el trabajo toca persistencia, identificar tablas, FK e índices en `docs/
 - Documentación del proyecto en **español**.
 - Mensajes de Git en **español** con formato Conventional Commits: `tipo(ámbito): descripción`.
 - Tipos válidos: `feat`, `fix`, `docs`, `refactor`, `style`, `test`, `build`, `ci`, `chore`, `perf`, `revert`.
+  - `feat`: Nueva característica (incrementa MINOR en versionamiento)
+  - `fix`: Corrección de bug (incrementa PATCH)
+  - `feat!` o `fix!`: Breaking change (incrementa MAJOR)
+  - Otros tipos: sin impacto en versión
 - Archivos en **UTF-8** (crítico para XAML y markdown con tildes).
 - Nullable reference types e implicit usings habilitados; no desactivarlos sin razón clara.
 - Nombres de entidades C# alineados con los nombres de tabla del esquema SQL; documentar cualquier divergencia en código.
+
+## Versionamiento Semántico
+
+El proyecto usa **Semantic Versioning 2.0.0** (SemVer) basado automáticamente en Conventional Commits.
+
+### Versión actual
+
+```powershell
+git describe --tags --match "v*" --abbrev=0
+```
+
+### Workflow de versiones
+
+Usar la skill local `versionamiento-semantico`:
+
+```powershell
+# Determinar siguiente versión
+.\.codex\skills\versionamiento-semantico\scripts\semver.ps1 next
+
+# Generar changelog automático
+.\.codex\skills\versionamiento-semantico\scripts\semver.ps1 changelog --output CHANGELOG.md
+
+# Crear tag de versión
+.\.codex\skills\versionamiento-semantico\scripts\semver.ps1 tag vX.Y.Z --message "Release vX.Y.Z: descripción"
+
+# Validar versión
+.\.codex\skills\versionamiento-semantico\scripts\semver.ps1 validate vX.Y.Z
+```
+
+Para más detalles: `.codex/skills/versionamiento-semantico/QUICK-START.md`
 
 ## Workflow Git
 
@@ -111,3 +145,4 @@ Git Flow AVH. Rama de integración: `develop`. Ramas de trabajo: `feature/<tema>
 | `obs-arrastre-wpf` | Arquitectura, naming, mapeo de dominio, tareas de implementación en este repo |
 | `commits-convencionales` | Redactar mensajes de commit, merge, squash o revert |
 | `principios-arquitectura` | Evaluar o aplicar SOLID, Clean Architecture, Repository Pattern |
+| `versionamiento-semantico` | Determinar versiones, generar changelogs, crear tags de release |

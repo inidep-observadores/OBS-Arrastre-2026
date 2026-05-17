@@ -50,7 +50,27 @@ Use this file as the project-specific operating guide for Codex-compatible agent
 - Use the local skill `obs-arrastre-wpf` when working on architecture, naming, domain mapping, or implementation tasks in this repository.
 - Use the local skill `commits-convencionales` when drafting commit, merge, squash, or revert messages.
 - Use the local skill `principios-arquitectura` when evaluating or applying design principles and structural patterns.
+- Use the local skill `versionamiento-semantico` for version management, changelog generation, and release workflows. See `.codex/skills/versionamiento-semantico/QUICK-START.md` for usage.
 - Read `.codex/skills/obs-arrastre-wpf/references/domain-context.md` when changes depend on the fishing-domain schema.
+
+## Semantic Versioning and Conventional Commits
+
+All commits must follow Conventional Commits format: `type(scope): description`
+
+**Type mapping to SemVer:**
+- `feat`: New feature → MINOR version bump
+- `fix`: Bug fix → PATCH version bump
+- `feat!` or `fix!`: Breaking change → MAJOR version bump
+- `docs`, `refactor`, `test`, `style`, `build`, `ci`, `chore`: No version bump
+
+**Examples:**
+```
+feat(reportes): agregar soporte para exportación a Excel
+fix(importacion): corregir validación de especies
+feat(api)!: cambiar estructura de respuesta JSON
+```
+
+The local skill `versionamiento-semantico` automatically calculates versions, generates changelogs, and manages release tags based on these commits.
 
 ## Early Architecture Guidance
 
