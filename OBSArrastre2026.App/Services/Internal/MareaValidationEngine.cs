@@ -622,8 +622,8 @@ public sealed class MareaValidationEngine
                 report.AddIssue(ValidationLevel.Error, "Integridad", $"Muestra de lance {m.Lance} ({m.Fecha:dd/MM/yyyy}) no tiene lance correspondiente en CAPTURA", ctx);
 
             // REQ-4.3.1: Verificar Rangos de Talla
-            if (m.UltTalla <= m.PrimTalla)
-                report.AddIssue(ValidationLevel.Error, "Biometría", $"Última talla ({m.UltTalla}) no es mayor que primera talla ({m.PrimTalla}) en lance {m.Lance} ({m.Fecha:dd/MM/yyyy})", ctx);
+            if (m.UltTalla < m.PrimTalla)
+                report.AddIssue(ValidationLevel.Error, "Biometría", $"Última talla ({m.UltTalla}) no puede ser menor que la primera talla ({m.PrimTalla}) en lance {m.Lance} ({m.Fecha:dd/MM/yyyy})", ctx);
 
             if (m.Intervalo <= 0)
                 report.AddIssue(ValidationLevel.Error, "Biometría", $"Intervalo de tallas inválido (<= 0) en lance {m.Lance} ({m.Fecha:dd/MM/yyyy})", ctx);
