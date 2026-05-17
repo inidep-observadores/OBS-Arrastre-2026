@@ -459,8 +459,8 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
             "7210030201" => 32, // Polaca
             "7210040102" => 61, // Merluza Austral
             "7210020101" => 40, // Salilota australis
-            "7218320101" => 82, // Merluza Negra
-            "7218350201" => 29, // Savorín
+            "7218280201" => 82, // Merluza Negra
+            "7218390102" => 29, // Savorín
             "7218160501" => 30, // Pescadilla común
             "7204020101" => 9,  // Anchoíta
             "7105010101" => 56, // Gatuzo

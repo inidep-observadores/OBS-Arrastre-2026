@@ -30,8 +30,6 @@ public sealed class DatabaseInitializer(IDbContextFactory<AppDbContext> dbContex
 
     private async Task SeedLargoPesoAsync(AppDbContext dbContext, CancellationToken ct)
     {
-        if (await dbContext.EspeciesLargoPeso.AnyAsync(ct)) return;
-
         var seedData = new[]
         {
             // Merluza común (M. hubbsi) - 7210040101
@@ -43,26 +41,26 @@ public sealed class DatabaseInitializer(IDbContextFactory<AppDbContext> dbContex
             new { Code = "7226030101", Sexo = 0, A = 0.00096, B = 3.352, Medida = "LT", Obs = "Oficial 2026 - Total" },
 
             // Merluza de cola (M. magellanicus) - 7210040201
-            new { Code = "7210040201", Sexo = 0, A = 0.027, B = 3.03142, Medida = "LT", Obs = "Oficial 2026 - Total" },
-            new { Code = "7210040201", Sexo = 1, A = 0.029, B = 3.01028, Medida = "LT", Obs = "Oficial 2026 - Machos" },
-            new { Code = "7210040201", Sexo = 2, A = 0.025, B = 3.04753, Medida = "LT", Obs = "Oficial 2026 - Hembras" },
+            new { Code = "7210040201", Sexo = 0, A = 0.0027, B = 3.03142, Medida = "LT", Obs = "Oficial 2026 - Total" },
+            new { Code = "7210040201", Sexo = 1, A = 0.0029, B = 3.01028, Medida = "LT", Obs = "Oficial 2026 - Machos" },
+            new { Code = "7210040201", Sexo = 2, A = 0.0025, B = 3.04753, Medida = "LT", Obs = "Oficial 2026 - Hembras" },
 
             // Merluza Austral (M. australis) - 7210040102
-            new { Code = "7210040102", Sexo = 0, A = 0.025, B = 3.2702, Medida = "LT", Obs = "Oficial 2026 - Total" },
+            new { Code = "7210040102", Sexo = 0, A = 0.0025, B = 3.2702, Medida = "LT", Obs = "Oficial 2026 - Total" },
 
             // Polaca (M. australis) - 7210030201
-            new { Code = "7210030201", Sexo = 0, A = 0.024, B = 3.248, Medida = "LT", Obs = "Oficial 2026 - Total" },
-            new { Code = "7210030201", Sexo = 1, A = 0.021, B = 3.2846, Medida = "LT", Obs = "Oficial 2026 - Machos" },
-            new { Code = "7210030201", Sexo = 2, A = 0.026, B = 3.2278, Medida = "LT", Obs = "Oficial 2026 - Hembras" },
+            new { Code = "7210030201", Sexo = 0, A = 0.0024, B = 3.248, Medida = "LT", Obs = "Oficial 2026 - Total" },
+            new { Code = "7210030201", Sexo = 1, A = 0.0021, B = 3.2846, Medida = "LT", Obs = "Oficial 2026 - Machos" },
+            new { Code = "7210030201", Sexo = 2, A = 0.0026, B = 3.2278, Medida = "LT", Obs = "Oficial 2026 - Hembras" },
 
-            // Merluza negra (D. eleginoides) - 7218320101
+            // Merluza negra (D. eleginoides) - 7218280201
             new { Code = "7218280201", Sexo = 0, A = 0.0042, B = 3.19385, Medida = "LT", Obs = "Oficial 2026 - Total" },
 
             // Pescadilla (Cynoscion guatucupa) - 7218160501
             new { Code = "7218160501", Sexo = 0, A = 0.00552, B = 3.1310, Medida = "LT", Obs = "Región Bonaerense" },
 
-            // Savorín (S. porosa) - 7218350201
-            new { Code = "7218350201", Sexo = 0, A = 0.004, B = 3.1989, Medida = "LT", Obs = "Oficial 2026 - Total" },
+            // Savorín (S. porosa) - 7218390102
+            new { Code = "7218390102", Sexo = 0, A = 0.004, B = 3.1989, Medida = "LT", Obs = "Oficial 2026 - Total" },
 
             // Langostino (P. muelleri) - 5139030101
             new { Code = "5139030101", Sexo = 1, A = 0.00185, B = 2.7850, Medida = "LC", Obs = "Oficial 2026 - Machos (Basado en LC)" },
@@ -99,20 +97,34 @@ public sealed class DatabaseInitializer(IDbContextFactory<AppDbContext> dbContex
             new { Code = "5702150101", Sexo = 0, A = 0.011, B = 3.15, Medida = "LM", Obs = "Largo de Manto" }
         };
 
+        var dbRecords = await dbContext.EspeciesLargoPeso.Include(lp => lp.Especie).ToListAsync(ct);
+        var dbEspecies = await dbContext.Especies.Where(e => e.CodigoInidep != null).ToListAsync(ct);
+
         foreach (var data in seedData)
         {
-            var especie = await dbContext.Especies.FirstOrDefaultAsync(e => e.CodigoInidep == data.Code, ct);
+            var especie = dbEspecies.FirstOrDefault(e => e.CodigoInidep == data.Code);
             if (especie != null)
             {
-                dbContext.EspeciesLargoPeso.Add(new EspecieLargoPeso
+                var existing = dbRecords.FirstOrDefault(r => r.EspecieId == especie.ID && r.Sexo == data.Sexo);
+                if (existing != null)
                 {
-                    EspecieId = especie.ID,
-                    Sexo = data.Sexo,
-                    ParamA = data.A,
-                    ParamB = data.B,
-                    TipoMedida = data.Medida,
-                    Observaciones = data.Obs
-                });
+                    existing.ParamA = data.A;
+                    existing.ParamB = data.B;
+                    existing.TipoMedida = data.Medida;
+                    existing.Observaciones = data.Obs;
+                }
+                else
+                {
+                    dbContext.EspeciesLargoPeso.Add(new EspecieLargoPeso
+                    {
+                        EspecieId = especie.ID,
+                        Sexo = data.Sexo,
+                        ParamA = data.A,
+                        ParamB = data.B,
+                        TipoMedida = data.Medida,
+                        Observaciones = data.Obs
+                    });
+                }
             }
         }
 
