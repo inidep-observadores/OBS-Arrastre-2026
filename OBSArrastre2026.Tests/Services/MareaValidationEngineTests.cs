@@ -153,4 +153,49 @@ public class MareaValidationEngineTests
         report.Issues.Should().Contain(i => i.Level == ValidationLevel.AutoFixed && i.Message.Contains("Recalculado mediante relación Largo-Peso"));
         muestras[0].PesoMues.Should().BeInRange(3.89, 3.91);
     }
+
+    [Fact]
+    public void ValidateMarea_ShouldIncludeSpeciesInContext_WhenDiscardIsGreaterLessThanTotalCapture()
+    {
+        // Arrange
+        var capturas = new List<LegacyCaptura>();
+        
+        // 5 lances normales (consensúan que la marea se cargó en KILOS)
+        for (int i = 1; i <= 5; i++)
+        {
+            var cap = new LegacyCaptura
+            {
+                Lance = i,
+                Barco = "B",
+                Marea = 100,
+                CaptTotal = 1000,
+                Descarte = 100
+            };
+            cap.Especies["7210040101"] = 1000;
+            cap.DescartesPorEspecie["7210040101"] = 100;
+            capturas.Add(cap);
+        }
+
+        // 1 lance con descarte excesivo (ratio > 1.0) que indica probable error de carga
+        var lanceExcesivo = new LegacyCaptura
+        {
+            Lance = 6,
+            Barco = "B",
+            Marea = 100,
+            CaptTotal = 1000,
+            Descarte = 1500
+        };
+        lanceExcesivo.Especies["7210040101"] = 900;
+        lanceExcesivo.DescartesPorEspecie["7210040101"] = 1500;
+        capturas.Add(lanceExcesivo);
+
+        var especiesDict = new Dictionary<string, string> { ["MERLUZA COMUN"] = "7210040101" };
+
+        // Act
+        var report = _engine.ValidateMarea("B", 2026, 100, null, null, null, null, new(), capturas, new(), new(), new(), new(), new(), especiesDict, new(), new(), new());
+
+        // Assert
+        var issue = report.Issues.Should().ContainSingle(i => i.Category == "Captura" && i.Message.Contains("El descarte") && i.Message.Contains("superior a la captura total")).Subject;
+        issue.Context.Should().Be("Lance 6 - Especie MERLUZA COMUN");
+    }
 }

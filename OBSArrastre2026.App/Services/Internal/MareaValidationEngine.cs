@@ -53,7 +53,7 @@ public sealed class MareaValidationEngine
         ValidateBaseConsistency(report, barcoMareaActual, nroMareaActual, capturas, muestras, submuestras, lgs, tracking, produccion);
 
         // 3. Validación de Lances (C*)
-        ValidateLances(report, capturas, tracking);
+        ValidateLances(report, capturas, tracking, especiesDict, especiesViejasDict);
 
         // 4. Validación de Muestras (M*) y Relación Largo-Peso
         ValidateSamples(report, muestras, capturas, lgs, largoPesoCatalogo, especiesDict, especiesViejasDict, especiesCodigosValidos);
@@ -432,7 +432,8 @@ public sealed class MareaValidationEngine
         }
     }
 
-    private void ValidateLances(MareaValidationReport report, List<LegacyCaptura> capturas, List<LegacyTracking> tracking)
+    private void ValidateLances(MareaValidationReport report, List<LegacyCaptura> capturas, List<LegacyTracking> tracking,
+        Dictionary<string, string> especiesDict, Dictionary<string, string> especiesViejasDict)
     {
         int countPorcentaje = 0;
         int countKilos = 0;
@@ -575,7 +576,40 @@ public sealed class MareaValidationEngine
                     {
                         if (c.CaptTotal > 0 && c.Descarte > c.CaptTotal)
                         {
-                            report.AddIssue(ValidationLevel.Error, "Captura", $"El descarte ({c.Descarte} kg) es superior a la captura total ({c.CaptTotal} kg). Se asume que son kilos erróneos (no porcentaje) por consenso de marea.", $"Lance {c.Lance}");
+                            var especiesConDescarteExcesivo = new List<string>();
+                            foreach (var kvp in c.DescartesPorEspecie)
+                            {
+                                string codEspecie = kvp.Key;
+                                double descarteEsp = kvp.Value;
+                                if (descarteEsp > 0)
+                                {
+                                    c.Especies.TryGetValue(codEspecie, out double captEsp);
+                                    if (descarteEsp > captEsp)
+                                    {
+                                        string nombre = GetEspecieNombre(codEspecie, especiesDict, especiesViejasDict);
+                                        especiesConDescarteExcesivo.Add(nombre);
+                                    }
+                                }
+                            }
+
+                            // Fallback por si la suma acumulada de varias supera al total pero ninguna supera individualmente su propia captura
+                            if (especiesConDescarteExcesivo.Count == 0)
+                            {
+                                foreach (var kvp in c.DescartesPorEspecie)
+                                {
+                                    if (kvp.Value > 0)
+                                    {
+                                        string nombre = GetEspecieNombre(kvp.Key, especiesDict, especiesViejasDict);
+                                        especiesConDescarteExcesivo.Add(nombre);
+                                    }
+                                }
+                            }
+
+                            string ctxEspecies = especiesConDescarteExcesivo.Count > 0 
+                                ? $"Lance {c.Lance} - Especie {string.Join(", ", especiesConDescarteExcesivo)}"
+                                : $"Lance {c.Lance}";
+
+                            report.AddIssue(ValidationLevel.Error, "Captura", $"El descarte ({c.Descarte} kg) es superior a la captura total ({c.CaptTotal} kg). Se asume que son kilos erróneos (no porcentaje) por consenso de marea.", ctxEspecies);
                         }
                     }
                 }
@@ -1224,5 +1258,18 @@ public sealed class MareaValidationEngine
             : (decimalDegrees >= 0 ? 'E' : 'W');
 
         return $"{degrees:D2}º {minutes:F1}' {quadrant}".Replace('.', ',');
+    }
+
+    private string GetEspecieNombre(string codigo, Dictionary<string, string> especiesDict, Dictionary<string, string> especiesViejasDict)
+    {
+        if (string.IsNullOrEmpty(codigo)) return "Especie Desconocida";
+
+        var match = especiesDict.FirstOrDefault(kvp => kvp.Value == codigo);
+        if (match.Key != null) return match.Key;
+        
+        var matchOld = especiesViejasDict.FirstOrDefault(kvp => kvp.Value == codigo);
+        if (matchOld.Key != null) return matchOld.Key;
+        
+        return $"Código {codigo}";
     }
 }
