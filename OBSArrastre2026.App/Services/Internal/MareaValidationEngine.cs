@@ -27,7 +27,8 @@ public sealed class MareaValidationEngine
         Dictionary<string, string> especiesDict,
         Dictionary<string, string> especiesViejasDict,
         HashSet<string> especiesCodigosValidos,
-        Dictionary<(string EspecieId, int Sexo), (double A, double B)> largoPesoCatalogo)
+        Dictionary<(string EspecieId, int Sexo), (double A, double B)> largoPesoCatalogo,
+        bool procesarSubmuestrasSinMuestraTalla = false)
     {
         var report = new MareaValidationReport
         {
@@ -41,7 +42,8 @@ public sealed class MareaValidationEngine
             TotalLances = capturas.Count,
             FechaInicioMarea = etapasFechas.Any() ? etapasFechas.Min(e => e.Inicio) : null,
             FechaFinMarea = etapasFechas.Any() ? etapasFechas.Max(e => e.Fin) : null,
-            Etapas = etapasFechas.Select((e, i) => new EtapaValidationInfo(i + 1, e.Inicio, e.Fin)).ToList()
+            Etapas = etapasFechas.Select((e, i) => new EtapaValidationInfo(i + 1, e.Inicio, e.Fin)).ToList(),
+            ProcesarSubmuestrasSinMuestraTalla = procesarSubmuestrasSinMuestraTalla
         };
 
         // 1. Consistencia Temporal
@@ -57,7 +59,7 @@ public sealed class MareaValidationEngine
         ValidateSamples(report, muestras, capturas, lgs, largoPesoCatalogo, especiesDict, especiesViejasDict, especiesCodigosValidos);
 
         // 5. Validación de Submuestras (S*)
-        ValidateSubSamples(report, submuestras, muestras);
+        ValidateSubSamples(report, submuestras, muestras, procesarSubmuestrasSinMuestraTalla);
 
         // 6. Validación de Producción (P*)
         ValidateProduction(report, produccion, especiesDict, especiesViejasDict, especiesCodigosValidos, capturas);
@@ -931,7 +933,7 @@ public sealed class MareaValidationEngine
         }
     }
 
-    private void ValidateSubSamples(MareaValidationReport report, List<LegacySubmuestra> submuestras, List<LegacyMuestra> muestras)
+    private void ValidateSubSamples(MareaValidationReport report, List<LegacySubmuestra> submuestras, List<LegacyMuestra> muestras, bool procesarSubmuestrasSinMuestraTalla)
     {
         // NUEVA VALIDACIÓN: Suma de pesos de ejemplares (S*) vs Peso total de muestra (M*)
         var subPorMuestra = submuestras
@@ -984,7 +986,14 @@ public sealed class MareaValidationEngine
                 }
                 else
                 {
-                    report.AddIssue(ValidationLevel.Fatal, "Integridad", $"Submuestra huérfana: No existe una muestra estándar para la especie {s.Especie} en el lance {s.Lance} del {s.Fecha:dd/MM/yyyy}.", ctx);
+                    if (procesarSubmuestrasSinMuestraTalla)
+                    {
+                        report.AddIssue(ValidationLevel.Warning, "Integridad", $"Submuestra sin muestra de talla asociada: Se reconstruirá automáticamente la muestra de talla estándar correspondiente a la especie {s.Especie} en el lance {s.Lance} a partir de los datos biológicos individuales de la submuestra.", ctx);
+                    }
+                    else
+                    {
+                        report.AddIssue(ValidationLevel.Fatal, "Integridad", $"Submuestra huérfana: No existe una muestra estándar para la especie {s.Especie} en el lance {s.Lance} del {s.Fecha:dd/MM/yyyy}.", ctx);
+                    }
                 }
             }
             else

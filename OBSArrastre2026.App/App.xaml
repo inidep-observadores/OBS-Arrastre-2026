@@ -1119,6 +1119,13 @@
                                 <TextBlock Text="Los descartes importados se interpretarán con esta unidad." 
                                            FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" Margin="2,4,0,0" />
                             </StackPanel>
+
+                            <CheckBox Content="Procesar submuestras sin muestra de talla" 
+                                      IsChecked="{Binding ProcesarSubmuestrasSinMuestraTalla}"
+                                      Foreground="{DynamicResource PrimaryTextBrush}"
+                                      Margin="0,16,0,0"
+                                      VerticalContentAlignment="Center"
+                                      ToolTip="Habilita la reconstrucción automática de la muestra de talla a partir de la submuestra cuando no exista el archivo de muestra de talla correspondiente."/>
                         </StackPanel>
                     </Border>
 

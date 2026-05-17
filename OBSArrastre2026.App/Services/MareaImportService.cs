@@ -11,7 +11,7 @@ namespace OBSArrastre2026.App.Services;
 
 public interface IMareaImportService
 {
-    Task<MareaValidationReport> ProcessMareaImportAsync(string basePath, IEnumerable<string> selectedFiles, Marea marea);
+    Task<MareaValidationReport> ProcessMareaImportAsync(string basePath, IEnumerable<string> selectedFiles, Marea marea, bool procesarSubmuestrasSinMuestraTalla = false);
     Task ImportAsync(string mareaId, MareaValidationReport report);
     Task<bool> HasDataAsync(string mareaId);
     Task ClearMareaDataAsync(string mareaId);
@@ -69,7 +69,7 @@ public class MareaImportService : IMareaImportService
         return null;
     }
 
-    public async Task<MareaValidationReport> ProcessMareaImportAsync(string basePath, IEnumerable<string> selectedFiles, Marea marea)
+    public async Task<MareaValidationReport> ProcessMareaImportAsync(string basePath, IEnumerable<string> selectedFiles, Marea marea, bool procesarSubmuestrasSinMuestraTalla = false)
     {
         string barco = marea.Buque?.Nombre ?? "S/D";
         int mareaNum = marea.NumeroInidep;
@@ -320,7 +320,8 @@ public class MareaImportService : IMareaImportService
             especiesDict, 
             especiesViejasDict, 
             especiesCodigosValidos, 
-            largoPesoCatalogo);
+            largoPesoCatalogo,
+            procesarSubmuestrasSinMuestraTalla);
             
         // Restaurar atributos del reporte original que se perdían al instanciar uno nuevo
         report.IsTrackingOnly = isTrackingOnly;
@@ -600,6 +601,122 @@ public class MareaImportService : IMareaImportService
                     
                     // Mapa adicional para búsqueda por ID de especie (usado por archivos L*)
                     muestraByIdMap[$"{rm.Lance}_{especieId}"] = muestra;
+                }
+            }
+        }
+
+        // Reconstrucción automática de muestras huérfanas a partir de submuestras si la opción está habilitada
+        if (report.ProcesarSubmuestrasSinMuestraTalla)
+        {
+            var submuestrasHuerfanas = report.Submuestras
+                .Where(rs => !muestraMap.ContainsKey($"{rs.Lance}_{rs.Especie?.Trim().ToUpper().Normalize(NormalizationForm.FormC)}"))
+                .ToList();
+
+            if (submuestrasHuerfanas.Any())
+            {
+                var gruposHuerfanos = submuestrasHuerfanas
+                    .GroupBy(s => new { s.Lance, EspecieKey = s.Especie?.Trim().ToUpper().Normalize(NormalizationForm.FormC) });
+
+                foreach (var grupo in gruposHuerfanos)
+                {
+                    if (lanceMap.TryGetValue(grupo.Key.Lance, out var lance))
+                    {
+                        string? especieId = null;
+                        var muestraEjemplo = grupo.First();
+
+                        if (grupo.Key.EspecieKey != null)
+                        {
+                            var exactMatch = candidatosEspecies.FirstOrDefault(c => 
+                                c.NombreVulgar == grupo.Key.EspecieKey || 
+                                c.NombreCientifico == grupo.Key.EspecieKey);
+
+                            if (exactMatch != null)
+                            {
+                                especieId = exactMatch.Id;
+                            }
+                            else
+                            {
+                                var normNameNoAccents = RemoveAccents(grupo.Key.EspecieKey);
+                                var accentMatch = candidatosEspecies.FirstOrDefault(c => 
+                                    RemoveAccents(c.NombreVulgar) == normNameNoAccents || 
+                                    RemoveAccents(c.NombreCientifico) == normNameNoAccents);
+
+                                if (accentMatch != null)
+                                {
+                                    especieId = accentMatch.Id;
+                                }
+                            }
+                        }
+
+                        if (especieId != null)
+                        {
+                            var ejemplaresConTalla = grupo.Where(x => x.LargoTot > 0).ToList();
+                            int? primTalla = ejemplaresConTalla.Any() ? ejemplaresConTalla.Min(x => x.LargoTot) : null;
+                            int? ultTalla = ejemplaresConTalla.Any() ? ejemplaresConTalla.Max(x => x.LargoTot) : null;
+
+                            double sumaPesoKg = grupo.Sum(s => s.PesoTot);
+                            double pesoGramos = sumaPesoKg * 1000.0;
+
+                            var muestraReconstruida = new Muestra
+                            {
+                                Lance = lance,
+                                EspecieID = especieId,
+                                Intervalo = 1.0, // por defecto 1 cm
+                                UnidadMedidaTalla = 1, // CM
+                                ModoMedicionTalla = 1, // LT
+                                Origen = 1, // Muestreo de Captura
+                                TipoMuestra = 1, // Estándar
+                                NumeroOrden = 999, // Identificador para muestras reconstruidas
+                                EspecieOriginal = muestraEjemplo.Especie,
+                                Fuente = muestraEjemplo.Fuente,
+                                Tarte = muestraEjemplo.Tarte,
+                                FactPond = 1.0,
+                                PrimTalla = primTalla,
+                                UltTalla = ultTalla,
+                                Area = (muestraEjemplo.Area == null || muestraEjemplo.Area <= 0) && lance.LatitudInicioDecimal.HasValue && lance.LongitudInicioDecimal.HasValue
+                                    ? LegacyDecoder.CalculateGridArea(lance.LatitudInicioDecimal.Value, lance.LongitudInicioDecimal.Value)
+                                    : muestraEjemplo.Area,
+                                PesoMuestra_PesoGramos = pesoGramos,
+                                Comentarios = "Muestra reconstruida automáticamente a partir de submuestra."
+                            };
+
+                            var agrupacionesTalla = grupo
+                                .GroupBy(s => s.LargoTot)
+                                .OrderBy(g => g.Key);
+
+                            foreach (var gt in agrupacionesTalla)
+                            {
+                                int machos = gt.Count(x => x.Sexo == 1);
+                                int hembras = gt.Count(x => x.Sexo == 2);
+                                int indeterminados = gt.Count(x => x.Sexo != 1 && x.Sexo != 2);
+                                int total = gt.Count();
+
+                                muestraReconstruida.FrecuenciasTallas.Add(new FrecuenciaTalla
+                                {
+                                    Talla = gt.Key, // en centímetros
+                                    NroMachos = machos,
+                                    NroHembras = hembras,
+                                    NroIndeterminados = indeterminados,
+                                    NroTotal = total
+                                });
+                            }
+
+                            muestraReconstruida.DiscriminaSexo = grupo.Any(t => t.Sexo == 1 || t.Sexo == 2) ? 1 : 0;
+                            muestraReconstruida.HayIndeterminados = grupo.Any(t => t.Sexo != 1 && t.Sexo != 2) ? 1 : 0;
+
+                            int totalEjemplares = grupo.Count();
+                            if (sumaPesoKg > 0)
+                            {
+                                muestraReconstruida.EjemplaresPorKg = (int)Math.Round(totalEjemplares / sumaPesoKg);
+                            }
+
+                            dbContext.Muestras.Add(muestraReconstruida);
+
+                            string key = $"{grupo.Key.Lance}_{grupo.Key.EspecieKey}";
+                            muestraMap[key] = muestraReconstruida;
+                            muestraByIdMap[$"{grupo.Key.Lance}_{especieId}"] = muestraReconstruida;
+                        }
+                    }
                 }
             }
         }

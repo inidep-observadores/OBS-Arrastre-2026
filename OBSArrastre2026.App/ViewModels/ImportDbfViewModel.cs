@@ -66,6 +66,13 @@ public sealed partial class ImportDbfViewModel : ObservableObject, IDisposable
         CancelCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(() => _onFinished(null, null), () => !IsBusy);
     }
 
+    private bool _procesarSubmuestrasSinMuestraTalla;
+    public bool ProcesarSubmuestrasSinMuestraTalla
+    {
+        get => _procesarSubmuestrasSinMuestraTalla;
+        set => SetProperty(ref _procesarSubmuestrasSinMuestraTalla, value);
+    }
+
     public bool IsBusy
     {
         get => _isBusy;
@@ -354,7 +361,7 @@ public sealed partial class ImportDbfViewModel : ObservableObject, IDisposable
             BusyMessage = "Validando integridad de archivos DBF...";
             var filesToProcess = SelectedFiles.Select(f => f.FullPath).Distinct().ToList();
             
-            var report = await _importService.ProcessMareaImportAsync(basePath, filesToProcess, mareaUpdated);
+            var report = await _importService.ProcessMareaImportAsync(basePath, filesToProcess, mareaUpdated, ProcesarSubmuestrasSinMuestraTalla);
             report.UnidadDescarte = SelectedTipoDatoDescarte;
 
             if (report.HasFatalErrors)
