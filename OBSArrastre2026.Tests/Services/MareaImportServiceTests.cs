@@ -201,4 +201,128 @@ public class MareaImportServiceTests
         // Verificar que las submuestras están correctamente vinculadas a la muestra creada
         muestraReconstruida.ItemsSubmuestras.Should().HaveCount(3);
     }
+
+    [Fact]
+    public async Task ProcessMareaImportAsync_WithOrphanSubSamplesAndFlagTrue_ShouldCalculateAlometricWeight()
+    {
+        // Arrange
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        
+        var dbFactory = Substitute.For<IDbContextFactory<AppDbContext>>();
+        dbFactory.CreateDbContextAsync().Returns(_ => new AppDbContext(options));
+        
+        var service = new MareaImportService(_extractor, _report, dbFactory);
+
+        // Mockear extractor para que devuelva una submuestra huérfana
+        _extractor.ReadCapturasAsync(Arg.Any<string>())
+            .Returns(new List<LegacyCaptura> { new() { Lance = 1, Barco = "TEST", Marea = 100, Fecha = DateTime.Today } });
+        
+        _extractor.ReadMuestrasAsync(Arg.Any<string>())
+            .Returns(new List<LegacyMuestra>()); // Sin muestras de talla en el DBF
+        
+        var submuestras = new List<LegacySubmuestra>
+        {
+            new() { Lance = 1, Especie = "MERLUZA COMUN", Sexo = 1, LargoTot = 35, PesoTot = 0.5, Barco = "TEST", Marea = 100, Fecha = DateTime.Today }, 
+            new() { Lance = 1, Especie = "MERLUZA COMUN", Sexo = 2, LargoTot = 35, PesoTot = 0.6, Barco = "TEST", Marea = 100, Fecha = DateTime.Today }, 
+            new() { Lance = 1, Especie = "MERLUZA COMUN", Sexo = 1, LargoTot = 36, PesoTot = 0.55, Barco = "TEST", Marea = 100, Fecha = DateTime.Today }
+        };
+        _extractor.ReadSubmuestrasAsync(Arg.Any<string>())
+            .Returns(submuestras);
+
+        _extractor.DetectEncodingSmartAsync(Arg.Any<string>())
+            .Returns(Task.FromResult(System.Text.Encoding.UTF8));
+
+        _report.GenerateValidationPdfAsync(Arg.Any<MareaValidationReport>())
+            .Returns(Task.FromResult(new byte[] { 1, 2, 3 }));
+
+        // Crear carpeta temporal
+        string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(tempDir);
+        File.WriteAllText(Path.Combine(tempDir, "C10026.DBF"), "");
+        File.WriteAllText(Path.Combine(tempDir, "M10026.DBF"), "");
+        File.WriteAllText(Path.Combine(tempDir, "P10026.DBF"), "");
+        File.WriteAllText(Path.Combine(tempDir, "S10026.DBF"), "");
+
+        var mareaId = Guid.NewGuid().ToString();
+        var etapa = new MareaEtapa 
+        { 
+            ID = Guid.NewGuid().ToString(),
+            MareaID = mareaId,
+            FechaZarpada = DateTime.Today.AddDays(-1), 
+            FechaArribo = DateTime.Today.AddDays(1) 
+        };
+
+        var marea = new Marea 
+        { 
+            ID = mareaId,
+            Buque = new Buque { Nombre = "TEST" }, 
+            NumeroInidep = 100, 
+            AnioInidep = 2026,
+            Etapas = new List<MareaEtapa> { etapa }
+        };
+
+        var especie = new Especie 
+        { 
+            ID = Guid.NewGuid().ToString(),
+            CodigoInidep = "12",
+            NombreVulgar = "MERLUZA COMUN",
+            NombreCientifico = "Merluccius hubbsi"
+        };
+
+        // Relaciones largo-peso
+        var especieLargoPesoMachos = new EspecieLargoPeso
+        {
+            Especie = especie,
+            Sexo = 1,
+            ParamA = 0.005,
+            ParamB = 3.1
+        };
+        var especieLargoPesoHembras = new EspecieLargoPeso
+        {
+            Especie = especie,
+            Sexo = 2,
+            ParamA = 0.006,
+            ParamB = 3.2
+        };
+
+        // Guardar la marea, la especie y sus relaciones largo-peso en la base de datos
+        using (var setupContext = new AppDbContext(options))
+        {
+            setupContext.Mareas.Add(marea);
+            setupContext.Especies.Add(especie);
+            setupContext.EspeciesLargoPeso.Add(especieLargoPesoMachos);
+            setupContext.EspeciesLargoPeso.Add(especieLargoPesoHembras);
+            await setupContext.SaveChangesAsync();
+        }
+
+        // Act
+        var selectedFiles = Directory.GetFiles(tempDir);
+        var result = await service.ProcessMareaImportAsync(tempDir, selectedFiles, marea, procesarSubmuestrasSinMuestraTalla: true);
+
+        // Guardar los datos en el DbContext para verificar persistencia
+        await service.ImportAsync(marea.ID, result);
+
+        // Verificar que la Muestra fue creada con peso alométrico estimado
+        using var assertContext = new AppDbContext(options);
+        var muestrasEnDb = await assertContext.Muestras
+            .Include(m => m.FrecuenciasTallas)
+            .ToListAsync();
+
+        muestrasEnDb.Should().HaveCount(1);
+        var muestraReconstruida = muestrasEnDb.First();
+        muestraReconstruida.Automatica.Should().BeTrue();
+
+        // Verificar el peso calculado mediante la relación alométrica largo-peso inteligente
+        // Macho 35 cm: 0.005 * 35^3.1 = 306.359 gramos
+        // Hembra 35 cm: 0.006 * 35^3.2 = 516.263 gramos
+        // Macho 36 cm: 0.005 * 36^3.1 = 334.135 gramos
+        // El total estimado por EF Core e integración alométrica en gramos es ~1163.52
+        muestraReconstruida.PesoMuestra_PesoGramos.Should().BeApproximately(1163.52, 0.1);
+
+        // Ejemplares por kilogramo:
+        // 3 ejemplares / (1156.757 / 1000) kg = 3 / 1.156757 kg = 2.59 ejemplares/kg -> redondeado a 3 ejemplares por kg
+        muestraReconstruida.EjemplaresPorKg.Should().Be(3);
+    }
 }

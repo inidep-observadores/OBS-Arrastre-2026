@@ -368,6 +368,17 @@ public class MareaImportService : IMareaImportService
         var especiesCatalogo = await dbContext.Especies
             .OrderByDescending(e => e.Frecuente)
             .ToListAsync();
+
+        var largoPesoDB = await dbContext.EspeciesLargoPeso
+            .Include(lp => lp.Especie)
+            .ToListAsync();
+
+        var largoPesoCatalogo = largoPesoDB
+            .Where(lp => lp.Especie?.CodigoInidep != null)
+            .ToDictionary(
+                lp => (EspecieId: NormalizeInidepCode(lp.Especie!.CodigoInidep!), Sexo: lp.Sexo),
+                lp => (A: lp.ParamA, B: lp.ParamB)
+            );
         
         var especieByCodigoMap = especiesCatalogo
             .Where(e => !string.IsNullOrEmpty(e.CodigoInidep))
@@ -709,6 +720,118 @@ public class MareaImportService : IMareaImportService
                             if (sumaPesoKg > 0)
                             {
                                 muestraReconstruida.EjemplaresPorKg = (int)Math.Round(totalEjemplares / sumaPesoKg);
+                            }
+
+                            // Calcular el peso de la muestra automática reconstruida usando la relación largo-peso de sus ejemplares
+                            var especieEntidad = especiesCatalogo.FirstOrDefault(e => e.ID == especieId);
+                            string? especieCodInidep = especieEntidad?.CodigoInidep != null ? NormalizeInidepCode(especieEntidad.CodigoInidep) : null;
+
+                            if (!string.IsNullOrEmpty(especieCodInidep))
+                            {
+                                string espId = especieCodInidep.Trim();
+                                double totalWeightGramos = 0;
+                                bool foundAnyParams = false;
+
+                                // Fallback en el archivo LG (L*) si existe
+                                double fallbackA = 0, fallbackB = 0;
+                                bool hasFallback = false;
+                                var lg = report.Lgs.FirstOrDefault(l => NormalizeInidepCode(l.CodEspecIE) == espId);
+                                if (lg != null && lg.ParamA > 0)
+                                {
+                                    fallbackA = lg.ParamA;
+                                    fallbackB = lg.ParamB;
+                                    hasFallback = true;
+                                }
+
+                                if (hasFallback || largoPesoCatalogo.Any(k => k.Key.EspecieId.Trim() == espId))
+                                {
+                                    // Función local para obtener parámetros alométricos inteligentes con fallback
+                                    (double A, double B) GetSmartParams(int targetSex, out bool isSpecific)
+                                    {
+                                        (double A, double B) res = (0, 0);
+                                        isSpecific = false;
+
+                                        // 1. Intentar búsqueda exacta
+                                        if (largoPesoCatalogo.TryGetValue((espId, targetSex), out res))
+                                        {
+                                            isSpecific = (targetSex == 1 || targetSex == 2);
+                                        }
+
+                                        // 2. Fallbacks de sexo
+                                        if (res.A <= 0)
+                                        {
+                                            if (targetSex == 0 && largoPesoCatalogo.TryGetValue((espId, 3), out res)) { }
+                                            else if (targetSex != 0 && largoPesoCatalogo.TryGetValue((espId, 0), out res)) { }
+                                        }
+
+                                        // 3. Cualquier sexo (último recurso)
+                                        if (res.A <= 0)
+                                        {
+                                            var anyEntry = largoPesoCatalogo.FirstOrDefault(k => k.Key.EspecieId == espId);
+                                            if (anyEntry.Key.EspecieId != null) { res = anyEntry.Value; }
+                                        }
+
+                                        // 4. Promedios
+                                        if (res.A <= 0)
+                                        {
+                                            bool hasM = largoPesoCatalogo.TryGetValue((espId, 1), out var pM);
+                                            bool hasF = largoPesoCatalogo.TryGetValue((espId, 2), out var pF);
+                                            if (hasM && hasF) { res = ((pM.A + pF.A) / 2.0, (pM.B + pF.B) / 2.0); }
+                                            else if (hasM) { res = pM; }
+                                            else if (hasF) { res = pF; }
+                                        }
+
+                                        if (res.A <= 0 && hasFallback) { res = (fallbackA, fallbackB); }
+                                        return res;
+                                    }
+
+                                    foreach (var tally in muestraReconstruida.FrecuenciasTallas)
+                                    {
+                                        double tallaCm = tally.Talla;
+
+                                        var pM = GetSmartParams(1, out bool specificM);
+                                        var pH = GetSmartParams(2, out bool specificH);
+                                        var pI = GetSmartParams(0, out _);
+
+                                        // Si hay discriminación y fórmulas específicas para ambos sexos
+                                        if ((tally.NroMachos > 0 || tally.NroHembras > 0) && specificM && specificH)
+                                        {
+                                            if (tally.NroMachos > 0 && pM.A > 0) totalWeightGramos += (tally.NroMachos * (pM.A * Math.Pow(tallaCm, pM.B)));
+                                            if (tally.NroHembras > 0 && pH.A > 0) totalWeightGramos += (tally.NroHembras * (pH.A * Math.Pow(tallaCm, pH.B)));
+                                            if (tally.NroIndeterminados > 0 && pI.A > 0) totalWeightGramos += (tally.NroIndeterminados * (pI.A * Math.Pow(tallaCm, pI.B)));
+                                            foundAnyParams = true;
+                                        }
+                                        // De lo contrario, si hay Indeterminados o conteo parcial, usamos la fórmula general
+                                        else if (tally.NroMachos > 0 || tally.NroHembras > 0 || tally.NroIndeterminados > 0)
+                                        {
+                                            if (pI.A > 0)
+                                            {
+                                                int suma = tally.NroMachos + tally.NroHembras + tally.NroIndeterminados;
+                                                totalWeightGramos += (suma * (pI.A * Math.Pow(tallaCm, pI.B)));
+                                                foundAnyParams = true;
+                                            }
+                                        }
+                                        // Si todo es cero pero hay Total (muestra sin discriminar)
+                                        else if (tally.NroTotal > 0)
+                                        {
+                                            if (pI.A > 0)
+                                            {
+                                                totalWeightGramos += (tally.NroTotal * (pI.A * Math.Pow(tallaCm, pI.B)));
+                                                foundAnyParams = true;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (foundAnyParams && totalWeightGramos > 0)
+                                {
+                                    muestraReconstruida.PesoMuestra_PesoGramos = totalWeightGramos;
+                                    double totalWeightKg = totalWeightGramos / 1000.0;
+                                    if (totalWeightKg > 0)
+                                    {
+                                        muestraReconstruida.EjemplaresPorKg = (int)Math.Round(totalEjemplares / totalWeightKg);
+                                    }
+                                }
                             }
 
                             dbContext.Muestras.Add(muestraReconstruida);
