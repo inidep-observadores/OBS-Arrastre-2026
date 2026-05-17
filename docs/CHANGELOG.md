@@ -6,6 +6,18 @@ Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 
 
 ---
 
+## [v1.6.1] - 2026-05-17
+
+**Descripción**: Corrección del pipeline de importación y exportación de muestras biológicas con amplitud de tallas grande (archivos M y X).
+
+### Fixed (Correcciones)
+- fix(exportacion): ajustar ULT_TALLA en archivo M cuando desborda, y restaurar valor real en archivo X
+- fix(exportacion): establecer PRIM_TALLA del archivo X como la primera talla extendida
+- fix(importacion): corregir desalineacion y omision de tallas grandes en muestras
+- fix(exportacion): asegurar generacion y alineacion correcta de muestras extendidas X
+
+---
+
 ## [v1.6.0] - 2026-05-17
 
 **Descripción**: Redondeo y visualización de biometría en kilogramos, y optimización de flujos de validación de muestras.
@@ -530,5 +542,5 @@ Para generar changelog de cambios pendientes:
 
 **Última actualización**: 2026-05-17
 **Período de desarrollo**: 2026-04-09 a 2026-05-17 (40 días)
-**Total de commits documentados**: 282  
-**Versión actual**: v1.6.0
+**Total de commits documentados**: 286  
+**Versión actual**: v1.6.1
