@@ -1,8 +1,17 @@
 # Historial de Versiones
 
 Documentación histórica del desarrollo del proyecto OBSArrastre2026.
-Período documentado: 2026-04-09 a 2026-05-17 (40 días de desarrollo).
+Período documentado: 2026-04-09 a 2026-05-18.
 Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 1.0.0.
+
+---
+
+## [v1.6.2] - 2026-05-18
+
+**Descripción**: Corrección en el formato de salida de PDF de Control de Producción.
+
+### Fixed (Correcciones)
+- fix(reportes): agregar fila de totales al pdf de captura producción
 
 ---
 
@@ -540,7 +549,7 @@ Para generar changelog de cambios pendientes:
 
 ---
 
-**Última actualización**: 2026-05-17
-**Período de desarrollo**: 2026-04-09 a 2026-05-17 (40 días)
-**Total de commits documentados**: 286  
-**Versión actual**: v1.6.1
+**Última actualización**: 2026-05-18
+**Período de desarrollo**: 2026-04-09 a 2026-05-18 (40 días)
+**Total de commits documentados**: 289  
+**Versión actual**: v1.6.2
