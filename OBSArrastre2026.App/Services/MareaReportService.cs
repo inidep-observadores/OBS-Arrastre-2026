@@ -878,9 +878,25 @@ public class MareaReportService : IMareaReportService
                     {
                         diffCell.Text(item.DiferenciaPorcentaje);
                     }
-
-                    IContainer ContentStyle(IContainer container) => container.PaddingVertical(5).BorderBottom(1).BorderColor(Colors.Grey.Lighten3);
                 }
+
+                table.Cell().Element(FooterStyle).Text("TOTALES").SemiBold();
+                table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.ProduccionTotal).ToString("N1")).SemiBold();
+                table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.CapturaReconstruida).ToString("N1")).SemiBold();
+                table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.CapturaBruta).ToString("N1")).SemiBold();
+                table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.DescarteKg).ToString("N1")).SemiBold();
+                table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.CapturaRetenida).ToString("N1")).SemiBold();
+                
+                var totalDifKg = report.Items.Sum(i => i.DiferenciaKg);
+                var totalRet = report.Items.Sum(i => i.CapturaRetenida);
+                var totalRecon = report.Items.Sum(i => i.CapturaReconstruida);
+                var totalDifPct = totalRet > 0 ? (totalDifKg * 100.0 / totalRet) : (totalRecon > 0 ? -100.0 : 0);
+                
+                table.Cell().Element(FooterStyle).AlignRight().Text(totalDifKg.ToString("N1")).SemiBold();
+                table.Cell().Element(FooterStyle).AlignRight().Text(totalDifPct.ToString("N2") + "%").SemiBold();
+
+                IContainer ContentStyle(IContainer container) => container.PaddingVertical(5).BorderBottom(1).BorderColor(Colors.Grey.Lighten3);
+                IContainer FooterStyle(IContainer container) => container.PaddingVertical(8).BorderTop(2).BorderColor(Colors.Black);
             });
         });
     }
