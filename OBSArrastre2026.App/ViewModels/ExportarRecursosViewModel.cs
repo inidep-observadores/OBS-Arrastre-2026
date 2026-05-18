@@ -211,10 +211,10 @@ public class ExportarRecursosViewModel : ObservableObject
                 message = "No se pudo guardar el informe porque el archivo ya está abierto por otra aplicación (ej: Excel o Word). Por favor, cierre el documento y vuelva a intentarlo.";
             }
 
-            DialogResult.TrySetResult(false);
-
             if (ShowMessage != null) 
                 await ShowMessage("Error de Exportación", message, ex.ToString(), MessageDialogType.Error);
+
+            DialogResult.TrySetResult(false);
         }
         finally
         {
