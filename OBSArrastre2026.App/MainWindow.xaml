@@ -1871,7 +1871,7 @@
                         </Border>
 
                         <!-- Detail Sidebar (Specific to ControlProduccion) -->
-                        <Grid Grid.Column="2" Width="380">
+                        <Grid Grid.Column="2" Width="340">
                             <Grid.Style>
                                 <Style TargetType="Grid">
                                     <Setter Property="Visibility" Value="Collapsed" />
@@ -1906,6 +1906,8 @@
                                               ItemsSource="{Binding ControlLanceDetails}"
                                               Background="Transparent"
                                               BorderThickness="0"
+                                              Padding="0"
+                                              Margin="0"
                                               SelectionMode="Single">
                                         <ListView.ItemContainerStyle>
                                             <Style TargetType="ListViewItem">
@@ -1961,7 +1963,7 @@
                                                         </Setter>
                                                     </Style>
                                                 </GridView.ColumnHeaderContainerStyle>
-                                                <GridViewColumn Header="LANCE" Width="95">
+                                                <GridViewColumn Header="LANCE" Width="85">
                                                      <GridViewColumn.CellTemplate>
                                                          <DataTemplate>
                                                              <TextBlock Text="{Binding NroLanceDisplay}" 
@@ -1972,7 +1974,7 @@
                                                          </DataTemplate>
                                                      </GridViewColumn.CellTemplate>
                                                  </GridViewColumn>
-                                                <GridViewColumn Width="95">
+                                                <GridViewColumn Width="85">
                                                     <GridViewColumn.Header>
                                                         <TextBlock Text="CAPTURA" />
                                                     </GridViewColumn.Header>
@@ -1982,7 +1984,7 @@
                                                         </DataTemplate>
                                                     </GridViewColumn.CellTemplate>
                                                 </GridViewColumn>
-                                                <GridViewColumn Width="95">
+                                                <GridViewColumn Width="85">
                                                     <GridViewColumn.Header>
                                                         <TextBlock Text="DESCARTE" />
                                                     </GridViewColumn.Header>
@@ -1992,7 +1994,7 @@
                                                         </DataTemplate>
                                                     </GridViewColumn.CellTemplate>
                                                 </GridViewColumn>
-                                                <GridViewColumn Width="95">
+                                                <GridViewColumn Width="85">
                                                     <GridViewColumn.Header>
                                                         <TextBlock Text="RETENIDA" />
                                                     </GridViewColumn.Header>
@@ -2010,15 +2012,15 @@
                                             Background="{DynamicResource SidebarSecondaryBackgroundBrush}" 
                                             BorderBrush="{DynamicResource SidebarBorderBrush}" 
                                             BorderThickness="0,1,0,0"
-                                            Padding="12,14">
+                                            Padding="0,14">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="95" />
-                                                <ColumnDefinition Width="95" />
-                                                <ColumnDefinition Width="95" />
-                                                <ColumnDefinition Width="95" />
+                                                <ColumnDefinition Width="85" />
+                                                <ColumnDefinition Width="85" />
+                                                <ColumnDefinition Width="85" />
+                                                <ColumnDefinition Width="85" />
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Text="TOTAL" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="TOTAL" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" Margin="10,0,0,0"/>
                                             <TextBlock Grid.Column="1" Text="{Binding TotalCapturaKg, StringFormat={}{0:N1}}" FontWeight="Bold" Foreground="{DynamicResource PrimaryTextBrush}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
                                             <TextBlock Grid.Column="2" Text="{Binding TotalDescarteKg, StringFormat={}{0:N1}}" FontWeight="Bold" Foreground="{DynamicResource DangerForegroundBrush}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
                                             <TextBlock Grid.Column="3" Text="{Binding TotalRetenidaKg, StringFormat={}{0:N1}}" FontWeight="Bold" Foreground="{DynamicResource SuccessForegroundBrush}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
