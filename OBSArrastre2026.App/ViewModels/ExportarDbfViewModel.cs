@@ -132,6 +132,7 @@ public class ExportarDbfViewModel : ObservableObject
         catch (Exception ex)
         {
             IsBusy = false;
+            DialogResult.TrySetResult(false);
             if (ShowMessage != null) 
                 await ShowMessage("Error de Exportación", "Ocurrió un error al generar los archivos DBF.", ex.ToString(), MessageDialogType.Error);
         }
