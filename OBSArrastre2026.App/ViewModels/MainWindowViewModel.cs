@@ -2349,7 +2349,8 @@ public class MainWindowViewModel : ObservableObject
                 ObservadorApellido = meta.ObservadorApellido,
                 ObservadorCodigo = meta.ObservadorCodigo,
                 FechaInicioMarea = _activeMareaManager.ActiveMarea.FechaInicio,
-                FechaFinMarea = _activeMareaManager.ActiveMarea.FechaFin
+                FechaFinMarea = _activeMareaManager.ActiveMarea.FechaFin,
+                Comentarios = _activeMareaManager.ActiveMarea.Comentarios
             };
 
             var etapasOrdenadas = _activeMareaManager.ActiveMarea.Etapas.OrderBy(e => e.FechaZarpada).ToList();

@@ -450,6 +450,16 @@ public class MareaReportService : IMareaReportService
                         ComposeProductionDetailContent(col, etapa);
                         col.Item().PaddingBottom(30);
                     }
+
+                    if (!string.IsNullOrWhiteSpace(report.Comentarios))
+                    {
+                        col.Item().PaddingTop(10).Column(commCol =>
+                        {
+                            commCol.Item().Text("COMENTARIOS DE LA MAREA").FontSize(10).SemiBold().FontColor(Colors.Blue.Darken3);
+                            commCol.Item().PaddingTop(5).LineHorizontal(1).LineColor(Colors.Blue.Darken3);
+                            commCol.Item().PaddingTop(8).Text(report.Comentarios).FontSize(8);
+                        });
+                    }
                 });
 
                 ComposeFooter(page.Footer());

@@ -58,6 +58,7 @@ public class ControlProduccionReport
     public int? ObservadorCodigo { get; set; }
     public DateTime? FechaInicioMarea { get; set; }
     public DateTime? FechaFinMarea { get; set; }
+    public string? Comentarios { get; set; }
     public List<ControlProduccionEtapaReport> Etapas { get; set; } = new();
     public DateTime FechaGeneracion { get; set; } = DateTime.Now;
 }
