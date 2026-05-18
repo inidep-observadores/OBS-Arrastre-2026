@@ -73,6 +73,30 @@ public sealed class MareaListItemViewModel : ObservableObject
     {
         if (IsValidating) return;
 
+        // Estimar y verificar previamente si el archivo de destino está libre
+        string fileName = $"Resumen_Marea_{Marea.Buque?.Nombre ?? "Marea"}_{Marea.NumeroInidep}_{Marea.AnioInidep}.pdf";
+        string importFolder = MareaMetadataHelper.GetImportFolder(Marea.Metadata);
+        string savePath;
+
+        if (!string.IsNullOrEmpty(importFolder))
+        {
+            savePath = System.IO.Path.Combine(importFolder, "Reportes", fileName);
+        }
+        else
+        {
+            savePath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), fileName);
+        }
+
+        if (!Services.FileHelper.IsFileWritable(savePath))
+        {
+            System.Windows.MessageBox.Show(
+                $"No se puede guardar el resumen de marea en:\n\"{savePath}\"\n\nEl archivo ya está abierto por otra aplicación (por ejemplo, Acrobat Reader). Por favor, cierre el documento e inténtelo nuevamente.",
+                "Archivo Bloqueado",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Error);
+            return;
+        }
+
         IsValidating = true;
         StatusText = "Generando resumen...";
         try
@@ -86,18 +110,9 @@ public sealed class MareaListItemViewModel : ObservableObject
             });
 
             StatusText = "Abriendo reporte...";
-            string fileName = $"Resumen_Marea_{Marea.Buque?.Nombre ?? "Marea"}_{Marea.NumeroInidep}_{Marea.AnioInidep}.pdf";
-            string importFolder = MareaMetadataHelper.GetImportFolder(Marea.Metadata);
-            string savePath;
-
             if (!string.IsNullOrEmpty(importFolder))
             {
-                savePath = System.IO.Path.Combine(importFolder, "Reportes", fileName);
                 System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(savePath)!);
-            }
-            else
-            {
-                savePath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), fileName);
             }
 
             await System.IO.File.WriteAllBytesAsync(savePath, pdfBytes);
@@ -122,6 +137,30 @@ public sealed class MareaListItemViewModel : ObservableObject
     private async Task ValidateAsync()
     {
         if (IsValidating) return;
+
+        // Estimar y verificar previamente si el archivo de destino está libre
+        string fileName = $"Reporte_Validacion_{Marea.Buque?.Nombre ?? "Marea"}_{Marea.NumeroInidep}_{Marea.AnioInidep}.pdf";
+        string importFolder = MareaMetadataHelper.GetImportFolder(Marea.Metadata);
+        string savePath;
+
+        if (!string.IsNullOrEmpty(importFolder))
+        {
+            savePath = System.IO.Path.Combine(importFolder, "Reportes", fileName);
+        }
+        else
+        {
+            savePath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), fileName);
+        }
+
+        if (!Services.FileHelper.IsFileWritable(savePath))
+        {
+            System.Windows.MessageBox.Show(
+                $"No se puede guardar el reporte de validación en:\n\"{savePath}\"\n\nEl archivo ya está abierto por otra aplicación (por ejemplo, Acrobat Reader). Por favor, cierre el documento e inténtelo nuevamente.",
+                "Archivo Bloqueado",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Error);
+            return;
+        }
 
         var result = System.Windows.MessageBox.Show(
             $"¿Desea iniciar el proceso de auditoría para la marea {CodigoDisplay}?\n\nEste proceso puede tardar unos segundos.",
@@ -148,18 +187,9 @@ public sealed class MareaListItemViewModel : ObservableObject
             });
 
             StatusText = "Guardando reporte...";
-            string fileName = $"Reporte_Validacion_{Marea.Buque?.Nombre ?? "Marea"}_{Marea.NumeroInidep}_{Marea.AnioInidep}.pdf";
-            string importFolder = MareaMetadataHelper.GetImportFolder(Marea.Metadata);
-            string savePath;
-
             if (!string.IsNullOrEmpty(importFolder))
             {
-                savePath = System.IO.Path.Combine(importFolder, "Reportes", fileName);
                 System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(savePath)!);
-            }
-            else
-            {
-                savePath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), fileName);
             }
 
             await System.IO.File.WriteAllBytesAsync(savePath, pdfResult.Bytes);

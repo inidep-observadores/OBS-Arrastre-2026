@@ -76,6 +76,14 @@ public class MareaImportService : IMareaImportService
         int anio = marea.AnioInidep;
         var etapas = marea.Etapas;
 
+        // Estimar y verificar previamente si el reporte de auditoría es escribible
+        string safeBarco = barco.Replace("/", "-").Replace("\\", "-");
+        string reportPath = Path.Combine(basePath, "Reportes", $"Audit_{safeBarco}_{mareaNum}_{anio}.pdf");
+        if (!FileHelper.IsFileWritable(reportPath))
+        {
+            throw new IOException($"No se puede iniciar el proceso de importación porque el reporte de auditoría PDF de destino ya está abierto o bloqueado en:\n\"{reportPath}\"\n\nPor favor, cierre el documento e inténtelo nuevamente.");
+        }
+
         // 1. Resolver rutas de forma flexible (Marea 3 Año 2026 -> S326, S0326, S00326, etc.) limitando a los archivos seleccionados
         string? cPath = ResolveFilePath(selectedFiles, "C", mareaNum, anio);
         string? mPath = ResolveFilePath(selectedFiles, "M", mareaNum, anio);
@@ -334,8 +342,8 @@ public class MareaImportService : IMareaImportService
 
         // 6. Generar Reporte PDF
         var pdfBytes = await _reporter.GenerateValidationPdfAsync(report);
-        string safeBarco = barco.Replace("/", "-").Replace("\\", "-");
-        string reportPath = Path.Combine(basePath, "Reportes", $"Audit_{safeBarco}_{mareaNum}_{anio}.pdf");
+        safeBarco = barco.Replace("/", "-").Replace("\\", "-");
+        reportPath = Path.Combine(basePath, "Reportes", $"Audit_{safeBarco}_{mareaNum}_{anio}.pdf");
         Directory.CreateDirectory(Path.GetDirectoryName(reportPath)!);
         await File.WriteAllBytesAsync(reportPath, pdfBytes);
 

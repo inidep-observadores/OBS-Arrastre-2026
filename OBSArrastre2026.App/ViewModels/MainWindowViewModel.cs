@@ -1276,11 +1276,6 @@ public class MainWindowViewModel : ObservableObject
                     return;
                 }
 
-                // Actualizar los datos del reporte con la selección filtrada
-                reportData.Especies = selectedEspecies;
-
-                var pdfBytes = await _reportService.GenerateRecibiProyectoPdfAsync(reportData);
-
                 string fileName = $"Recibi_{reportData.BuqueNombre.Replace(" ", "_")}_{reportData.MareaNumero}_{reportData.MareaAnio}.pdf";
                 string importFolder = MareaMetadataHelper.GetImportFolder(_activeMareaManager.ActiveMarea!.Metadata);
                 string savePath;
@@ -1288,11 +1283,26 @@ public class MainWindowViewModel : ObservableObject
                 if (!string.IsNullOrEmpty(importFolder))
                 {
                     savePath = Path.Combine(importFolder, "Reportes", fileName);
-                    Directory.CreateDirectory(Path.GetDirectoryName(savePath)!);
                 }
                 else
                 {
                     savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), fileName);
+                }
+
+                if (!FileHelper.IsFileWritable(savePath))
+                {
+                    ShowMessage("Archivo bloqueado", $"No se puede guardar el reporte PDF de recibí en:\n\"{savePath}\"\n\nEl archivo ya está abierto por otra aplicación (ej: Acrobat Reader). Por favor, cierre el documento e inténtelo nuevamente.", null, MessageDialogType.Error);
+                    return;
+                }
+
+                // Actualizar los datos del reporte con la selección filtrada
+                reportData.Especies = selectedEspecies;
+
+                var pdfBytes = await _reportService.GenerateRecibiProyectoPdfAsync(reportData);
+
+                if (!string.IsNullOrEmpty(importFolder))
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(savePath)!);
                 }
 
                 await File.WriteAllBytesAsync(savePath, pdfBytes);
@@ -2336,6 +2346,33 @@ public class MainWindowViewModel : ObservableObject
         
         try
         {
+            // Estimar y chequear previamente si el archivo de destino es escribible
+            string barco = _activeMareaManager.ActiveMarea.Buque?.Nombre ?? "S_D";
+            string marea = _activeMareaManager.ActiveMarea.NumeroInidep.ToString();
+            int anio = _activeMareaManager.ActiveMarea.AnioInidep;
+            string fileName = $"Control_Produccion_{barco}_{marea}_{anio}.pdf";
+            string importFolder = MareaMetadataHelper.GetImportFolder(_activeMareaManager.ActiveMarea.Metadata);
+            string savePath;
+
+            if (!string.IsNullOrEmpty(importFolder))
+            {
+                savePath = Path.Combine(importFolder, "Reportes", fileName);
+            }
+            else
+            {
+                savePath = Path.Combine(Path.GetTempPath(), fileName);
+            }
+
+            if (!FileHelper.IsFileWritable(savePath))
+            {
+                System.Windows.MessageBox.Show(
+                    $"No se puede guardar el reporte PDF de control de producción en:\n\"{savePath}\"\n\nEl archivo ya está abierto por otra aplicación (por ejemplo, Acrobat Reader). Por favor, cierre el documento e inténtelo nuevamente.",
+                    "Archivo Bloqueado",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Error);
+                return;
+            }
+
             await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
             
             var meta = MareaMetadataHelper.GetMetadata(_activeMareaManager.ActiveMarea);
@@ -2588,18 +2625,9 @@ public class MainWindowViewModel : ObservableObject
             }
 
             var pdfBytes = await _reportService.GenerateControlProduccionPdfAsync(report);
-            string fileName = $"Control_Produccion_{report.Barco}_{report.Marea}_{report.Anio}.pdf";
-            string importFolder = MareaMetadataHelper.GetImportFolder(_activeMareaManager.ActiveMarea.Metadata);
-            string savePath;
-
             if (!string.IsNullOrEmpty(importFolder))
             {
-                savePath = Path.Combine(importFolder, "Reportes", fileName);
                 Directory.CreateDirectory(Path.GetDirectoryName(savePath)!);
-            }
-            else
-            {
-                savePath = Path.Combine(Path.GetTempPath(), fileName);
             }
 
             await File.WriteAllBytesAsync(savePath, pdfBytes);
@@ -2622,6 +2650,35 @@ public class MainWindowViewModel : ObservableObject
         
         try
         {
+            // Estimar y chequear previamente si el archivo de destino es escribible
+            string barco = _activeMareaManager.ActiveMarea.Buque?.Nombre ?? "S_D";
+            string marea = _activeMareaManager.ActiveMarea.NumeroInidep.ToString();
+            int anio = _activeMareaManager.ActiveMarea.AnioInidep;
+            string especieDisplayName = ControlProduccionSelectedEspecie.FullDisplayName;
+            string especieSanitizada = string.Join("_", especieDisplayName.Split(Path.GetInvalidFileNameChars()));
+            string fileName = $"Detalle_Produccion_{especieSanitizada}_{barco}_{marea}_{anio}.pdf";
+            string importFolder = MareaMetadataHelper.GetImportFolder(_activeMareaManager.ActiveMarea.Metadata);
+            string savePath;
+
+            if (!string.IsNullOrEmpty(importFolder))
+            {
+                savePath = Path.Combine(importFolder, "Reportes", fileName);
+            }
+            else
+            {
+                savePath = Path.Combine(Path.GetTempPath(), fileName);
+            }
+
+            if (!FileHelper.IsFileWritable(savePath))
+            {
+                System.Windows.MessageBox.Show(
+                    $"No se puede guardar el reporte PDF de detalle de producción en:\n\"{savePath}\"\n\nEl archivo ya está abierto por otra aplicación (por ejemplo, Acrobat Reader). Por favor, cierre el documento e inténtelo nuevamente.",
+                    "Archivo Bloqueado",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Error);
+                return;
+            }
+
             var meta = MareaMetadataHelper.GetMetadata(_activeMareaManager.ActiveMarea);
             
             // Obtener los datos de la lista actual (que son ControlProduccionListItemViewModel agrupados por fecha)
@@ -2661,21 +2718,9 @@ public class MainWindowViewModel : ObservableObject
 
             var pdfBytes = await _reportService.GenerateControlProduccionDetalleEspeciePdfAsync(report);
             
-            // Sanitizar nombre de archivo
-            string especieSanitizada = string.Join("_", report.Especie.Split(Path.GetInvalidFileNameChars()));
-            string fileName = $"Detalle_Produccion_{especieSanitizada}_{report.Barco}_{report.Marea}_{report.Anio}.pdf";
-            
-            string importFolder = MareaMetadataHelper.GetImportFolder(_activeMareaManager.ActiveMarea.Metadata);
-            string savePath;
-
             if (!string.IsNullOrEmpty(importFolder))
             {
-                savePath = Path.Combine(importFolder, "Reportes", fileName);
                 Directory.CreateDirectory(Path.GetDirectoryName(savePath)!);
-            }
-            else
-            {
-                savePath = Path.Combine(Path.GetTempPath(), fileName);
             }
 
             await File.WriteAllBytesAsync(savePath, pdfBytes);

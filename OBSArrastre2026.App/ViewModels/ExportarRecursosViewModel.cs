@@ -156,11 +156,45 @@ public class ExportarRecursosViewModel : ObservableObject
                 for (int i = 0; i < etapas.Count; i++)
                 {
                     string prefix = multipleEtapas ? $"Etapa{i + 1}-" : "";
+                    string aa = (_marea.AnioInidep % 100).ToString("00");
+                    string nn = _marea.NumeroInidep.ToString("00");
+                    string fileName = $"{prefix}Informe_{nn}{aa}.xlsx";
+                    string excelPath = Path.Combine(ExportPath, fileName);
+
+                    if (!FileHelper.IsFileWritable(excelPath))
+                    {
+                        throw new IOException($"No se puede guardar el informe Excel de la marea en:\n\"{excelPath}\"\n\nEl archivo ya está abierto por otra aplicación (por ejemplo, Microsoft Excel). Por favor, cierre el documento e inténtelo nuevamente.");
+                    }
+                }
+
+                // Si pasamos los chequeos, procedemos con la exportación real
+                for (int i = 0; i < etapas.Count; i++)
+                {
+                    string prefix = multipleEtapas ? $"Etapa{i + 1}-" : "";
                     await ExportEtapaAsync(etapas[i], ExportPath, prefix);
                 }
             }
             else if (ExportTemplateWord)
             {
+                // Calcular nombre de archivo de Word para chequear previamente
+                string fileName;
+                var settings = _userSettingsService.GetSettings();
+                string añoActual = DateTime.Now.Year.ToString();
+                string apellido = (settings.RevisorApellido ?? "S_A").Replace(" ", "_");
+                string inicialNombre = !string.IsNullOrEmpty(settings.RevisorNombre) ? settings.RevisorNombre[0].ToString().ToUpper() : "";
+                string añoMarea = _marea.AnioInidep.ToString();
+                string nroMarea = _marea.NumeroInidep.ToString("00");
+                var meta = MareaMetadataHelper.GetMetadata(_marea);
+                string codigoBuque = meta.BuqueCodigo?.ToString() ?? "0";
+
+                fileName = $"Inf_MAR_DIOYT_{añoActual}_{apellido}{inicialNombre}_{añoMarea}_{nroMarea}_{codigoBuque}.docx";
+                string filePath = Path.Combine(ExportPath, fileName);
+
+                if (!FileHelper.IsFileWritable(filePath))
+                {
+                    throw new IOException($"No se puede guardar el informe Word en:\n\"{filePath}\"\n\nEl archivo ya está abierto por otra aplicación (por ejemplo, Microsoft Word). Por favor, cierre el documento e inténtelo nuevamente.");
+                }
+
                 await ExportFullWordAsync(ExportPath, useTemplate: true);
             }
 
@@ -169,10 +203,10 @@ public class ExportarRecursosViewModel : ObservableObject
         catch (Exception ex)
         {
             IsBusy = false;
-            string message = "Ocurrió un error inesperado al generar el informe.";
+            string message = ex.Message;
             
-            // Detectar si el archivo está en uso
-            if (ex is IOException && (ex.HResult & 0x0000FFFF) == 32)
+            // Detectar si el archivo está en uso por otra causa (y el mensaje de la excepción es el genérico de E/S de Windows)
+            if (ex is IOException && (ex.HResult & 0x0000FFFF) == 32 && (string.Equals(ex.Message, "Ocurrió un error de E/S.", StringComparison.OrdinalIgnoreCase) || ex.Message.Contains("IOException")))
             {
                 message = "No se pudo guardar el informe porque el archivo ya está abierto por otra aplicación (ej: Excel o Word). Por favor, cierre el documento y vuelva a intentarlo.";
             }
