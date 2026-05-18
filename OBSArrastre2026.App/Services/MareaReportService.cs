@@ -455,8 +455,8 @@ public class MareaReportService : IMareaReportService
                     {
                         col.Item().PaddingTop(10).Column(commCol =>
                         {
-                            commCol.Item().Text("COMENTARIOS DE LA MAREA").FontSize(10).SemiBold().FontColor(Colors.Blue.Darken3);
-                            commCol.Item().PaddingTop(5).LineHorizontal(1).LineColor(Colors.Blue.Darken3);
+                            commCol.Item().Text("COMENTARIOS DE LA MAREA").FontSize(10).SemiBold().FontColor(Colors.Black);
+                            commCol.Item().PaddingTop(5).LineHorizontal(1).LineColor(Colors.Black);
                             commCol.Item().PaddingTop(8).Text(report.Comentarios).FontSize(8);
                         });
                     }
@@ -488,7 +488,7 @@ public class MareaReportService : IMareaReportService
                         row.RelativeItem().Text(text => 
                         {
                             text.Span("ESPECIE: ").SemiBold();
-                            text.Span(report.Especie).SemiBold().FontColor(Colors.Blue.Darken3).FontSize(11);
+                            text.Span(report.Especie).SemiBold().FontColor(Colors.Black).FontSize(11);
                         });
                     });
 
@@ -578,7 +578,7 @@ public class MareaReportService : IMareaReportService
             {
                 row.RelativeItem().Column(c =>
                 {
-                    c.Item().Text(titulo).FontSize(14).SemiBold().FontColor(Colors.Blue.Darken3);
+                    c.Item().Text(titulo).FontSize(14).SemiBold().FontColor(Colors.Black);
                     
                     var barcoConPrefijo = barco.StartsWith("B/P ", StringComparison.OrdinalIgnoreCase) || barco.StartsWith("B/P", StringComparison.OrdinalIgnoreCase)
                         ? barco 
@@ -751,7 +751,7 @@ public class MareaReportService : IMareaReportService
 
         foreach (var speciesGroup in groupedBySpecies)
         {
-            col.Item().PaddingTop(15).PaddingBottom(5).Text(speciesGroup.Key).FontSize(10).SemiBold().FontColor(Colors.Blue.Darken3);
+            col.Item().PaddingTop(15).PaddingBottom(5).Text(speciesGroup.Key).FontSize(10).SemiBold().FontColor(Colors.Black);
             
             col.Item().Table(table =>
             {
@@ -882,7 +882,7 @@ public class MareaReportService : IMareaReportService
                     var diffCell = table.Cell().Element(ContentStyle).AlignRight();
                     if (item.HasDiferenciaSignificativa)
                     {
-                        diffCell.Text(item.DiferenciaPorcentaje).SemiBold().FontColor(Colors.Red.Medium);
+                        diffCell.Text(item.DiferenciaPorcentaje).SemiBold().FontColor(Colors.Black);
                     }
                     else
                     {
