@@ -6,6 +6,19 @@ Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 
 
 ---
 
+## [v1.7.0] - 2026-05-18
+
+**Descripción**: Validación proactiva de escritura para archivos de salida y corrección en la navegación de diálogos del Lanzador de Procesos.
+
+### Added (Características nuevas)
+- feat(procesos): validación proactiva de archivos abiertos o bloqueados antes de iniciar procesos de exportación (Word, Excel y PDF) para prevenir errores fatales.
+
+### Fixed (Correcciones)
+- fix(procesos): resolver bloqueo permanente de botones de procesos interactivos migrando Borders a Buttons estándar.
+- fix(procesos): corregir secuencia de finalización en bloques `catch` de ViewModels para asegurar la correcta visualización del diálogo de error.
+
+---
+
 ## [v1.6.2] - 2026-05-18
 
 **Descripción**: Corrección en el formato de salida de PDF de Control de Producción.
@@ -551,5 +564,5 @@ Para generar changelog de cambios pendientes:
 
 **Última actualización**: 2026-05-18
 **Período de desarrollo**: 2026-04-09 a 2026-05-18 (40 días)
-**Total de commits documentados**: 289  
-**Versión actual**: v1.6.2
+**Total de commits documentados**: 292  
+**Versión actual**: v1.7.0
