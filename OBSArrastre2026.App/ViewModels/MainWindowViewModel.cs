@@ -1210,7 +1210,7 @@ public class MainWindowViewModel : ObservableObject
 
         var lances = await _lanceService.GetLancesAsync(mareaId: activeMarea.ID);
         var viewModel = new ExportarRecursosViewModel(activeMarea, lances.ToList(), _lanceService, _mapRenderingService, _excelReportService, _reportService, _mareaSummaryService, _userSettingsService);
-        viewModel.ShowMessage = (title, msg, details, type) => { ShowMessage(title, msg, details, type); return Task.CompletedTask; };
+        viewModel.ShowMessage = (title, msg, details, type) => ShowMessageAsync(title, msg, details, type);
         viewModel.ShowConfirmation = (title, msg) => ShowConfirmationAsync(title, msg);
         ActiveDialog = viewModel;
 
@@ -1330,7 +1330,7 @@ public class MainWindowViewModel : ObservableObject
         }
 
         var viewModel = new ExportarDbfViewModel(activeMarea, _dbfExporterService);
-        viewModel.ShowMessage = (title, msg, details, type) => { ShowMessage(title, msg, details, type); return Task.CompletedTask; };
+        viewModel.ShowMessage = (title, msg, details, type) => ShowMessageAsync(title, msg, details, type);
         ActiveDialog = viewModel;
 
         bool result = await viewModel.DialogResult.Task;
