@@ -1336,8 +1336,8 @@ public class MareaReportService : IMareaReportService
     {
         var muestras = lances.SelectMany(l => l.Muestras).ToList();
         var grupos = muestras
-            .Where(m => m.FrecuenciasTallas.Sum(f => f.NroTotal) >= 3)
             .GroupBy(m => new { m.EspecieID, m.TipoMuestra })
+            .Where(g => g.SelectMany(m => m.FrecuenciasTallas).Sum(f => f.NroTotal) >= 10)
             .OrderBy(g => g.First().Especie?.NombreCientifico)
             .ThenBy(g => g.Key.TipoMuestra)
             .ToList();
@@ -1348,41 +1348,80 @@ public class MareaReportService : IMareaReportService
             var especie = g.First().Especie;
             if (especie == null) continue;
 
+            bool isLangostino = especie.CodigoInidep == "5139030101";
             string tipoStr = g.Key.TipoMuestra == 2 ? "Descarte" : "Captura";
-            doc.InsertParagraph($"Especie: {especie.NombreCientifico} ({tipoStr})")
+            
+            var pEspecie = doc.InsertParagraph().SpacingAfter(5);
+
+            pEspecie.Append("Especie: ")
                 .Font("Times New Roman")
                 .FontSize(12)
-                .Bold()
-                .Italic()
-                .SpacingAfter(5);
+                .Bold();
+
+            if (!string.IsNullOrEmpty(especie.NombreVulgar))
+            {
+                pEspecie.Append(especie.NombreVulgar)
+                    .Font("Times New Roman")
+                    .FontSize(12)
+                    .Bold();
+
+                if (!string.IsNullOrEmpty(especie.NombreCientifico))
+                {
+                    pEspecie.Append($" ({especie.NombreCientifico})")
+                        .Font("Times New Roman")
+                        .FontSize(12)
+                        .Italic();
+                }
+            }
+            else
+            {
+                pEspecie.Append(especie.NombreCientifico ?? "Desconocida")
+                    .Font("Times New Roman")
+                    .FontSize(12)
+                    .Bold();
+            }
+
+            pEspecie.Append($" - {tipoStr}")
+                .Font("Times New Roman")
+                .FontSize(12);
 
             int cutoff = GetSpeciesCutoff(especie.CodigoInidep);
             var frecuencias = g.SelectMany(m => m.FrecuenciasTallas).ToList();
 
+            var statsPoints = frecuencias
+                .GroupBy(f => f.Talla)
+                .Select(pts => new {
+                    Talla = pts.Key,
+                    Machos = pts.Sum(f => f.NroMachos),
+                    Hembras = pts.Sum(f => f.NroHembras),
+                    Indet = pts.Sum(f => f.NroIndeterminados),
+                    Total = pts.Sum(f => f.NroTotal)
+                })
+                .OrderBy(pts => pts.Talla)
+                .ToList();
+
+            double totalM = statsPoints.Sum(p => (double)p.Machos);
+            double totalH = statsPoints.Sum(p => (double)p.Hembras);
+            double totalI = statsPoints.Sum(p => (double)p.Indet);
+            double totalT = statsPoints.Sum(p => (double)p.Total);
+
+            bool forzarSoloTotal = false;
+            if (!isLangostino)
+            {
+                bool tieneDiferenciacionSexo = totalM > 0 || totalH > 0;
+                if (tieneDiferenciacionSexo && (totalM < 10 || totalH < 10))
+                {
+                    forzarSoloTotal = true;
+                }
+            }
+
             // Tabla de estadísticas
-            InsertStatsTable(doc, frecuencias, cutoff);
+            InsertStatsTable(doc, frecuencias, cutoff, forzarSoloTotal);
             doc.InsertParagraph().SpacingAfter(10);
 
             // Gráfico (si hay puntos)
             try
             {
-                var statsPoints = frecuencias
-                    .GroupBy(f => f.Talla)
-                    .Select(pts => new {
-                        Talla = pts.Key,
-                        Machos = pts.Sum(f => f.NroMachos),
-                        Hembras = pts.Sum(f => f.NroHembras),
-                        Indet = pts.Sum(f => f.NroIndeterminados),
-                        Total = pts.Sum(f => f.NroTotal)
-                    })
-                    .OrderBy(pts => pts.Talla)
-                    .ToList();
-
-                double totalM = statsPoints.Sum(p => (double)p.Machos);
-                double totalH = statsPoints.Sum(p => (double)p.Hembras);
-                double totalI = statsPoints.Sum(p => (double)p.Indet);
-                double totalT = statsPoints.Sum(p => (double)p.Total);
-
                 if (totalT > 0)
                 {
                     var chartData = statsPoints.Select(p => (
@@ -1393,7 +1432,7 @@ public class MareaReportService : IMareaReportService
                         Total: (totalT > 0 ? p.Total * 100.0 / totalT : 0)
                     )).ToList();
 
-                    var chartBytes = RenderFrequencyChart(chartData, cutoff, especie.NombreCientifico, especie.CodigoInidep == "5139030101");
+                    var chartBytes = RenderFrequencyChart(chartData, cutoff, especie.NombreCientifico, isLangostino, forzarSoloTotal);
                     if (chartBytes.Length > 0)
                     {
                         using var chartMs = new MemoryStream(chartBytes);
@@ -1420,7 +1459,7 @@ public class MareaReportService : IMareaReportService
         }
     }
 
-    private byte[] RenderFrequencyChart(List<(double Talla, double Machos, double Hembras, double Indet, double Total)> dataPoints, int cutoff, string title, bool isLangostino)
+    private byte[] RenderFrequencyChart(List<(double Talla, double Machos, double Hembras, double Indet, double Total)> dataPoints, int cutoff, string title, bool isLangostino, bool forzarSoloTotal)
     {
         int width = 900;
         int height = 550;
@@ -1438,11 +1477,11 @@ public class MareaReportService : IMareaReportService
         double maxX = Math.Ceiling(dataPoints.Max(p => p.Talla) / 5.0) * 5.0;
         if (maxX - minX < 20) maxX = minX + 20;
 
-        bool hasMachos = dataPoints.Any(p => p.Machos > 0.01);
-        bool hasHembras = dataPoints.Any(p => p.Hembras > 0.01);
-        bool hasIndet = dataPoints.Any(p => p.Indet > 0.01);
+        bool hasMachos = !forzarSoloTotal && dataPoints.Any(p => p.Machos > 0.01);
+        bool hasHembras = !forzarSoloTotal && dataPoints.Any(p => p.Hembras > 0.01);
+        bool hasIndet = !forzarSoloTotal && dataPoints.Any(p => p.Indet > 0.01);
         bool hasTotal = dataPoints.Any(p => p.Total > 0.01);
-        bool plotTotal = isLangostino || (!hasMachos && !hasHembras && !hasIndet);
+        bool plotTotal = isLangostino || forzarSoloTotal || (!hasMachos && !hasHembras && !hasIndet);
 
         double maxYValue = dataPoints.Max(p => {
             double val = Math.Max(p.Machos, p.Hembras);
@@ -1575,7 +1614,7 @@ public class MareaReportService : IMareaReportService
         return pngData.ToArray();
     }
 
-    private void InsertStatsTable(DocX doc, List<FrecuenciaTalla> frecuencias, int cutoff)
+    private void InsertStatsTable(DocX doc, List<FrecuenciaTalla> frecuencias, int cutoff, bool forzarSoloTotal)
     {
         var statsTotal = CalculateStats(frecuencias, f => f.NroTotal, cutoff);
         var statsMachos = CalculateStats(frecuencias, f => f.NroMachos, cutoff);
@@ -1591,9 +1630,9 @@ public class MareaReportService : IMareaReportService
             statsTotal.Porcent = 100;
         }
 
-        bool sinSexo = frecuencias.Sum(f => f.NroMachos) == 0
+        bool sinSexo = forzarSoloTotal || (frecuencias.Sum(f => f.NroMachos) == 0
                     && frecuencias.Sum(f => f.NroHembras) == 0
-                    && frecuencias.Sum(f => f.NroIndeterminados) == 0;
+                    && frecuencias.Sum(f => f.NroIndeterminados) == 0);
 
         int numRows = sinSexo ? 3 : 5;
         var table = doc.AddTable(numRows, 8);
