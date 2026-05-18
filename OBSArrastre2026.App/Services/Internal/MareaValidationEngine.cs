@@ -28,7 +28,8 @@ public sealed class MareaValidationEngine
         Dictionary<string, string> especiesViejasDict,
         HashSet<string> especiesCodigosValidos,
         Dictionary<(string EspecieId, int Sexo), (double A, double B)> largoPesoCatalogo,
-        bool procesarSubmuestrasSinMuestraTalla = false)
+        bool procesarSubmuestrasSinMuestraTalla = false,
+        bool skipConsensusHeuristic = false)
     {
         var report = new MareaValidationReport
         {
@@ -53,7 +54,7 @@ public sealed class MareaValidationEngine
         ValidateBaseConsistency(report, barcoMareaActual, nroMareaActual, capturas, muestras, submuestras, lgs, tracking, produccion);
 
         // 3. Validación de Lances (C*)
-        ValidateLances(report, capturas, tracking, especiesDict, especiesViejasDict);
+        ValidateLances(report, capturas, tracking, especiesDict, especiesViejasDict, skipConsensusHeuristic);
 
         // 4. Validación de Muestras (M*) y Relación Largo-Peso
         ValidateSamples(report, muestras, capturas, lgs, largoPesoCatalogo, especiesDict, especiesViejasDict, especiesCodigosValidos);
@@ -433,7 +434,7 @@ public sealed class MareaValidationEngine
     }
 
     private void ValidateLances(MareaValidationReport report, List<LegacyCaptura> capturas, List<LegacyTracking> tracking,
-        Dictionary<string, string> especiesDict, Dictionary<string, string> especiesViejasDict)
+        Dictionary<string, string> especiesDict, Dictionary<string, string> especiesViejasDict, bool skipConsensusHeuristic)
     {
         int countPorcentaje = 0;
         int countKilos = 0;
@@ -539,85 +540,130 @@ public sealed class MareaValidationEngine
             }
         }
 
-        // Resolución de porcentaje de descarte (Heurística de consenso)
-        if (countPorcentaje > 0 || countKilos > 0)
+        if (skipConsensusHeuristic)
         {
-            double totalConDatos = countPorcentaje + countKilos;
-            bool asPercentage = (countKilos == 0) || (countPorcentaje / totalConDatos > 0.8);
-            bool asKilos = (countPorcentaje == 0) || (countKilos / totalConDatos > 0.8);
-
-            if (asPercentage && !asKilos)
+            foreach (var c in capturas)
             {
-                report.AddIssue(ValidationLevel.AutoFixed, "Descarte", "Se detectó que los descartes están en porcentaje (consenso > 80%). Convertidos a kilos automáticamente.", "Toda la marea");
-                foreach (var c in capturas)
+                if (c.CaptTotal > 0 && c.Descarte > c.CaptTotal)
                 {
-                    if (c.Descarte > 0)
+                    var especiesConDescarteExcesivo = new List<string>();
+                    foreach (var kvp in c.DescartesPorEspecie)
                     {
-                        double pctDescarteTotal = c.Descarte;
-                        c.Descarte = (c.Descarte * c.CaptTotal) / 100.0;
-                        foreach (var key in c.DescartesPorEspecie.Keys.ToList())
+                        string codEspecie = kvp.Key;
+                        double descarteEsp = kvp.Value;
+                        if (descarteEsp > 0)
                         {
-                            if (c.DescartesPorEspecie[key] > 0)
+                            c.Especies.TryGetValue(codEspecie, out double captEsp);
+                            if (descarteEsp > captEsp)
                             {
-                                // DESCAR_i = (DESCAR_i * KG_i) / 100
-                                double especieCaptura = c.Especies.ContainsKey(key) ? c.Especies[key] : 0;
-                                c.DescartesPorEspecie[key] = (c.DescartesPorEspecie[key] * especieCaptura) / 100.0;
+                                string nombre = GetEspecieNombre(codEspecie, especiesDict, especiesViejasDict);
+                                especiesConDescarteExcesivo.Add(nombre);
                             }
                         }
                     }
+
+                    if (especiesConDescarteExcesivo.Count == 0)
+                    {
+                        foreach (var kvp in c.DescartesPorEspecie)
+                        {
+                            if (kvp.Value > 0)
+                            {
+                                string nombre = GetEspecieNombre(kvp.Key, especiesDict, especiesViejasDict);
+                                especiesConDescarteExcesivo.Add(nombre);
+                            }
+                        }
+                    }
+
+                    string ctxEspecies = especiesConDescarteExcesivo.Count > 0 
+                        ? $"Lance {c.Lance} - Especie {string.Join(", ", especiesConDescarteExcesivo)}"
+                        : $"Lance {c.Lance}";
+
+                    report.AddIssue(ValidationLevel.Error, "Captura", $"El descarte ({c.Descarte} kg) es superior a la captura total ({c.CaptTotal} kg).", ctxEspecies);
                 }
             }
-            else if (asKilos && !asPercentage)
+        }
+        else
+        {
+            // Resolución de porcentaje de descarte (Heurística de consenso)
+            if (countPorcentaje > 0 || countKilos > 0)
             {
-                // Caso de la consulta del usuario: 142 kilos vs 3 lances con ratio > 1 (probables errores de carga)
-                if (countPorcentaje > 0)
+                double totalConDatos = countPorcentaje + countKilos;
+                bool asPercentage = (countKilos == 0) || (countPorcentaje / totalConDatos > 0.8);
+                bool asKilos = (countPorcentaje == 0) || (countKilos / totalConDatos > 0.8);
+
+                if (asPercentage && !asKilos)
                 {
+                    report.AddIssue(ValidationLevel.AutoFixed, "Descarte", "Se detectó que los descartes están en porcentaje (consenso > 80%). Convertidos a kilos automáticamente.", "Toda la marea");
                     foreach (var c in capturas)
                     {
-                        if (c.CaptTotal > 0 && c.Descarte > c.CaptTotal)
+                        if (c.Descarte > 0)
                         {
-                            var especiesConDescarteExcesivo = new List<string>();
-                            foreach (var kvp in c.DescartesPorEspecie)
+                            double pctDescarteTotal = c.Descarte;
+                            c.Descarte = (c.Descarte * c.CaptTotal) / 100.0;
+                            foreach (var key in c.DescartesPorEspecie.Keys.ToList())
                             {
-                                string codEspecie = kvp.Key;
-                                double descarteEsp = kvp.Value;
-                                if (descarteEsp > 0)
+                                if (c.DescartesPorEspecie[key] > 0)
                                 {
-                                    c.Especies.TryGetValue(codEspecie, out double captEsp);
-                                    if (descarteEsp > captEsp)
-                                    {
-                                        string nombre = GetEspecieNombre(codEspecie, especiesDict, especiesViejasDict);
-                                        especiesConDescarteExcesivo.Add(nombre);
-                                    }
+                                    // DESCAR_i = (DESCAR_i * KG_i) / 100
+                                    double especieCaptura = c.Especies.ContainsKey(key) ? c.Especies[key] : 0;
+                                    c.DescartesPorEspecie[key] = (c.DescartesPorEspecie[key] * especieCaptura) / 100.0;
                                 }
                             }
-
-                            // Fallback por si la suma acumulada de varias supera al total pero ninguna supera individualmente su propia captura
-                            if (especiesConDescarteExcesivo.Count == 0)
-                            {
-                                foreach (var kvp in c.DescartesPorEspecie)
-                                {
-                                    if (kvp.Value > 0)
-                                    {
-                                        string nombre = GetEspecieNombre(kvp.Key, especiesDict, especiesViejasDict);
-                                        especiesConDescarteExcesivo.Add(nombre);
-                                    }
-                                }
-                            }
-
-                            string ctxEspecies = especiesConDescarteExcesivo.Count > 0 
-                                ? $"Lance {c.Lance} - Especie {string.Join(", ", especiesConDescarteExcesivo)}"
-                                : $"Lance {c.Lance}";
-
-                            report.AddIssue(ValidationLevel.Error, "Captura", $"El descarte ({c.Descarte} kg) es superior a la captura total ({c.CaptTotal} kg). Se asume que son kilos erróneos (no porcentaje) por consenso de marea.", ctxEspecies);
                         }
                     }
                 }
-            }
-            else
-            {
-                // Ambigüedad real (ej. 50/50 o sin mayoría clara)
-                report.AddIssue(ValidationLevel.Fatal, "Descarte", $"Datos mixtos de descarte: {countPorcentaje} lances parecen porcentaje (ratio > 1), {countKilos} parecen kilos. No se puede determinar la unidad automáticamente por falta de consenso (> 80%).", "Toda la marea");
+                else if (asKilos && !asPercentage)
+                {
+                    // Caso de la consulta del usuario: 142 kilos vs 3 lances con ratio > 1 (probables errores de carga)
+                    if (countPorcentaje > 0)
+                    {
+                        foreach (var c in capturas)
+                        {
+                            if (c.CaptTotal > 0 && c.Descarte > c.CaptTotal)
+                            {
+                                var especiesConDescarteExcesivo = new List<string>();
+                                foreach (var kvp in c.DescartesPorEspecie)
+                                {
+                                    string codEspecie = kvp.Key;
+                                    double descarteEsp = kvp.Value;
+                                    if (descarteEsp > 0)
+                                    {
+                                        c.Especies.TryGetValue(codEspecie, out double captEsp);
+                                        if (descarteEsp > captEsp)
+                                        {
+                                            string nombre = GetEspecieNombre(codEspecie, especiesDict, especiesViejasDict);
+                                            especiesConDescarteExcesivo.Add(nombre);
+                                        }
+                                    }
+                                }
+
+                                // Fallback por si la suma acumulada de varias supera al total pero ninguna supera individualmente su propia captura
+                                if (especiesConDescarteExcesivo.Count == 0)
+                                {
+                                    foreach (var kvp in c.DescartesPorEspecie)
+                                    {
+                                        if (kvp.Value > 0)
+                                        {
+                                            string nombre = GetEspecieNombre(kvp.Key, especiesDict, especiesViejasDict);
+                                            especiesConDescarteExcesivo.Add(nombre);
+                                        }
+                                    }
+                                }
+
+                                string ctxEspecies = especiesConDescarteExcesivo.Count > 0 
+                                    ? $"Lance {c.Lance} - Especie {string.Join(", ", especiesConDescarteExcesivo)}"
+                                    : $"Lance {c.Lance}";
+
+                                report.AddIssue(ValidationLevel.Error, "Captura", $"El descarte ({c.Descarte} kg) es superior a la captura total ({c.CaptTotal} kg). Se asume que son kilos erróneos (no porcentaje) por consenso de marea.", ctxEspecies);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // Ambigüedad real (ej. 50/50 o sin mayoría clara)
+                    report.AddIssue(ValidationLevel.Fatal, "Descarte", $"Datos mixtos de descarte: {countPorcentaje} lances parecen porcentaje (ratio > 1), {countKilos} parecen kilos. No se puede determinar la unidad automáticamente por falta de consenso (> 80%).", "Toda la marea");
+                }
             }
         }
     }

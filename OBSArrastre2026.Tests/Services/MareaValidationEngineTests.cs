@@ -198,4 +198,57 @@ public class MareaValidationEngineTests
         var issue = report.Issues.Should().ContainSingle(i => i.Category == "Captura" && i.Message.Contains("El descarte") && i.Message.Contains("superior a la captura total")).Subject;
         issue.Context.Should().Be("Lance 6 - Especie MERLUZA COMUN");
     }
+
+    [Fact]
+    public void ValidateMarea_WithSkipConsensusHeuristic_ShouldReportErrorDirectlyWithoutAlteringValues()
+    {
+        // Arrange
+        var capturas = new List<LegacyCaptura>
+        {
+            new()
+            {
+                Lance = 1,
+                Barco = "B",
+                Marea = 100,
+                CaptTotal = 100,
+                Descarte = 150
+            }
+        };
+        capturas[0].Especies["7210040101"] = 100;
+        capturas[0].DescartesPorEspecie["7210040101"] = 150;
+
+        var especiesDict = new Dictionary<string, string> { ["MERLUZA COMUN"] = "7210040101" };
+
+        // Act
+        var report = _engine.ValidateMarea(
+            barcoMareaActual: "B",
+            anioMareaActual: 2026,
+            nroMareaActual: 100,
+            buqueCodigo: null,
+            obsNombre: null,
+            obsApellido: null,
+            obsCodigo: null,
+            etapasFechas: new(),
+            capturas: capturas,
+            muestras: new(),
+            submuestras: new(),
+            lgs: new(),
+            tracking: new(),
+            produccion: new(),
+            especiesDict: especiesDict,
+            especiesViejasDict: new(),
+            especiesCodigosValidos: new(),
+            largoPesoCatalogo: new(),
+            procesarSubmuestrasSinMuestraTalla: false,
+            skipConsensusHeuristic: true
+        );
+
+        // Assert
+        var issue = report.Issues.Should().ContainSingle(i => i.Category == "Captura" && i.Message.Contains("El descarte (150 kg) es superior a la captura total (100 kg).")).Subject;
+        issue.Level.Should().Be(ValidationLevel.Error);
+        issue.Context.Should().Be("Lance 1 - Especie MERLUZA COMUN");
+
+        capturas[0].Descarte.Should().Be(150);
+        capturas[0].DescartesPorEspecie["7210040101"].Should().Be(150);
+    }
 }

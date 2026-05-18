@@ -153,8 +153,8 @@ public class MareaValidationService : IMareaValidationService
                         if (!cap.Especies.ContainsKey(cod)) cap.Especies[cod] = 0;
                         if (!cap.DescartesPorEspecie.ContainsKey(cod)) cap.DescartesPorEspecie[cod] = 0;
 
-                        cap.Especies[cod] += ic.DatoCaptura;
-                        cap.DescartesPorEspecie[cod] += ic.DatoDescarte;
+                        cap.Especies[cod] += ic.CapturaTotalKgCalculado;
+                        cap.DescartesPorEspecie[cod] += ic.PesoDescarteCalculado;
                     }
                 }
                 capturas.Add(cap);
@@ -254,7 +254,8 @@ public class MareaValidationService : IMareaValidationService
             especiesDict,
             especiesViejasDict,
             especiesCodigosValidos,
-            largoPesoCatalogo
+            largoPesoCatalogo,
+            skipConsensusHeuristic: true
         );
 
         // PERSISTIR CORRECCIONES: Si el motor corrigió totales, los guardamos en la DB
