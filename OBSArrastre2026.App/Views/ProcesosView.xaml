@@ -10,25 +10,49 @@
              Background="{DynamicResource HeroBackgroundBrush}">
     
     <UserControl.Resources>
-        <Style x:Key="ProcessCardStyle" TargetType="Border">
+        <Style x:Key="ProcessCardButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
             <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="16" />
             <Setter Property="Padding" Value="24" />
             <Setter Property="Margin" Value="12" />
             <Setter Property="Cursor" Value="Hand" />
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="{DynamicResource HoverBackgroundBrush}" />
-                    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
-                    <Setter Property="RenderTransform">
-                        <Setter.Value>
-                            <TranslateTransform Y="-4" />
-                        </Setter.Value>
-                    </Setter>
-                </Trigger>
-            </Style.Triggers>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="16"
+                                Padding="{TemplateBinding Padding}">
+                            <Border.RenderTransform>
+                                <TranslateTransform Y="0" />
+                            </Border.RenderTransform>
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{DynamicResource HoverBackgroundBrush}" />
+                                <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                <Setter TargetName="border" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <TranslateTransform Y="-4" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5" />
+                                <Setter Property="Cursor" Value="No" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style x:Key="IconBorderStyle" TargetType="Border">
@@ -52,10 +76,7 @@
 
                     <UniformGrid Columns="3">
                         <!-- Tarjeta: Generar Informe -->
-                        <Border Style="{StaticResource ProcessCardStyle}">
-                            <Border.InputBindings>
-                                <MouseBinding MouseAction="LeftClick" Command="{Binding GenerarInformeCommand}" />
-                            </Border.InputBindings>
+                        <Button Style="{StaticResource ProcessCardButtonStyle}" Command="{Binding GenerarInformeCommand}">
                             <StackPanel>
                                 <Border Style="{StaticResource IconBorderStyle}" Background="#E3F2FD">
                                     <TextBlock Text="📦" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -68,13 +89,10 @@
                                     <TextBlock Text="Lanzar proceso →" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" FontSize="13" />
                                 </Border>
                             </StackPanel>
-                        </Border>
+                        </Button>
 
                         <!-- Tarjeta: Exportar DBF -->
-                        <Border Style="{StaticResource ProcessCardStyle}">
-                            <Border.InputBindings>
-                                <MouseBinding MouseAction="LeftClick" Command="{Binding ExportarDbfCommand}" />
-                            </Border.InputBindings>
+                        <Button Style="{StaticResource ProcessCardButtonStyle}" Command="{Binding ExportarDbfCommand}">
                             <StackPanel>
                                 <Border Style="{StaticResource IconBorderStyle}" Background="#E8F5E9">
                                     <TextBlock Text="💾" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -87,13 +105,10 @@
                                     <TextBlock Text="Lanzar proceso →" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" FontSize="13" />
                                 </Border>
                             </StackPanel>
-                        </Border>
+                        </Button>
 
                         <!-- Tarjeta: Cambiar Unidad de Descarte -->
-                        <Border Style="{StaticResource ProcessCardStyle}">
-                            <Border.InputBindings>
-                                <MouseBinding MouseAction="LeftClick" Command="{Binding CambiarUnidadDescarteCommand}" />
-                            </Border.InputBindings>
+                        <Button Style="{StaticResource ProcessCardButtonStyle}" Command="{Binding CambiarUnidadDescarteCommand}">
                             <StackPanel>
                                 <Border Style="{StaticResource IconBorderStyle}" Background="#FFF3E0">
                                     <TextBlock Text="⚙" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -106,12 +121,9 @@
                                     <TextBlock Text="Configurar →" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" FontSize="13" />
                                 </Border>
                             </StackPanel>
-                        </Border>
+                        </Button>
                         <!-- Tarjeta: Reporte de Submuestras (Recibí Proyecto) -->
-                        <Border Style="{StaticResource ProcessCardStyle}">
-                            <Border.InputBindings>
-                                <MouseBinding MouseAction="LeftClick" Command="{Binding GenerarRecibiCommand}" />
-                            </Border.InputBindings>
+                        <Button Style="{StaticResource ProcessCardButtonStyle}" Command="{Binding GenerarRecibiCommand}">
                             <StackPanel>
                                 <Border Style="{StaticResource IconBorderStyle}" Background="#F3E5F5">
                                     <TextBlock Text="📄" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -124,7 +136,7 @@
                                     <TextBlock Text="Generar PDF →" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" FontSize="13" />
                                 </Border>
                             </StackPanel>
-                        </Border>
+                        </Button>
                     </UniformGrid>
                 </StackPanel>
                 
