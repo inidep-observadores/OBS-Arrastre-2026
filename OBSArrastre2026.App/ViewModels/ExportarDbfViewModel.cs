@@ -16,10 +16,13 @@ public class ExportarDbfViewModel : ObservableObject
 {
     private readonly IDbfExporterService _exporterService;
     private readonly Marea _marea;
+    private readonly string _importFolder = string.Empty;
     private string _exportPath = string.Empty;
     private bool _isBusy;
     private double _progressValue;
     private DbfExportSummary? _exportSummary;
+    private bool _exportToCorregido = true;
+    private bool _updateOriginalFiles;
 
     public string ExportPath
     {
@@ -42,6 +45,7 @@ public class ExportarDbfViewModel : ObservableObject
             if (SetProperty(ref _isBusy, value))
             {
                 OnPropertyChanged(nameof(CanAccept));
+                OnPropertyChanged(nameof(CanBrowse));
                 (AcceptCommand as IRelayCommand)?.NotifyCanExecuteChanged();
                 (CloseCommand as IRelayCommand)?.NotifyCanExecuteChanged();
                 (BrowseCommand as IRelayCommand)?.NotifyCanExecuteChanged();
@@ -61,6 +65,62 @@ public class ExportarDbfViewModel : ObservableObject
         set => SetProperty(ref _exportSummary, value);
     }
 
+    public bool ExportToCorregido
+    {
+        get => _exportToCorregido;
+        set
+        {
+            if (SetProperty(ref _exportToCorregido, value))
+            {
+                if (value)
+                {
+                    _updateOriginalFiles = false;
+                    OnPropertyChanged(nameof(UpdateOriginalFiles));
+                    
+                    // Restaurar ruta a "Corregido" o MyDocuments
+                    if (!string.IsNullOrEmpty(_importFolder))
+                    {
+                        ExportPath = Path.Combine(_importFolder, "Corregido");
+                    }
+                    else
+                    {
+                        ExportPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "INIDEP_Export");
+                    }
+                }
+                OnPropertyChanged(nameof(CanBrowse));
+                (BrowseCommand as IRelayCommand)?.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    public bool UpdateOriginalFiles
+    {
+        get => _updateOriginalFiles;
+        set
+        {
+            if (SetProperty(ref _updateOriginalFiles, value))
+            {
+                if (value)
+                {
+                    _exportToCorregido = false;
+                    OnPropertyChanged(nameof(ExportToCorregido));
+                    
+                    // Asignar ruta de exportación a la carpeta original
+                    if (!string.IsNullOrEmpty(_importFolder))
+                    {
+                        ExportPath = _importFolder;
+                    }
+                }
+                OnPropertyChanged(nameof(CanBrowse));
+                (BrowseCommand as IRelayCommand)?.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    public bool CanUpdateOriginalFiles { get; }
+
+    public bool CanBrowse => ExportToCorregido && !IsBusy;
+
     public bool CanAccept => !string.IsNullOrWhiteSpace(ExportPath) && !IsBusy;
 
     public ICommand AcceptCommand { get; }
@@ -77,17 +137,21 @@ public class ExportarDbfViewModel : ObservableObject
 
         AcceptCommand = new AsyncRelayCommand(ExecuteExportAsync, () => CanAccept);
         CloseCommand = new RelayCommand(() => DialogResult.TrySetResult(false), () => !IsBusy);
-        BrowseCommand = new RelayCommand(Browse, () => !IsBusy);
+        BrowseCommand = new RelayCommand(Browse, () => CanBrowse);
 
         // Carpeta por defecto basada en metadata o Documentos
-        string importFolder = MareaMetadataHelper.GetImportFolder(_marea.Metadata);
-        if (!string.IsNullOrEmpty(importFolder))
+        _importFolder = MareaMetadataHelper.GetImportFolder(_marea.Metadata);
+        CanUpdateOriginalFiles = !string.IsNullOrEmpty(_importFolder);
+
+        if (CanUpdateOriginalFiles)
         {
-            ExportPath = Path.Combine(importFolder, "Corregido");
+            _exportToCorregido = true;
+            _exportPath = Path.Combine(_importFolder, "Corregido");
         }
         else
         {
-            ExportPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "INIDEP_Export");
+            _exportToCorregido = true;
+            _exportPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "INIDEP_Export");
         }
     }
 
@@ -126,7 +190,7 @@ public class ExportarDbfViewModel : ObservableObject
         try
         {
             var progress = new Progress<double>(v => ProgressValue = v);
-            ExportSummary = await _exporterService.ExportMareaToDbfAsync(_marea, ExportPath, progress);
+            ExportSummary = await _exporterService.ExportMareaToDbfAsync(_marea, ExportPath, UpdateOriginalFiles, progress);
             DialogResult.TrySetResult(true);
         }
         catch (Exception ex)

@@ -72,6 +72,55 @@ public class MareaImportServiceTests
     }
 
     [Fact]
+    public async Task ProcessMareaImportAsync_ShouldCaptureOriginalFilenamesInMetadata()
+    {
+        // Arrange
+        _extractor.ReadCapturasAsync(Arg.Any<string>())
+            .Returns(new List<LegacyCaptura> { new() { Lance = 1, Barco = "TEST", Marea = 100 } });
+        
+        _extractor.ReadMuestrasAsync(Arg.Any<string>())
+            .Returns(new List<LegacyMuestra>());
+        
+        _extractor.ReadSubmuestrasAsync(Arg.Any<string>())
+            .Returns(new List<LegacySubmuestra>());
+
+        _report.GenerateValidationPdfAsync(Arg.Any<MareaValidationReport>())
+            .Returns(Task.FromResult(new byte[] { 1, 2, 3 }));
+
+        _extractor.DetectEncodingSmartAsync(Arg.Any<string>())
+            .Returns(Task.FromResult(System.Text.Encoding.UTF8));
+
+        // Act
+        string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(tempDir);
+        File.WriteAllText(Path.Combine(tempDir, "C0010026.DBF"), "");
+        File.WriteAllText(Path.Combine(tempDir, "M0010026.DBF"), "");
+        File.WriteAllText(Path.Combine(tempDir, "P0010026.DBF"), "");
+        File.WriteAllText(Path.Combine(tempDir, "T0010026.DBF"), ""); // tracking (no debe guardarse)
+
+        var marea = new Marea 
+        { 
+            Buque = new Buque { Nombre = "TEST" }, 
+            NumeroInidep = 100, 
+            AnioInidep = 2026,
+            Etapas = new List<MareaEtapa>()
+        };
+        var selectedFiles = Directory.GetFiles(tempDir);
+        var result = await _service.ProcessMareaImportAsync(tempDir, selectedFiles, marea);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.MareaMetadata.Should().NotBeNullOrEmpty();
+        
+        var meta = MareaMetadataHelper.GetMetadata(result.MareaMetadata);
+        meta.OriginalFilenames.Should().NotBeNull();
+        meta.OriginalFilenames.Should().ContainKey("C").WhoseValue.Should().Be("C0010026.DBF");
+        meta.OriginalFilenames.Should().ContainKey("M").WhoseValue.Should().Be("M0010026.DBF");
+        meta.OriginalFilenames.Should().ContainKey("P").WhoseValue.Should().Be("P0010026.DBF");
+        meta.OriginalFilenames.Should().NotContainKey("T");
+    }
+
+    [Fact]
     public async Task ProcessMareaImportAsync_WithOrphanSubSamplesAndFlagTrue_ShouldReconstructMuestraAndFrecuencias()
     {
         // Arrange

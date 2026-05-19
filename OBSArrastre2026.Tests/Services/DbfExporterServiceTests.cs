@@ -402,6 +402,136 @@ public sealed class DbfExporterServiceTests : IDisposable
         }
     }
 
+    [Fact]
+    public async Task ExportMareaToDbfAsync_WithUseOriginalFilenames_UsesOriginalFilenamesFromMetadata()
+    {
+        // 1. Arrange: Crear datos de prueba con metadatos de nombres originales
+        string mareaId = "marea-original-filenames-id";
+        string buqueId = "buque-original-filenames-id";
+        string etapaId = "etapa-original-filenames-id";
+        string lanceId = "lance-original-filenames-id";
+        string especieId = "especie-original-filenames-id";
+
+        var metadataObj = new MareaMetadata
+        {
+            ImportFolder = "some-import-folder",
+            OriginalFilenames = new Dictionary<string, string>
+            {
+                { "C", "C04226.DBF" },
+                { "M", "M04226.DBF" },
+                { "MD", "MD04226.DBF" },
+                { "S", "S04226.DBF" },
+                { "L", "L04226.DBF" },
+                { "X", "X04226.DBF" },
+                { "P", "P04226.DBF" }
+            }
+        };
+        string metadataJson = MareaMetadataHelper.SetMetadata(metadataObj);
+
+        using (var db = _fixture.CreateContext())
+        {
+            var buque = new Buque
+            {
+                Id = buqueId,
+                Nombre = "TEST BARCO 3",
+                Matricula = 5678
+            };
+            db.Buques.Add(buque);
+
+            var marea = new Marea
+            {
+                ID = mareaId,
+                NumeroInidep = 42,
+                AnioInidep = 2026,
+                BuqueID = buqueId,
+                FechaInicio = new DateTime(2026, 5, 1),
+                Metadata = metadataJson
+            };
+            db.Mareas.Add(marea);
+
+            var etapa = new MareaEtapa
+            {
+                ID = etapaId,
+                MareaID = mareaId,
+                FechaZarpada = new DateTime(2026, 5, 1),
+                FechaArribo = new DateTime(2026, 5, 10)
+            };
+            db.MareaEtapas.Add(etapa);
+
+            var especie = new Especie
+            {
+                ID = especieId,
+                NombreVulgar = "MERLUZA",
+                CodigoInidep = "33"
+            };
+            db.Especies.Add(especie);
+
+            var lance = new Lance
+            {
+                Id = lanceId,
+                MareaEtapaId = etapaId,
+                NroLance = 1,
+                Fecha = "2026-05-02",
+                HoraInicio = "10:00",
+                HoraFinal = "12:00",
+                CapturaTotalKg = 1000.0,
+                DescarteTotalKg = 50.0
+            };
+            db.Lances.Add(lance);
+
+            var item = new ItemCaptura
+            {
+                ID = "item-test-id-3",
+                LanceID = lanceId,
+                EspecieID = especieId,
+                EspecieOriginal = "33",
+                DatoCaptura = 100.0,
+                TipoDatoCaptura = TipoDatoCaptura.Kilogramos,
+                DatoDescarte = 5.0,
+                TipoDatoDescarte = TipoDatoDescarte.Kilogramos,
+                NumeroOrden = 1
+            };
+            db.ItemsCaptura.Add(item);
+
+            await db.SaveChangesAsync();
+        }
+
+        Marea fullMarea;
+        using (var db = _fixture.CreateContext())
+        {
+            fullMarea = await db.Mareas
+                .Include(m => m.Buque)
+                .Include(m => m.Etapas)
+                    .ThenInclude(e => e.Lances)
+                        .ThenInclude(l => l.ItemsCaptura)
+                .FirstAsync(m => m.ID == mareaId);
+        }
+
+        string tempOutputDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(tempOutputDir);
+
+        try
+        {
+            // 2. Act: Exportar con useOriginalFilenames = true
+            await _service.ExportMareaToDbfAsync(fullMarea, tempOutputDir, useOriginalFilenames: true);
+
+            // 3. Assert: Verificar archivos generados con nombres originales
+            File.Exists(Path.Combine(tempOutputDir, "C04226.DBF")).Should().BeTrue();
+            File.Exists(Path.Combine(tempOutputDir, "P04226.DBF")).Should().BeTrue();
+            
+            // Los archivos estándar NO deberían haberse generado
+            File.Exists(Path.Combine(tempOutputDir, "C4226.DBF")).Should().BeFalse();
+            File.Exists(Path.Combine(tempOutputDir, "P4226.DBF")).Should().BeFalse();
+        }
+        finally
+        {
+            if (Directory.Exists(tempOutputDir))
+            {
+                Directory.Delete(tempOutputDir, true);
+            }
+        }
+    }
+
     public void Dispose()
     {
         _fixture.Dispose();

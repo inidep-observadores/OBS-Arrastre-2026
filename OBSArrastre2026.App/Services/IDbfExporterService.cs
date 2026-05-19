@@ -10,7 +10,8 @@ public interface IDbfExporterService
     /// </summary>
     /// <param name="marea">La marea a exportar.</param>
     /// <param name="outputPath">La carpeta de destino.</param>
+    /// <param name="useOriginalFilenames">Si es true, utiliza los nombres de archivo originales almacenados en la metadata de la marea.</param>
     /// <param name="progress">Reporte de progreso opcional.</param>
     /// <returns>Resumen con los tiempos de cada etapa.</returns>
-    Task<DbfExportSummary> ExportMareaToDbfAsync(Marea marea, string outputPath, IProgress<double>? progress = null);
+    Task<DbfExportSummary> ExportMareaToDbfAsync(Marea marea, string outputPath, bool useOriginalFilenames = false, IProgress<double>? progress = null);
 }

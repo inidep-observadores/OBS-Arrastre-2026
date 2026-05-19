@@ -115,9 +115,19 @@ public class MareaImportService : IMareaImportService
         }
         
         foreach (var issue in initialIssues) { report.Issues.Add(issue); }
-        // 1.5 Guardar metadatos (carpeta de importación y encoding detectado)
+        // 1.5 Guardar metadatos (carpeta de importación, encoding detectado y nombres de archivos originales)
         var meta = MareaMetadataHelper.GetMetadata(marea.Metadata);
         meta.ImportFolder = basePath;
+
+        meta.OriginalFilenames.Clear();
+        if (cPath != null) meta.OriginalFilenames["C"] = Path.GetFileName(cPath);
+        if (mPath != null) meta.OriginalFilenames["M"] = Path.GetFileName(mPath);
+        if (mdPath != null) meta.OriginalFilenames["MD"] = Path.GetFileName(mdPath);
+        if (xPath != null) meta.OriginalFilenames["X"] = Path.GetFileName(xPath);
+        if (sPath != null) meta.OriginalFilenames["S"] = Path.GetFileName(sPath);
+        if (lPath != null) meta.OriginalFilenames["L"] = Path.GetFileName(lPath);
+        if (pPath != null) meta.OriginalFilenames["P"] = Path.GetFileName(pPath);
+
         if (pPath != null)
         {
             var detectedEnc = await _extractor.DetectEncodingSmartAsync(pPath);
@@ -335,6 +345,7 @@ public class MareaImportService : IMareaImportService
         report.IsTrackingOnly = isTrackingOnly;
         report.ArchivosProcesados = archivosEncontrados;
         report.ImportPath = basePath;
+        report.MareaMetadata = marea.Metadata;
         foreach (var issue in initialIssues) 
         { 
             report.Issues.Insert(0, issue); 

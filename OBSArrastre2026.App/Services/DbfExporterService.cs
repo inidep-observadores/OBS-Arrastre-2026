@@ -21,7 +21,7 @@ public sealed class DbfExporterService : IDbfExporterService
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
     }
 
-    public async Task<DbfExportSummary> ExportMareaToDbfAsync(Marea marea, string outputPath, IProgress<double>? progress = null)
+    public async Task<DbfExportSummary> ExportMareaToDbfAsync(Marea marea, string outputPath, bool useOriginalFilenames = false, IProgress<double>? progress = null)
     {
         var totalSw = Stopwatch.StartNew();
         var summary = new DbfExportSummary();
@@ -74,21 +74,23 @@ public sealed class DbfExporterService : IDbfExporterService
             ? Encoding.GetEncoding(metadata.EncodingCodePage.Value) 
             : Encoding.GetEncoding(850); // Fallback recomendado para INIDEP (antes era 437)
 
+        var originalFilenames = useOriginalFilenames ? metadata.OriginalFilenames : null;
+
         // Exportar cada archivo
         progress?.Report(10);
         var sw = Stopwatch.StartNew();
-        await ExportCapturasAsync(fullMarea, barcoNombre, mareaSuffix, outputPath, exportEncoding);
+        await ExportCapturasAsync(fullMarea, barcoNombre, mareaSuffix, outputPath, exportEncoding, originalFilenames);
         summary.StageTimings["Capturas (C)"] = sw.Elapsed;
 
         progress?.Report(30);
         sw.Restart();
-        await ExportProduccionAsync(fullMarea, barcoNombre, mareaSuffix, outputPath, exportEncoding);
+        await ExportProduccionAsync(fullMarea, barcoNombre, mareaSuffix, outputPath, exportEncoding, originalFilenames);
         summary.StageTimings["Producción (P)"] = sw.Elapsed;
 
 
         progress?.Report(70);
         sw.Restart();
-        await ExportMuestrasYSasyn(fullMarea, barcoNombre, mareaSuffix, outputPath, exportEncoding, progress);
+        await ExportMuestrasYSasyn(fullMarea, barcoNombre, mareaSuffix, outputPath, exportEncoding, originalFilenames, progress);
         summary.StageTimings["Muestras y Submuestras (M,S,L,X)"] = sw.Elapsed;
 
         progress?.Report(100);
@@ -96,9 +98,12 @@ public sealed class DbfExporterService : IDbfExporterService
         return summary with { TotalTime = totalSw.Elapsed };
     }
 
-    private async Task ExportCapturasAsync(Marea marea, string barco, string suffix, string path, Encoding encoding)
+    private async Task ExportCapturasAsync(Marea marea, string barco, string suffix, string path, Encoding encoding, Dictionary<string, string>? originalFilenames)
     {
-        string fileName = Path.Combine(path, $"C{suffix}.DBF");
+        string name = (originalFilenames != null && originalFilenames.TryGetValue("C", out var originalName) && !string.IsNullOrWhiteSpace(originalName))
+            ? originalName
+            : $"C{suffix}.DBF";
+        string fileName = Path.Combine(path, name);
 
         using var stream = File.Open(fileName, FileMode.Create, FileAccess.Write);
         var writer = new DBFWriter(stream) { CharEncoding = encoding };
@@ -231,9 +236,12 @@ public sealed class DbfExporterService : IDbfExporterService
         writer.Close();
     }
 
-    private async Task ExportProduccionAsync(Marea marea, string barco, string suffix, string path, Encoding encoding)
+    private async Task ExportProduccionAsync(Marea marea, string barco, string suffix, string path, Encoding encoding, Dictionary<string, string>? originalFilenames)
     {
-        string fileName = Path.Combine(path, $"P{suffix}.DBF");
+        string name = (originalFilenames != null && originalFilenames.TryGetValue("P", out var originalName) && !string.IsNullOrWhiteSpace(originalName))
+            ? originalName
+            : $"P{suffix}.DBF";
+        string fileName = Path.Combine(path, name);
 
         using var stream = File.Open(fileName, FileMode.Create, FileAccess.Write);
         var writer = new DBFWriter(stream) { CharEncoding = encoding };
@@ -276,14 +284,19 @@ public sealed class DbfExporterService : IDbfExporterService
         writer.Close();
     }
 
-    private async Task ExportMuestrasYSasyn(Marea marea, string barco, string suffix, string path, Encoding encoding, IProgress<double>? progress = null)
+    private async Task ExportMuestrasYSasyn(Marea marea, string barco, string suffix, string path, Encoding encoding, Dictionary<string, string>? originalFilenames, IProgress<double>? progress = null)
     {
+        string mName = (originalFilenames != null && originalFilenames.TryGetValue("M", out var oM) && !string.IsNullOrWhiteSpace(oM)) ? oM : $"M{suffix}.DBF";
+        string mdName = (originalFilenames != null && originalFilenames.TryGetValue("MD", out var oMd) && !string.IsNullOrWhiteSpace(oMd)) ? oMd : $"MD{suffix}.DBF";
+        string sName = (originalFilenames != null && originalFilenames.TryGetValue("S", out var oS) && !string.IsNullOrWhiteSpace(oS)) ? oS : $"S{suffix}.DBF";
+        string lName = (originalFilenames != null && originalFilenames.TryGetValue("L", out var oL) && !string.IsNullOrWhiteSpace(oL)) ? oL : $"L{suffix}.DBF";
+        string xName = (originalFilenames != null && originalFilenames.TryGetValue("X", out var oX) && !string.IsNullOrWhiteSpace(oX)) ? oX : $"X{suffix}.DBF";
 
-        string mPath = Path.Combine(path, $"M{suffix}.DBF");
-        string mdPath = Path.Combine(path, $"MD{suffix}.DBF");
-        string sPath = Path.Combine(path, $"S{suffix}.DBF");
-        string lPath = Path.Combine(path, $"L{suffix}.DBF");
-        string xPath = Path.Combine(path, $"X{suffix}.DBF");
+        string mPath = Path.Combine(path, mName);
+        string mdPath = Path.Combine(path, mdName);
+        string sPath = Path.Combine(path, sName);
+        string lPath = Path.Combine(path, lName);
+        string xPath = Path.Combine(path, xName);
 
         using var mStream = File.Open(mPath, FileMode.Create, FileAccess.Write);
         var mWriter = new DBFWriter(mStream) { CharEncoding = encoding };

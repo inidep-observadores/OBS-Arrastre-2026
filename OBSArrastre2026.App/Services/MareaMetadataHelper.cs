@@ -42,6 +42,9 @@ public class MareaMetadata
 
     [JsonPropertyName("arte_pesca")]
     public string? ArtePesca { get; set; }
+
+    [JsonPropertyName("original_filenames")]
+    public Dictionary<string, string> OriginalFilenames { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
 public static class MareaMetadataHelper

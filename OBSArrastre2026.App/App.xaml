@@ -1319,7 +1319,43 @@
                                         TextWrapping="Wrap"
                                         FontSize="13"
                                         LineHeight="20"
-                                        Margin="0,0,0,24"/>
+                                        Margin="0,0,0,20"/>
+                            
+                            <!-- Selección de Opción de Exportación -->
+                            <Label Content="Opción de destino" Style="{StaticResource FormLabelStyle}" Margin="0,0,0,8" />
+                            <Border BorderBrush="{DynamicResource CardBorderBrush}" 
+                                    BorderThickness="1" 
+                                    CornerRadius="12" 
+                                    Background="{DynamicResource SurfaceBackgroundBrush}" 
+                                    Padding="16,12" 
+                                    Margin="0,0,0,20">
+                                <StackPanel>
+                                    <RadioButton IsChecked="{Binding ExportToCorregido}" 
+                                                 Content="Exportar a subcarpeta 'Corregido'" 
+                                                 GroupName="ExportDest"
+                                                 Foreground="{DynamicResource PrimaryTextBrush}"
+                                                 FontSize="13"
+                                                 FontWeight="Medium" />
+                                    <TextBlock Text="Crea una carpeta llamada 'Corregido' dentro de la ruta de importación." 
+                                               Foreground="{DynamicResource SecondaryTextBrush}" 
+                                               FontSize="11" 
+                                               TextWrapping="Wrap" 
+                                               Margin="20,4,0,12" />
+
+                                    <RadioButton IsChecked="{Binding UpdateOriginalFiles}" 
+                                                 IsEnabled="{Binding CanUpdateOriginalFiles}"
+                                                 Content="Actualizar archivos de entrada originales" 
+                                                 GroupName="ExportDest"
+                                                 Foreground="{DynamicResource PrimaryTextBrush}"
+                                                 FontSize="13"
+                                                 FontWeight="Medium" />
+                                    <TextBlock Text="Sobrescribe los archivos DBF originales utilizando sus nombres exactos al momento de la importación." 
+                                               Foreground="{DynamicResource SecondaryTextBrush}" 
+                                               FontSize="11" 
+                                               TextWrapping="Wrap" 
+                                               Margin="20,4,0,0" />
+                                </StackPanel>
+                            </Border>
                             
                             <Label Content="Carpeta de destino" Style="{StaticResource FormLabelStyle}" />
                             <Grid>
