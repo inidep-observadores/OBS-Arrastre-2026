@@ -4,6 +4,14 @@ Documentación histórica del desarrollo del proyecto OBSArrastre2026.
 Período documentado: 2026-04-09 a 2026-05-18.
 Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 1.0.0.
 
+## [v1.8.0] - 2026-05-19
+
+**Descripción**: Incorporación de parámetros de relación largo-peso para Pintarroja (Schroederichthys bivius) en el catálogo biométrico y validación de coherencia.
+
+### Added (Características nuevas)
+- feat(biometria): agregar parámetros largo-peso para pintarroja (Schroederichthys bivius) en el sembrado de datos.
+- test(biometria): incluir prueba unitaria para validar la coherencia del peso alométrico de la pintarroja.
+
 ---
 
 ## [v1.7.0] - 2026-05-18
@@ -562,7 +570,7 @@ Para generar changelog de cambios pendientes:
 
 ---
 
-**Última actualización**: 2026-05-18
-**Período de desarrollo**: 2026-04-09 a 2026-05-18 (40 días)
-**Total de commits documentados**: 292  
-**Versión actual**: v1.7.0
+**Última actualización**: 2026-05-19
+**Período de desarrollo**: 2026-04-09 a 2026-05-19 (41 días)
+**Total de commits documentados**: 293  
+**Versión actual**: v1.8.0

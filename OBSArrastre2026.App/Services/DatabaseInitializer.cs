@@ -93,6 +93,10 @@ public sealed class DatabaseInitializer(IDbContextFactory<AppDbContext> dbContex
             new { Code = "7109010105", Sexo = 1, A = 0.001, B = 3.2575, Medida = "LT", Obs = "Oficial 2026 - Machos" },
             new { Code = "7109010105", Sexo = 2, A = 0.001, B = 3.2573, Medida = "LT", Obs = "Oficial 2026 - Hembras" },
 
+            // Pintarroja (Schroederichthys bivius) - 7106010101
+            new { Code = "7106010101", Sexo = 1, A = 0.00180, B = 3.1200, Medida = "LT", Obs = "Basado en Largo Total (LT)." },
+            new { Code = "7106010101", Sexo = 2, A = 0.00130, B = 3.2100, Medida = "LT", Obs = "Basado en Largo Total (LT)." },
+
             // Calamar (I. argentinus) - 5702150101
             new { Code = "5702150101", Sexo = 0, A = 0.011, B = 3.15, Medida = "LM", Obs = "Largo de Manto" }
         };
