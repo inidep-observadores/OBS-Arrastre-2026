@@ -1,4 +1,4 @@
-# .gitignore for .NET / Visual Studio
+﻿# .gitignore for .NET / Visual Studio
 bin/
 obj/
 .vs/
@@ -11,7 +11,7 @@ obj/
 *.pdf
 
 # Ignorar staging temporal y archivos de depuración
-OBSArrastre2026.App/bin/Debug/net10.0-windows/Data/Import/Staging/
+ControlMareas.App/bin/Debug/net10.0-windows/Data/Import/Staging/
 scratch/
 *.lscache
 *_wpftmp.csproj

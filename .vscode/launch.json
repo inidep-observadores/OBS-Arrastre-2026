@@ -1,4 +1,4 @@
-{
+﻿{
     "version": "0.2.0",
     "configurations": [
         {
@@ -6,9 +6,9 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/OBSArrastre2026.App/bin/Debug/net10.0-windows/ControlDeMareas.exe",
+            "program": "${workspaceFolder}/ControlMareas.App/bin/Debug/net10.0-windows/ControlDeMareas.exe",
             "args": [],
-            "cwd": "${workspaceFolder}/OBSArrastre2026.App",
+            "cwd": "${workspaceFolder}/ControlMareas.App",
             "console": "internalConsole"
         },
         {
@@ -16,9 +16,9 @@
             "type": "dotnet",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/OBSArrastre2026.App/bin/Debug/net10.0-windows/ControlDeMareas.exe",
+            "program": "${workspaceFolder}/ControlMareas.App/bin/Debug/net10.0-windows/ControlDeMareas.exe",
             "args": [],
-            "cwd": "${workspaceFolder}/OBSArrastre2026.App",
+            "cwd": "${workspaceFolder}/ControlMareas.App",
             "console": "internalConsole"
         },
         {
@@ -26,9 +26,9 @@
             "type": "csharp",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/OBSArrastre2026.App/bin/Debug/net10.0-windows/ControlDeMareas.exe",
+            "program": "${workspaceFolder}/ControlMareas.App/bin/Debug/net10.0-windows/ControlDeMareas.exe",
             "args": [],
-            "cwd": "${workspaceFolder}/OBSArrastre2026.App"
+            "cwd": "${workspaceFolder}/ControlMareas.App"
         }
     ]
 }

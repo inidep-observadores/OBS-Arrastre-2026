@@ -7,7 +7,7 @@
 !define APP_VERSION "1.0.0"
 !define INSTALLER_OUT "InstalarControlDeMareas.exe"
 !define INSTALL_DIR "$PROGRAMFILES64\Control de mareas"
-!define APP_ICON "..\OBSArrastre2026.App\assets\icons\app_icon.ico"
+!define APP_ICON "..\ControlMareas.App\assets\icons\app_icon.ico"
 !define PUBLISH_DIR "publish"
 
 SetCompressor lzma

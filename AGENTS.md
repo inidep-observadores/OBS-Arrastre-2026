@@ -1,4 +1,4 @@
-# Control de mareas Agent Guide
+﻿# Control de mareas Agent Guide
 
 ## Scope
 
@@ -8,8 +8,8 @@ Use this file as the project-specific operating guide for Codex-compatible agent
 ## Project Defaults
 
 - Primary stack: C#, .NET 10, WPF, XAML, EF Core, SQLite.
-- Solution file: `OBSArrastre2026.sln`.
-- Main app project: `OBSArrastre2026.App/OBSArrastre2026.App.csproj`.
+- Solution file: `ControlMareas.sln`.
+- Main app project: `ControlMareas.App/ControlMareas.App.csproj`.
 - Current canonical schema source: `docs/esquema.sql`.
 - Default branch model: Git Flow AVH with `develop` as the ongoing integration branch.
 - Application startup uses `Microsoft.Extensions.Hosting` and dependency injection.
@@ -31,8 +31,8 @@ Use this file as the project-specific operating guide for Codex-compatible agent
 
 ## Build And Verification
 
-- Restore/build solution: `dotnet build .\OBSArrastre2026.sln`
-- Run the WPF app: `dotnet run --project .\OBSArrastre2026.App\OBSArrastre2026.App.csproj`
+- Restore/build solution: `dotnet build .\ControlMareas.sln`
+- Run the WPF app: `dotnet run --project .\ControlMareas.App\ControlMareas.App.csproj`
 - When adding tests later, prefer `dotnet test` from the solution root.
 - The repo pins the SDK through `global.json`; keep it aligned with the installed LTS SDK.
 
@@ -47,11 +47,11 @@ Use this file as the project-specific operating guide for Codex-compatible agent
 ## Agent Context
 
 - Project-local skills live under `.codex/skills/`.
-- Use the local skill `obs-arrastre-wpf` when working on architecture, naming, domain mapping, or implementation tasks in this repository.
+- Use the local skill `control-mareas-wpf` when working on architecture, naming, domain mapping, or implementation tasks in this repository.
 - Use the local skill `commits-convencionales` when drafting commit, merge, squash, or revert messages.
 - Use the local skill `principios-arquitectura` when evaluating or applying design principles and structural patterns.
 - Use the local skill `versionamiento-semantico` for version management, changelog generation, and release workflows. See `.codex/skills/versionamiento-semantico/QUICK-START.md` for usage.
-- Read `.codex/skills/obs-arrastre-wpf/references/domain-context.md` when changes depend on the fishing-domain schema.
+- Read `.codex/skills/control-mareas-wpf/references/domain-context.md` when changes depend on the fishing-domain schema.
 
 ## Semantic Versioning and Conventional Commits
 

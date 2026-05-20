@@ -1,0 +1,1432 @@
+﻿<Application x:Class="ControlMareas.App.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ControlMareas.App.ViewModels"
+             xmlns:conv="clr-namespace:ControlMareas.App.Converters"
+             xmlns:models="clr-namespace:ControlMareas.App.Models"
+             xmlns:views="clr-namespace:ControlMareas.App.Views"
+             xmlns:system="clr-namespace:System;assembly=mscorlib">
+    <Application.Resources>
+        <!-- Plantilla Global para Buques: Asegura que siempre se vea el Nombre -->
+        <DataTemplate DataType="{x:Type vm:BuqueListItemViewModel}">
+            <TextBlock Text="{Binding Nombre}" VerticalAlignment="Center" />
+        </DataTemplate>
+        <!-- Recursos Base (Evitan XamlParseException antes de que el ThemeService cargue) -->
+        <Color x:Key="AccentColor">#2F6BFF</Color>
+        <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
+        <SolidColorBrush x:Key="AccentMutedBrush" Color="#D8E4FF" />
+        <SolidColorBrush x:Key="CardBackgroundBrush" Color="White" />
+        <SolidColorBrush x:Key="CardBorderBrush" Color="#DCE7FF" />
+        <SolidColorBrush x:Key="PrimaryTextBrush" Color="#0F172A" />
+        <SolidColorBrush x:Key="SecondaryTextBrush" Color="#475569" />
+        <SolidColorBrush x:Key="SurfaceBackgroundBrush" Color="#F8FAFC" />
+        <SolidColorBrush x:Key="HoverBackgroundBrush" Color="#F1F5F9" />
+        <SolidColorBrush x:Key="SidebarBorderBrush" Color="#E5E7EB" />
+        <SolidColorBrush x:Key="TableRowBorderBrush" Color="#E2E8F0" />
+        <SolidColorBrush x:Key="SelectionBackgroundBrush" Color="#EEF4FF" />
+        <SolidColorBrush x:Key="SuccessForegroundBrush" Color="#15803D" />
+        <SolidColorBrush x:Key="SuccessBackgroundBrush" Color="#DCFCE7" />
+        <SolidColorBrush x:Key="WarningForegroundBrush" Color="#B45309" />
+        <SolidColorBrush x:Key="WarningBackgroundBrush" Color="#FEF3C7" />
+        <SolidColorBrush x:Key="DangerForegroundBrush" Color="#B91C1C" />
+        <SolidColorBrush x:Key="DangerBackgroundBrush" Color="#FEE2E2" />
+        <SolidColorBrush x:Key="WarningBrush" Color="#F59E0B" />
+
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <conv:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
+        <conv:IntToVisibilityConverter x:Key="IntToVisibilityConverter" />
+        <conv:MathConverter x:Key="MathConverter" />
+        <conv:EnhancedBooleanToVisibilityConverter x:Key="EnhancedBooleanToVisibilityConverter" />
+        <conv:CoordinateConverter x:Key="CoordinateConverter" />
+
+        <ObjectDataProvider x:Key="TipoDatoDescarteEnum" MethodName="GetValues" ObjectType="{x:Type system:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="models:TipoDatoDescarte"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+
+        <Style x:Key="SurfaceBorderStyle" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="0" />
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="#000000" Direction="270"
+                                      ShadowDepth="2" BlurRadius="16" Opacity="0.06" />
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SidebarItemStyle" TargetType="ListBoxItem">
+            <Setter Property="Margin" Value="0,1,0,1" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="IsEnabled" Value="{Binding IsEnabled}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="3" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Rectangle x:Name="AccentBar"
+                                       Fill="Transparent"
+                                       RadiusX="0"
+                                       RadiusY="0" />
+                            <Border x:Name="Container"
+                                    Grid.Column="1"
+                                    Padding="12,10"
+                                    Background="Transparent"
+                                    CornerRadius="0">
+                                <ContentPresenter />
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Container" Property="Background"
+                                        Value="{DynamicResource AccentMutedBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="AccentBar" Property="Fill"
+                                        Value="{DynamicResource AccentBrush}" />
+                                <Setter TargetName="Container" Property="Background"
+                                        Value="{DynamicResource SelectionBackgroundBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ThemeButtonStyle" TargetType="Button">
+            <Setter Property="Padding" Value="14,8" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root"
+                                Padding="{TemplateBinding Padding}"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background"
+                                        Value="{DynamicResource AccentMutedBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Root" Property="Background"
+                                        Value="{DynamicResource SelectionBackgroundBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+            <Setter Property="Padding" Value="18,11" />
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root"
+                                Padding="{TemplateBinding Padding}"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="0"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform ScaleX="1" ScaleY="1" />
+                            </Border.RenderTransform>
+                            <Border.Effect>
+                                <DropShadowEffect Color="#2F6BFF" Direction="270"
+                                                  ShadowDepth="0" BlurRadius="14" Opacity="0.4" />
+                            </Border.Effect>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.88" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.72" />
+                                <Setter TargetName="Root" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.97" ScaleY="0.97" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.35" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="FilterChipStyle" TargetType="Border">
+            <Setter Property="Margin" Value="0,0,10,10" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="Background" Value="{DynamicResource AccentMutedBrush}" />
+            <Setter Property="CornerRadius" Value="0" />
+        </Style>
+
+        <Style x:Key="MetricCardStyle" TargetType="Border" BasedOn="{StaticResource SurfaceBorderStyle}">
+            <Setter Property="Padding" Value="20" />
+            <Setter Property="Margin" Value="0,0,14,14" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect Color="#000000" Direction="270"
+                                              ShadowDepth="4" BlurRadius="24" Opacity="0.13" />
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="HeaderLabelStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+        </Style>
+
+        <Style x:Key="SubtitleStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+        </Style>
+
+        <Style x:Key="BodySecondaryStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+        </Style>
+
+        <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+            <Setter Property="Opacity" Value="0.7" />
+        </Style>
+
+        <Style x:Key="SlimProgressBarStyle" TargetType="ProgressBar">
+            <Setter Property="Height" Value="8" />
+            <Setter Property="Background" Value="{DynamicResource AccentMutedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ProgressBar">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="0">
+                            <Grid x:Name="TemplateRoot">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Border x:Name="PART_Indicator" Background="{TemplateBinding Foreground}" CornerRadius="0" />
+                            </Grid>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ScrollBarThumbStyle" TargetType="Thumb">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Border x:Name="Root"
+                                Background="{DynamicResource SecondaryTextBrush}"
+                                CornerRadius="0"
+                                Opacity="0.35" />
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.6" />
+                            </Trigger>
+                            <Trigger Property="IsDragging" Value="True">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.85" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SlimScrollBarStyle" TargetType="ScrollBar">
+            <Setter Property="Width" Value="6" />
+            <Setter Property="MinWidth" Value="6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid Background="Transparent">
+                            <Track x:Name="PART_Track" IsDirectionReversed="True" Margin="0,4">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageUpCommand"
+                                                  Opacity="0" Focusable="False" />
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Style="{StaticResource ScrollBarThumbStyle}" MinHeight="20" />
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageDownCommand"
+                                                  Opacity="0" Focusable="False" />
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="ScrollBar" BasedOn="{StaticResource SlimScrollBarStyle}" />
+
+
+        <Style x:Key="TableRowStyle" TargetType="Border">
+            <Setter Property="BorderBrush" Value="{DynamicResource TableRowBorderBrush}" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="Padding" Value="18,15" />
+            <Setter Property="Background" Value="Transparent" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource SelectionBackgroundBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource HoverBackgroundBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="SlimScrollViewerStyle" TargetType="ScrollViewer">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollViewer">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="6" />
+                            </Grid.ColumnDefinitions>
+                            <ScrollContentPresenter Grid.Column="0" Grid.ColumnSpan="2"
+                                                    CanContentScroll="{TemplateBinding CanContentScroll}" />
+                            <ScrollBar x:Name="PART_VerticalScrollBar"
+                                       Grid.Column="1"
+                                       Style="{StaticResource SlimScrollBarStyle}"
+                                       Value="{TemplateBinding VerticalOffset}"
+                                       Maximum="{TemplateBinding ScrollableHeight}"
+                                       ViewportSize="{TemplateBinding ViewportHeight}"
+                                       Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Slider Style -->
+        <Style x:Key="PremiumSliderStyle" TargetType="Slider">
+            <Setter Property="Height" Value="24" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid>
+                            <Border Height="6" 
+                                    Background="{DynamicResource AccentMutedBrush}" 
+                                    VerticalAlignment="Center"
+                                    CornerRadius="3" />
+                            <Track x:Name="PART_Track">
+                                <Track.Thumb>
+                                    <Thumb Width="20" Height="20">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Ellipse Fill="{DynamicResource AccentBrush}" 
+                                                         Stroke="White" 
+                                                         StrokeThickness="2">
+                                                    <Ellipse.Effect>
+                                                        <DropShadowEffect BlurRadius="5" ShadowDepth="2" Opacity="0.3" />
+                                                    </Ellipse.Effect>
+                                                </Ellipse>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Form Styles -->
+        <Style x:Key="FormLabelStyle" TargetType="Label">
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,0,0,4" />
+            <Setter Property="Padding" Value="0" />
+        </Style>
+
+        <!-- TextBox Style -->
+        <Style x:Key="PremiumTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="SelectionBrush" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Grid>
+                            <Border x:Name="border"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="0"
+                                    SnapsToDevicePixels="True">
+                                <Grid>
+                                    <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+                                    <!-- Placeholder / Tag -->
+                                    <TextBlock x:Name="placeholder"
+                                               Text="{TemplateBinding Tag}"
+                                               Foreground="{DynamicResource SecondaryTextBrush}"
+                                               Style="{StaticResource SubtitleStyle}"
+                                               FontSize="14"
+                                               Margin="12,0"
+                                               VerticalAlignment="Center"
+                                               IsHitTestVisible="False"
+                                               Visibility="Collapsed"
+                                               Opacity="0.5"/>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="Text" Value="" />
+                                    <Condition Property="IsFocused" Value="False" />
+                                </MultiTrigger.Conditions>
+                                <Setter Property="Visibility" TargetName="placeholder" Value="Visible" />
+                            </MultiTrigger>
+                            <Trigger Property="IsMouseOver" Value="true">
+                                <Setter Property="BorderBrush" TargetName="border" Value="{DynamicResource AccentBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsFocused" Value="true">
+                                <Setter Property="BorderBrush" TargetName="border" Value="{DynamicResource AccentBrush}"/>
+                                <Setter Property="BorderThickness" TargetName="border" Value="2"/>
+                                <Setter Property="Effect" TargetName="border">
+                                    <Setter.Value>
+                                        <DropShadowEffect BlurRadius="8" ShadowDepth="0" Color="{Binding Color, Source={StaticResource AccentBrush}}" Opacity="0.3"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ComboBox Item Style -->
+        <Style x:Key="PremiumComboBoxItemStyle" TargetType="ComboBoxItem">
+            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Margin" Value="2,1" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="0"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="true">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="true">
+                                <Setter Property="Background" TargetName="border" Value="{DynamicResource HoverBackgroundBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="true">
+                                <Setter Property="Background" TargetName="border" Value="{DynamicResource AccentBrush}" />
+                                <Setter Property="TextElement.Foreground" Value="White" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ComboBox Style -->
+        <Style x:Key="PremiumComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="ItemContainerStyle" Value="{StaticResource PremiumComboBoxItemStyle}" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="ScrollViewer.CanContentScroll" Value="true"/>
+            <Setter Property="ScrollViewer.PanningMode" Value="Both"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid x:Name="templateRoot" SnapsToDevicePixels="true">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition MinWidth="0" Width="30"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <Popup x:Name="PART_Popup"
+                                   AllowsTransparency="true"
+                                   Grid.ColumnSpan="2"
+                                   IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                   Margin="1"
+                                   Placement="Bottom"
+                                   PopupAnimation="Slide">
+                                <Border x:Name="dropDownBorder"
+                                        Background="{DynamicResource SurfaceBackgroundBrush}"
+                                        BorderBrush="{DynamicResource CardBorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="0"
+                                        MinHeight="40"
+                                        MaxHeight="400"
+                                        MinWidth="{Binding ActualWidth, ElementName=templateRoot}"
+                                        Margin="0,4,0,10">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="15" 
+                                                          ShadowDepth="3" 
+                                                          Opacity="0.15" 
+                                                          Color="Black"/>
+                                    </Border.Effect>
+                                    <ScrollViewer x:Name="DropDownScrollViewer" Margin="4">
+                                        <ItemsPresenter x:Name="ItemsPresenter" 
+                                                        KeyboardNavigation.DirectionalNavigation="Contained" 
+                                                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+
+                            <Border x:Name="border"
+                                    Grid.ColumnSpan="2"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="0">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="30"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- El ToggleButton va primero para que esté al fondo y no tape el texto -->
+                                    <ToggleButton x:Name="toggleButton"
+                                                  Grid.ColumnSpan="2"
+                                                  Background="Transparent"
+                                                  BorderThickness="0"
+                                                  ClickMode="Press"
+                                                  Focusable="False"
+                                                  IsTabStop="False"
+                                                  IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                        <ToggleButton.Style>
+                                            <Style TargetType="ToggleButton">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="ToggleButton">
+                                                            <Border Background="Transparent" />
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </ToggleButton.Style>
+                                    </ToggleButton>
+
+                                    <ContentPresenter x:Name="contentPresenter" 
+                                                      Content="{TemplateBinding SelectionBoxItem}"
+                                                      ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                      ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
+                                                      ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                                      HorizontalAlignment="Left"
+                                                      VerticalAlignment="Center"
+                                                      Margin="{TemplateBinding Padding}"
+                                                      SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                                                      IsHitTestVisible="false"/>
+
+                                    <TextBox x:Name="PART_EditableTextBox"
+                                             Style="{x:Null}"
+                                             Focusable="True"
+                                             Background="Transparent"
+                                             BorderThickness="0"
+                                             Padding="{TemplateBinding Padding}"
+                                             VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                             HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                             IsReadOnly="{Binding IsReadOnly, RelativeSource={RelativeSource TemplatedParent}}"
+                                             Visibility="Collapsed"
+                                             Foreground="{TemplateBinding Foreground}"
+                                             FontSize="{TemplateBinding FontSize}" />
+                                    
+                                    <Path x:Name="arrow" 
+                                          Grid.Column="1"
+                                          Fill="{DynamicResource SecondaryTextBrush}"
+                                          Data="M 0 0 L 4 4 L 8 0 Z"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,8,0"
+                                          IsHitTestVisible="False"/>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEditable" Value="True">
+                                <Setter Property="IsTabStop" Value="False" />
+                                <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="contentPresenter" Property="Visibility" Value="Collapsed" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="true">
+                                <Setter Property="BorderBrush" TargetName="border" Value="{DynamicResource AccentBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsDropDownOpen" Value="true">
+                                <Setter Property="BorderBrush" TargetName="border" Value="{DynamicResource AccentBrush}"/>
+                                <Setter Property="RenderTransform" TargetName="arrow">
+                                    <Setter.Value>
+                                        <RotateTransform Angle="180" CenterX="4" CenterY="2"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="true">
+                                <Setter Property="BorderBrush" TargetName="border" Value="{DynamicResource AccentBrush}"/>
+                                <Setter Property="BorderThickness" TargetName="border" Value="2"/>
+                                <Setter Property="Effect" TargetName="border">
+                                    <Setter.Value>
+                                        <DropShadowEffect BlurRadius="8" ShadowDepth="0" Color="{DynamicResource AccentColor}" Opacity="0.3"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="false">
+                                <Setter Property="Opacity" TargetName="border" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <DataTemplate DataType="{x:Type vm:RecibiProyectoSelectionViewModel}">
+            <views:RecibiProyectoSelectionView />
+        </DataTemplate>
+
+        <!-- Diálogo de Mensajes Premium -->
+        <DataTemplate DataType="{x:Type vm:MessageDialogViewModel}">
+            <Border Width="450" 
+                    Background="{DynamicResource CardBackgroundBrush}"
+                    BorderBrush="{DynamicResource CardBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="0"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="40" ShadowDepth="10" Opacity="0.15" Color="Black"/>
+                </Border.Effect>
+                
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Header/Accent Bar -->
+                    <Border Grid.Row="0" Height="4" x:Name="TypeBar" Background="{DynamicResource AccentBrush}" />
+
+                    <Border Grid.Row="1" Padding="40,32,40,24">
+                        <StackPanel>
+                            <Grid HorizontalAlignment="Center" Margin="0,0,0,24">
+                                <!-- Icon according to type -->
+                                <Path x:Name="IconPath" 
+                                      Width="48" Height="48" 
+                                      Stretch="Uniform" 
+                                      Fill="{DynamicResource AccentBrush}"
+                                      Data="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10,10-4.48,10-10S17.52,2,12,2z M13,17h-2v-2h2V17z M13,13h-2V7h2V13z" />
+                            </Grid>
+
+                            <TextBlock Text="{Binding Title}" 
+                                       HorizontalAlignment="Center"
+                                       FontSize="20" FontWeight="Bold" 
+                                       Foreground="{DynamicResource PrimaryTextBrush}"
+                                       Margin="0,0,0,12"
+                                       TextAlignment="Center"/>
+
+                            <TextBlock Text="{Binding Message}" 
+                                       HorizontalAlignment="Center"
+                                       FontSize="15" 
+                                       Foreground="{DynamicResource SecondaryTextBrush}"
+                                       TextAlignment="Center"
+                                       TextWrapping="Wrap"/>
+
+                            <!-- More info button -->
+                            <Button x:Name="BtnDetails"
+                                    Content="Ver detalles técnicos"
+                                    Command="{Binding ToggleDetailsCommand}"
+                                    Margin="0,20,0,0"
+                                    Padding="10,4"
+                                    Visibility="{Binding HasDetails, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                    Style="{StaticResource ThemeButtonStyle}"
+                                    Foreground="{DynamicResource AccentBrush}"
+                                    HorizontalAlignment="Center" />
+
+                            <!-- Details content -->
+                            <Grid x:Name="DetailsGrid" Visibility="Collapsed">
+                                <Border Background="{DynamicResource SurfaceBackgroundBrush}" 
+                                        BorderBrush="{DynamicResource CardBorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="0" Margin="0,16,0,0" Padding="16">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
+                                        
+                                        <Button Command="{Binding CopyToClipboardCommand}"
+                                                Content="Copiar al portapapeles"
+                                                Style="{StaticResource ThemeButtonStyle}"
+                                                Foreground="{DynamicResource AccentBrush}"
+                                                FontSize="11" Height="28" Padding="12,0"
+                                                HorizontalAlignment="Right"
+                                                Margin="0,0,0,12" />
+
+                                        <TextBox Grid.Row="1"
+                                                 Text="{Binding Details, Mode=OneWay}"
+                                                 IsReadOnly="True"
+                                                 AcceptsReturn="True"
+                                                 TextWrapping="Wrap"
+                                                 BorderThickness="0"
+                                                 Background="Transparent"
+                                                 FontSize="11"
+                                                 Foreground="{DynamicResource SecondaryTextBrush}"
+                                                 FontFamily="Consolas, Cascadia Code, Courier New"
+                                                 MaxHeight="180"
+                                                 VerticalScrollBarVisibility="Auto" />
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="2" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="32,20">
+                        <Button Content="Entendido" 
+                                Command="{Binding CloseCommand}"
+                                Style="{StaticResource PrimaryButtonStyle}"
+                                HorizontalAlignment="Stretch" />
+                    </Border>
+                </Grid>
+            </Border>
+            
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Type}" Value="Success">
+                    <Setter TargetName="TypeBar" Property="Background" Value="{DynamicResource SuccessForegroundBrush}" />
+                    <Setter TargetName="IconPath" Property="Fill" Value="{DynamicResource SuccessForegroundBrush}" />
+                    <Setter TargetName="IconPath" Property="Data" Value="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10,10-4.48,10-10S17.52,2,12,2z M10,17l-5-5l1.41-1.41L10,14.17l7.59-7.59L19,8L10,17z" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="Warning">
+                    <Setter TargetName="TypeBar" Property="Background" Value="{DynamicResource WarningForegroundBrush}" />
+                    <Setter TargetName="IconPath" Property="Fill" Value="{DynamicResource WarningForegroundBrush}" />
+                    <Setter TargetName="IconPath" Property="Data" Value="M12,2L1,21h22L12,2z M13,18h-2v-2h2V18z M13,14h-2v-4h2V14z" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="Error">
+                    <Setter TargetName="TypeBar" Property="Background" Value="{DynamicResource DangerForegroundBrush}" />
+                    <Setter TargetName="IconPath" Property="Fill" Value="{DynamicResource DangerForegroundBrush}" />
+                    <Setter TargetName="IconPath" Property="Data" Value="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10,10-4.48,10-10S17.52,2,12,2z M15.59,7L12,10.59L8.41,7L7,8.41L10.59,12L7,15.59L8.41,17L12,13.41L15.59,17L17,15.59L13.41,12L17,8.41L15.59,7z" />
+                </DataTrigger>
+
+                <DataTrigger Binding="{Binding IsDetailsExpanded}" Value="True">
+                    <Setter TargetName="DetailsGrid" Property="Visibility" Value="Visible" />
+                    <Setter TargetName="BtnDetails" Property="Content" Value="Ocultar detalles técnicos" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- Plantilla para el Diálogo de Confirmación -->
+        <DataTemplate DataType="{x:Type vm:ConfirmationDialogViewModel}">
+            <Border Background="{DynamicResource CardBackgroundBrush}" 
+                    CornerRadius="16" 
+                    Width="420"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="40" ShadowDepth="10" Opacity="0.15" Color="Black"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Header / Color Accent -->
+                    <Border Height="6" Background="{DynamicResource WarningBrush}" CornerRadius="16,16,0,0" VerticalAlignment="Top" />
+
+                    <!-- Content -->
+                    <Border Grid.Row="1" Padding="32,40,32,32">
+                        <StackPanel>
+                        <Border Width="64" Height="64" Background="{DynamicResource WarningBrush}" CornerRadius="32" Margin="0,0,0,24">
+                            <TextBlock Text="?" FontSize="36" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,2" />
+                        </Border>
+
+                        <TextBlock Text="{Binding Title}" 
+                                   FontSize="22" 
+                                   FontWeight="Bold" 
+                                   Foreground="{DynamicResource PrimaryTextBrush}" 
+                                   HorizontalAlignment="Center"
+                                   TextAlignment="Center"
+                                   Margin="0,0,0,12"/>
+
+                        <TextBlock Text="{Binding Message}" 
+                                   FontSize="15" 
+                                   Foreground="{DynamicResource SecondaryTextBrush}" 
+                                   TextWrapping="Wrap"
+                                   TextAlignment="Center"
+                                   LineHeight="22"/>
+                    </StackPanel>
+                </Border>
+
+                    <!-- Actions -->
+                    <Border Grid.Row="2" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="24,20" CornerRadius="0,0,16,16">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="BtnCancel"
+                                    Content="Cancelar" 
+                                    Command="{Binding CancelCommand}"
+                                    Style="{StaticResource ThemeButtonStyle}"
+                                    Height="48"
+                                    Margin="0,0,4,0"/>
+                            
+                            <Button x:Name="BtnNo"
+                                    Grid.Column="1"
+                                    Content="No Guardar" 
+                                    Command="{Binding NoCommand}"
+                                    Style="{StaticResource ThemeButtonStyle}"
+                                    Foreground="{DynamicResource DangerForegroundBrush}"
+                                    Height="48"
+                                    Margin="4,0,4,0"
+                                    Visibility="Collapsed"/>
+
+                            <Button x:Name="BtnConfirm"
+                                    Grid.Column="2"
+                                    Content="Confirmar" 
+                                    Command="{Binding ConfirmCommand}"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Height="48"
+                                    Margin="4,0,0,0"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding ShowNoButton}" Value="True">
+                    <Setter TargetName="BtnNo" Property="Visibility" Value="Visible" />
+                    <Setter TargetName="BtnConfirm" Property="Content" Value="Guardar" />
+                    <Setter TargetName="BtnCancel" Property="Content" Value="Volver" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- Diálogo de Configuración de Unidad de Descarte -->
+        <DataTemplate DataType="{x:Type vm:ConfigurarUnidadDescarteViewModel}">
+            <Border Width="450" 
+                    Background="{DynamicResource CardBackgroundBrush}"
+                    BorderBrush="{DynamicResource CardBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="16"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="40" ShadowDepth="10" Opacity="0.15" Color="Black"/>
+                </Border.Effect>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="24,20" CornerRadius="16,16,0,0">
+                        <StackPanel>
+                            <TextBlock Text="CONFIGURAR UNIDAD DE DESCARTE" 
+                                       FontSize="11" FontWeight="Bold" 
+                                       Foreground="{DynamicResource AccentBrush}" />
+                            <TextBlock Text="Cambio global para la marea activa" 
+                                       FontSize="18" FontWeight="SemiBold" 
+                                       Foreground="{DynamicResource PrimaryTextBrush}"
+                                       Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="1" Padding="24,30">
+                        <StackPanel>
+                        <TextBlock Text="Esta acción establecerá la unidad de medida seleccionada para TODOS los registros de captura de la marea actual. Los valores numéricos existentes no se verán alterados, pero su interpretación cambiará (ej: de 10kg a 10%)." 
+                                   Foreground="{DynamicResource SecondaryTextBrush}" 
+                                   TextWrapping="Wrap"
+                                   FontSize="13"
+                                   LineHeight="20"
+                                   Margin="0,0,0,24"/>
+                        
+                        <Label Content="Unidad de Descarte" Style="{StaticResource FormLabelStyle}" />
+                        <ComboBox ItemsSource="{Binding Source={StaticResource TipoDatoDescarteEnum}}"
+                                  SelectedItem="{Binding TipoSeleccionado}"
+                                  Style="{StaticResource PremiumComboBoxStyle}"
+                                  Height="40" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="2" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="24,20" CornerRadius="0,0,16,16">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button Content="CANCELAR" 
+                                    Command="{Binding CancelCommand}"
+                                    Style="{StaticResource ThemeButtonStyle}"
+                                    Height="44"
+                                    Margin="0,0,8,0"/>
+                            <Button Grid.Column="1"
+                                    Content="APLICAR CAMBIO" 
+                                    Command="{Binding AcceptCommand}"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Height="44"
+                                    Margin="8,0,0,0"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <!-- Diálogo de Exportación de Recursos -->
+        <DataTemplate DataType="{x:Type vm:ExportarRecursosViewModel}">
+            <Border Width="500" 
+                    Background="{DynamicResource CardBackgroundBrush}"
+                    BorderBrush="{DynamicResource CardBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="16"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="40" ShadowDepth="10" Opacity="0.15" Color="Black"/>
+                </Border.Effect>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="24,20" CornerRadius="16,16,0,0">
+                        <StackPanel>
+                            <TextBlock Text="GENERAR INFORME" 
+                                       FontSize="11" FontWeight="Bold" 
+                                       Foreground="{DynamicResource AccentBrush}" />
+                            <TextBlock Text="Exportación de informe de marea" 
+                                       FontSize="18" FontWeight="SemiBold" 
+                                       Foreground="{DynamicResource PrimaryTextBrush}"
+                                       Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="1" Padding="24,30">
+                        <StackPanel>
+                            <Label Content="Formato del informe" Style="{StaticResource FormLabelStyle}" />
+                            <StackPanel Orientation="Vertical" Margin="0,0,0,24">
+                                <RadioButton Content="Generar Informe de Marea" 
+                                              IsChecked="{Binding ExportTemplateWord}"
+                                              Style="{StaticResource {x:Type RadioButton}}"
+                                              Margin="0,0,0,8"
+                                              Foreground="{DynamicResource PrimaryTextBrush}"/>
+                                <RadioButton Content="Tablas Excel (.xlsx)" 
+                                             IsChecked="{Binding ExportExcel}"
+                                             Style="{StaticResource {x:Type RadioButton}}" 
+                                             Foreground="{DynamicResource PrimaryTextBrush}"/>
+                            </StackPanel>
+
+                            <TextBlock Text="Seleccione la carpeta donde se guardarán los archivos del informe." 
+                                        Foreground="{DynamicResource SecondaryTextBrush}" 
+                                        TextWrapping="Wrap"
+                                        FontSize="13"
+                                        LineHeight="20"
+                                        Margin="0,0,0,12"/>
+                            
+                            <Label Content="Carpeta de destino" Style="{StaticResource FormLabelStyle}" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding ExportPath}" 
+                                         Style="{StaticResource PremiumTextBoxStyle}" 
+                                         IsReadOnly="True"
+                                         Tag="Seleccione una carpeta..."
+                                         Height="40" />
+                                <Button Grid.Column="1" 
+                                        Command="{Binding BrowseCommand}"
+                                        Content="Examinar..." 
+                                        Style="{StaticResource ThemeButtonStyle}"
+                                        Margin="8,0,0,0"
+                                        Padding="12,0" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="2" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="24,20" CornerRadius="0,0,16,16">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button Content="CERRAR" 
+                                    Command="{Binding CloseCommand}"
+                                    Style="{StaticResource ThemeButtonStyle}"
+                                    Height="44"
+                                    Margin="0,0,8,0"/>
+                            <Button Grid.Column="1"
+                                    Content="ACEPTAR" 
+                                    Command="{Binding AcceptCommand}"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Height="44"
+                                    Margin="8,0,0,0"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Overlay de carga mejorado -->
+                    <Border Grid.RowSpan="3" Background="#AA000000" CornerRadius="16"
+                            Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Border Background="{DynamicResource CardBackgroundBrush}" 
+                                Padding="32,24" 
+                                CornerRadius="12" 
+                                VerticalAlignment="Center" 
+                                HorizontalAlignment="Center">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="30" Opacity="0.3" ShadowDepth="0" Color="Black"/>
+                            </Border.Effect>
+                            <StackPanel>
+                                <ProgressBar IsIndeterminate="True" Width="220" Height="4" 
+                                             Foreground="{DynamicResource AccentBrush}" 
+                                             Background="{DynamicResource CardBorderBrush}" 
+                                             BorderThickness="0"/>
+                                <TextBlock Text="Generando informe..." 
+                                           Foreground="{DynamicResource PrimaryTextBrush}" 
+                                           Margin="0,16,0,0" 
+                                           HorizontalAlignment="Center" 
+                                           FontWeight="SemiBold"
+                                           FontSize="14"/>
+                            </StackPanel>
+                        </Border>
+                    </Border>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <!-- Diálogo de Importación DBF -->
+        <DataTemplate DataType="{x:Type vm:ImportDbfViewModel}">
+            <Border Width="650" 
+                    Background="{DynamicResource CardBackgroundBrush}"
+                    BorderBrush="{DynamicResource CardBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="0"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="40" ShadowDepth="10" Opacity="0.15" Color="Black"/>
+                </Border.Effect>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="24,20">
+                        <StackPanel>
+                            <TextBlock Text="IMPORTAR MAREA (JSON/DBF)" 
+                                       FontSize="18" FontWeight="Bold" 
+                                       Foreground="{DynamicResource PrimaryTextBrush}" />
+                            
+                            <!-- Input para Numero y Año (Solo si es nueva marea) -->
+                            <Grid Visibility="{Binding IsMareaInputVisible, Converter={StaticResource BooleanToVisibilityConverter}}" Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <Label Content="Número Marea" Style="{StaticResource FormLabelStyle}" />
+                                    <TextBox x:Name="txtMareaNum" 
+                                             Text="{Binding MareaNum, UpdateSourceTrigger=PropertyChanged}" 
+                                             Style="{StaticResource PremiumTextBoxStyle}" Tag="Ej: 326" 
+                                             FocusManager.FocusedElement="{Binding RelativeSource={RelativeSource Self}}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <Label Content="Año" Style="{StaticResource FormLabelStyle}" />
+                                    <TextBox Text="{Binding Anio, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource PremiumTextBoxStyle}" Tag="Ej: 2026" />
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Text="{Binding PatternNote}" 
+                                       FontSize="12" 
+                                       Foreground="{DynamicResource SecondaryTextBrush}" 
+                                       Margin="0,8,0,16"/>
+
+                            <StackPanel>
+                                <Label Content="Unidad de Descarte Predeterminada" Style="{StaticResource FormLabelStyle}" />
+                                <ComboBox ItemsSource="{Binding Source={StaticResource TipoDatoDescarteEnum}}"
+                                          SelectedItem="{Binding SelectedTipoDatoDescarte}"
+                                          Style="{StaticResource PremiumComboBoxStyle}"
+                                          Width="200"
+                                          HorizontalAlignment="Left" />
+                                <TextBlock Text="Los descartes importados se interpretarán con esta unidad." 
+                                           FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" Margin="2,4,0,0" />
+                            </StackPanel>
+
+                            <CheckBox Content="Procesar submuestras sin muestra de talla" 
+                                      IsChecked="{Binding ProcesarSubmuestrasSinMuestraTalla}"
+                                      Foreground="{DynamicResource PrimaryTextBrush}"
+                                      Margin="0,16,0,0"
+                                      VerticalContentAlignment="Center"
+                                      ToolTip="Habilita la reconstrucción automática de la muestra de talla a partir de la submuestra cuando no exista el archivo de muestra de talla correspondiente."/>
+                        </StackPanel>
+                    </Border>
+
+                    <Grid Grid.Row="1" Margin="24">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" MinHeight="200" MaxHeight="400" />
+                        </Grid.RowDefinitions>
+
+                        <Button Command="{Binding AddFilesCommand}" 
+                                Content="+ Seleccionar Archivos" 
+                                Style="{StaticResource ThemeButtonStyle}" 
+                                Foreground="{DynamicResource AccentBrush}"
+                                HorizontalAlignment="Left"
+                                Margin="0,0,0,20" />
+
+                        <!-- Header Tabla -->
+                        <Grid Grid.Row="1" Margin="0,0,0,8" VerticalAlignment="Bottom">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="100" />
+                                <ColumnDefinition Width="150" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Nombre del Archivo" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource SecondaryTextBrush}" Margin="12,0,0,0"/>
+                            <TextBlock Grid.Column="1" Text="Tamaño" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource SecondaryTextBrush}" />
+                            <TextBlock Grid.Column="2" Text="Fecha Modificación" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource SecondaryTextBrush}" />
+                        </Grid>
+
+                        <ScrollViewer Grid.Row="2" Style="{StaticResource SlimScrollViewerStyle}">
+                            <ItemsControl ItemsSource="{Binding SelectedFiles}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="{DynamicResource SidebarBorderBrush}" BorderThickness="0,0,0,1" Padding="12,12">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="100" />
+                                                    <ColumnDefinition Width="150" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding Name}" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="1" Text="{Binding SizeDisplay}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="2" Text="{Binding DateDisplay}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+
+                        <!-- Overlay de Carga -->
+                        <Border Grid.Row="0" Grid.RowSpan="3" Background="{DynamicResource CardBackgroundBrush}" Opacity="0.8" Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <ProgressBar IsIndeterminate="True" Width="200" Height="4" Foreground="{DynamicResource AccentBrush}" />
+                                <TextBlock Text="{Binding BusyMessage}" Margin="0,16,0,0" Foreground="{DynamicResource PrimaryTextBrush}" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <Border Grid.Row="2" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="24,20">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="Cancelar" 
+                                    Command="{Binding CancelCommand}"
+                                    Style="{StaticResource ThemeButtonStyle}"
+                                    Margin="0,0,12,0"
+                                    Width="120" />
+                            <Button Content="Aceptar" 
+                                    Command="{Binding AcceptCommand}"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Width="120" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+        </DataTemplate>
+        <!-- Estilos para DataGrid Premium -->
+        <Style x:Key="PremiumDataGridColumnHeaderStyle" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="{DynamicResource TableHeaderBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SidebarBorderBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+        </Style>
+
+        <Style x:Key="PremiumDataGridColumnHeaderRightStyle" TargetType="DataGridColumnHeader" BasedOn="{StaticResource PremiumDataGridColumnHeaderStyle}">
+            <Setter Property="HorizontalContentAlignment" Value="Right" />
+        </Style>
+
+        <Style x:Key="PremiumDataGridColumnHeaderCenterStyle" TargetType="DataGridColumnHeader" BasedOn="{StaticResource PremiumDataGridColumnHeaderStyle}">
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style x:Key="PremiumDataGridCellStyle" TargetType="DataGridCell">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridCell">
+                        <Border Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}" BorderThickness="0">
+                            <ContentPresenter VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource SelectionBackgroundBrush}" />
+                    <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="PremiumDataGridStyle" TargetType="DataGrid">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="GridLinesVisibility" Value="Horizontal" />
+            <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource SidebarBorderBrush}" />
+            <Setter Property="AutoGenerateColumns" Value="False" />
+            <Setter Property="HeadersVisibility" Value="Column" />
+            <Setter Property="ColumnHeaderStyle" Value="{StaticResource PremiumDataGridColumnHeaderStyle}" />
+            <Setter Property="CellStyle" Value="{StaticResource PremiumDataGridCellStyle}" />
+            <Setter Property="RowHeight" Value="42" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+            <Setter Property="RowBackground" Value="Transparent" />
+            <Setter Property="AlternatingRowBackground" Value="{DynamicResource SurfaceBackgroundBrush}" />
+            <Setter Property="CanUserAddRows" Value="False" />
+            <Setter Property="CanUserDeleteRows" Value="False" />
+            <Setter Property="SelectionMode" Value="Single" />
+        </Style>
+
+        <!-- Alineaciones para Celdas de DataGrid -->
+        <Style x:Key="DataGridTextCenter" TargetType="TextBlock" BasedOn="{StaticResource BodySecondaryStyle}">
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style x:Key="DataGridTextRight" TargetType="TextBlock" BasedOn="{StaticResource BodySecondaryStyle}">
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,0,12,0" />
+        </Style>
+
+        <Style x:Key="DataGridTextLeft" TargetType="TextBlock" BasedOn="{StaticResource BodySecondaryStyle}">
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="12,0,0,0" />
+        </Style>
+
+        <!-- Diálogo de Exportación DBF -->
+        <DataTemplate DataType="{x:Type vm:ExportarDbfViewModel}">
+            <Border Width="500" 
+                    Background="{DynamicResource CardBackgroundBrush}"
+                    BorderBrush="{DynamicResource CardBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="16"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="40" ShadowDepth="10" Opacity="0.15" Color="Black"/>
+                </Border.Effect>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="24,20" CornerRadius="16,16,0,0">
+                        <StackPanel>
+                            <TextBlock Text="EXPORTAR DATOS A DBF" 
+                                       FontSize="11" FontWeight="Bold" 
+                                       Foreground="{DynamicResource AccentBrush}" />
+                            <TextBlock Text="Formato Legado INIDEP" 
+                                       FontSize="18" FontWeight="SemiBold" 
+                                       Foreground="{DynamicResource PrimaryTextBrush}"
+                                       Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="1" Padding="24,30">
+                        <StackPanel>
+                            <TextBlock Text="Se generarán los archivos C, M, MD, S, P, L y X compatibles con el programa OBS del INIDEP. Los archivos se codificarán en CP850." 
+                                        Foreground="{DynamicResource SecondaryTextBrush}" 
+                                        TextWrapping="Wrap"
+                                        FontSize="13"
+                                        LineHeight="20"
+                                        Margin="0,0,0,20"/>
+                            
+                            <!-- Selección de Opción de Exportación -->
+                            <Label Content="Opción de destino" Style="{StaticResource FormLabelStyle}" Margin="0,0,0,8" />
+                            <Border BorderBrush="{DynamicResource CardBorderBrush}" 
+                                    BorderThickness="1" 
+                                    CornerRadius="12" 
+                                    Background="{DynamicResource SurfaceBackgroundBrush}" 
+                                    Padding="16,12" 
+                                    Margin="0,0,0,20">
+                                <StackPanel>
+                                    <RadioButton IsChecked="{Binding ExportToCorregido}" 
+                                                 Content="Exportar a subcarpeta 'Corregido'" 
+                                                 GroupName="ExportDest"
+                                                 Foreground="{DynamicResource PrimaryTextBrush}"
+                                                 FontSize="13"
+                                                 FontWeight="Medium" />
+                                    <TextBlock Text="Crea una carpeta llamada 'Corregido' dentro de la ruta de importación." 
+                                               Foreground="{DynamicResource SecondaryTextBrush}" 
+                                               FontSize="11" 
+                                               TextWrapping="Wrap" 
+                                               Margin="20,4,0,12" />
+
+                                    <RadioButton IsChecked="{Binding UpdateOriginalFiles}" 
+                                                 IsEnabled="{Binding CanUpdateOriginalFiles}"
+                                                 Content="Actualizar archivos de entrada originales" 
+                                                 GroupName="ExportDest"
+                                                 Foreground="{DynamicResource PrimaryTextBrush}"
+                                                 FontSize="13"
+                                                 FontWeight="Medium" />
+                                    <TextBlock Text="Sobrescribe los archivos DBF originales utilizando sus nombres exactos al momento de la importación." 
+                                               Foreground="{DynamicResource SecondaryTextBrush}" 
+                                               FontSize="11" 
+                                               TextWrapping="Wrap" 
+                                               Margin="20,4,0,0" />
+                                </StackPanel>
+                            </Border>
+                            
+                            <Label Content="Carpeta de destino" Style="{StaticResource FormLabelStyle}" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding ExportPath}" 
+                                         Style="{StaticResource PremiumTextBoxStyle}" 
+                                         IsReadOnly="True"
+                                         Tag="Seleccione una carpeta..."
+                                         Height="40" />
+                                <Button Grid.Column="1" 
+                                        Command="{Binding BrowseCommand}"
+                                        Content="Examinar..." 
+                                        Style="{StaticResource ThemeButtonStyle}"
+                                        Margin="8,0,0,0"
+                                        Padding="12,0" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="2" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="24,20" CornerRadius="0,0,16,16">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button Content="CERRAR" 
+                                    Command="{Binding CloseCommand}"
+                                    Style="{StaticResource ThemeButtonStyle}"
+                                    Height="44"
+                                    Margin="0,0,8,0"/>
+                            <Button Grid.Column="1"
+                                    Content="EXPORTAR" 
+                                    Command="{Binding AcceptCommand}"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Height="44"
+                                    Margin="8,0,0,0"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Overlay de carga -->
+                    <Border Grid.RowSpan="3" Background="#AA000000" CornerRadius="16"
+                            Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Border Background="{DynamicResource CardBackgroundBrush}" 
+                                Padding="32,24" 
+                                CornerRadius="12" 
+                                VerticalAlignment="Center" 
+                                HorizontalAlignment="Center">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="30" Opacity="0.3" ShadowDepth="0" Color="Black"/>
+                            </Border.Effect>
+                            <StackPanel>
+                                <ProgressBar Minimum="0" Maximum="100" Value="{Binding ProgressValue}" Width="220" Height="4" 
+                                             Foreground="{DynamicResource AccentBrush}" 
+                                             Background="{DynamicResource CardBorderBrush}" 
+                                             BorderThickness="0"/>
+                                <TextBlock Text="Exportando datos a DBF..." 
+                                           Foreground="{DynamicResource PrimaryTextBrush}" 
+                                           Margin="0,16,0,0" 
+                                           HorizontalAlignment="Center" 
+                                           FontWeight="SemiBold"
+                                           FontSize="14"/>
+                            </StackPanel>
+                        </Border>
+                    </Border>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+    </Application.Resources>
+
+</Application>

@@ -1,12 +1,12 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using OBSArrastre2026.App.Data;
-using OBSArrastre2026.App.Data.Entities;
+using ControlMareas.App.Data;
+using ControlMareas.App.Data.Entities;
 
 // Ruta dinámica basada en LocalApplicationData
 var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-var dbPath = Path.Combine(localAppData, "OBSArrastre2026", "obs-arrastre-2026.db");
-var outputDir = @"c:\Users\danieldt\Documents\Desarrollo\.net\WPF\OBS-Arrastre-2026\Export";
+var dbPath = Path.Combine(localAppData, "ControlMareas", "control-mareas.db");
+var outputDir = @"c:\Users\danieldt\Documents\Desarrollo\.net\WPF\ControlMareas\Export";
 
 Console.WriteLine($"Buscando base de datos en: {dbPath}");
 
