@@ -1,4 +1,4 @@
-# CLAUDE.md
+﻿# CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -6,19 +6,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Aplicación de escritorio WPF (.NET 10) para el control de mareas y lances de pesca de arrastre del INIDEP. Gestiona buques, mareas, etapas, lances, muestras, producciones, exportaciones DBF y generación de reportes.
 
-- Solución: `OBSArrastre2026.sln`
-- Proyecto principal: `OBSArrastre2026.App/OBSArrastre2026.App.csproj`
-- Proyecto de tests: `OBSArrastre2026.Tests/OBSArrastre2026.Tests.csproj`
+- Solución: `ControlMareas.sln`
+- Proyecto principal: `ControlMareas.App/ControlMareas.App.csproj`
+- Proyecto de tests: `ControlMareas.Tests/ControlMareas.Tests.csproj`
 - Fuente canónica del dominio: `docs/esquema.sql`
 
 ## Comandos esenciales
 
 ```powershell
 # Compilar
-dotnet build .\OBSArrastre2026.sln
+dotnet build .\ControlMareas.sln
 
 # Ejecutar la aplicación
-dotnet run --project .\OBSArrastre2026.App\OBSArrastre2026.App.csproj
+dotnet run --project .\ControlMareas.App\ControlMareas.App.csproj
 
 # Correr todos los tests
 dotnet test
@@ -42,11 +42,11 @@ El host de la aplicación (`App.xaml.cs`) usa `Microsoft.Extensions.Hosting` par
 
 - EF Core 10 con SQLite.
 - Siempre inyectar `IDbContextFactory<AppDbContext>` (nunca un `DbContext` de larga vida).
-- Las migraciones están en `OBSArrastre2026.App/Migrations/`.
+- Las migraciones están en `ControlMareas.App/Migrations/`.
 - `DatabaseInitializer` inicializa y migra la base de datos al arrancar.
-- La base de datos se ubica en `%APPDATA%\OBSArrastre2026\obs-arrastre-2026.db` en tiempo de ejecución.
+- La base de datos se ubica en `%APPDATA%\ControlMareas\control-mareas.db` en tiempo de ejecución.
 
-### Organización de carpetas (dentro de `OBSArrastre2026.App/`)
+### Organización de carpetas (dentro de `ControlMareas.App/`)
 
 | Carpeta | Contenido |
 |---|---|
@@ -89,7 +89,7 @@ Restricciones importantes a preservar:
 - `registros_produccion` clave compuesta única en `(marea_etapa_id, fecha, id_producto)`
 - Varios campos de fecha se almacenan como `TEXT` en SQLite; tratar explícitamente
 
-Cuando el trabajo toca persistencia, identificar tablas, FK e índices en `docs/esquema.sql` antes de modificar código. Si la referencia rápida en `.codex/skills/obs-arrastre-wpf/references/domain-context.md` discrepa con `docs/esquema.sql`, prevalece el SQL.
+Cuando el trabajo toca persistencia, identificar tablas, FK e índices en `docs/esquema.sql` antes de modificar código. Si la referencia rápida en `.codex/skills/control-mareas-wpf/references/domain-context.md` discrepa con `docs/esquema.sql`, prevalece el SQL.
 
 ## Convenciones de código
 
@@ -142,7 +142,7 @@ Git Flow AVH. Rama de integración: `develop`. Ramas de trabajo: `feature/<tema>
 
 | Skill | Cuándo usarlo |
 |---|---|
-| `obs-arrastre-wpf` | Arquitectura, naming, mapeo de dominio, tareas de implementación en este repo |
+| `control-mareas-wpf` | Arquitectura, naming, mapeo de dominio, tareas de implementación en este repo |
 | `commits-convencionales` | Redactar mensajes de commit, merge, squash o revert |
 | `principios-arquitectura` | Evaluar o aplicar SOLID, Clean Architecture, Repository Pattern |
 | `versionamiento-semantico` | Determinar versiones, generar changelogs, crear tags de release |

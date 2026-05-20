@@ -1,0 +1,219 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using ControlMareas.App.Data;
+using ControlMareas.App.Data.Entities;
+using ControlMareas.App.Models;
+
+namespace ControlMareas.App.Services;
+
+public sealed class MareaService(IDbContextFactory<AppDbContext> dbContextFactory) : IMareaService
+{
+    public async Task<IReadOnlyList<int>> GetAniosExistentesAsync(CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        
+        return await dbContext.Mareas
+            .Select(x => x.AnioInidep)
+            .Distinct()
+            .OrderByDescending(x => x)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<Marea?> GetMareaAsync(string id, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        
+        return await dbContext.Mareas
+            .Include(x => x.Buque)
+            .Include(x => x.Etapas)
+            .FirstOrDefaultAsync(x => x.ID == id, cancellationToken);
+    }
+
+    public async Task SaveMareaAsync(Marea marea, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        
+        var existingMarea = await dbContext.Mareas
+            .Include(x => x.Etapas)
+            .FirstOrDefaultAsync(x => x.ID == marea.ID, cancellationToken);
+
+        if (existingMarea == null)
+        {
+            // Nueva marea
+            await dbContext.Mareas.AddAsync(marea, cancellationToken);
+        }
+        else
+        {
+            // Actualizar marea existente
+            dbContext.Entry(existingMarea).CurrentValues.SetValues(marea);
+            existingMarea.BuqueID = marea.BuqueID;
+
+            // Sincronizar Etapas
+            // 1. ELiminar etapas que ya no están
+            foreach (var existingEtapa in existingMarea.Etapas.ToList())
+            {
+                if (!marea.Etapas.Any(e => e.ID == existingEtapa.ID))
+                {
+                    dbContext.MareaEtapas.Remove(existingEtapa);
+                }
+            }
+
+            // 2. Actualizar o añadir etapas
+            foreach (var etapa in marea.Etapas)
+            {
+                var existingEtapa = existingMarea.Etapas.FirstOrDefault(e => e.ID == etapa.ID);
+                if (existingEtapa == null)
+                {
+                    existingMarea.Etapas.Add(etapa);
+                }
+                else
+                {
+                    dbContext.Entry(existingEtapa).CurrentValues.SetValues(etapa);
+                }
+            }
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Marea>> GetMareasAsync(
+        int? anio = null,
+        string? buqueId = null,
+        DateTime? fechaDesde = null,
+        DateTime? fechaHasta = null,
+        string? busquedaTextual = null,
+        CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+        var query = dbContext.Mareas
+            .Include(x => x.Buque)
+            .AsNoTracking();
+
+        if (anio.HasValue)
+        {
+            query = query.Where(x => x.AnioInidep == anio.Value);
+        }
+
+        if (!string.IsNullOrEmpty(buqueId))
+        {
+            query = query.Where(x => x.BuqueID == buqueId);
+        }
+
+        if (fechaDesde.HasValue)
+        {
+            query = query.Where(x => x.FechaInicio >= fechaDesde.Value);
+        }
+
+        if (fechaHasta.HasValue)
+        {
+            query = query.Where(x => x.FechaInicio <= fechaHasta.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(busquedaTextual))
+        {
+            var search = busquedaTextual.Trim().ToLower();
+            query = query.Where(x => 
+                (x.Comentarios != null && x.Comentarios.ToLower().Contains(search)) ||
+                (x.NumeroInidep.ToString() + "/" + (x.AnioInidep % 100).ToString()).Contains(search));
+        }
+
+        // Ordenar: Las "En curso" (FechaFin null) arriba, luego por FechaFin desc, luego por FechaInicio desc
+        return await query
+            .OrderByDescending(x => x.FechaFin == null)
+            .ThenByDescending(x => x.FechaFin)
+            .ThenByDescending(x => x.FechaInicio)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<bool> HasExistingDataAsync(string mareaId, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        
+        var stageIds = await dbContext.MareaEtapas
+            .Where(e => e.MareaID == mareaId)
+            .Select(e => e.ID)
+            .ToListAsync(cancellationToken);
+
+        if (!stageIds.Any()) return false;
+
+        var hasLances = await dbContext.Lances.AnyAsync(l => stageIds.Contains(l.MareaEtapaId), cancellationToken);
+        if (hasLances) return true;
+
+        var hasProduccion = await dbContext.RegistrosProduccion.AnyAsync(p => stageIds.Contains(p.MareaEtapaId), cancellationToken);
+        return hasProduccion;
+    }
+
+    public async Task ClearMareaDataAsync(string mareaId, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        
+        var stageIds = await dbContext.MareaEtapas
+            .Where(e => e.MareaID == mareaId)
+            .Select(e => e.ID)
+            .ToListAsync(cancellationToken);
+
+        if (!stageIds.Any()) return;
+
+        // Borrar producción
+        await dbContext.RegistrosProduccion
+            .Where(p => stageIds.Contains(p.MareaEtapaId))
+            .ExecuteDeleteAsync(cancellationToken);
+
+        // Borrar lances
+        await dbContext.Lances
+            .Where(l => stageIds.Contains(l.MareaEtapaId))
+            .ExecuteDeleteAsync(cancellationToken);
+            
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task DeleteMareaAsync(string id, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        
+        var marea = await dbContext.Mareas.FirstOrDefaultAsync(x => x.ID == id, cancellationToken);
+        if (marea != null)
+        {
+            dbContext.Mareas.Remove(marea);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    public async Task<Marea?> FindMareaAsync(int numero, int anio, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        
+        return await dbContext.Mareas
+            .Include(m => m.Buque)
+            .Include(m => m.Etapas)
+            .FirstOrDefaultAsync(m => m.NumeroInidep == numero && m.AnioInidep == anio, cancellationToken);
+    }
+
+    public async Task SetTipoDatoDescarteMasivoAsync(string mareaId, TipoDatoDescarte tipo, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        
+        var stageIds = await dbContext.MareaEtapas
+            .Where(e => e.MareaID == mareaId)
+            .Select(e => e.ID)
+            .ToListAsync(cancellationToken);
+
+        if (!stageIds.Any()) return;
+
+        var lanceIds = await dbContext.Lances
+            .Where(l => stageIds.Contains(l.MareaEtapaId))
+            .Select(l => l.Id)
+            .ToListAsync(cancellationToken);
+
+        if (!lanceIds.Any()) return;
+
+        await dbContext.ItemsCaptura
+            .Where(i => lanceIds.Contains(i.LanceID))
+            .ExecuteUpdateAsync(s => s.SetProperty(i => i.TipoDatoDescarte, tipo), cancellationToken);
+    }
+}

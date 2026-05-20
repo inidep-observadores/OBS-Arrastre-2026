@@ -1,4 +1,4 @@
-{
+﻿{
   "permissions": {
     "allow": [
       "Bash(Get-ChildItem -Recurse -Directory)",
@@ -12,7 +12,7 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Read(//tmp/**)",
-      "Bash(cd \"d:\\\\Desarrollo\\\\_INIDEP\\\\OBS\\\\OBS-Arrastre-2026\" && git log --all --reverse --pretty=format:\"%H|%h|%s|%b\" > /tmp/full_commits.txt && head -100 /tmp/full_commits.txt)",
+      "Bash(cd \"d:\\\\Desarrollo\\\\_INIDEP\\\\OBS\\\\ControlMareas\" && git log --all --reverse --pretty=format:\"%H|%h|%s|%b\" > /tmp/full_commits.txt && head -100 /tmp/full_commits.txt)",
       "Bash(git tag *)"
     ],
     "additionalDirectories": [

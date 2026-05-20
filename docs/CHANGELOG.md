@@ -1,6 +1,6 @@
-# Historial de Versiones
+﻿# Historial de Versiones
 
-Documentación histórica del desarrollo del proyecto OBSArrastre2026.
+Documentación histórica del desarrollo del proyecto ControlMareas.
 Período documentado: 2026-04-09 a 2026-05-18.
 Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 1.0.0.
 

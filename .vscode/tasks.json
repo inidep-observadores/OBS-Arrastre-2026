@@ -1,4 +1,4 @@
-{
+﻿{
     "version": "2.0.0",
     "tasks": [
         {
@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/OBSArrastre2026.App/OBSArrastre2026.App.csproj",
+                "${workspaceFolder}/ControlMareas.App/ControlMareas.App.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -19,7 +19,7 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/OBSArrastre2026.App/OBSArrastre2026.App.csproj",
+                "${workspaceFolder}/ControlMareas.App/ControlMareas.App.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -33,7 +33,7 @@
                 "watch",
                 "run",
                 "--project",
-                "${workspaceFolder}/OBSArrastre2026.App/OBSArrastre2026.App.csproj"
+                "${workspaceFolder}/ControlMareas.App/ControlMareas.App.csproj"
             ],
             "problemMatcher": "$msCompile"
         }

@@ -1,0 +1,18 @@
+﻿namespace ControlMareas.App.Models;
+
+public enum NavigationSection
+{
+    Mareas,
+    Lances,
+    Muestras,
+    Submuestras,
+    Produccion,
+    ControlProduccion,
+    ReemplazoEspecie,
+    ConfigurarUnidadDescarte,
+    Separator,
+    GenerarRecursosInforme,
+    ExportarDbf,
+    Procesos,
+    Configuracion
+}
