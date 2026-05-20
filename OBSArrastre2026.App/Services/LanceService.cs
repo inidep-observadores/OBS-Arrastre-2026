@@ -94,6 +94,11 @@ public sealed class LanceService(IDbContextFactory<AppDbContext> dbContextFactor
 
         if (existing == null)
         {
+            // Evitar re-insertar especies de catálogo
+            foreach (var item in lance.ItemsCaptura)
+            {
+                item.Especie = null;
+            }
             await dbContext.Lances.AddAsync(lance, cancellationToken);
         }
         else
@@ -116,10 +121,13 @@ public sealed class LanceService(IDbContextFactory<AppDbContext> dbContextFactor
                 var existingItem = existing.ItemsCaptura.FirstOrDefault(i => i.ID == item.ID);
                 if (existingItem == null)
                 {
+                    // Desacoplar especie para que EF Core no intente insertarla
+                    item.Especie = null;
                     existing.ItemsCaptura.Add(item);
                 }
                 else
                 {
+                    item.Especie = null;
                     dbContext.Entry(existingItem).CurrentValues.SetValues(item);
                     existingItem.EspecieID = item.EspecieID; // Asegurar FK
                 }

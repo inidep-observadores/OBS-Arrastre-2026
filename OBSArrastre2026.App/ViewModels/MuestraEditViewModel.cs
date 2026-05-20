@@ -19,6 +19,7 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
     private readonly string _lanceId;
     private string? _muestraId;
     private bool _isLoading;
+    private Muestra? _originalMuestra;
 
     private string? _especieId;
     private double? _pesoMuestraKg;
@@ -214,6 +215,7 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
                 var muestra = await _muestraService.GetMuestraAsync(_muestraId);
                 if (muestra != null)
                 {
+                    _originalMuestra = muestra;
                     EspecieId = muestra.EspecieID;
                     PesoMuestraKg = muestra.PesoMuestra_PesoGramos.HasValue ? Math.Round(muestra.PesoMuestra_PesoGramos.Value / 1000.0, 2) : null;
                     TipoMuestra = muestra.TipoMuestra;
@@ -286,24 +288,73 @@ public sealed class MuestraEditViewModel : ValidatableViewModelBase<MuestraEditV
             IsLoading = true;
             try
             {
-                var muestra = new Muestra
+                Muestra muestra;
+                if (_originalMuestra != null)
                 {
-                    ID = _muestraId ?? Guid.NewGuid().ToString(),
-                    LanceID = _lanceId,
-                    EspecieID = EspecieId,
-                    PesoMuestra_PesoGramos = PesoMuestraKg.HasValue ? Math.Round(PesoMuestraKg.Value * 1000.0, 2) : null,
-                    TipoMuestra = TipoMuestra
-                };
+                    muestra = _originalMuestra;
+                    muestra.EspecieID = EspecieId;
+                    muestra.PesoMuestra_PesoGramos = PesoMuestraKg.HasValue ? Math.Round(PesoMuestraKg.Value * 1000.0, 2) : null;
+                    muestra.TipoMuestra = TipoMuestra;
+                    muestra.FrecuenciasTallas.Clear();
+                }
+                else
+                {
+                    muestra = new Muestra
+                    {
+                        ID = Guid.NewGuid().ToString(),
+                        LanceID = _lanceId,
+                        EspecieID = EspecieId,
+                        PesoMuestra_PesoGramos = PesoMuestraKg.HasValue ? Math.Round(PesoMuestraKg.Value * 1000.0, 2) : null,
+                        TipoMuestra = TipoMuestra,
+                        
+                        // Valores obligatorios para muestra nueva
+                        Intervalo = 1.0, // por defecto 1 cm
+                        UnidadMedidaTalla = 1, // CM
+                        ModoMedicionTalla = 1, // LT
+                        Origen = 1, // Muestreo de Captura
+                        NumeroOrden = 1 // Por defecto
+                    };
+                }
+
+                // Recalcular Flags de Sexo y Totales para la muestra
+                int totalEjemplares = 0;
+                bool tieneMachosOHembras = false;
+                bool tieneIndeterminados = false;
 
                 foreach (var fVm in FrecuenciasTallas)
                 {
                     var f = fVm.ToEntity();
                     f.MuestraID = muestra.ID;
                     muestra.FrecuenciasTallas.Add(f);
+
+                    totalEjemplares += f.NroTotal;
+                    if (f.NroMachos > 0 || f.NroHembras > 0) tieneMachosOHembras = true;
+                    if (f.NroIndeterminados > 0) tieneIndeterminados = true;
+                }
+
+                muestra.DiscriminaSexo = tieneMachosOHembras ? 1 : 0;
+                muestra.HayIndeterminados = tieneIndeterminados ? 1 : 0;
+
+                if (PesoMuestraKg.HasValue && PesoMuestraKg.Value > 0)
+                {
+                    muestra.EjemplaresPorKg = (int)Math.Round(totalEjemplares / PesoMuestraKg.Value);
+                }
+                else
+                {
+                    muestra.EjemplaresPorKg = 0;
                 }
 
                 await _muestraService.SaveMuestraAsync(muestra);
                 _onClose();
+            }
+            catch (Exception ex)
+            {
+                var message = "No se pudo guardar la muestra: " + ex.Message;
+                if (ex.InnerException != null)
+                {
+                    message += "\n\nDetalle técnico: " + ex.InnerException.Message;
+                }
+                System.Windows.MessageBox.Show(message, "Error al guardar", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
             finally
             {

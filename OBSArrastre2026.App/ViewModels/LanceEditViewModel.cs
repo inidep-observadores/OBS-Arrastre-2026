@@ -538,7 +538,12 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
             }
             catch (Exception ex)
             {
-                ShowMessage?.Invoke("Error", $"No se pudo guardar el lance: {ex.Message}", null, MessageDialogType.Error);
+                var message = ex.Message;
+                if (ex.InnerException != null)
+                {
+                    message += $"\n\nDetalle técnico: {ex.InnerException.Message}";
+                }
+                ShowMessage?.Invoke("Error", $"No se pudo guardar el lance: {message}", null, MessageDialogType.Error);
                 return false;
             }
             finally
