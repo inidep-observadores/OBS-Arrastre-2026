@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ControlMareas.App.Data.Entities;
 
@@ -16,6 +16,7 @@ public sealed class LanceConfiguration : IEntityTypeConfiguration<Lance>
         builder.Property(x => x.MareaEtapaId).HasColumnName("marea_etapa_id").IsRequired();
         builder.Property(x => x.NroLance).HasColumnName("nro_lance").IsRequired();
         builder.Property(x => x.Fecha).HasColumnName("fecha").IsRequired();
+        builder.Property(x => x.FechaFin).HasColumnName("fecha_fin").IsRequired(false);
         builder.Property(x => x.HoraInicio).HasColumnName("hora_inicio");
         builder.Property(x => x.HoraFinal).HasColumnName("hora_final");
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -23,6 +23,7 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
 
     private int _nroLance;
     private DateTime _fecha;
+    private DateTime? _fechaFin;
     private string? _horaInicio;
     private string? _horaFinal;
     private double? _latitudInicio;
@@ -55,6 +56,7 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
     // Initial values for change detection
     private int _initialNroLance;
     private DateTime _initialFecha;
+    private DateTime? _initialFechaFin;
     private string? _initialHoraInicio;
     private string? _initialHoraFinal;
     private double? _initialLatitudInicio;
@@ -123,6 +125,7 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
 
     public int NroLance { get => _nroLance; set { if (SetProperty(ref _nroLance, value)) OnPropertyChanged(nameof(Title)); } }
     public DateTime Fecha { get => _fecha; set { if (SetProperty(ref _fecha, value)) OnPropertyChanged(nameof(Title)); } }
+    public DateTime? FechaFin { get => _fechaFin; set => SetProperty(ref _fechaFin, value); }
     public string? HoraInicio { get => _horaInicio; set { if (SetProperty(ref _horaInicio, value)) OnPropertyChanged(nameof(Title)); } }
     public string? HoraFinal { get => _horaFinal; set => SetProperty(ref _horaFinal, value); }
     
@@ -234,6 +237,7 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
             _lanceId = lanceId;
             NroLance = lance.NroLance;
             if (DateTime.TryParse(lance.Fecha, out var date)) Fecha = date;
+            FechaFin = lance.FechaFin;
             HoraInicio = lance.HoraInicio;
             HoraFinal = lance.HoraFinal;
             LatitudInicioDecimal = lance.LatitudInicioDecimal;
@@ -280,6 +284,7 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
     {
         _initialNroLance = NroLance;
         _initialFecha = Fecha;
+        _initialFechaFin = FechaFin;
         _initialHoraInicio = HoraInicio;
         _initialHoraFinal = HoraFinal;
         _initialLatitudInicio = LatitudInicioDecimal;
@@ -319,6 +324,7 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
     {
         if (_initialNroLance != NroLance) return true;
         if (_initialFecha != Fecha) return true;
+        if (_initialFechaFin != FechaFin) return true;
         if (_initialHoraInicio != HoraInicio) return true;
         if (_initialHoraFinal != HoraFinal) return true;
         if (_initialLatitudInicio != LatitudInicioDecimal) return true;
@@ -493,6 +499,7 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
                     MareaEtapaId = _mareaEtapaId,
                     NroLance = NroLance,
                     Fecha = Fecha.ToString("yyyy-MM-dd"),
+                    FechaFin = FechaFin,
                     HoraInicio = HoraInicio,
                     HoraFinal = HoraFinal,
                     LatitudInicioDecimal = LatitudInicioDecimal,

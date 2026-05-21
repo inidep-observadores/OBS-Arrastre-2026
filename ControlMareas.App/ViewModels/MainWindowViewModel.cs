@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Collections.ObjectModel;
@@ -1948,6 +1948,16 @@ public class MainWindowViewModel : ObservableObject
 
         if (DateTime.TryParse($"{lance.Fecha} {hora}", out var dt))
         {
+            if (!isStart)
+            {
+                // obtener hora de inicio para comparar
+                var startDt = GetLanceDateTime(lance, true);
+                if (startDt.HasValue && dt < startDt.Value)
+                {
+                    // la hora final es anterior a la de inicio, cruzó el día
+                    dt = dt.AddDays(1);
+                }
+            }
             return dt;
         }
         return null;

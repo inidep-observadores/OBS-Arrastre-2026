@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="ControlMareas.App.Views.LanceEditView"
+<UserControl x:Class="ControlMareas.App.Views.LanceEditView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -154,8 +154,10 @@
 
                                     <!-- FECHA -->
                                     <StackPanel>
-                                        <TextBlock Text="FECHA" Style="{StaticResource PaperHeaderStyle}" />
+                                        <TextBlock Text="FECHA INICIO" Style="{StaticResource PaperHeaderStyle}" />
                                         <controls:DatePickerPremium SelectedDate="{Binding Fecha}" Width="120" Height="28" EsCompacto="True" />
+                                        <TextBlock Text="FECHA FIN" Style="{StaticResource PaperHeaderStyle}" Margin="0,4,0,0" />
+                                        <controls:DatePickerPremium SelectedDate="{Binding FechaFin}" Width="120" Height="28" EsCompacto="True" />
                                     </StackPanel>
 
                                     <!-- N° LANCE -->

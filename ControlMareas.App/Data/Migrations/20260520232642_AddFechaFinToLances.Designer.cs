@@ -3,16 +3,19 @@ using System;
 using ControlMareas.App.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace ControlMareas.App.Migrations
+namespace ControlMareas.App.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260520232642_AddFechaFinToLances")]
+    partial class AddFechaFinToLances
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.8");
@@ -614,7 +617,8 @@ namespace ControlMareas.App.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("fecha");
 
-                    b.Property<DateTime?>("FechaFin")
+                    b.Property<string>("FechaFin")
+                        .IsRequired()
                         .HasColumnType("TEXT")
                         .HasColumnName("fecha_fin");
 

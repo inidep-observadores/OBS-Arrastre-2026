@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations.Schema;
 using ControlMareas.App.Models;
 
 namespace ControlMareas.App.Data.Entities;
@@ -13,6 +13,7 @@ public sealed class Lance
 
     public int NroLance { get; set; }
     public string Fecha { get; set; } = string.Empty;
+    public DateTime? FechaFin { get; set; } // Fecha de finalización del lance
     public string? HoraInicio { get; set; }
     public string? HoraFinal { get; set; }
 

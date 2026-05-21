@@ -1,4 +1,4 @@
-﻿using ControlMareas.App.Models.Import;
+using ControlMareas.App.Models.Import;
 using ControlMareas.App.Services.Internal;
 using ControlMareas.App.Data;
 using ControlMareas.App.Data.Entities;
@@ -460,11 +460,21 @@ public class MareaImportService : IMareaImportService
             
             if (etapa == null) continue;
 
+            // Calcular fecha de fin considerando cruce de medianoche
+            DateTime? fechaFin = null;
+            if (TimeSpan.TryParse(FormatTime(c.HoraInic) ?? string.Empty, out var horaInicio) &&
+                TimeSpan.TryParse(FormatTime(c.HoraFinal) ?? string.Empty, out var horaFinal))
+            {
+                // Si la hora final es menor que la inicial, el lance pasa a día siguiente
+                fechaFin = horaFinal >= horaInicio ? c.Fecha : c.Fecha.AddDays(1);
+            }
+
             var lance = new Lance
             {
                 MareaEtapaId = etapa.ID,
                 NroLance = (int)c.Lance,
                 Fecha = c.Fecha.ToString("yyyy-MM-dd"),
+                FechaFin = fechaFin,
                 HoraInicio = FormatTime(c.HoraInic),
                 HoraFinal = FormatTime(c.HoraFinal),
                 LatitudInicioDecimal = LegacyDecoder.DecodeCoordinate(c.LatInic),
