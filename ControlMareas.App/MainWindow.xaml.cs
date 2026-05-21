@@ -308,9 +308,10 @@ public partial class MainWindow : Window
             FontWeight = FontWeights.SemiBold
         };
 
-        // Formatear fecha de yyyy-MM-dd a dd/MM/yyyy si es posible
-        string fecha = lance.Fecha;
-        if (DateTime.TryParse(lance.Fecha, out DateTime dt))
+        // Usar la fecha correcta: FechaFin si es "FIN", Fecha si es "INICIO"
+        string fechaStr = type == "INICIO" ? lance.Fecha : (lance.FechaFin?.ToString("yyyy-MM-dd") ?? lance.Fecha);
+        string fecha = fechaStr;
+        if (DateTime.TryParse(fechaStr, out DateTime dt))
         {
             fecha = dt.ToString("dd/MM/yyyy");
         }
