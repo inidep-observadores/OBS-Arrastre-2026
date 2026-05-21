@@ -1,8 +1,19 @@
 ﻿# Historial de Versiones
 
 Documentación histórica del desarrollo del proyecto ControlMareas.
-Período documentado: 2026-04-09 a 2026-05-18.
+Período documentado: 2026-04-09 a 2026-05-21.
 Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 1.0.0.
+
+## [v1.8.1] - 2026-05-21
+
+**Descripción**: Correcciones en el formulario de edición de lances: comportamiento del botón eliminar, confirmación de eliminación y codificación UTF-8.
+
+### Fixed (Correcciones)
+- fix(lance-edit): resolver comportamiento del botón eliminar para evitar abrir panel lateral cuando está cerrado
+- fix(lance-edit): agregar diálogo de confirmación antes de eliminar especie capturada
+- fix(lance-edit): corregir codificación UTF-8 en textos del formulario (Edición, Eliminar)
+
+---
 
 ## [v1.8.0] - 2026-05-19
 
@@ -570,7 +581,7 @@ Para generar changelog de cambios pendientes:
 
 ---
 
-**Última actualización**: 2026-05-19
-**Período de desarrollo**: 2026-04-09 a 2026-05-19 (41 días)
-**Total de commits documentados**: 293  
-**Versión actual**: v1.8.0
+**Última actualización**: 2026-05-21
+**Período de desarrollo**: 2026-04-09 a 2026-05-21 (43 días)
+**Total de commits documentados**: 294  
+**Versión actual**: v1.8.1
