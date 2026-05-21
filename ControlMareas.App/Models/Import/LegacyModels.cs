@@ -20,6 +20,7 @@ public class LegacyCaptura
     public double Marea { get; set; }
     public double Lance { get; set; }
     public DateTime Fecha { get; set; }
+    public DateTime? FechaFin { get; set; } // Fecha de finalización del lance
     public double HoraInic { get; set; }
     public double HoraFinal { get; set; }
     public double LatInic { get; set; }

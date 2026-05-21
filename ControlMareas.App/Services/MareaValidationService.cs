@@ -133,6 +133,7 @@ public class MareaValidationService : IMareaValidationService
                     Marea = marea.NumeroInidep,
                     Lance = lance.NroLance,
                     Fecha = DateTime.Parse(lance.Fecha),
+                    FechaFin = lance.FechaFin,
                     HoraInic = EncodeTime(lance.HoraInicio),
                     HoraFinal = EncodeTime(lance.HoraFinal),
                     LatInic = EncodeCoordinate(lance.LatitudInicioDecimal),

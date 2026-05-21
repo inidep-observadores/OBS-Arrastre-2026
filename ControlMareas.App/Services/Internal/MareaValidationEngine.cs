@@ -529,7 +529,8 @@ public sealed class MareaValidationEngine
             }
 
             // Detección de solapamientos
-            var timeCurrentEnd = current.Fecha.Date.Add(LegacyDecoder.DecodeTime(current.HoraFinal));
+            var fechaFinCurrent = current.FechaFin ?? current.Fecha;
+            var timeCurrentEnd = fechaFinCurrent.Date.Add(LegacyDecoder.DecodeTime(current.HoraFinal));
             if (timeCurrentEnd < timeCurrent) timeCurrentEnd = timeCurrentEnd.AddDays(1);
 
             if (timeNext < timeCurrentEnd)
@@ -1126,7 +1127,8 @@ public sealed class MareaValidationEngine
 
         // Tiempos del lance (Ya vienen en UTC-3 según confirmación del usuario)
         var timeStart = c.Fecha.Date.Add(LegacyDecoder.DecodeTime(c.HoraInic));
-        var timeEnd = c.Fecha.Date.Add(LegacyDecoder.DecodeTime(c.HoraFinal));
+        var fechaFin = c.FechaFin ?? c.Fecha;
+        var timeEnd = fechaFin.Date.Add(LegacyDecoder.DecodeTime(c.HoraFinal));
 
         // Validar punto de inicio
         ValidatePointWithTrack(report, ctx, "Inicio", timeStart, 
@@ -1140,9 +1142,10 @@ public sealed class MareaValidationEngine
     private void ValidateInternalLanceSpeed(MareaValidationReport report, LegacyCaptura c)
     {
         string ctx = $"Lance {c.Lance}";
-        
+
         var timeStart = c.Fecha.Date.Add(LegacyDecoder.DecodeTime(c.HoraInic));
-        var timeEnd = c.Fecha.Date.Add(LegacyDecoder.DecodeTime(c.HoraFinal));
+        var fechaFin = c.FechaFin ?? c.Fecha;
+        var timeEnd = fechaFin.Date.Add(LegacyDecoder.DecodeTime(c.HoraFinal));
         
         // Si el lance cruzó la medianoche (fecha de fin es el día siguiente)
         if (timeEnd < timeStart) timeEnd = timeEnd.AddDays(1);
@@ -1172,10 +1175,10 @@ public sealed class MareaValidationEngine
 
         // Ordenar lances cronológicamente por inicio
         var sorted = capturas
-            .Select(c => new { 
-                Captura = c, 
+            .Select(c => new {
+                Captura = c,
                 Start = c.Fecha.Date.Add(LegacyDecoder.DecodeTime(c.HoraInic)),
-                End = c.Fecha.Date.Add(LegacyDecoder.DecodeTime(c.HoraFinal)) 
+                End = (c.FechaFin ?? c.Fecha).Date.Add(LegacyDecoder.DecodeTime(c.HoraFinal))
             })
             .OrderBy(x => x.Start)
             .ToList();
