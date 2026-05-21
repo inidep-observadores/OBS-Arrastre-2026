@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.8.0] - 2026-05-20
+
+### Added
+- feat(ui): agregar zoom al lance cuando se hace clic en la lista de lances
+- feat(ui): mejorar contraste de segmentos de lances y cambiar color de seleccionado a magenta
+
+### Fixed
+- fix(validacion): usar FechaFin de lance en calculos de validacion y auditoria
+- fix(lance): usar FechaFin en tooltip y calculo de fecha-hora de fin
+- fix(reportes): usar FechaFin en calculos de horas de lance en reportes
+- fix(ui): usar FechaFin en tooltip del marcador de fin de lance en mapa
+
 ## [v1.7.0] - 2026-05-18
 
 ### Added
