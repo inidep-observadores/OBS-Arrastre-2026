@@ -1169,8 +1169,8 @@ public class MareaReportService : IMareaReportService
                 double kilos = g.Sum(i => i.CapturaTotalKgCalculado);
                 double descarte = g.Sum(i => i.PesoDescarteCalculado);
                 double horas = lancesEsp.Sum(l => {
-                    if (DateTime.TryParse($"{l!.Fecha} {l.HoraInicio}", out var start) && 
-                        DateTime.TryParse($"{l.Fecha} {l.HoraFinal}", out var end))
+                    if (DateTime.TryParse($"{l!.Fecha} {l.HoraInicio}", out var start) &&
+                        DateTime.TryParse($"{(l.FechaFin?.ToString("yyyy-MM-dd") ?? l.Fecha)} {l.HoraFinal}", out var end))
                     {
                         if (end < start) end = end.AddDays(1);
                         return (end - start).TotalHours;
@@ -1243,8 +1243,8 @@ public class MareaReportService : IMareaReportService
                 double kilos = g.SelectMany(l => l.ItemsCaptura).Sum(i => i.CapturaTotalKgCalculado);
                 double descarte = g.SelectMany(l => l.ItemsCaptura).Sum(i => i.PesoDescarteCalculado);
                 double horas = g.Sum(l => {
-                    if (DateTime.TryParse($"{l!.Fecha} {l.HoraInicio}", out var start) && 
-                        DateTime.TryParse($"{l.Fecha} {l.HoraFinal}", out var end))
+                    if (DateTime.TryParse($"{l!.Fecha} {l.HoraInicio}", out var start) &&
+                        DateTime.TryParse($"{(l.FechaFin?.ToString("yyyy-MM-dd") ?? l.Fecha)} {l.HoraFinal}", out var end))
                     {
                         if (end < start) end = end.AddDays(1);
                         return (end - start).TotalHours;
