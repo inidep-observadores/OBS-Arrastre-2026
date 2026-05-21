@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using ControlMareas.App.Models.Import;
 using ControlMareas.App.Services.Internal;
 using Xunit;
@@ -250,5 +250,75 @@ public class MareaValidationEngineTests
 
         capturas[0].Descarte.Should().Be(150);
         capturas[0].DescartesPorEspecie["7210040101"].Should().Be(150);
+    }
+
+    [Fact]
+    public void ValidateMarea_ShouldHandleMidnightCrossingInTrackingConsistency_WhenFechaFinIsNull()
+    {
+        // Arrange
+        // Lance inicia el 2026-05-20 a las 23:30 y finaliza el 2026-05-21 a las 01:15 (cruce de medianoche)
+        var c = new LegacyCaptura
+        {
+            Lance = 1,
+            Barco = "BUQUE",
+            Marea = 100,
+            Fecha = new DateTime(2026, 5, 20),
+            FechaFin = null, // Inicialmente nulo (como al importar de DBF)
+            HoraInic = 23.30,
+            HoraFinal = 01.15,
+            LatInic = 40.000,   // -40 grados decimales
+            LongInic = 60.000,  // -60 grados decimales
+            LatFinal = 40.050,  // -40.0833 grados decimales
+            LongFinal = 60.050, // -60.0833 grados decimales
+            CaptTotal = 100
+        };
+        c.Especies["7210040101"] = 100;
+
+        // Tracking satelital que coincide perfectamente con los momentos del lance
+        var tracking = new List<LegacyTracking>
+        {
+            new()
+            {
+                Buque = "BUQUE",
+                FechaStr = "2026-05-20 23:30:00",
+                Latitud = -40.0,
+                Longitud = -60.0
+            },
+            new()
+            {
+                Buque = "BUQUE",
+                FechaStr = "2026-05-21 01:15:00", // Día siguiente
+                Latitud = -40.0833,
+                Longitud = -60.0833
+            }
+        };
+
+        // Act
+        var report = _engine.ValidateMarea(
+            barcoMareaActual: "BUQUE",
+            anioMareaActual: 2026,
+            nroMareaActual: 100,
+            buqueCodigo: null,
+            obsNombre: null,
+            obsApellido: null,
+            obsCodigo: null,
+            etapasFechas: new(),
+            capturas: new() { c },
+            muestras: new(),
+            submuestras: new(),
+            lgs: new(),
+            tracking: tracking,
+            produccion: new(),
+            especiesDict: new() { ["MERLUZA"] = "7210040101" },
+            especiesViejasDict: new(),
+            especiesCodigosValidos: new() { "7210040101" },
+            largoPesoCatalogo: new()
+        );
+
+        // Assert
+        // No debe haber problemas de inconsistencia geográfica de "Fin" ni diferencias importantes 
+        // de distancia contra el track en el reporte.
+        var geoIssues = report.Issues.Where(i => i.Category == "Geografía");
+        geoIssues.Should().NotContain(i => i.Message.Contains("Fin") && i.Message.Contains("difiere"));
     }
 }

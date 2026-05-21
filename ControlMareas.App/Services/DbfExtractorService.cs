@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Text;
 using System.Text.Json;
 using DbfDataReader;
@@ -331,6 +331,11 @@ public sealed class DbfExtractorService : IDbfExtractorService
                 AreaBarr = GetDoubleNullable(reader, colMap, "AREA_BARR"),
                 MallSobre = GetDoubleNullable(reader, colMap, "MALL_SOBRE")
             };
+
+            // Calcular proactivamente la fecha de finalización considerando el cruce de medianoche
+            var timeStart = LegacyDecoder.DecodeTime(c.HoraInic);
+            var timeEnd = LegacyDecoder.DecodeTime(c.HoraFinal);
+            c.FechaFin = timeEnd >= timeStart ? c.Fecha : c.Fecha.AddDays(1);
 
             for (int i = 1; i <= 25; i++)
             {

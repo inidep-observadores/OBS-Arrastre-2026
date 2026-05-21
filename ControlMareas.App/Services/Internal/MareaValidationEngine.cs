@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Globalization;
 using ControlMareas.App.Models.Import;
 
@@ -1129,6 +1129,12 @@ public sealed class MareaValidationEngine
         var timeStart = c.Fecha.Date.Add(LegacyDecoder.DecodeTime(c.HoraInic));
         var fechaFin = c.FechaFin ?? c.Fecha;
         var timeEnd = fechaFin.Date.Add(LegacyDecoder.DecodeTime(c.HoraFinal));
+
+        // Si el lance cruzó la medianoche (hora final < hora inicio) y no tiene fecha fin explícita, se suma 1 día
+        if (c.FechaFin == null && timeEnd < timeStart)
+        {
+            timeEnd = timeEnd.AddDays(1);
+        }
 
         // Validar punto de inicio
         ValidatePointWithTrack(report, ctx, "Inicio", timeStart, 
