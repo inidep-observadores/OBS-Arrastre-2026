@@ -542,6 +542,50 @@ public partial class MainWindow : Window
         }
     }
 
+    private void RecordsList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm && vm.SelectedRecord is LanceListItemViewModel lance)
+        {
+            // Hacer zoom al lance seleccionado, aunque sea el mismo que ya estaba seleccionado
+            ZoomToLance(lance.Lance);
+        }
+    }
+
+    private void ZoomToLance(Lance? lance)
+    {
+        if (lance == null) return;
+
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            var positions = new List<PointLatLng>();
+
+            if (lance.LatitudInicioDecimal.HasValue && lance.LongitudInicioDecimal.HasValue)
+            {
+                positions.Add(new PointLatLng(lance.LatitudInicioDecimal.Value, lance.LongitudInicioDecimal.Value));
+            }
+
+            if (lance.LatitudFinalDecimal.HasValue && lance.LongitudFinalDecimal.HasValue)
+            {
+                positions.Add(new PointLatLng(lance.LatitudFinalDecimal.Value, lance.LongitudFinalDecimal.Value));
+            }
+
+            if (positions.Any())
+            {
+                double minLat = positions.Min(p => p.Lat);
+                double maxLat = positions.Max(p => p.Lat);
+                double minLng = positions.Min(p => p.Lng);
+                double maxLng = positions.Max(p => p.Lng);
+
+                // Asegurar que el rectángulo tenga un tamaño mínimo (para lances muy cortos)
+                double width = Math.Max(maxLng - minLng, 0.05);
+                double height = Math.Max(maxLat - minLat, 0.05);
+
+                var rect = new RectLatLng(maxLat, minLng, width, height);
+                MainMap.SetZoomToFitRect(rect);
+            }
+        }), System.Windows.Threading.DispatcherPriority.Background);
+    }
+
     private void ControlLance_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (sender is ListViewItem item && item.DataContext is ControlLanceDetailViewModel detailVm)

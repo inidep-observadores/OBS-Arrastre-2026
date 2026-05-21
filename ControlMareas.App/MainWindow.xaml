@@ -1445,6 +1445,7 @@
                                      VirtualizingStackPanel.IsVirtualizing="True"
                                      VirtualizingStackPanel.VirtualizationMode="Recycling"
                                      PreviewKeyDown="RecordsList_PreviewKeyDown"
+                                     PreviewMouseLeftButtonDown="RecordsList_PreviewMouseLeftButtonDown"
                                      SelectionChanged="RecordsList_SelectionChanged">
                                 <ListBox.InputBindings>
                                     <KeyBinding Key="Enter" Command="{Binding OpenSelectedRecordEditCommand}" />
