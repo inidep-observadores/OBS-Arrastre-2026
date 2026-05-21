@@ -189,10 +189,12 @@ public partial class MainWindow : Window
                 if (lance.LatitudFinalDecimal.HasValue && lance.LongitudFinalDecimal.HasValue)
                 {
                     var endPos = new PointLatLng(lance.LatitudFinalDecimal.Value, lance.LongitudFinalDecimal.Value);
-                    
-                    // Determinar color (Azul si está seleccionado, Cian si no)
+
+                    // Determinar color (Azul oscuro si está seleccionado, Azul oscuro si no con menor grosor)
                     bool isSelected = vm.SelectedRecord is LanceListItemViewModel selectedVm && selectedVm.ID == lance.Id;
-                    var lanceBrush = isSelected ? Brushes.Blue : Brushes.Cyan;
+                    var lanceBrush = isSelected
+                        ? new SolidColorBrush(Colors.DarkBlue) { Opacity = 0.5 }
+                        : new SolidColorBrush(Colors.SteelBlue) { Opacity = 0.5 };
                     var lanceThickness = isSelected ? 3.0 : 1.5;
 
                     // Línea del lance
