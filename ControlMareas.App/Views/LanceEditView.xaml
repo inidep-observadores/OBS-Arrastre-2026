@@ -125,115 +125,112 @@
                             <RowDefinition Height="*" />    <!-- Tabla Especies -->
                         </Grid.RowDefinitions>
 
-                        <!-- SECCIÓN DATOS GENERALES (MIMETIC A LA PLANILLA DE PAPEL) -->
+                        <!-- SECCIÓN DATOS GENERALES (REDISEÑO COMPACTO Y RESPONSIVO) -->
                         <Border Style="{StaticResource SurfaceBorderStyle}" Padding="16" Margin="0,0,0,16">
                             <Grid TextElement.FontSize="11">
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" /> <!-- Fila 1: Fecha, Lance, Hora, Estado, Ubic -->
+                                    <RowDefinition Height="Auto" /> <!-- Fila 1: N° Lance, Fechas, Horas -->
                                     <RowDefinition Height="Auto" /> <!-- Separador -->
-                                    <RowDefinition Height="Auto" /> <!-- Fila 2: Prof, Viento, Temp, Pres, Capt -->
+                                    <RowDefinition Height="Auto" /> <!-- Fila 2: Ubicación -->
                                     <RowDefinition Height="Auto" /> <!-- Separador -->
-                                    <RowDefinition Height="Auto" /> <!-- Fila 3: Arrastre, Malla, Cable, AbV, DistA, ProfA -->
+                                    <RowDefinition Height="Auto" /> <!-- Fila 3: Prof, Viento, Temp -->
                                     <RowDefinition Height="Auto" /> <!-- Separador -->
-                                    <RowDefinition Height="Auto" /> <!-- Fila 4: Comentarios -->
+                                    <RowDefinition Height="Auto" /> <!-- Fila 4: Estado, Presión, Captura -->
+                                    <RowDefinition Height="Auto" /> <!-- Separador -->
+                                    <RowDefinition Height="Auto" /> <!-- Fila 5: Arrastre, Malla, Cable, AbV, DistA, DistP -->
+                                    <RowDefinition Height="Auto" /> <!-- Separador -->
+                                    <RowDefinition Height="Auto" /> <!-- Fila 6: Comentarios -->
                                 </Grid.RowDefinitions>
 
-                                <!-- FILA 1 DE LA PLANILLA PAPEL -->
+                                <!-- FILA 1: N° LANCE, FECHAS, HORAS EN UNA LÍNEA -->
                                 <Grid Grid.Row="0">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" /> <!-- Fecha -->
-                                        <ColumnDefinition Width="20" />
                                         <ColumnDefinition Width="Auto" /> <!-- N° Lance -->
-                                        <ColumnDefinition Width="20" />
-                                        <ColumnDefinition Width="Auto" /> <!-- Hora -->
-                                        <ColumnDefinition Width="20" />
-                                        <ColumnDefinition Width="Auto" /> <!-- Estado -->
-                                        <ColumnDefinition Width="20" />
-                                        <ColumnDefinition Width="*" />    <!-- Ubicación -->
+                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Width="Auto" /> <!-- Fecha Inicio -->
+                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Width="Auto" /> <!-- Hora Inicial -->
+                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Width="Auto" /> <!-- Fecha Final -->
+                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Width="Auto" /> <!-- Hora Final -->
+                                        <ColumnDefinition Width="*" />    <!-- Padding -->
                                     </Grid.ColumnDefinitions>
 
-                                    <!-- FECHA -->
-                                    <StackPanel>
-                                        <TextBlock Text="FECHA INICIO" Style="{StaticResource PaperHeaderStyle}" />
-                                        <controls:DatePickerPremium SelectedDate="{Binding Fecha}" Width="120" Height="28" EsCompacto="True" />
-                                        <TextBlock Text="FECHA FIN" Style="{StaticResource PaperHeaderStyle}" Margin="0,4,0,0" />
-                                        <controls:DatePickerPremium SelectedDate="{Binding FechaFin}" Width="120" Height="28" EsCompacto="True" />
-                                    </StackPanel>
-
                                     <!-- N° LANCE -->
-                                    <StackPanel Grid.Column="2">
+                                    <StackPanel>
                                         <TextBlock Text="N° LANCE" Style="{StaticResource PaperHeaderStyle}" />
-                                        <TextBox Text="{Binding NroLance}" Style="{StaticResource PaperTextBoxStyle}" Width="60" />
+                                        <TextBox Text="{Binding NroLance}" Style="{StaticResource PaperTextBoxStyle}" Width="50" />
                                     </StackPanel>
 
-                                    <!-- HORA -->
+                                    <!-- FECHA INICIO -->
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="FECHA INICIO" Style="{StaticResource PaperHeaderStyle}" />
+                                        <controls:DatePickerPremium SelectedDate="{Binding Fecha}" Width="95" Height="28" EsCompacto="True" />
+                                    </StackPanel>
+
+                                    <!-- HORA INICIAL -->
                                     <StackPanel Grid.Column="4">
-                                        <TextBlock Text="HORA" Style="{StaticResource PaperHeaderStyle}" />
-                                        <UniformGrid Columns="2">
-                                            <StackPanel Margin="0,0,4,0">
-                                                <Label Content="INICIAL" Style="{StaticResource PaperLabelStyle}" />
-                                                <controls:TimePickerPremium SelectedTime="{Binding HoraInicio}" Width="80" Height="28" EsCompacto="True" />
-                                            </StackPanel>
-                                            <StackPanel>
-                                                <Label Content="FINAL" Style="{StaticResource PaperLabelStyle}" />
-                                                <controls:TimePickerPremium SelectedTime="{Binding HoraFinal}" Width="80" Height="28" EsCompacto="True" />
-                                            </StackPanel>
-                                        </UniformGrid>
+                                        <TextBlock Text="HORA INICIAL" Style="{StaticResource PaperHeaderStyle}" />
+                                        <controls:TimePickerPremium SelectedTime="{Binding HoraInicio}" Width="70" Height="28" EsCompacto="True" />
                                     </StackPanel>
 
-                                    <!-- ESTADO -->
+                                    <!-- FECHA FINAL -->
                                     <StackPanel Grid.Column="6">
-                                        <TextBlock Text="ESTADO" Style="{StaticResource PaperHeaderStyle}" />
-                                        <UniformGrid Columns="2">
-                                            <StackPanel Margin="0,0,4,0">
-                                                <Label Content="TIEM" Style="{StaticResource PaperLabelStyle}" />
-                                                <TextBox Text="{Binding EstadoTiempoCodigo}" Style="{StaticResource PaperTextBoxStyle}" Width="45" />
-                                            </StackPanel>
-                                            <StackPanel>
-                                                <Label Content="MAR" Style="{StaticResource PaperLabelStyle}" />
-                                                <TextBox Text="{Binding EstadoMarCodigo}" Style="{StaticResource PaperTextBoxStyle}" Width="45" />
-                                            </StackPanel>
-                                        </UniformGrid>
+                                        <TextBlock Text="FECHA FINAL" Style="{StaticResource PaperHeaderStyle}" />
+                                        <controls:DatePickerPremium SelectedDate="{Binding FechaFin}" Width="95" Height="28" EsCompacto="True" />
                                     </StackPanel>
 
-                                    <!-- UBICACION -->
+                                    <!-- HORA FINAL -->
                                     <StackPanel Grid.Column="8">
+                                        <TextBlock Text="HORA FINAL" Style="{StaticResource PaperHeaderStyle}" />
+                                        <controls:TimePickerPremium SelectedTime="{Binding HoraFinal}" Width="70" Height="28" EsCompacto="True" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Border Grid.Row="1" Height="12" />
+
+                                <!-- FILA 2: UBICACIÓN -->
+                                <Grid Grid.Row="2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel>
                                         <TextBlock Text="UBICACION" Style="{StaticResource PaperHeaderStyle}" />
                                         <UniformGrid Columns="4">
-                                            <StackPanel Margin="0,0,4,0">
+                                            <StackPanel Margin="0,0,8,0">
                                                 <Label Content="LAT. INIC" Style="{StaticResource PaperLabelStyle}" />
-                                                <controls:CoordinatePickerPremium SelectedValue="{Binding LatitudInicioDecimal}" IsLatitude="True" Height="28" EsCompacto="True" />
+                                                <controls:CoordinatePickerPremium SelectedValue="{Binding LatitudInicioDecimal}" IsLatitude="True" Height="28" EsCompacto="True" Width="75" />
                                             </StackPanel>
-                                            <StackPanel Margin="0,0,4,0">
+                                            <StackPanel Margin="0,0,8,0">
                                                 <Label Content="LON. INIC" Style="{StaticResource PaperLabelStyle}" />
-                                                <controls:CoordinatePickerPremium SelectedValue="{Binding LongitudInicioDecimal}" IsLatitude="False" Height="28" EsCompacto="True" />
+                                                <controls:CoordinatePickerPremium SelectedValue="{Binding LongitudInicioDecimal}" IsLatitude="False" Height="28" EsCompacto="True" Width="75" />
                                             </StackPanel>
-                                            <StackPanel Margin="0,0,4,0">
+                                            <StackPanel Margin="0,0,8,0">
                                                 <Label Content="LAT. FIN" Style="{StaticResource PaperLabelStyle}" />
-                                                <controls:CoordinatePickerPremium SelectedValue="{Binding LatitudFinalDecimal}" IsLatitude="True" Height="28" EsCompacto="True" />
+                                                <controls:CoordinatePickerPremium SelectedValue="{Binding LatitudFinalDecimal}" IsLatitude="True" Height="28" EsCompacto="True" Width="75" />
                                             </StackPanel>
                                             <StackPanel>
                                                 <Label Content="LON. FIN" Style="{StaticResource PaperLabelStyle}" />
-                                                <controls:CoordinatePickerPremium SelectedValue="{Binding LongitudFinalDecimal}" IsLatitude="False" Height="28" EsCompacto="True" />
+                                                <controls:CoordinatePickerPremium SelectedValue="{Binding LongitudFinalDecimal}" IsLatitude="False" Height="28" EsCompacto="True" Width="75" />
                                             </StackPanel>
                                         </UniformGrid>
                                     </StackPanel>
                                 </Grid>
 
-                                <Border Grid.Row="1" Height="20" />
+                                <Border Grid.Row="3" Height="12" />
 
-                                <!-- FILA 2 DE LA PLANILLA PAPEL -->
-                                <Grid Grid.Row="2">
+                                <!-- FILA 3: PROFUNDIDAD, VIENTO, TEMPERATURA -->
+                                <Grid Grid.Row="4">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" /> <!-- Profundidad -->
-                                        <ColumnDefinition Width="20" />
+                                        <ColumnDefinition Width="12" />
                                         <ColumnDefinition Width="Auto" /> <!-- Viento -->
-                                        <ColumnDefinition Width="20" />
+                                        <ColumnDefinition Width="12" />
                                         <ColumnDefinition Width="Auto" /> <!-- Temp -->
-                                        <ColumnDefinition Width="20" />
-                                        <ColumnDefinition Width="Auto" /> <!-- Presion -->
-                                        <ColumnDefinition Width="20" />
-                                        <ColumnDefinition Width="*" />    <!-- Captura Total -->
+                                        <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
 
                                     <!-- PROFUNDIDAD (m) -->
@@ -242,11 +239,11 @@
                                         <UniformGrid Columns="2">
                                             <StackPanel Margin="0,0,4,0">
                                                 <Label Content="INICIAL" Style="{StaticResource PaperLabelStyle}" />
-                                                <TextBox Text="{Binding ProfundidadInicioM}" Style="{StaticResource PaperTextBoxStyle}" Width="65" />
+                                                <TextBox Text="{Binding ProfundidadInicioM}" Style="{StaticResource PaperTextBoxStyle}" Width="55" />
                                             </StackPanel>
                                             <StackPanel>
                                                 <Label Content="FINAL" Style="{StaticResource PaperLabelStyle}" />
-                                                <TextBox Text="{Binding ProfundidadFinalM}" Style="{StaticResource PaperTextBoxStyle}" Width="65" />
+                                                <TextBox Text="{Binding ProfundidadFinalM}" Style="{StaticResource PaperTextBoxStyle}" Width="55" />
                                             </StackPanel>
                                         </UniformGrid>
                                     </StackPanel>
@@ -257,11 +254,11 @@
                                         <UniformGrid Columns="2">
                                             <StackPanel Margin="0,0,4,0">
                                                 <Label Content="DIREC" Style="{StaticResource PaperLabelStyle}" />
-                                                <TextBox Text="{Binding VientoDireccionGrados}" Style="{StaticResource PaperTextBoxStyle}" Width="60" />
+                                                <TextBox Text="{Binding VientoDireccionGrados}" Style="{StaticResource PaperTextBoxStyle}" Width="50" />
                                             </StackPanel>
                                             <StackPanel>
                                                 <Label Content="FUERZA" Style="{StaticResource PaperLabelStyle}" />
-                                                <TextBox Text="{Binding VientoFuerzaBeaufort}" Style="{StaticResource PaperTextBoxStyle}" Width="60" />
+                                                <TextBox Text="{Binding VientoFuerzaBeaufort}" Style="{StaticResource PaperTextBoxStyle}" Width="50" />
                                             </StackPanel>
                                         </UniformGrid>
                                     </StackPanel>
@@ -272,48 +269,78 @@
                                         <UniformGrid Columns="2">
                                             <StackPanel Margin="0,0,4,0">
                                                 <Label Content="AIRE" Style="{StaticResource PaperLabelStyle}" />
-                                                <TextBox Text="{Binding TemperaturaAireC}" Style="{StaticResource PaperTextBoxStyle}" Width="60" />
+                                                <TextBox Text="{Binding TemperaturaAireC}" Style="{StaticResource PaperTextBoxStyle}" Width="50" />
                                             </StackPanel>
                                             <StackPanel>
                                                 <Label Content="RED" Style="{StaticResource PaperLabelStyle}" />
-                                                <TextBox Text="{Binding TemperaturaRedC}" Style="{StaticResource PaperTextBoxStyle}" Width="60" />
+                                                <TextBox Text="{Binding TemperaturaRedC}" Style="{StaticResource PaperTextBoxStyle}" Width="50" />
+                                            </StackPanel>
+                                        </UniformGrid>
+                                    </StackPanel>
+                                </Grid>
+
+                                <Border Grid.Row="5" Height="12" />
+
+                                <!-- FILA 4: ESTADO, PRESIÓN, CAPTURA -->
+                                <Grid Grid.Row="6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" /> <!-- Estado -->
+                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Width="Auto" /> <!-- Presión -->
+                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Width="Auto" /> <!-- Captura Total -->
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- ESTADO -->
+                                    <StackPanel>
+                                        <TextBlock Text="ESTADO" Style="{StaticResource PaperHeaderStyle}" />
+                                        <UniformGrid Columns="2">
+                                            <StackPanel Margin="0,0,4,0">
+                                                <Label Content="TIEM" Style="{StaticResource PaperLabelStyle}" />
+                                                <TextBox Text="{Binding EstadoTiempoCodigo}" Style="{StaticResource PaperTextBoxStyle}" Width="40" />
+                                            </StackPanel>
+                                            <StackPanel>
+                                                <Label Content="MAR" Style="{StaticResource PaperLabelStyle}" />
+                                                <TextBox Text="{Binding EstadoMarCodigo}" Style="{StaticResource PaperTextBoxStyle}" Width="40" />
                                             </StackPanel>
                                         </UniformGrid>
                                     </StackPanel>
 
                                     <!-- PRESION (mb) -->
-                                    <StackPanel Grid.Column="6">
+                                    <StackPanel Grid.Column="2">
                                         <TextBlock Text="PRESION (mb)" Style="{StaticResource PaperHeaderStyle}" />
-                                        <Border Height="13" /> <!-- Alineación con los que tienen sub-etiquetas -->
-                                        <TextBox Text="{Binding PresionHpa}" Style="{StaticResource PaperTextBoxStyle}" Width="80" />
+                                        <Border Height="13" />
+                                        <TextBox Text="{Binding PresionHpa}" Style="{StaticResource PaperTextBoxStyle}" Width="65" />
                                     </StackPanel>
 
-                                    <!-- CAPTURA TOTAL (Kg) -->
-                                    <StackPanel Grid.Column="8">
-                                        <TextBlock Text="CAPTURA TOTAL (Kg)" Style="{StaticResource PaperHeaderStyle}" />
+                                    <!-- CAPTURA TOTAL (Kg) - REDUCIDO -->
+                                    <StackPanel Grid.Column="4">
+                                        <TextBlock Text="CAPTURA (Kg)" Style="{StaticResource PaperHeaderStyle}" />
                                         <Border Height="13" />
-                                        <TextBox Text="{Binding CapturaTotalKg}" Style="{StaticResource PaperTextBoxStyle}" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" />
+                                        <TextBox Text="{Binding CapturaTotalKg}" Style="{StaticResource PaperTextBoxStyle}" Width="65" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" />
                                     </StackPanel>
                                 </Grid>
 
-                                <Border Grid.Row="3" Height="20" />
+                                <Border Grid.Row="7" Height="12" />
 
-                                <!-- FILA 3 DE LA PLANILLA PAPEL -->
-                                <Grid Grid.Row="4">
+                                <!-- FILA 5: ARRASTRE, MALLA, CABLE, ETC -->
+                                <Grid Grid.Row="8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" /> <!-- Arrastre -->
-                                        <ColumnDefinition Width="20" />
+                                        <ColumnDefinition Width="12" />
                                         <ColumnDefinition Width="Auto" /> <!-- Malla -->
-                                        <ColumnDefinition Width="20" />
+                                        <ColumnDefinition Width="12" />
                                         <ColumnDefinition Width="Auto" /> <!-- Cable -->
-                                        <ColumnDefinition Width="20" />
+                                        <ColumnDefinition Width="12" />
                                         <ColumnDefinition Width="Auto" /> <!-- AbVert -->
-                                        <ColumnDefinition Width="20" />
-                                        <ColumnDefinition Width="Auto" /> <!-- DistA -->
-                                        <ColumnDefinition Width="20" />
-                                        <ColumnDefinition Width="*" />    <!-- DistP -->
-                                        <ColumnDefinition Width="20" />
-                                        <ColumnDefinition Width="Auto" /> <!-- Select -->
+                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Width="Auto" /> <!-- DistAlas -->
+                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Width="Auto" /> <!-- DistPortones -->
+                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Width="Auto" /> <!-- Selectividad -->
+                                        <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
 
                                     <!-- ARRASTRE -->
@@ -322,11 +349,11 @@
                                         <UniformGrid Columns="2">
                                             <StackPanel Margin="0,0,4,0">
                                                 <Label Content="VEL" Style="{StaticResource PaperLabelStyle}" />
-                                                <TextBox Text="{Binding VelocidadArrastreNudos}" Style="{StaticResource PaperTextBoxStyle}" Width="55" />
+                                                <TextBox Text="{Binding VelocidadArrastreNudos}" Style="{StaticResource PaperTextBoxStyle}" Width="50" />
                                             </StackPanel>
                                             <StackPanel>
                                                 <Label Content="RUMBO" Style="{StaticResource PaperLabelStyle}" />
-                                                <TextBox Text="{Binding RumboGrados}" Style="{StaticResource PaperTextBoxStyle}" Width="55" />
+                                                <TextBox Text="{Binding RumboGrados}" Style="{StaticResource PaperTextBoxStyle}" Width="50" />
                                             </StackPanel>
                                         </UniformGrid>
                                     </StackPanel>
@@ -337,11 +364,11 @@
                                         <UniformGrid Columns="2">
                                             <StackPanel Margin="0,0,4,0">
                                                 <Label Content="COPO" Style="{StaticResource PaperLabelStyle}" />
-                                                <TextBox Text="{Binding MallaCopoMm}" Style="{StaticResource PaperTextBoxStyle}" Width="55" />
+                                                <TextBox Text="{Binding MallaCopoMm}" Style="{StaticResource PaperTextBoxStyle}" Width="50" />
                                             </StackPanel>
                                             <StackPanel>
                                                 <Label Content="ALAS" Style="{StaticResource PaperLabelStyle}" />
-                                                <TextBox Text="{Binding MallaAlasMm}" Style="{StaticResource PaperTextBoxStyle}" Width="55" />
+                                                <TextBox Text="{Binding MallaAlasMm}" Style="{StaticResource PaperTextBoxStyle}" Width="50" />
                                             </StackPanel>
                                         </UniformGrid>
                                     </StackPanel>
@@ -350,28 +377,28 @@
                                     <StackPanel Grid.Column="4">
                                         <TextBlock Text="CABLE FIL. (m)" Style="{StaticResource PaperHeaderStyle}" />
                                         <Border Height="13" />
-                                        <TextBox Text="{Binding CableFiladoM}" Style="{StaticResource PaperTextBoxStyle}" Width="80" />
+                                        <TextBox Text="{Binding CableFiladoM}" Style="{StaticResource PaperTextBoxStyle}" Width="65" />
                                     </StackPanel>
 
                                     <!-- ABERT. VERT (m) -->
                                     <StackPanel Grid.Column="6">
                                         <TextBlock Text="ABERT. VERT (m)" Style="{StaticResource PaperHeaderStyle}" />
                                         <Border Height="13" />
-                                        <TextBox Text="{Binding AberturaVerticalM}" Style="{StaticResource PaperTextBoxStyle}" Width="90" />
+                                        <TextBox Text="{Binding AberturaVerticalM}" Style="{StaticResource PaperTextBoxStyle}" Width="70" />
                                     </StackPanel>
 
                                     <!-- DIST. ALAS (m) -->
                                     <StackPanel Grid.Column="8">
                                         <TextBlock Text="DIST. ALAS (m)" Style="{StaticResource PaperHeaderStyle}" />
                                         <Border Height="13" />
-                                        <TextBox Text="{Binding DistanciaAlasM}" Style="{StaticResource PaperTextBoxStyle}" Width="90" />
+                                        <TextBox Text="{Binding DistanciaAlasM}" Style="{StaticResource PaperTextBoxStyle}" Width="70" />
                                     </StackPanel>
 
-                                    <!-- DIST. PORTONES (m) -->
+                                    <!-- DIST. PORTONES (m) - REDUCIDO -->
                                     <StackPanel Grid.Column="10">
-                                        <TextBlock Text="DIST. PORTONES (m)" Style="{StaticResource PaperHeaderStyle}" />
+                                        <TextBlock Text="DIST. PORT (m)" Style="{StaticResource PaperHeaderStyle}" />
                                         <Border Height="13" />
-                                        <TextBox Text="{Binding DistanciaPortonesM}" Style="{StaticResource PaperTextBoxStyle}" />
+                                        <TextBox Text="{Binding DistanciaPortonesM}" Style="{StaticResource PaperTextBoxStyle}" Width="70" />
                                     </StackPanel>
 
                                     <!-- SELECTIVIDAD -->
@@ -380,10 +407,10 @@
                                     </StackPanel>
                                 </Grid>
 
-                                <Border Grid.Row="5" Height="10" />
+                                <Border Grid.Row="9" Height="12" />
 
-                                <!-- FILA 4: COMENTARIOS -->
-                                <Grid Grid.Row="6">
+                                <!-- FILA 6: COMENTARIOS -->
+                                <Grid Grid.Row="10">
                                     <StackPanel>
                                         <TextBlock Text="COMENTARIOS / OBSERVACIONES" Style="{StaticResource PaperHeaderStyle}" />
                                         <TextBox Text="{Binding Comentarios}" 
