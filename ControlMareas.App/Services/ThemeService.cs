@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Media;
 using Microsoft.Win32;
 using ControlMareas.App.Models;
@@ -36,7 +36,8 @@ public sealed class ThemeService : IThemeService
         DangerForeground:           "#B91C1C",
         DangerBackground:           "#FEE2E2",
         HoverBackground:            "#F1F5F9",
-        SurfaceBackground:          "#F8FAFC");
+        SurfaceBackground:          "#F8FAFC",
+        HighlightForeground:        "#D9520A");
 
     private static readonly ThemePalette DarkPalette = new(
         ShellBackground:            "#07111F",
@@ -60,7 +61,8 @@ public sealed class ThemeService : IThemeService
         DangerForeground:           "#F87171",
         DangerBackground:           "#450A0A",
         HoverBackground:            "#1E293B",
-        SurfaceBackground:          "#0B1423");
+        SurfaceBackground:          "#0B1423",
+        HighlightForeground:        "#FF7C30");
 
     private readonly IUserSettingsService _settingsService;
 
@@ -107,6 +109,7 @@ public sealed class ThemeService : IThemeService
         SetBrush("DangerBackgroundBrush", palette.DangerBackground);
         SetBrush("HoverBackgroundBrush", palette.HoverBackground);
         SetBrush("SurfaceBackgroundBrush", palette.SurfaceBackground);
+        SetBrush("HighlightForegroundBrush", palette.HighlightForeground);
 
         Application.Current.Resources["DisplayFontFamily"] = new FontFamily("Segoe UI Variable Display");
         Application.Current.Resources["TextFontFamily"] = new FontFamily("Segoe UI Variable Text");
@@ -154,5 +157,6 @@ public sealed class ThemeService : IThemeService
         string DangerForeground,
         string DangerBackground,
         string HoverBackground,
-        string SurfaceBackground);
+        string SurfaceBackground,
+        string HighlightForeground);
 }

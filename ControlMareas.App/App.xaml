@@ -1,4 +1,4 @@
-﻿<Application x:Class="ControlMareas.App.App"
+<Application x:Class="ControlMareas.App.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:ControlMareas.App.ViewModels"
@@ -31,6 +31,7 @@
         <SolidColorBrush x:Key="DangerForegroundBrush" Color="#B91C1C" />
         <SolidColorBrush x:Key="DangerBackgroundBrush" Color="#FEE2E2" />
         <SolidColorBrush x:Key="WarningBrush" Color="#F59E0B" />
+        <SolidColorBrush x:Key="HighlightForegroundBrush" Color="#E8640A" /> <!-- Naranja fuerte: buen contraste en modo claro y oscuro -->
 
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <conv:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
