@@ -190,10 +190,10 @@ public partial class MainWindow : Window
                 {
                     var endPos = new PointLatLng(lance.LatitudFinalDecimal.Value, lance.LongitudFinalDecimal.Value);
 
-                    // Determinar color (Azul oscuro si está seleccionado, Azul oscuro si no con menor grosor)
+                    // Determinar color (Magenta si está seleccionado para mayor visibilidad, SteelBlue si no)
                     bool isSelected = vm.SelectedRecord is LanceListItemViewModel selectedVm && selectedVm.ID == lance.Id;
                     var lanceBrush = isSelected
-                        ? new SolidColorBrush(Colors.DarkBlue) { Opacity = 0.5 }
+                        ? new SolidColorBrush(Colors.Magenta) { Opacity = 0.5 }
                         : new SolidColorBrush(Colors.SteelBlue) { Opacity = 0.5 };
                     var lanceThickness = isSelected ? 3.0 : 1.5;
 
