@@ -1944,9 +1944,11 @@ public class MainWindowViewModel : ObservableObject
     public DateTime? GetLanceDateTime(Lance lance, bool isStart)
     {
         string? hora = isStart ? lance.HoraInicio : lance.HoraFinal;
-        if (string.IsNullOrEmpty(lance.Fecha) || string.IsNullOrEmpty(hora)) return null;
+        string fecha = isStart ? lance.Fecha : (lance.FechaFin?.ToString("yyyy-MM-dd") ?? lance.Fecha);
 
-        if (DateTime.TryParse($"{lance.Fecha} {hora}", out var dt))
+        if (string.IsNullOrEmpty(fecha) || string.IsNullOrEmpty(hora)) return null;
+
+        if (DateTime.TryParse($"{fecha} {hora}", out var dt))
         {
             if (!isStart)
             {
@@ -1954,7 +1956,7 @@ public class MainWindowViewModel : ObservableObject
                 var startDt = GetLanceDateTime(lance, true);
                 if (startDt.HasValue && dt < startDt.Value)
                 {
-                    // la hora final es anterior a la de inicio, cruzó el día
+                    // la hora final es anterior a la de inicio, cruzó el día (fallback si FechaFin está vacía)
                     dt = dt.AddDays(1);
                 }
             }
