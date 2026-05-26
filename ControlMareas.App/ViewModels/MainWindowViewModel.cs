@@ -2575,7 +2575,7 @@ public class MainWindowViewModel : ObservableObject
                         return icKey == key;
                     })).ToList();
                     var groupedByArea = spLances
-                        .GroupBy(l => Math.Truncate(LegacyDecoder.CalculateGridArea(l.LatitudInicioDecimal ?? 0, l.LongitudInicioDecimal ?? 0)).ToString("0"))
+                        .GroupBy(l => LegacyDecoder.GetAreaKey(l.LatitudInicioDecimal, l.LongitudInicioDecimal))
                         .Select(g => 
                         {
                             double totalHoras = 0;

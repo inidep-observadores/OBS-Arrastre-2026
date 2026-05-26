@@ -1,4 +1,4 @@
-﻿using ControlMareas.App.Models.Import;
+using ControlMareas.App.Models.Import;
 
 namespace ControlMareas.App.Services.Internal;
 
@@ -201,6 +201,21 @@ public static class LegacyDecoder
         // MMMHHHIII
         string s = $"{Math.Min(mm, 999):D3}{Math.Min(hm, 999):D3}{Math.Min(hi, 999):D3}";
         return double.Parse(s);
+    }
+
+    /// <summary>
+    /// Retorna la clave de área estadística a partir de coordenadas decimales,
+    /// usando la misma lógica que GetCuadricula en los servicios de reporte.
+    /// Si alguna coordenada es nula, retorna "S/D".
+    /// Formato de clave: (int(|lat|) * 100) + int(|lon|), p.ej. "4160".
+    /// </summary>
+    public static string GetAreaKey(double? lat, double? lon)
+    {
+        if (!lat.HasValue || !lon.HasValue) return "S/D";
+        double latAbs = Math.Abs(lat.Value);
+        double lonAbs = Math.Abs(lon.Value);
+        int cuad = ((int)Math.Truncate(latAbs) * 100) + (int)Math.Truncate(lonAbs);
+        return cuad.ToString();
     }
 
     /// <summary>

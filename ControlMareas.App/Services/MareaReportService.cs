@@ -12,6 +12,7 @@ using Xceed.Words.NET;
 using Xceed.Document.NET;
 using XColor = Xceed.Drawing.Color;
 using SkiaSharp;
+using ControlMareas.App.Services.Internal;
 
 namespace ControlMareas.App.Services;
 
@@ -1726,16 +1727,7 @@ public class MareaReportService : IMareaReportService
     }
 
     private string GetCuadricula(Lance lance)
-    {
-        if (!lance.LatitudInicioDecimal.HasValue || !lance.LongitudInicioDecimal.HasValue) 
-            return "S/D";
-
-        double lat = Math.Abs(lance.LatitudInicioDecimal.Value);
-        double lon = Math.Abs(lance.LongitudInicioDecimal.Value);
-
-        int cuad = ((int)Math.Truncate(lat) * 100) + (int)Math.Truncate(lon);
-        return cuad.ToString();
-    }
+        => LegacyDecoder.GetAreaKey(lance.LatitudInicioDecimal, lance.LongitudInicioDecimal);
 
     private int GetSpeciesCutoff(string? codigoInidep)
     {
