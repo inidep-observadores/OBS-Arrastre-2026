@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -523,32 +523,32 @@ public class MareaReportService : IMareaReportService
                         foreach (var item in report.Items)
                         {
                             table.Cell().Element(CellStyle).Text(item.Fecha.ToString("dd/MM/yyyy"));
-                            table.Cell().Element(CellStyle).AlignRight().Text(item.ProduccionTotal.ToString("N1"));
-                            table.Cell().Element(CellStyle).AlignRight().Text(item.CapturaReconstruida.ToString("N1"));
-                            table.Cell().Element(CellStyle).AlignRight().Text(item.CapturaBruta.ToString("N1"));
-                            table.Cell().Element(CellStyle).AlignRight().Text(item.DescarteKg.ToString("N1"));
-                            table.Cell().Element(CellStyle).AlignRight().Text(item.CapturaRetenida.ToString("N1"));
-                            table.Cell().Element(CellStyle).AlignRight().Text(item.DiferenciaKg.ToString("N1"));
+                            table.Cell().Element(CellStyle).AlignRight().Text(item.ProduccionTotal.ToString("N2"));
+                            table.Cell().Element(CellStyle).AlignRight().Text(item.CapturaReconstruida.ToString("N2"));
+                            table.Cell().Element(CellStyle).AlignRight().Text(item.CapturaBruta.ToString("N2"));
+                            table.Cell().Element(CellStyle).AlignRight().Text(item.DescarteKg.ToString("N2"));
+                            table.Cell().Element(CellStyle).AlignRight().Text(item.CapturaRetenida.ToString("N2"));
+                            table.Cell().Element(CellStyle).AlignRight().Text(item.DiferenciaKg.ToString("N2"));
                             table.Cell().Element(CellStyle).AlignRight().Text(item.DiferenciaPorcentaje);
-                            table.Cell().Element(CellStyle).AlignRight().Text(item.SaldoAcumuladoKg.ToString("N1"));
+                            table.Cell().Element(CellStyle).AlignRight().Text(item.SaldoAcumuladoKg.ToString("N2"));
                         }
 
                         // Totales
                         table.Cell().Element(FooterStyle).Text("TOTALES").SemiBold();
-                        table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.ProduccionTotal).ToString("N1")).SemiBold();
-                        table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.CapturaReconstruida).ToString("N1")).SemiBold();
-                        table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.CapturaBruta).ToString("N1")).SemiBold();
-                        table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.DescarteKg).ToString("N1")).SemiBold();
-                        table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.CapturaRetenida).ToString("N1")).SemiBold();
+                        table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.ProduccionTotal).ToString("N2")).SemiBold();
+                        table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.CapturaReconstruida).ToString("N2")).SemiBold();
+                        table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.CapturaBruta).ToString("N2")).SemiBold();
+                        table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.DescarteKg).ToString("N2")).SemiBold();
+                        table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.CapturaRetenida).ToString("N2")).SemiBold();
                         
                         var totalDifKg = report.Items.Sum(i => i.DiferenciaKg);
                         var totalRet = report.Items.Sum(i => i.CapturaRetenida);
                         var totalRecon = report.Items.Sum(i => i.CapturaReconstruida);
                         var totalDifPct = totalRet > 0 ? (totalDifKg * 100.0 / totalRet) : (totalRecon > 0 ? -100.0 : 0);
                         
-                        table.Cell().Element(FooterStyle).AlignRight().Text(totalDifKg.ToString("N1")).SemiBold();
+                        table.Cell().Element(FooterStyle).AlignRight().Text(totalDifKg.ToString("N2")).SemiBold();
                         table.Cell().Element(FooterStyle).AlignRight().Text(totalDifPct.ToString("N2") + "%").SemiBold();
-                        table.Cell().Element(FooterStyle).AlignRight().Text(totalDifKg.ToString("N1")).SemiBold();
+                        table.Cell().Element(FooterStyle).AlignRight().Text(totalDifKg.ToString("N2")).SemiBold();
 
                         IContainer CellStyle(IContainer container) => container.PaddingVertical(3).BorderBottom(1).BorderColor(Colors.Grey.Lighten4);
                         IContainer FooterStyle(IContainer container) => container.PaddingVertical(8).BorderTop(2).BorderColor(Colors.Black);
@@ -778,8 +778,8 @@ public class MareaReportService : IMareaReportService
                 foreach (var item in speciesGroup)
                 {
                     table.Cell().Element(ContentStyle).Text(item.Area);
-                    table.Cell().Element(ContentStyle).AlignRight().Text(item.CapturaKg.ToString("N1"));
-                    table.Cell().Element(ContentStyle).AlignRight().Text(item.DescarteKg.ToString("N1"));
+                    table.Cell().Element(ContentStyle).AlignRight().Text(item.CapturaKg.ToString("N2"));
+                    table.Cell().Element(ContentStyle).AlignRight().Text(item.DescarteKg.ToString("N2"));
                     table.Cell().Element(ContentStyle).AlignRight().Text(item.DiasPesca.ToString("N0"));
                     table.Cell().Element(ContentStyle).AlignRight().Text(item.CantidadLances.ToString("N0"));
                     table.Cell().Element(ContentStyle).AlignRight().Text(item.TotalHoras.ToString("N2"));
@@ -787,8 +787,8 @@ public class MareaReportService : IMareaReportService
 
                 // Total de la especie
                 table.Cell().Element(FooterStyle).Text("Total");
-                table.Cell().Element(FooterStyle).AlignRight().Text(speciesGroup.Sum(s => s.CapturaKg).ToString("N1"));
-                table.Cell().Element(FooterStyle).AlignRight().Text(speciesGroup.Sum(s => s.DescarteKg).ToString("N1"));
+                table.Cell().Element(FooterStyle).AlignRight().Text(speciesGroup.Sum(s => s.CapturaKg).ToString("N2"));
+                table.Cell().Element(FooterStyle).AlignRight().Text(speciesGroup.Sum(s => s.DescarteKg).ToString("N2"));
                 table.Cell().Element(FooterStyle).Text("");
                 table.Cell().Element(FooterStyle).Text("");
                 table.Cell().Element(FooterStyle).AlignRight().Text(speciesGroup.Sum(s => s.TotalHoras).ToString("N2"));
@@ -826,13 +826,13 @@ public class MareaReportService : IMareaReportService
                 table.Cell().Element(ContentStyle).Text(item.Especie);
                 table.Cell().Element(ContentStyle).Text(item.Producto);
                 table.Cell().Element(ContentStyle).Text(item.Categoria);
-                table.Cell().Element(ContentStyle).AlignRight().Text(item.Kilos.ToString("N1"));
+                table.Cell().Element(ContentStyle).AlignRight().Text(item.Kilos.ToString("N2"));
             }
 
             table.Cell().Element(FooterStyle).Text("Total General");
             table.Cell().Element(FooterStyle).Text("");
             table.Cell().Element(FooterStyle).Text("");
-            table.Cell().Element(FooterStyle).AlignRight().Text(report.ProduccionDetalle.Sum(p => p.Kilos).ToString("N1"));
+            table.Cell().Element(FooterStyle).AlignRight().Text(report.ProduccionDetalle.Sum(p => p.Kilos).ToString("N2"));
 
             IContainer ContentStyle(IContainer container) => container.PaddingVertical(2).BorderBottom(1).BorderColor(Colors.Grey.Lighten4);
             IContainer FooterStyle(IContainer container) => container.PaddingVertical(5).BorderTop(1).BorderColor(Colors.Black).DefaultTextStyle(x => x.SemiBold());
@@ -872,12 +872,12 @@ public class MareaReportService : IMareaReportService
                 foreach (var item in report.Items)
                 {
                     table.Cell().Element(ContentStyle).Text(item.Especie);
-                    table.Cell().Element(ContentStyle).AlignRight().Text(item.ProduccionTotal.ToString("N1"));
-                    table.Cell().Element(ContentStyle).AlignRight().Text(item.CapturaReconstruida.ToString("N1"));
-                    table.Cell().Element(ContentStyle).AlignRight().Text(item.CapturaBruta.ToString("N1"));
-                    table.Cell().Element(ContentStyle).AlignRight().Text(item.DescarteKg.ToString("N1"));
-                    table.Cell().Element(ContentStyle).AlignRight().Text(item.CapturaRetenida.ToString("N1"));
-                    table.Cell().Element(ContentStyle).AlignRight().Text(item.DiferenciaKg.ToString("N1"));
+                    table.Cell().Element(ContentStyle).AlignRight().Text(item.ProduccionTotal.ToString("N2"));
+                    table.Cell().Element(ContentStyle).AlignRight().Text(item.CapturaReconstruida.ToString("N2"));
+                    table.Cell().Element(ContentStyle).AlignRight().Text(item.CapturaBruta.ToString("N2"));
+                    table.Cell().Element(ContentStyle).AlignRight().Text(item.DescarteKg.ToString("N2"));
+                    table.Cell().Element(ContentStyle).AlignRight().Text(item.CapturaRetenida.ToString("N2"));
+                    table.Cell().Element(ContentStyle).AlignRight().Text(item.DiferenciaKg.ToString("N2"));
                     
                     var diffCell = table.Cell().Element(ContentStyle).AlignRight();
                     if (item.HasDiferenciaSignificativa)
@@ -891,18 +891,18 @@ public class MareaReportService : IMareaReportService
                 }
 
                 table.Cell().Element(FooterStyle).Text("TOTALES").SemiBold();
-                table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.ProduccionTotal).ToString("N1")).SemiBold();
-                table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.CapturaReconstruida).ToString("N1")).SemiBold();
-                table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.CapturaBruta).ToString("N1")).SemiBold();
-                table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.DescarteKg).ToString("N1")).SemiBold();
-                table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.CapturaRetenida).ToString("N1")).SemiBold();
+                table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.ProduccionTotal).ToString("N2")).SemiBold();
+                table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.CapturaReconstruida).ToString("N2")).SemiBold();
+                table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.CapturaBruta).ToString("N2")).SemiBold();
+                table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.DescarteKg).ToString("N2")).SemiBold();
+                table.Cell().Element(FooterStyle).AlignRight().Text(report.Items.Sum(i => i.CapturaRetenida).ToString("N2")).SemiBold();
                 
                 var totalDifKg = report.Items.Sum(i => i.DiferenciaKg);
                 var totalRet = report.Items.Sum(i => i.CapturaRetenida);
                 var totalRecon = report.Items.Sum(i => i.CapturaReconstruida);
                 var totalDifPct = totalRet > 0 ? (totalDifKg * 100.0 / totalRet) : (totalRecon > 0 ? -100.0 : 0);
                 
-                table.Cell().Element(FooterStyle).AlignRight().Text(totalDifKg.ToString("N1")).SemiBold();
+                table.Cell().Element(FooterStyle).AlignRight().Text(totalDifKg.ToString("N2")).SemiBold();
                 table.Cell().Element(FooterStyle).AlignRight().Text(totalDifPct.ToString("N2") + "%").SemiBold();
 
                 IContainer ContentStyle(IContainer container) => container.PaddingVertical(5).BorderBottom(1).BorderColor(Colors.Grey.Lighten3);
