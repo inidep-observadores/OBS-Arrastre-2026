@@ -2556,65 +2556,36 @@ public class MainWindowViewModel : ObservableObject
                 }
                 etapaReport.Items = etapaReport.Items.OrderByDescending(i => i.CapturaBruta).ToList();
 
-                // 4. Especies predominantes en la ETAPA (>= 20% de la producción de la etapa)
-                double totalEtapaProduccion = etapaProduccion.Sum(p => p.Kg ?? 0);
-                var predominantInEtapa = prodSummary
-                    .Where(x => totalEtapaProduccion > 0 && (x.Value.ProduccionTotal / totalEtapaProduccion) >= 0.20)
-                    .Select(x => x.Key)
-                    .ToList();
-
-                foreach (var key in predominantInEtapa)
-                {
-                    prodSummary.TryGetValue(key, out var pData);
-                    var spName = pData?.EspecieNombre ?? "Desconocida";
-                    var spLances = etapaLances.Where(l => l.ItemsCaptura.Any(ic => 
+                // 4. Resumen por Área (Total de la etapa, idéntico al informe Word)
+                var groupedByArea = etapaLances
+                    .GroupBy(l => LegacyDecoder.GetAreaKey(l.LatitudInicioDecimal, l.LongitudInicioDecimal))
+                    .Select(g => 
                     {
-                        bool isRaya = IsRaya(ic.Especie);
-                        bool isGeneric = isRaya && !IsGenericRaya(ic.Especie) && !commonRayaIdsMarea.Contains(ic.EspecieID!);
-                        string icKey = isGeneric ? RayaGenericVirtualId : (ic.EspecieID ?? ic.Especie?.FullDisplayName ?? "Desconocida");
-                        return icKey == key;
-                    })).ToList();
-                    var groupedByArea = spLances
-                        .GroupBy(l => LegacyDecoder.GetAreaKey(l.LatitudInicioDecimal, l.LongitudInicioDecimal))
-                        .Select(g => 
+                        double totalHoras = 0;
+                        foreach(var l in g)
                         {
-                            double totalHoras = 0;
-                            foreach(var l in g)
+                            if (TimeSpan.TryParse(l.HoraInicio, out var tsI) && TimeSpan.TryParse(l.HoraFinal, out var tsF))
                             {
-                                if (TimeSpan.TryParse(l.HoraInicio, out var tsI) && TimeSpan.TryParse(l.HoraFinal, out var tsF))
-                                {
-                                    if (tsF < tsI) tsF = tsF.Add(TimeSpan.FromDays(1));
-                                    totalHoras += (tsF - tsI).TotalHours;
-                                }
+                                if (tsF < tsI) tsF = tsF.Add(TimeSpan.FromDays(1));
+                                totalHoras += (tsF - tsI).TotalHours;
                             }
+                        }
 
-                            return new ControlProduccionAreaSummary
-                            {
-                                Especie = spName,
-                                Area = g.Key,
-                                CapturaKg = g.Sum(l => l.ItemsCaptura.Where(ic => 
-                                {
-                                    bool isR = IsRaya(ic.Especie);
-                                    bool isG = isR && !IsGenericRaya(ic.Especie) && !commonRayaIdsMarea.Contains(ic.EspecieID!);
-                                    string icK = isG ? RayaGenericVirtualId : (ic.EspecieID ?? ic.Especie?.FullDisplayName ?? "Desconocida");
-                                    return icK == key;
-                                }).Sum(ic => ic.CapturaTotalKgCalculado)),
-                                DescarteKg = g.Sum(l => l.ItemsCaptura.Where(ic => 
-                                {
-                                    bool isR = IsRaya(ic.Especie);
-                                    bool isG = isR && !IsGenericRaya(ic.Especie) && !commonRayaIdsMarea.Contains(ic.EspecieID!);
-                                    string icK = isG ? RayaGenericVirtualId : (ic.EspecieID ?? ic.Especie?.FullDisplayName ?? "Desconocida");
-                                    return icK == key;
-                                }).Sum(ic => ic.PesoDescarteCalculado)),
-                                TotalHoras = totalHoras,
-                                CantidadLances = g.Count(),
-                                DiasPesca = g.Select(l => l.Fecha).Distinct().Count()
-                            };
-                        })
-                        .OrderBy(a => a.Area)
-                        .ToList();
-                    etapaReport.AreaSummaries.AddRange(groupedByArea);
-                }
+                        return new ControlProduccionAreaSummary
+                        {
+                            Especie = "Total",
+                            Area = g.Key,
+                            CapturaKg = g.Sum(l => l.ItemsCaptura.Sum(ic => ic.CapturaTotalKgCalculado)),
+                            DescarteKg = g.Sum(l => l.ItemsCaptura.Sum(ic => ic.PesoDescarteCalculado)),
+                            TotalHoras = totalHoras,
+                            CantidadLances = g.Count(),
+                            DiasPesca = g.Select(l => l.Fecha).Distinct().Count()
+                        };
+                    })
+                    .OrderByDescending(a => a.CapturaKg)
+                    .ToList();
+                
+                etapaReport.AreaSummaries.AddRange(groupedByArea);
 
                 // 5. Detalle producción de la etapa (AGRUPADO)
                 etapaReport.ProduccionDetalle = etapaProduccion

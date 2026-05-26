@@ -746,58 +746,63 @@ public class MareaReportService : IMareaReportService
     {
         if (!report.AreaSummaries.Any()) return;
 
-        col.Item().PaddingTop(10).Text("RESUMEN POR ÁREA (Especies Predominantes)").FontSize(11).SemiBold();
+        col.Item().PaddingTop(10).PaddingBottom(5).Text("RESUMEN POR ÁREA").FontSize(11).SemiBold();
 
-        var groupedBySpecies = report.AreaSummaries.GroupBy(s => s.Especie);
-
-        foreach (var speciesGroup in groupedBySpecies)
+        col.Item().Table(table =>
         {
-            col.Item().PaddingTop(15).PaddingBottom(5).Text(speciesGroup.Key).FontSize(10).SemiBold().FontColor(Colors.Black);
-            
-            col.Item().Table(table =>
+            table.ColumnsDefinition(columns =>
             {
-                table.ColumnsDefinition(columns =>
-                {
-                    columns.RelativeColumn(); // Área
-                    columns.RelativeColumn(); // Captura
-                    columns.RelativeColumn(); // Descarte
-                    columns.RelativeColumn(); // Días
-                    columns.RelativeColumn(); // Lances
-                    columns.RelativeColumn(); // Horas
-                });
-
-                table.Header(header =>
-                {
-                    header.Cell().Element(HeaderStyle).Text("Área");
-                    header.Cell().Element(HeaderStyle).AlignRight().Text("Captura");
-                    header.Cell().Element(HeaderStyle).AlignRight().Text("Descarte");
-                    header.Cell().Element(HeaderStyle).AlignRight().Text("Días");
-                    header.Cell().Element(HeaderStyle).AlignRight().Text("Lances");
-                    header.Cell().Element(HeaderStyle).AlignRight().Text("Horas");
-                });
-
-                foreach (var item in speciesGroup)
-                {
-                    table.Cell().Element(ContentStyle).Text(item.Area);
-                    table.Cell().Element(ContentStyle).AlignRight().Text(item.CapturaKg.ToString("N2"));
-                    table.Cell().Element(ContentStyle).AlignRight().Text(item.DescarteKg.ToString("N2"));
-                    table.Cell().Element(ContentStyle).AlignRight().Text(item.DiasPesca.ToString("N0"));
-                    table.Cell().Element(ContentStyle).AlignRight().Text(item.CantidadLances.ToString("N0"));
-                    table.Cell().Element(ContentStyle).AlignRight().Text(item.TotalHoras.ToString("N2"));
-                }
-
-                // Total de la especie
-                table.Cell().Element(FooterStyle).Text("Total");
-                table.Cell().Element(FooterStyle).AlignRight().Text(speciesGroup.Sum(s => s.CapturaKg).ToString("N2"));
-                table.Cell().Element(FooterStyle).AlignRight().Text(speciesGroup.Sum(s => s.DescarteKg).ToString("N2"));
-                table.Cell().Element(FooterStyle).Text("");
-                table.Cell().Element(FooterStyle).Text("");
-                table.Cell().Element(FooterStyle).AlignRight().Text(speciesGroup.Sum(s => s.TotalHoras).ToString("N2"));
-
-                IContainer ContentStyle(IContainer container) => container.PaddingVertical(2).BorderBottom(1).BorderColor(Colors.Grey.Lighten4);
-                IContainer FooterStyle(IContainer container) => container.PaddingVertical(5).BorderTop(1).BorderColor(Colors.Black).DefaultTextStyle(x => x.SemiBold());
+                columns.RelativeColumn(1.5f); // Área
+                columns.RelativeColumn(2); // Captura
+                columns.RelativeColumn(2); // Descarte
+                columns.RelativeColumn(1.5f); // Desc.%
+                columns.RelativeColumn(1.5f); // Lances
+                columns.RelativeColumn(1.5f); // Días
+                columns.RelativeColumn(1.5f); // Horas
             });
-        }
+
+            table.Header(header =>
+            {
+                header.Cell().Element(HeaderStyle).Text("Área");
+                header.Cell().Element(HeaderStyle).AlignRight().Text("Kilos");
+                header.Cell().Element(HeaderStyle).AlignRight().Text("Descarte");
+                header.Cell().Element(HeaderStyle).AlignRight().Text("Desc.%");
+                header.Cell().Element(HeaderStyle).AlignRight().Text("Lances");
+                header.Cell().Element(HeaderStyle).AlignRight().Text("Días");
+                header.Cell().Element(HeaderStyle).AlignRight().Text("Horas");
+            });
+
+            foreach (var item in report.AreaSummaries)
+            {
+                table.Cell().Element(ContentStyle).Text(item.Area);
+                table.Cell().Element(ContentStyle).AlignRight().Text(item.CapturaKg.ToString("N2"));
+                table.Cell().Element(ContentStyle).AlignRight().Text(item.DescarteKg.ToString("N2"));
+                
+                double descPct = item.CapturaKg > 0 ? (item.DescarteKg * 100.0 / item.CapturaKg) : 0;
+                table.Cell().Element(ContentStyle).AlignRight().Text(descPct.ToString("N2"));
+                
+                table.Cell().Element(ContentStyle).AlignRight().Text(item.CantidadLances.ToString("N0"));
+                table.Cell().Element(ContentStyle).AlignRight().Text(item.DiasPesca.ToString("N0"));
+                table.Cell().Element(ContentStyle).AlignRight().Text(item.TotalHoras.ToString("N2"));
+            }
+
+            // Total
+            table.Cell().Element(FooterStyle).Text("Total");
+            
+            double totalCaptura = report.AreaSummaries.Sum(s => s.CapturaKg);
+            double totalDescarte = report.AreaSummaries.Sum(s => s.DescarteKg);
+            double totalDescPct = totalCaptura > 0 ? (totalDescarte * 100.0 / totalCaptura) : 0;
+            
+            table.Cell().Element(FooterStyle).AlignRight().Text(totalCaptura.ToString("N2"));
+            table.Cell().Element(FooterStyle).AlignRight().Text(totalDescarte.ToString("N2"));
+            table.Cell().Element(FooterStyle).AlignRight().Text(totalDescPct.ToString("N2"));
+            table.Cell().Element(FooterStyle).Text("");
+            table.Cell().Element(FooterStyle).Text("");
+            table.Cell().Element(FooterStyle).AlignRight().Text(report.AreaSummaries.Sum(s => s.TotalHoras).ToString("N2"));
+
+            IContainer ContentStyle(IContainer container) => container.PaddingVertical(2).BorderBottom(1).BorderColor(Colors.Grey.Lighten4);
+            IContainer FooterStyle(IContainer container) => container.PaddingVertical(5).BorderTop(1).BorderColor(Colors.Black).DefaultTextStyle(x => x.SemiBold());
+        });
     }
 
     private void ComposeProductionDetailContent(ColumnDescriptor col, ControlProduccionEtapaReport report)
