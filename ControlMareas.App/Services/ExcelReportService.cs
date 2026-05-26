@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -311,13 +311,13 @@ namespace ControlMareas.App.Services
             double maxY = Math.Ceiling(maxYValue / step) * step;
             if (maxY == 0) maxY = step;
 
-            var axisPaint = new SKPaint { Color = SKColors.Black, StrokeWidth = 1.5f, IsAntialias = true };
-            var gridPaint = new SKPaint { Color = SKColors.Gray, StrokeWidth = 1.0f, IsAntialias = true };
-            var textPaint = new SKPaint { Color = SKColors.Black, IsAntialias = true };
-            var labelCenterPaint = new SKPaint { Color = SKColors.Black, IsAntialias = true };
-            var textFont = new SKFont(SKTypeface.FromFamilyName("Times New Roman"), 14);
-            var labelFont = new SKFont(SKTypeface.FromFamilyName("Times New Roman"), 16) { Edging = SKFontEdging.SubpixelAntialias };
-            var axisFont = new SKFont(SKTypeface.FromFamilyName("Times New Roman"), 12);
+            using var axisPaint = new SKPaint { Color = SKColors.Black, StrokeWidth = 1.5f, IsAntialias = true };
+            using var gridPaint = new SKPaint { Color = SKColors.Gray, StrokeWidth = 1.0f, IsAntialias = true };
+            using var textPaint = new SKPaint { Color = SKColors.Black, IsAntialias = true };
+            using var labelCenterPaint = new SKPaint { Color = SKColors.Black, IsAntialias = true };
+            using var textFont = new SKFont(SKTypeface.FromFamilyName("Times New Roman"), 14);
+            using var labelFont = new SKFont(SKTypeface.FromFamilyName("Times New Roman"), 16) { Edging = SKFontEdging.SubpixelAntialias };
+            using var axisFont = new SKFont(SKTypeface.FromFamilyName("Times New Roman"), 12);
 
             for (double yVal = 0; yVal <= maxY + (step/10.0); yVal += step)
             {
@@ -346,10 +346,6 @@ namespace ControlMareas.App.Services
             canvas.RotateDegrees(-90, 25, height / 2);
             canvas.DrawText("Frecuencia relativa (%)", 25, height / 2, labelFont, labelCenterPaint);
             canvas.Restore();
-
-            textFont.Dispose();
-            labelFont.Dispose();
-            axisFont.Dispose();
 
             void DrawSeries(Func<(double Talla, double Machos, double Hembras, double Indet, double Total), double> selector, SKColor color, float[]? dashPattern = null, float strokeWidth = 2.5f)
             {
