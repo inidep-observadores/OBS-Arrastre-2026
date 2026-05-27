@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 
@@ -66,6 +66,7 @@ public class NarrativaMuestraEspecie
     public string NombreVulgar { get; set; } = string.Empty;
     public string NombreCientifico { get; set; } = string.Empty;
     public int TotalMuestras { get; set; }
+    public int TotalMuestrasDescarte { get; set; }
 }
 
 /// <summary>Datos narrativos de una etapa individual.</summary>

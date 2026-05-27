@@ -1,8 +1,17 @@
-﻿# Historial de Versiones
+# Historial de Versiones
 
 Documentación histórica del desarrollo del proyecto ControlMareas.
 Período documentado: 2026-04-09 a 2026-05-21.
 Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 1.0.0.
+
+## [v1.9.0] - 2026-05-27
+
+**Descripción**: Mejora en la redacción narrativa del reporte de resumen de marea para incluir explícitamente las muestras de descarte.
+
+### Added (Características nuevas)
+- feat(reportes): agregar muestras de descarte al resumen narrativo textual e indicar cantidades según tipo de muestra (captura/descarte)
+
+---
 
 ## [v1.8.1] - 2026-05-21
 
@@ -581,7 +590,7 @@ Para generar changelog de cambios pendientes:
 
 ---
 
-**Última actualización**: 2026-05-21
-**Período de desarrollo**: 2026-04-09 a 2026-05-21 (43 días)
-**Total de commits documentados**: 294  
-**Versión actual**: v1.8.1
+**Última actualización**: 2026-05-27
+**Período de desarrollo**: 2026-04-09 a 2026-05-27 (49 días)
+**Total de commits documentados**: 295  
+**Versión actual**: v1.9.0

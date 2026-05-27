@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using ControlMareas.App.Models.Reports;
 
 namespace ControlMareas.App.Services;
@@ -270,7 +270,7 @@ public static class MareaSummaryNarrativeBuilder
     private static NarrativaParagraph BuildParrafoMuestras(MareaSummaryReport report)
     {
         var sb = new NarrativaSpanBuilder();
-        int total = report.NarrativaMuestras.Sum(m => m.TotalMuestras);
+        int total = report.NarrativaMuestras.Sum(m => m.TotalMuestras + m.TotalMuestrasDescarte);
 
         sb.Normal($"Cantidad de muestras realizadas: {total} {Pluralizar(total, "muestra total", "muestras totales")}. ");
 
@@ -278,8 +278,23 @@ public static class MareaSummaryNarrativeBuilder
         {
             var m = report.NarrativaMuestras[i];
             if (i > 0) sb.Normal(" – ");
-            sb.Normal($"{m.TotalMuestras} {m.NombreVulgar} ");
+            
+            sb.Normal($"{m.NombreVulgar} ");
             sb.Italic($"({m.NombreCientifico})");
+            sb.Normal(": ");
+            
+            if (m.TotalMuestras > 0 && m.TotalMuestrasDescarte > 0)
+            {
+                sb.Normal($"{m.TotalMuestras} de captura y {m.TotalMuestrasDescarte} de descarte");
+            }
+            else if (m.TotalMuestras > 0)
+            {
+                sb.Normal($"{m.TotalMuestras} de captura");
+            }
+            else if (m.TotalMuestrasDescarte > 0)
+            {
+                sb.Normal($"{m.TotalMuestrasDescarte} de descarte");
+            }
         }
         sb.Normal(".");
 

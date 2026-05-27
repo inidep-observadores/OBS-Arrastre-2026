@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -235,7 +235,7 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
         // -- Resumen de muestras por especie (párrafo de cierre) --
         var muestrasAgrupadas = lances
             .SelectMany(l => l.Muestras)
-            .Where(m => m.Especie != null && m.TipoMuestra == 1) // Solo muestras de talla estándar (excluye descarte)
+            .Where(m => m.Especie != null && (m.TipoMuestra == 1 || m.TipoMuestra == 2)) // Muestras de talla estándar y descarte
             .GroupBy(m => m.EspecieID)
             .Select(g =>
             {
@@ -244,10 +244,13 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
                 {
                     NombreVulgar = esp.NombreVulgar ?? esp.NombreCientifico ?? string.Empty,
                     NombreCientifico = esp.NombreCientifico ?? string.Empty,
-                    TotalMuestras = g.Count()
+                    TotalMuestras = g.Count(m => m.TipoMuestra == 1),
+                    TotalMuestrasDescarte = g.Count(m => m.TipoMuestra == 2)
                 };
             })
+            .Where(x => x.TotalMuestras > 0 || x.TotalMuestrasDescarte > 0)
             .OrderByDescending(e => e.TotalMuestras)
+            .ThenByDescending(e => e.TotalMuestrasDescarte)
             .ToList();
         report.NarrativaMuestras = muestrasAgrupadas;
     }
