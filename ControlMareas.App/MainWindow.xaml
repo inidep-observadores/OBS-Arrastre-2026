@@ -76,32 +76,9 @@
                     <TextBlock Grid.Column="1" Style="{StaticResource BodySecondaryStyle}" Text="{Binding BuqueNombre}" />
                     <TextBlock Grid.Column="2" Style="{StaticResource BodySecondaryStyle}" Text="{Binding FechaInicioDisplay}" />
                     <TextBlock Grid.Column="3" Style="{StaticResource BodySecondaryStyle}" Text="{Binding FechaFinDisplay}" />
-                    <TextBlock Grid.Column="4" Style="{StaticResource BodySecondaryStyle}" Text="{Binding Comentarios}" />
-                    <Border Grid.Column="5" Padding="10,4" HorizontalAlignment="Left" CornerRadius="0">
-                        <Border.Style>
-                            <Style TargetType="Border">
-                                <Setter Property="Background" Value="{DynamicResource AccentMutedBrush}" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Estado}" Value="En curso">
-                                        <Setter Property="Background" Value="{DynamicResource SuccessBackgroundBrush}" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-                        <TextBlock FontSize="11" FontWeight="SemiBold" Text="{Binding Estado}">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Estado}" Value="En curso">
-                                            <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </Border>
+                    <TextBlock Grid.Column="4" Grid.ColumnSpan="2" Style="{StaticResource BodySecondaryStyle}" Text="{Binding Comentarios}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Comentarios}" Margin="0,0,16,0" />
                     
+
                     <StackPanel Grid.Column="6" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="8,0,0,0">
                         <!-- Botón para Establecer como Activa -->
                         <Button Command="{Binding SetActiveCommand}"
