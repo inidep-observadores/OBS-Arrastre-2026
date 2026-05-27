@@ -584,12 +584,13 @@ public class MareaReportService : IMareaReportService
                     var barcoConPrefijo = barco.StartsWith("B/P ", StringComparison.OrdinalIgnoreCase) || barco.StartsWith("B/P", StringComparison.OrdinalIgnoreCase)
                         ? barco 
                         : $"B/P {barco}";
-                    var buqueInfo = buqueCodigo.HasValue ? $"{barcoConPrefijo} ({buqueCodigo})" : barcoConPrefijo;
-                    var mareaInfo = $"{buqueInfo} - Marea {marea} ({anio})";
+                    // var buqueInfo = buqueCodigo.HasValue ? $"{barcoConPrefijo} ({buqueCodigo})" : barcoConPrefijo;
+                    var buqueInfo = barcoConPrefijo;
+                    var mareaInfo = $"{buqueInfo} - Marea {marea}/{anio}";
                     
                     if (fechaInicio.HasValue && fechaFin.HasValue)
                     {
-                        mareaInfo += $" | {fechaInicio:dd/MM/yyyy} — {fechaFin:dd/MM/yyyy}";
+                        mareaInfo += $" | Navegado: {fechaInicio:dd/MM/yyyy} — {fechaFin:dd/MM/yyyy}";
                     }
                     c.Item().Text(mareaInfo).FontSize(9);
 
