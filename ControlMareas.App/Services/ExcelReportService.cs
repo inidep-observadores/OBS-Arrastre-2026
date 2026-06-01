@@ -191,7 +191,7 @@ namespace ControlMareas.App.Services
                         MMad = g.Sum(f => f.NroLangostinosMachoMaduros),
                         HMad = g.Sum(f => f.NroLangostinosHembraMaduras),
                         HImp = g.Sum(f => f.NroLangostinosHembraImpregnadas),
-                        Total = g.Sum(f => f.NroTotal)
+                        Total = g.Sum(f => (f.NroMachos + f.NroHembras + f.NroIndeterminados) > 0 ? (f.NroMachos + f.NroHembras + f.NroIndeterminados) : f.NroTotal)
                     })
                     .OrderBy(f => f.Talla)
                     .ToList();
@@ -226,9 +226,9 @@ namespace ControlMareas.App.Services
                     worksheet.Cell(row, col++).Value = f.Total;
 
                     // Columnas de porcentaje
-                    double pMachos = totalMachos > 0 ? (f.Machos * 100.0) / totalMachos : 0;
-                    double pHembras = totalHembras > 0 ? (f.Hembras * 100.0) / totalHembras : 0;
-                    double pIndet = totalIndet > 0 ? (f.Indet * 100.0) / totalIndet : 0;
+                    double pMachos = totalGeneral > 0 ? (f.Machos * 100.0) / totalGeneral : 0;
+                    double pHembras = totalGeneral > 0 ? (f.Hembras * 100.0) / totalGeneral : 0;
+                    double pIndet = totalGeneral > 0 ? (f.Indet * 100.0) / totalGeneral : 0;
                     double pTotal = totalGeneral > 0 ? (f.Total * 100.0) / totalGeneral : 0;
 
                     worksheet.Cell(row, col).Value = pMachos;
@@ -366,9 +366,9 @@ namespace ControlMareas.App.Services
                     var p2 = points[i + 1];
                     var p3 = i == points.Length - 2 ? points[i + 1] : points[i + 2];
 
-                    // Control points
-                    var cp1 = new SKPoint(p1.X + (p2.X - p0.X) / 6, p1.Y + (p2.Y - p0.Y) / 6);
-                    var cp2 = new SKPoint(p2.X - (p3.X - p1.X) / 6, p2.Y - (p3.Y - p1.Y) / 6);
+                    // Control points (suavizado moderado dividiendo por 9)
+                    var cp1 = new SKPoint(p1.X + (p2.X - p0.X) / 9, p1.Y + (p2.Y - p0.Y) / 9);
+                    var cp2 = new SKPoint(p2.X - (p3.X - p1.X) / 9, p2.Y - (p3.Y - p1.Y) / 9);
 
                     path.CubicTo(cp1, cp2, p2);
                 }
