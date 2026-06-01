@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -172,6 +172,9 @@ public partial class App : Application
 
             // Excepción: Permitir el Enter normal en TextBox que acepten retornos
             if (element is TextBox tb && tb.AcceptsReturn) return;
+            
+            // Excepción: En el diálogo de Revisor, el Enter sobre el botón Aceptar debe ejecutarlo, no navegar
+            if (element is System.Windows.Controls.Button && (element as FrameworkElement)?.DataContext is RevisorDialogViewModel) return;
 
             // Navegar al siguiente/anterior elemento
             var direction = (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift 

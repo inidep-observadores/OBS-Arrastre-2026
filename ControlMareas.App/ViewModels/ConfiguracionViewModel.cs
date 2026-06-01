@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using ControlMareas.App.Models;
 using ControlMareas.App.Services;
 using System.Collections.Generic;
@@ -87,5 +87,14 @@ public partial class ConfiguracionViewModel : ObservableObject
             s.RevisorApellido = ApellidoRevisor;
             s.ThemeMode = SelectedTheme;
         });
+    }
+
+    public void LoadSettings()
+    {
+        var settings = _settingsService.GetSettings();
+        _nombreRevisor = settings.RevisorNombre ?? "";
+        _apellidoRevisor = settings.RevisorApellido ?? "";
+        OnPropertyChanged(nameof(NombreRevisor));
+        OnPropertyChanged(nameof(ApellidoRevisor));
     }
 }

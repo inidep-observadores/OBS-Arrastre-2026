@@ -573,6 +573,8 @@ public class MareaReportService : IMareaReportService
     private void ComposeHeader(IContainer container, string barco, string marea, int anio, DateTime? fechaInicio, DateTime? fechaFin, string titulo,
         int? buqueCodigo = null, string? obsNombre = null, string? obsApellido = null, int? obsCodigo = null)
     {
+        var settings = _userSettingsService.GetSettings();
+
         container.Column(col =>
         {
             col.Item().Row(row =>
@@ -593,14 +595,6 @@ public class MareaReportService : IMareaReportService
                         mareaInfo += $" | Navegado: {fechaInicio:dd/MM/yyyy} — {fechaFin:dd/MM/yyyy}";
                     }
                     c.Item().Text(mareaInfo).FontSize(9);
-
-                    if (!string.IsNullOrEmpty(obsNombre) || !string.IsNullOrEmpty(obsApellido))
-                    {
-                        var obsInfo = "Observador: ";
-                        if (!string.IsNullOrEmpty(obsApellido)) obsInfo += obsApellido;
-                        if (!string.IsNullOrEmpty(obsNombre)) obsInfo += (string.IsNullOrEmpty(obsApellido) ? "" : ", ") + obsNombre;
-                        c.Item().Text(obsInfo).FontSize(8).Italic().FontColor(Colors.Grey.Darken2);
-                    }
                 });
 
                 row.ConstantItem(100).Column(c =>
@@ -609,6 +603,35 @@ public class MareaReportService : IMareaReportService
                     c.Item().Text(DateTime.Now.ToString("dd/MM/yyyy")).AlignRight().FontSize(9);
                 });
             });
+
+            bool hasObserver = !string.IsNullOrEmpty(obsNombre) || !string.IsNullOrEmpty(obsApellido);
+            bool hasRevisor = !string.IsNullOrEmpty(settings.RevisorNombre) || !string.IsNullOrEmpty(settings.RevisorApellido);
+
+            if (hasObserver || hasRevisor)
+            {
+                col.Item().Row(row =>
+                {
+                    if (hasObserver)
+                    {
+                        var obsInfo = "Observador: ";
+                        if (!string.IsNullOrEmpty(obsApellido)) obsInfo += obsApellido;
+                        if (!string.IsNullOrEmpty(obsNombre)) obsInfo += (string.IsNullOrEmpty(obsApellido) ? "" : ", ") + obsNombre;
+                        row.RelativeItem().Text(obsInfo).FontSize(8).Italic().FontColor(Colors.Grey.Darken2);
+                    }
+                    else
+                    {
+                        row.RelativeItem();
+                    }
+
+                    if (hasRevisor)
+                    {
+                        var revInfo = "";
+                        if (!string.IsNullOrEmpty(settings.RevisorApellido)) revInfo += settings.RevisorApellido;
+                        if (!string.IsNullOrEmpty(settings.RevisorNombre)) revInfo += (string.IsNullOrEmpty(settings.RevisorApellido) ? "" : ", ") + settings.RevisorNombre;
+                        row.AutoItem().Text($"Revisado por: {revInfo}").FontSize(8).Italic().FontColor(Colors.Grey.Darken2);
+                    }
+                });
+            }
         });
     }
 

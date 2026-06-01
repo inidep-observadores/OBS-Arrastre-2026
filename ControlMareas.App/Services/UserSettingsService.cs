@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Text.Json;
 using ControlMareas.App.Models;
@@ -48,6 +48,15 @@ public sealed class UserSettingsService : IUserSettingsService
 
     public void SaveSettings(UserSettings settings)
     {
+        if (!string.IsNullOrWhiteSpace(settings.RevisorNombre))
+        {
+            settings.RevisorNombre = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(settings.RevisorNombre.Trim().ToLower());
+        }
+        if (!string.IsNullOrWhiteSpace(settings.RevisorApellido))
+        {
+            settings.RevisorApellido = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(settings.RevisorApellido.Trim().ToLower());
+        }
+
         _cachedSettings = settings;
         try
         {

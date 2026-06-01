@@ -145,17 +145,20 @@
             <Setter Property="Padding" Value="18,11" />
             <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
             <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="BorderThickness" Value="2" />
             <Setter Property="Foreground" Value="White" />
             <Setter Property="FontSize" Value="14" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Root"
                                 Padding="{TemplateBinding Padding}"
                                 Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="0"
                                 RenderTransformOrigin="0.5,0.5">
                             <Border.RenderTransform>
@@ -181,6 +184,15 @@
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.35" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Root" Property="BorderBrush" Value="White" />
+                                <Setter TargetName="Root" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#2F6BFF" Direction="270"
+                                                          ShadowDepth="0" BlurRadius="22" Opacity="0.85" />
+                                    </Setter.Value>
+                                </Setter>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -642,6 +654,10 @@
         </Style>
         <DataTemplate DataType="{x:Type vm:RecibiProyectoSelectionViewModel}">
             <views:RecibiProyectoSelectionView />
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:RevisorDialogViewModel}">
+            <views:RevisorDialogView />
         </DataTemplate>
 
         <!-- Diálogo de Mensajes Premium -->

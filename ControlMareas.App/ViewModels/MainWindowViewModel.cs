@@ -474,6 +474,20 @@ public class MainWindowViewModel : ObservableObject
         _mareasFilterAnio = settings.LastSelectedMareaAnio ?? DateTime.Today.Year;
         TrackVisibilitySliderValue = 1; // 0.25 días por defecto
 
+        if (string.IsNullOrWhiteSpace(settings.RevisorNombre) || string.IsNullOrWhiteSpace(settings.RevisorApellido))
+        {
+            ActiveDialog = new RevisorDialogViewModel((nombre, apellido) => 
+            {
+                _userSettingsService.UpdateSettings(s => 
+                {
+                    s.RevisorNombre = nombre;
+                    s.RevisorApellido = apellido;
+                });
+                _configuracionVM.LoadSettings();
+                ActiveDialog = null;
+            });
+        }
+
         foreach (var navigationItem in _mockShellDataService.GetNavigationItems())
         {
             NavigationItems.Add(navigationItem);
