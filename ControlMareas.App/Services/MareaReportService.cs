@@ -1435,7 +1435,7 @@ public class MareaReportService : IMareaReportService
                     Machos = pts.Sum(f => f.NroMachos),
                     Hembras = pts.Sum(f => f.NroHembras),
                     Indet = pts.Sum(f => f.NroIndeterminados),
-                    Total = pts.Sum(f => f.NroTotal)
+                    Total = pts.Sum(f => (f.NroMachos + f.NroHembras + f.NroIndeterminados) > 0 ? (f.NroMachos + f.NroHembras + f.NroIndeterminados) : f.NroTotal)
                 })
                 .OrderBy(pts => pts.Talla)
                 .ToList();
@@ -1466,9 +1466,9 @@ public class MareaReportService : IMareaReportService
                 {
                     var chartData = statsPoints.Select(p => (
                         Talla: p.Talla,
-                        Machos: (totalM > 0 ? p.Machos * 100.0 / totalM : 0),
-                        Hembras: (totalH > 0 ? p.Hembras * 100.0 / totalH : 0),
-                        Indet: (totalI > 0 ? p.Indet * 100.0 / totalI : 0),
+                        Machos: (totalT > 0 ? p.Machos * 100.0 / totalT : 0),
+                        Hembras: (totalT > 0 ? p.Hembras * 100.0 / totalT : 0),
+                        Indet: (totalT > 0 ? p.Indet * 100.0 / totalT : 0),
                         Total: (totalT > 0 ? p.Total * 100.0 / totalT : 0)
                     )).ToList();
 
@@ -1596,9 +1596,9 @@ public class MareaReportService : IMareaReportService
                 var p2 = rawPoints[i + 1];
                 var p3 = i == rawPoints.Count - 2 ? rawPoints[i + 1] : rawPoints[i + 2];
 
-                // Control points
-                var cp1 = new SKPoint(p1.X + (p2.X - p0.X) / 6, p1.Y + (p2.Y - p0.Y) / 6);
-                var cp2 = new SKPoint(p2.X - (p3.X - p1.X) / 6, p2.Y - (p3.Y - p1.Y) / 6);
+                // Control points (suavizado moderado dividiendo por 9)
+                var cp1 = new SKPoint(p1.X + (p2.X - p0.X) / 9, p1.Y + (p2.Y - p0.Y) / 9);
+                var cp2 = new SKPoint(p2.X - (p3.X - p1.X) / 9, p2.Y - (p3.Y - p1.Y) / 9);
 
                 path.CubicTo(cp1, cp2, p2);
             }
