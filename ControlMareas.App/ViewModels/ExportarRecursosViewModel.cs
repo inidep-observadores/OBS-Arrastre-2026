@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -161,6 +161,16 @@ public class ExportarRecursosViewModel : ObservableObject
                     string fileName = $"{prefix}Informe_{nn}{aa}.xlsx";
                     string excelPath = Path.Combine(ExportPath, fileName);
 
+                    if (File.Exists(excelPath) && ShowConfirmation != null)
+                    {
+                        var confirmResult = await ShowConfirmation("Archivo existente", $"El archivo '{fileName}' ya existe. ¿Desea sobreescribirlo?");
+                        if (confirmResult != true)
+                        {
+                            DialogResult.TrySetResult(false);
+                            return;
+                        }
+                    }
+
                     if (!FileHelper.IsFileWritable(excelPath))
                     {
                         throw new IOException($"No se puede guardar el informe Excel de la marea en:\n\"{excelPath}\"\n\nEl archivo ya está abierto por otra aplicación (por ejemplo, Microsoft Excel). Por favor, cierre el documento e inténtelo nuevamente.");
@@ -189,6 +199,16 @@ public class ExportarRecursosViewModel : ObservableObject
 
                 fileName = $"Inf_MAR_DIOYT_{añoActual}_{apellido}{inicialNombre}_{añoMarea}_{nroMarea}_{codigoBuque}.docx";
                 string filePath = Path.Combine(ExportPath, fileName);
+
+                if (File.Exists(filePath) && ShowConfirmation != null)
+                {
+                    var confirmResult = await ShowConfirmation("Archivo existente", $"El archivo '{fileName}' ya existe. ¿Desea sobreescribirlo?");
+                    if (confirmResult != true)
+                    {
+                        DialogResult.TrySetResult(false);
+                        return;
+                    }
+                }
 
                 if (!FileHelper.IsFileWritable(filePath))
                 {

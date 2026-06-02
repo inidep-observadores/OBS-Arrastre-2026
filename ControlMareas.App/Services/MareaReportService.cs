@@ -1237,6 +1237,9 @@ public class MareaReportService : IMareaReportService
             if (i > 0) hp.Alignment = Alignment.right;
         }
 
+        // Configurar la primera fila como encabezado para que se repita en cada página
+        table.Rows[0].TableHeader = true;
+
         int rowIdx = 1;
         foreach (var s in summary)
         {
@@ -1309,6 +1312,9 @@ public class MareaReportService : IMareaReportService
             if (i > 0) hp.Alignment = Alignment.right;
         }
 
+        // Configurar la primera fila como encabezado para que se repita en cada página
+        table.Rows[0].TableHeader = true;
+
         for (int i = 0; i < areaSummary.Count; i++)
         {
             var a = areaSummary[i];
@@ -1358,6 +1364,9 @@ public class MareaReportService : IMareaReportService
             table.Rows[0].Cells[i].FillColor = XColor.LightGray;
             if (i >= 3) hp.Alignment = Alignment.right;
         }
+
+        // Configurar la primera fila como encabezado para que se repita en cada página
+        table.Rows[0].TableHeader = true;
 
         for (int i = 0; i < grouped.Count; i++)
         {
@@ -1457,6 +1466,13 @@ public class MareaReportService : IMareaReportService
 
             // Tabla de estadísticas
             InsertStatsTable(doc, frecuencias, cutoff, forzarSoloTotal);
+            
+            // Buscar la última tabla insertada y marcar su primera fila como encabezado repetible
+            if (doc.Tables.Count > 0)
+            {
+                doc.Tables.Last().Rows[0].TableHeader = true;
+            }
+
             doc.InsertParagraph().SpacingAfter(10);
 
             // Gráfico (si hay puntos)
