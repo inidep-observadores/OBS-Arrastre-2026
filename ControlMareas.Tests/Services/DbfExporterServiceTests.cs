@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Text;
 using System.Collections.Generic;
@@ -492,6 +492,26 @@ public sealed class DbfExporterServiceTests : IDisposable
                 NumeroOrden = 1
             };
             db.ItemsCaptura.Add(item);
+
+            var producto = new Producto
+            {
+                Id = "producto-test-id",
+                Codigo = "ENT",
+                Descripcion = "Entero"
+            };
+            db.Productos.Add(producto);
+
+            var produccion = new RegistroProduccion
+            {
+                Id = "prod-test-id",
+                MareaEtapaId = etapaId,
+                IdProducto = "producto-test-id",
+                Fecha = "2026-05-02",
+                EspecieOriginal = "33",
+                Kg = 50.0,
+                NumeroOrden = 1
+            };
+            db.RegistrosProduccion.Add(produccion);
 
             await db.SaveChangesAsync();
         }

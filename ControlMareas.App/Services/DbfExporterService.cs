@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Text;
 using System.Diagnostics;
 using DotNetDBF;
@@ -100,6 +100,8 @@ public sealed class DbfExporterService : IDbfExporterService
 
     private async Task ExportCapturasAsync(Marea marea, string barco, string suffix, string path, Encoding encoding, Dictionary<string, string>? originalFilenames)
     {
+        if (!marea.Etapas.Any(e => e.Lances.Any())) return;
+
         string name = (originalFilenames != null && originalFilenames.TryGetValue("C", out var originalName) && !string.IsNullOrWhiteSpace(originalName))
             ? originalName
             : $"C{suffix}.DBF";
@@ -238,6 +240,8 @@ public sealed class DbfExporterService : IDbfExporterService
 
     private async Task ExportProduccionAsync(Marea marea, string barco, string suffix, string path, Encoding encoding, Dictionary<string, string>? originalFilenames)
     {
+        if (!marea.Etapas.Any(e => e.RegistrosProduccion.Any())) return;
+
         string name = (originalFilenames != null && originalFilenames.TryGetValue("P", out var originalName) && !string.IsNullOrWhiteSpace(originalName))
             ? originalName
             : $"P{suffix}.DBF";
@@ -298,15 +302,12 @@ public sealed class DbfExporterService : IDbfExporterService
         string lPath = Path.Combine(path, lName);
         string xPath = Path.Combine(path, xName);
 
-        using var mStream = File.Open(mPath, FileMode.Create, FileAccess.Write);
-        var mWriter = new DBFWriter(mStream) { CharEncoding = encoding };
-
+        FileStream? mStream = null;
+        DBFWriter? mWriter = null;
         FileStream? mdStream = null;
         DBFWriter? mdWriter = null;
-
-        using var sStream = File.Open(sPath, FileMode.Create, FileAccess.Write);
-        var sWriter = new DBFWriter(sStream) { CharEncoding = encoding };
-
+        FileStream? sStream = null;
+        DBFWriter? sWriter = null;
         DBFWriter? lWriter = null;
         FileStream? lStream = null;
         DBFWriter? xWriter = null;
@@ -330,13 +331,6 @@ public sealed class DbfExporterService : IDbfExporterService
             new DBFField("FACT_POND", NativeDbType.Numeric, 17, 4)
         };
         for (int i = 1; i <= 90; i++) mFields.Add(new DBFField($"TALLA_{i}", NativeDbType.Numeric, 15, 0));
-        mWriter.Fields = mFields.ToArray();
-
-        // Si hay muestras de descarte, prepararemos el mdWriter bajo demanda o lo inicializamos ya
-        // Para simplificar, lo inicializamos si el archivo MD existía o si hay muestras de tipo 2
-        mdStream = File.Open(mdPath, FileMode.Create, FileAccess.Write);
-        mdWriter = new DBFWriter(mdStream) { CharEncoding = encoding };
-        mdWriter.Fields = mFields.ToArray();
 
         var xFields = new List<DBFField>(mFields.GetRange(0, 14));
         for (int i = 91; i <= 150; i++) xFields.Add(new DBFField($"TALLA_{i}", NativeDbType.Numeric, 15, 0));
@@ -365,7 +359,6 @@ public sealed class DbfExporterService : IDbfExporterService
             new DBFField("EDAD", NativeDbType.Numeric, 2, 0),
             new DBFField("R_TOTAL", NativeDbType.Numeric, 4, 2)
         };
-        sWriter.Fields = sFields.ToArray();
 
         var todasMuestras = marea.Etapas
             .SelectMany(e => e.Lances)
@@ -416,22 +409,38 @@ public sealed class DbfExporterService : IDbfExporterService
                 int currentTalla = baseTalla + (i * interval);
                 if (freqMap.TryGetValue(currentTalla, out var ft))
                 {
-                    mRow[mIdx++] = double.Parse(LegacyDecoder.EncodeTally((int)ft.Talla, ft.NroMachos, ft.NroHembras, ft.NroIndeterminados, ft.NroTotal));
+                    mRow[mIdx++] = long.Parse(LegacyDecoder.EncodeTally((int)ft.Talla, ft.NroMachos, ft.NroHembras, ft.NroIndeterminados, ft.NroTotal));
                 }
                 else if (currentTalla >= prim && currentTalla <= ult)
                 {
                     // Rellenar con ceros empaquetados si está en el rango original
-                    mRow[mIdx++] = double.Parse(LegacyDecoder.EncodeTally(currentTalla, 0, 0, 0, 0));
+                    mRow[mIdx++] = long.Parse(LegacyDecoder.EncodeTally(currentTalla, 0, 0, 0, 0));
                 }
                 else
                 {
                     mRow[mIdx++] = null;
                 }
             }
-            if (m.TipoMuestra == 2 && mdWriter != null)
+            if (m.TipoMuestra == 2)
+            {
+                if (mdWriter == null)
+                {
+                    mdStream = File.Open(mdPath, FileMode.Create, FileAccess.Write);
+                    mdWriter = new DBFWriter(mdStream) { CharEncoding = encoding };
+                    mdWriter.Fields = mFields.ToArray();
+                }
                 mdWriter.WriteRecord(mRow);
+            }
             else
+            {
+                if (mWriter == null)
+                {
+                    mStream = File.Open(mPath, FileMode.Create, FileAccess.Write);
+                    mWriter = new DBFWriter(mStream) { CharEncoding = encoding };
+                    mWriter.Fields = mFields.ToArray();
+                }
                 mWriter.WriteRecord(mRow);
+            }
 
             var freqs = m.FrecuenciasTallas.OrderBy(f => f.Talla).ToList();
 
@@ -453,12 +462,12 @@ public sealed class DbfExporterService : IDbfExporterService
                     int currentTalla = baseTalla + (i * interval);
                     if (freqMap.TryGetValue(currentTalla, out var ft))
                     {
-                        xRow[xIdx++] = double.Parse(LegacyDecoder.EncodeTally((int)ft.Talla, ft.NroMachos, ft.NroHembras, ft.NroIndeterminados, ft.NroTotal));
+                        xRow[xIdx++] = long.Parse(LegacyDecoder.EncodeTally((int)ft.Talla, ft.NroMachos, ft.NroHembras, ft.NroIndeterminados, ft.NroTotal));
                     }
                     else if (currentTalla >= prim && currentTalla <= ult)
                     {
                         // Rellenar con ceros si cae dentro del rango original observado de la muestra
-                        xRow[xIdx++] = double.Parse(LegacyDecoder.EncodeTally(currentTalla, 0, 0, 0, 0));
+                        xRow[xIdx++] = long.Parse(LegacyDecoder.EncodeTally(currentTalla, 0, 0, 0, 0));
                     }
                     else
                     {
@@ -470,6 +479,12 @@ public sealed class DbfExporterService : IDbfExporterService
 
             foreach (var s in m.ItemsSubmuestras.OrderBy(x => x.NumeroOrden))
             {
+                if (sWriter == null)
+                {
+                    sStream = File.Open(sPath, FileMode.Create, FileAccess.Write);
+                    sWriter = new DBFWriter(sStream) { CharEncoding = encoding };
+                    sWriter.Fields = sFields.ToArray();
+                }
                 var sRow = new object[sFields.Count];
                 int sIdx = 0;
                 sRow[sIdx++] = barco;
@@ -518,21 +533,25 @@ public sealed class DbfExporterService : IDbfExporterService
                 lRow[lIdx++] = (double)marea.NumeroInidep;
                 lRow[lIdx++] = (double)lance.NroLance;
                 lRow[lIdx++] = DateTime.Parse(lance.Fecha);
-                for (int i = 0; i < 70; i++)
+                for (int talla = 1; talla <= 70; talla++)
                 {
-                    if (i < freqs.Count)
+                    if (freqMap.TryGetValue(talla, out var f))
                     {
-                        var f = freqs[i];
                         lRow[lIdx++] = LegacyDecoder.EncodeMatureTally(f.NroLangostinosMachoMaduros, f.NroLangostinosHembraMaduras, f.NroLangostinosHembraImpregnadas);
                     }
-                    else lRow[lIdx++] = null;
+                    else 
+                    {
+                        lRow[lIdx++] = null;
+                    }
                 }
                 lWriter.WriteRecord(lRow);
             }
         }
 
-        mWriter.Close();
-        sWriter.Close();
+        mWriter?.Close();
+        mStream?.Dispose();
+        sWriter?.Close();
+        sStream?.Dispose();
         lWriter?.Close();
         lStream?.Dispose();
         xWriter?.Close();

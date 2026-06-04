@@ -196,11 +196,11 @@ public static class LegacyDecoder
     /// <summary>
     /// Codifica el formato de 9 dígitos (MMMHHHIII) usado en los archivos L*.
     /// </summary>
-    public static double EncodeMatureTally(int mm, int hm, int hi)
+    public static long EncodeMatureTally(int mm, int hm, int hi)
     {
         // MMMHHHIII
         string s = $"{Math.Min(mm, 999):D3}{Math.Min(hm, 999):D3}{Math.Min(hi, 999):D3}";
-        return double.Parse(s);
+        return long.Parse(s);
     }
 
     /// <summary>
