@@ -4,6 +4,16 @@ Documentación histórica del desarrollo del proyecto ControlMareas.
 Período documentado: 2026-04-09 a 2026-05-21.
 Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 1.0.0.
 
+## [Unreleased]
+
+### Fixed (Correcciones)
+- fix(exportacion): arreglar decodificacion de tallas DBF usando long para prevenir perdida de ceros o notacion cientifica.
+- fix(exportacion): arreglar mapeo de tallas a columna absoluta en archivo L.
+- fix(exportacion): evitar creacion de archivos DBF vacios cuando no hay registros.
+- fix(tests): actualizar pruebas unitarias inyectando registros de produccion simulados.
+
+---
+
 ## [v1.9.0] - 2026-05-27
 
 **Descripción**: Mejora en la redacción narrativa del reporte de resumen de marea para incluir explícitamente las muestras de descarte.
