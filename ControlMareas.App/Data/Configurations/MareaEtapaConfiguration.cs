@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ControlMareas.App.Data.Entities;
 
@@ -22,6 +22,7 @@ public sealed class MareaEtapaConfiguration : IEntityTypeConfiguration<MareaEtap
         builder.Property(x => x.NombreOficialPesca).HasColumnName("NombreOficialPesca");
         builder.Property(x => x.AnioMareaBuque).HasColumnName("AnioMareaBuque");
         builder.Property(x => x.NumeroMareaBuque).HasColumnName("NumeroMareaBuque");
+        builder.Property(x => x.TipoEtapa).HasColumnName("tipo_etapa");
         builder.Property(x => x.Metadata).HasColumnName("Metadata");
 
         builder.HasOne(x => x.Marea)

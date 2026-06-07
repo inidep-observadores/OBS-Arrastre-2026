@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics;
 
 namespace ControlMareas.App.Data.Entities;
@@ -22,6 +22,8 @@ public sealed class MareaEtapa
 
     public int? AnioMareaBuque { get; set; }
     public int? NumeroMareaBuque { get; set; }
+
+    public string? TipoEtapa { get; set; }
 
     public string? Metadata { get; set; }
 

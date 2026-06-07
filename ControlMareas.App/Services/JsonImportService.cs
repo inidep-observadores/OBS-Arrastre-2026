@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using ControlMareas.App.Data;
@@ -267,7 +267,8 @@ public sealed class JsonImportService : IJsonImportService
                         FechaArribo = eDto.FechaArribo,
                         NombreCapitan = eDto.NombreCapitan,
                         AnioMareaBuque = eDto.AnioMareaBuque,
-                        NumeroMareaBuque = eDto.NumeroMareaBuque
+                        NumeroMareaBuque = eDto.NumeroMareaBuque,
+                        TipoEtapa = eDto.TipoEtapa
                     });
                 }
 
@@ -353,6 +354,7 @@ public sealed class JsonImportService : IJsonImportService
                 existing.NombreCapitan = eDto.NombreCapitan;
                 existing.AnioMareaBuque = eDto.AnioMareaBuque;
                 existing.NumeroMareaBuque = eDto.NumeroMareaBuque;
+                existing.TipoEtapa = eDto.TipoEtapa;
             }
             else
             {
@@ -365,7 +367,8 @@ public sealed class JsonImportService : IJsonImportService
                     FechaArribo = eDto.FechaArribo,
                     NombreCapitan = eDto.NombreCapitan,
                     AnioMareaBuque = eDto.AnioMareaBuque,
-                    NumeroMareaBuque = eDto.NumeroMareaBuque
+                    NumeroMareaBuque = eDto.NumeroMareaBuque,
+                    TipoEtapa = eDto.TipoEtapa
                 });
             }
         }
@@ -409,6 +412,7 @@ public sealed class JsonImportService : IJsonImportService
         public string? NombreCapitan { get; set; }
         public int? AnioMareaBuque { get; set; }
         public int? NumeroMareaBuque { get; set; }
+        public string? TipoEtapa { get; set; }
     }
 
     private string? GetStringValue(JsonElement element, string propertyName)
