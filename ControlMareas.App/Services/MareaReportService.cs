@@ -1139,9 +1139,10 @@ public class MareaReportService : IMareaReportService
             var etapaLances = lances.Where(l => string.Equals(l.MareaEtapaId, etapa.ID, StringComparison.OrdinalIgnoreCase)).ToList();
             var etapaProduccion = produccion.Where(p => string.Equals(p.MareaEtapaId, etapa.ID, StringComparison.OrdinalIgnoreCase)).ToList();
 
-            if (multipleEtapas)
+            if (multipleEtapas || etapa.TipoEtapa == "EP")
             {
-                doc.InsertParagraph($"VIAJE {etapa.NumeroEtapa}").Font("Times New Roman").FontSize(16).Bold().Alignment = Alignment.center;
+                string prospeccionSuffix = etapa.TipoEtapa == "EP" ? " (PROSPECCIÓN)" : "";
+                doc.InsertParagraph($"VIAJE {etapa.NumeroEtapa}{prospeccionSuffix}").Font("Times New Roman").FontSize(16).Bold().Alignment = Alignment.center;
                 doc.InsertParagraph().SpacingAfter(10);
             }
 

@@ -1,4 +1,4 @@
-﻿{
+{
     "version": "0.2.0",
     "configurations": [
         {
@@ -6,7 +6,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/ControlMareas.App/bin/Debug/net10.0-windows/ControlDeMareas.exe",
+            "program": "${workspaceFolder}/ControlMareas.App/bin/Debug/net10.0-windows/win-x64/ControlDeMareas.exe",
             "args": [],
             "cwd": "${workspaceFolder}/ControlMareas.App",
             "console": "internalConsole"
