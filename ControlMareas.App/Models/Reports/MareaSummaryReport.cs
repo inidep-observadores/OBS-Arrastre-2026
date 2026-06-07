@@ -73,6 +73,7 @@ public class NarrativaMuestraEspecie
 public class NarrativaEtapa
 {
     public int Numero { get; set; }
+    public string? TipoEtapa { get; set; }
     public DateTime FechaInicio { get; set; }
     public DateTime FechaFin { get; set; }
     public int TotalLances { get; set; }

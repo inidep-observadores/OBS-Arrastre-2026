@@ -139,9 +139,10 @@ public static class MareaSummaryNarrativeBuilder
         var sb = new NarrativaSpanBuilder();
 
         // Encabezado ordinal
+        string prospeccionSuffix = etapa.TipoEtapa == "EP" ? " (Prospección)" : "";
         string ordinal = totalEtapas > 1
-            ? $"{OrdinalMasculino(etapa.Numero)} viaje: "
-            : "El buque ";
+            ? $"{OrdinalMasculino(etapa.Numero)} viaje{prospeccionSuffix}: "
+            : (etapa.TipoEtapa == "EP" ? $"El buque{prospeccionSuffix} " : "El buque ");
 
         sb.Normal(ordinal);
 

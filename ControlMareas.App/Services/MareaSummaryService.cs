@@ -185,6 +185,7 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
             var narrativaEtapa = new NarrativaEtapa
             {
                 Numero = etapa.NumeroEtapa,
+                TipoEtapa = etapa.TipoEtapa,
                 FechaInicio = etapa.FechaZarpada,
                 FechaFin = etapa.FechaArribo ?? etapa.FechaZarpada,
                 TotalLances = lancesEtapa.Count,
