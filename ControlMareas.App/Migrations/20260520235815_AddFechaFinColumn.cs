@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace ControlMareas.App.Data.Migrations
+namespace ControlMareas.App.Migrations
 {
     /// <inheritdoc />
     public partial class AddFechaFinColumn : Migration
