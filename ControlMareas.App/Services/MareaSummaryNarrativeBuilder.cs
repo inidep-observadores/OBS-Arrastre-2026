@@ -150,18 +150,16 @@ public static class MareaSummaryNarrativeBuilder
         var sb = new NarrativaSpanBuilder();
 
         // Encabezado ordinal
-        string ordinal;
         if (totalViajes > 1)
         {
             string prospeccionSuffix = etapa.TipoEtapa == "EP" ? " (Prospección)" : "";
-            ordinal = $"{OrdinalMasculino(numeroViaje)} viaje{prospeccionSuffix}: ";
+            sb.Bold($"{OrdinalMasculino(numeroViaje)} viaje{prospeccionSuffix}: ");
         }
         else
         {
-            ordinal = etapa.TipoEtapa == "EP" ? "En modalidad de prospección, el buque " : "El buque ";
+            string inicio = etapa.TipoEtapa == "EP" ? "En modalidad de prospección, el buque " : "El buque ";
+            sb.Normal(inicio);
         }
-
-        sb.Normal(ordinal);
 
         // Cuadrados estadísticos donde operó
         if (etapa.Cuadrados.Any())
