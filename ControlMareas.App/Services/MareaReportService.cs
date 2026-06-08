@@ -1126,11 +1126,11 @@ public class MareaReportService : IMareaReportService
         doc.InsertParagraph(artePesca).Font("Times New Roman").FontSize(12).SpacingAfter(10);
         
         doc.InsertParagraph("Características generales").Font("Times New Roman").FontSize(12).Italic();
-        doc.InsertParagraph("{Describir en base al Modeinfo}").Font("Times New Roman").FontSize(12).SpacingAfter(40);
+        doc.InsertParagraph("{Describir en base al Modeinfo}").Font("Times New Roman").FontSize(12).SpacingAfter(12);
 
         // Metodología
         doc.InsertParagraph("Metodología de captura, estimación y producción").Font("Times New Roman").FontSize(14).Bold().SpacingAfter(6);
-        doc.InsertParagraph("{Describir en base al Modeinfo}").Font("Times New Roman").FontSize(12).SpacingAfter(60);
+        doc.InsertParagraph("{Describir en base al Modeinfo}").Font("Times New Roman").FontSize(12).SpacingAfter(12);
 
         // Resultados
         doc.InsertParagraph("Resultados obtenidos").Font("Times New Roman").FontSize(14).Bold().SpacingAfter(10);
