@@ -287,7 +287,16 @@ public static class MareaSummaryNarrativeBuilder
         string ordinal = totalViajes > 1 ? $"{OrdinalMasculino(viaje.NumeroViaje)} viaje: " : "El viaje: ";
         
         sb.Bold(ordinal);
-        sb.Normal($"La captura total del viaje fue de {viaje.CapturaTotalKg:N0} kg en {viaje.TotalLances} {Pluralizar(viaje.TotalLances, "lance", "lances")}. Desglose de operaciones:");
+        sb.Normal($"La captura total del viaje fue de {viaje.CapturaTotalKg:N0} kg ");
+        
+        if (viaje.DescartePct >= 99.9)
+            sb.Normal("descarándose en su totalidad ");
+        else if (viaje.DescartePct > 0)
+            sb.Normal($"con un {viaje.DescartePct:N2}% de descarte ");
+        else
+            sb.Normal("sin descarte ");
+            
+        sb.Normal($"en {viaje.TotalLances} {Pluralizar(viaje.TotalLances, "lance", "lances")}. Desglose de operaciones:");
         
         return new NarrativaParagraph(sb.ToSpans());
     }
@@ -336,7 +345,16 @@ public static class MareaSummaryNarrativeBuilder
             }
         }
         
-        sb.Normal($"Captura: {etapa.CapturaKg:N0} kg en {etapa.TotalLances} {Pluralizar(etapa.TotalLances, "lance", "lances")}.");
+        sb.Normal($"Captura: {etapa.CapturaKg:N0} kg ");
+        
+        if (etapa.DescartePct >= 99.9)
+            sb.Normal("descarándose en su totalidad ");
+        else if (etapa.DescartePct > 0)
+            sb.Normal($"con un {etapa.DescartePct:N2}% de descarte ");
+        else
+            sb.Normal("sin descarte ");
+            
+        sb.Normal($"en {etapa.TotalLances} {Pluralizar(etapa.TotalLances, "lance", "lances")} durante {etapa.DiasPesca} {Pluralizar(etapa.DiasPesca, "día", "días")}.");
         
         return new NarrativaParagraph(sb.ToSpans());
     }
