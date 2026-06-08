@@ -1,4 +1,4 @@
-﻿{
+{
   "permissions": {
     "allow": [
       "Bash(Get-ChildItem -Recurse -Directory)",
@@ -13,7 +13,8 @@
       "Bash(git commit -m ' *)",
       "Read(//tmp/**)",
       "Bash(cd \"d:\\\\Desarrollo\\\\_INIDEP\\\\OBS\\\\ControlMareas\" && git log --all --reverse --pretty=format:\"%H|%h|%s|%b\" > /tmp/full_commits.txt && head -100 /tmp/full_commits.txt)",
-      "Bash(git tag *)"
+      "Bash(git tag *)",
+      "PowerShell(dotnet build .\\\\ControlMareas.sln)"
     ],
     "additionalDirectories": [
       "\\tmp"

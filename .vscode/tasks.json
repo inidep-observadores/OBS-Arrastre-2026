@@ -7,11 +7,17 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/ControlMareas.App/ControlMareas.App.csproj",
+                "${workspaceFolder}/ControlMareas.sln",
+                "-c",
+                "Debug",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
-            "problemMatcher": "$msCompile"
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         },
         {
             "label": "publish",

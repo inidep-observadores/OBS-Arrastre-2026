@@ -25,6 +25,9 @@ public sealed class MareaEtapa
 
     public string? TipoEtapa { get; set; }
 
+    public string? PuertoZarpada { get; set; }
+    public string? PuertoArribo { get; set; }
+
     public string? Metadata { get; set; }
 
     public ICollection<Lance> Lances { get; set; } = new List<Lance>();

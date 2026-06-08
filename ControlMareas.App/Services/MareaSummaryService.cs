@@ -95,6 +95,7 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
         report.NarrativaTotalDiasPesca = lances.Select(l => DateTime.Parse(l.Fecha).Date).Distinct().Count();
 
         // -- Narrativa por etapa --
+        var allNarrativaEtapas = new List<NarrativaEtapa>();
         for (int i = 0; i < sortedEtapas.Count; i++)
         {
             var etapa = sortedEtapas[i];
@@ -186,6 +187,8 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
             {
                 Numero = etapa.NumeroEtapa,
                 TipoEtapa = etapa.TipoEtapa,
+                PuertoZarpada = etapa.PuertoZarpada,
+                PuertoArribo = etapa.PuertoArribo,
                 FechaInicio = etapa.FechaZarpada,
                 FechaFin = etapa.FechaArribo ?? etapa.FechaZarpada,
                 TotalLances = lancesEtapa.Count,
@@ -205,7 +208,68 @@ public class MareaSummaryService(IDbContextFactory<AppDbContext> dbContextFactor
                 EspeciesSecundarias = espSecundarias
             };
 
-            report.NarrativaEtapas.Add(narrativaEtapa);
+            allNarrativaEtapas.Add(narrativaEtapa);
+        }
+
+        // Lógica de agrupación de viajes
+        bool shouldGroup = sortedEtapas.Any(e => e.TipoEtapa == "EP") && 
+                           sortedEtapas.Any(e => string.IsNullOrEmpty(e.PuertoZarpada) || string.IsNullOrEmpty(e.PuertoArribo));
+
+        if (!shouldGroup)
+        {
+            // Comportamiento original: 1 viaje por etapa
+            int viajeIndex = 1;
+            foreach (var ne in allNarrativaEtapas)
+            {
+                var viaje = new NarrativaViaje
+                {
+                    NumeroViaje = viajeIndex++,
+                    FechaInicio = ne.FechaInicio,
+                    FechaFin = ne.FechaFin,
+                    CapturaTotalKg = ne.CapturaKg,
+                    DescarteTotalKg = ne.DescarteKg,
+                    TotalLances = ne.TotalLances,
+                    DiasPesca = ne.DiasPesca
+                };
+                viaje.Etapas.Add(ne);
+                report.NarrativaViajes.Add(viaje);
+            }
+        }
+        else
+        {
+            int viajeIndex = 1;
+            NarrativaViaje? currentViaje = null;
+
+            foreach (var ne in allNarrativaEtapas)
+            {
+                if (currentViaje == null || !string.IsNullOrEmpty(ne.PuertoZarpada))
+                {
+                    currentViaje = new NarrativaViaje { NumeroViaje = viajeIndex++ };
+                    report.NarrativaViajes.Add(currentViaje);
+                }
+
+                currentViaje.Etapas.Add(ne);
+
+                // Si encontramos puerto de arribo, el viaje se cierra
+                if (!string.IsNullOrEmpty(ne.PuertoArribo))
+                {
+                    currentViaje = null;
+                }
+            }
+
+            // Calcular totales para los viajes agrupados
+            foreach (var viaje in report.NarrativaViajes)
+            {
+                if (viaje.Etapas.Any())
+                {
+                    viaje.FechaInicio = viaje.Etapas.First().FechaInicio;
+                    viaje.FechaFin = viaje.Etapas.Last().FechaFin;
+                    viaje.CapturaTotalKg = viaje.Etapas.Sum(e => e.CapturaKg);
+                    viaje.DescarteTotalKg = viaje.Etapas.Sum(e => e.DescarteKg);
+                    viaje.TotalLances = viaje.Etapas.Sum(e => e.TotalLances);
+                    viaje.DiasPesca = viaje.Etapas.Sum(e => e.DiasPesca);
+                }
+            }
         }
 
         // -- Especies objetivo únicas de toda la marea (para el párrafo introductorio) --

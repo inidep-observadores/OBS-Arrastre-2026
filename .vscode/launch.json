@@ -8,27 +8,10 @@
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/ControlMareas.App/bin/Debug/net10.0-windows/win-x64/ControlDeMareas.exe",
             "args": [],
-            "cwd": "${workspaceFolder}/ControlMareas.App",
-            "console": "internalConsole"
-        },
-        {
-            "name": ".NET (dotnet) - WPF",
-            "type": "dotnet",
-            "request": "launch",
-            "preLaunchTask": "build",
-            "program": "${workspaceFolder}/ControlMareas.App/bin/Debug/net10.0-windows/ControlDeMareas.exe",
-            "args": [],
-            "cwd": "${workspaceFolder}/ControlMareas.App",
-            "console": "internalConsole"
-        },
-        {
-            "name": "C# - WPF",
-            "type": "csharp",
-            "request": "launch",
-            "preLaunchTask": "build",
-            "program": "${workspaceFolder}/ControlMareas.App/bin/Debug/net10.0-windows/ControlDeMareas.exe",
-            "args": [],
-            "cwd": "${workspaceFolder}/ControlMareas.App"
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "justMyCode": false
         }
     ]
 }

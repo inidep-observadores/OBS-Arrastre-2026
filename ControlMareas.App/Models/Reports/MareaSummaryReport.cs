@@ -102,6 +102,23 @@ public class NarrativaEtapa
     public NarrativaEspecieObjetivo? EspecieObjetivo { get; set; }
     /// <summary>Especies secundarias con captura relevante observadas en la etapa.</summary>
     public List<NarrativaEspecieSecundaria> EspeciesSecundarias { get; set; } = new();
+
+    public string? PuertoZarpada { get; set; }
+    public string? PuertoArribo { get; set; }
+}
+
+/// <summary>Representa un viaje físico que puede contener múltiples etapas.</summary>
+public class NarrativaViaje
+{
+    public int NumeroViaje { get; set; }
+    public DateTime FechaInicio { get; set; }
+    public DateTime FechaFin { get; set; }
+    public double CapturaTotalKg { get; set; }
+    public double DescarteTotalKg { get; set; }
+    public double DescartePct => CapturaTotalKg > 0 ? DescarteTotalKg * 100.0 / CapturaTotalKg : 0;
+    public int TotalLances { get; set; }
+    public int DiasPesca { get; set; }
+    public List<NarrativaEtapa> Etapas { get; set; } = new();
 }
 
 public class MareaSummarySection
@@ -149,8 +166,8 @@ public class MareaSummaryReport
     public List<MareaSummarySection> ResumenEtapas { get; set; } = new();
 
     // --- Datos para la narrativa textual ---
-    /// <summary>Datos narrativos detallados por etapa (en orden cronológico).</summary>
-    public List<NarrativaEtapa> NarrativaEtapas { get; set; } = new();
+    /// <summary>Datos narrativos detallados por viaje (en orden cronológico).</summary>
+    public List<NarrativaViaje> NarrativaViajes { get; set; } = new();
     /// <summary>Resumen de muestras por especie (para el párrafo de cierre).</summary>
     public List<NarrativaMuestraEspecie> NarrativaMuestras { get; set; } = new();
     /// <summary>Captura total de la marea en kg.</summary>

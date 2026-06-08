@@ -94,6 +94,8 @@ CREATE TABLE marea_etapas (
 	NombreOficialPesca TEXT,
 	AnioMareaBuque INTEGER,
 	NumeroMareaBuque INTEGER,
+	PuertoZarpada TEXT NULL,
+	PuertoArribo TEXT NULL,
 	Metadata TEXT NULL,
 	CONSTRAINT fk_marea_etapas_especies_especie_objetivo_id FOREIGN KEY (EspecieObjetivoID) REFERENCES especies(ID) ON DELETE SET NULL,
 	CONSTRAINT fk_marea_etapas_mareas_marea_id FOREIGN KEY (MareaID) REFERENCES mareas(ID) ON DELETE CASCADE

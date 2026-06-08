@@ -23,7 +23,7 @@ public static class MareaSummaryNarrativeBuilder
     {
         var parrafos = new List<NarrativaParagraph>();
 
-        if (!report.NarrativaEtapas.Any())
+        if (!report.NarrativaViajes.Any())
             return parrafos;
 
         // Párrafo 1: Viajes y fechas
@@ -43,9 +43,20 @@ public static class MareaSummaryNarrativeBuilder
             parrafos.Add(new NarrativaParagraph(new List<NarrativaSpan>()));
         }
 
-        foreach (var etapa in report.NarrativaEtapas)
+        foreach (var viaje in report.NarrativaViajes)
         {
-            parrafos.Add(BuildParrafoEtapa(etapa, report.NarrativaEtapas.Count));
+            if (viaje.Etapas.Count == 1)
+            {
+                parrafos.Add(BuildParrafoEtapa(viaje.Etapas[0], report.NarrativaViajes.Count, viaje.NumeroViaje));
+            }
+            else
+            {
+                parrafos.Add(BuildParrafoViajeJerarquico(viaje, report.NarrativaViajes.Count));
+                foreach (var etapa in viaje.Etapas)
+                {
+                    parrafos.Add(BuildParrafoSubEtapa(etapa));
+                }
+            }
         }
 
         if (report.NarrativaMuestras.Any())
@@ -59,21 +70,21 @@ public static class MareaSummaryNarrativeBuilder
     private static NarrativaParagraph BuildParrafoViajes(MareaSummaryReport report)
     {
         var sb = new NarrativaSpanBuilder();
-        int nEtapas = report.NarrativaEtapas.Count;
+        int nViajes = report.NarrativaViajes.Count;
 
         sb.Normal("El buque realizó ");
-        sb.Normal(Pluralizar(nEtapas, "un viaje", $"{nEtapas} viajes"));
+        sb.Normal(Pluralizar(nViajes, "un viaje", $"{nViajes} viajes"));
         sb.Normal(", ");
 
-        for (int i = 0; i < report.NarrativaEtapas.Count; i++)
+        for (int i = 0; i < report.NarrativaViajes.Count; i++)
         {
-            var e = report.NarrativaEtapas[i];
-            if (i > 0 && i == report.NarrativaEtapas.Count - 1)
+            var v = report.NarrativaViajes[i];
+            if (i > 0 && i == report.NarrativaViajes.Count - 1)
                 sb.Normal(" y ");
             else if (i > 0)
                 sb.Normal(", ");
 
-            sb.Normal($"desde el {e.FechaInicio:dd/MM/yyyy} al {e.FechaFin:dd/MM/yyyy}");
+            sb.Normal($"desde el {v.FechaInicio:dd/MM/yyyy} al {v.FechaFin:dd/MM/yyyy}");
         }
         sb.Normal(".");
 
@@ -134,16 +145,16 @@ public static class MareaSummaryNarrativeBuilder
     // Párrafo por etapa
     // -------------------------------------------------------------------------
 
-    private static NarrativaParagraph BuildParrafoEtapa(NarrativaEtapa etapa, int totalEtapas)
+    private static NarrativaParagraph BuildParrafoEtapa(NarrativaEtapa etapa, int totalViajes, int numeroViaje)
     {
         var sb = new NarrativaSpanBuilder();
 
         // Encabezado ordinal
         string ordinal;
-        if (totalEtapas > 1)
+        if (totalViajes > 1)
         {
             string prospeccionSuffix = etapa.TipoEtapa == "EP" ? " (Prospección)" : "";
-            ordinal = $"{OrdinalMasculino(etapa.Numero)} viaje{prospeccionSuffix}: ";
+            ordinal = $"{OrdinalMasculino(numeroViaje)} viaje{prospeccionSuffix}: ";
         }
         else
         {
@@ -155,7 +166,7 @@ public static class MareaSummaryNarrativeBuilder
         // Cuadrados estadísticos donde operó
         if (etapa.Cuadrados.Any())
         {
-            string inicioFrase = totalEtapas > 1
+            string inicioFrase = totalViajes > 1
                 ? "el buque operó en "
                 : "operó en ";
             sb.Normal(inicioFrase);
@@ -197,7 +208,7 @@ public static class MareaSummaryNarrativeBuilder
         }
 
         // Captura y descarte de la etapa
-        sb.Normal($"La captura del {Pluralizar(totalEtapas > 1 ? 2 : 1, "viaje", "viaje")} fue de ");
+        sb.Normal($"La captura del {Pluralizar(totalViajes > 1 ? 2 : 1, "viaje", "viaje")} fue de ");
         sb.Normal($"{etapa.CapturaKg:N0} kg ");
 
         if (etapa.DescartePct >= 99.9)
@@ -267,6 +278,44 @@ public static class MareaSummaryNarrativeBuilder
             }
         }
 
+        return new NarrativaParagraph(sb.ToSpans());
+    }
+
+    private static NarrativaParagraph BuildParrafoViajeJerarquico(NarrativaViaje viaje, int totalViajes)
+    {
+        var sb = new NarrativaSpanBuilder();
+        string ordinal = totalViajes > 1 ? $"{OrdinalMasculino(viaje.NumeroViaje)} viaje: " : "El viaje: ";
+        
+        sb.Bold(ordinal);
+        sb.Normal($"La captura total del viaje fue de {viaje.CapturaTotalKg:N0} kg en {viaje.TotalLances} {Pluralizar(viaje.TotalLances, "lance", "lances")}. Desglose de operaciones:");
+        
+        return new NarrativaParagraph(sb.ToSpans());
+    }
+
+    private static NarrativaParagraph BuildParrafoSubEtapa(NarrativaEtapa etapa)
+    {
+        var sb = new NarrativaSpanBuilder();
+        string tipoStr = etapa.TipoEtapa == "EP" ? "Prospección" : "Comercial";
+        
+        sb.Normal("    • "); // viñeta con indentación
+        sb.Bold($"Etapa {etapa.Numero} ({tipoStr} - {etapa.FechaInicio:dd/MM} al {etapa.FechaFin:dd/MM}): ");
+        
+        // Cuadrados estadísticos donde operó
+        if (etapa.Cuadrados.Any())
+        {
+            sb.Normal("operó en ");
+            if (etapa.Cuadrados.Count == 1)
+            {
+                sb.Normal($"el cuadrado estadístico {etapa.Cuadrados[0]}. ");
+            }
+            else
+            {
+                sb.Normal($"los cuadrados estadísticos: {ListarCuadrados(etapa.Cuadrados)}. ");
+            }
+        }
+        
+        sb.Normal($"Captura: {etapa.CapturaKg:N0} kg en {etapa.TotalLances} {Pluralizar(etapa.TotalLances, "lance", "lances")}.");
+        
         return new NarrativaParagraph(sb.ToSpans());
     }
 
