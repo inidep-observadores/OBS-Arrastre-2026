@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ControlMareas.App.Data;
 using ControlMareas.App.Data.Entities;
 using ControlMareas.App.Models.Import;
@@ -263,6 +263,11 @@ public class MareaValidationService : IMareaValidationService
         bool hayCambios = false;
         foreach (var etapa in marea.Etapas)
         {
+            if (!etapa.FechaArribo.HasValue)
+            {
+                report.AddIssue(ValidationLevel.Error, "Fechas", $"La etapa {etapa.NumeroEtapa} no tiene asignada Fecha de Arribo. Las mareas finalizadas deben tener fechas de arribo en todas sus etapas.");
+            }
+
             foreach (var lance in etapa.Lances)
             {
                 var legacyCaptura = capturas.FirstOrDefault(c => (int)c.Lance == lance.NroLance);

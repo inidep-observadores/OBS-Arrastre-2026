@@ -943,6 +943,11 @@ public class MareaReportService : IMareaReportService
 
     public async Task<byte[]> GenerateFullMareaReportWordAsync(Marea marea, List<Lance> lances, List<RegistroProduccion> produccion, MareaSummaryReport summary)
     {
+        if (marea.Etapas.Any(e => !e.FechaArribo.HasValue))
+        {
+            throw new InvalidOperationException("No se puede generar el informe de marea porque hay etapas sin Fecha de Arribo. Esto es un error en los datos de la marea.");
+        }
+
         return await Task.Run(async () =>
         {
             using var ms = new MemoryStream();
@@ -1132,6 +1137,7 @@ public class MareaReportService : IMareaReportService
 
         var etapas = marea.Etapas.OrderBy(e => e.FechaZarpada).ToList();
         bool multipleEtapas = etapas.Count > 1;
+        bool tieneProspeccion = etapas.Any(e => e.TipoEtapa == "EP");
 
         for (int i = 0; i < etapas.Count; i++)
         {
@@ -1139,15 +1145,17 @@ public class MareaReportService : IMareaReportService
             var etapaLances = lances.Where(l => string.Equals(l.MareaEtapaId, etapa.ID, StringComparison.OrdinalIgnoreCase)).ToList();
             var etapaProduccion = produccion.Where(p => string.Equals(p.MareaEtapaId, etapa.ID, StringComparison.OrdinalIgnoreCase)).ToList();
 
-            if (multipleEtapas)
+            if (tieneProspeccion)
             {
-                string prospeccionSuffix = etapa.TipoEtapa == "EP" ? " (PROSPECCIÓN)" : "";
-                doc.InsertParagraph($"VIAJE {etapa.NumeroEtapa}{prospeccionSuffix}").Font("Times New Roman").FontSize(16).Bold().Alignment = Alignment.center;
+                string tipoStr = etapa.TipoEtapa == "EP" ? "PROSPECCIÓN" : "COMERCIAL";
+                doc.InsertParagraph($"ETAPA {etapa.NumeroEtapa} ({tipoStr})").Font("Times New Roman").FontSize(16).Bold().Alignment = Alignment.center;
+                
+                doc.InsertParagraph($"Del {etapa.FechaZarpada:dd/MM/yyyy} al {etapa.FechaArribo!.Value:dd/MM/yyyy}").Font("Times New Roman").FontSize(12).Alignment = Alignment.center;
                 doc.InsertParagraph().SpacingAfter(10);
             }
-            else if (!multipleEtapas && etapa.TipoEtapa == "EP")
+            else if (multipleEtapas)
             {
-                doc.InsertParagraph("PROSPECCIÓN").Font("Times New Roman").FontSize(16).Bold().Alignment = Alignment.center;
+                doc.InsertParagraph($"VIAJE {etapa.NumeroEtapa}").Font("Times New Roman").FontSize(16).Bold().Alignment = Alignment.center;
                 doc.InsertParagraph().SpacingAfter(10);
             }
 

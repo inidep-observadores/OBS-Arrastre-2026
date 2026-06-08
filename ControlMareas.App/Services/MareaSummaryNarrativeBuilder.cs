@@ -310,7 +310,29 @@ public static class MareaSummaryNarrativeBuilder
             }
             else
             {
-                sb.Normal($"los cuadrados estadísticos: {ListarCuadrados(etapa.Cuadrados)}. ");
+                sb.Normal($"los cuadrados estadísticos: {ListarCuadrados(etapa.Cuadrados)}");
+
+                if (etapa.CuadradoMasLances == etapa.CuadradoMayorCaptura)
+                {
+                    if (etapa.CuadradoMasLances != null)
+                    {
+                        sb.Normal($", siendo el de mayor cantidad de operaciones de pesca y captura el {etapa.CuadradoMasLances} con ");
+                        sb.Normal($"{etapa.CuadradoMayorCapturaKg:N0} kg en {etapa.CuadradoMasLancesNro} {Pluralizar(etapa.CuadradoMasLancesNro, "lance", "lances")}");
+                    }
+                }
+                else
+                {
+                    if (etapa.CuadradoMasLances != null)
+                    {
+                        sb.Normal($", siendo el de mayor cantidad de operaciones de pesca el {etapa.CuadradoMasLances} ({etapa.CuadradoMasLancesNro} {Pluralizar(etapa.CuadradoMasLancesNro, "lance", "lances")})");
+                    }
+                    if (etapa.CuadradoMayorCaptura != null)
+                    {
+                        sb.Normal($" y el de mayor captura el {etapa.CuadradoMayorCaptura} ({etapa.CuadradoMayorCapturaKg:N0} kg)");
+                    }
+                }
+                
+                sb.Normal(". ");
             }
         }
         

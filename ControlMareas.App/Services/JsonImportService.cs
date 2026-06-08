@@ -268,7 +268,9 @@ public sealed class JsonImportService : IJsonImportService
                         NombreCapitan = eDto.NombreCapitan,
                         AnioMareaBuque = eDto.AnioMareaBuque,
                         NumeroMareaBuque = eDto.NumeroMareaBuque,
-                        TipoEtapa = eDto.TipoEtapa
+                        TipoEtapa = eDto.TipoEtapa,
+                        PuertoZarpada = eDto.PuertoZarpada,
+                        PuertoArribo = eDto.PuertoArribo
                     });
                 }
 
@@ -355,6 +357,8 @@ public sealed class JsonImportService : IJsonImportService
                 existing.AnioMareaBuque = eDto.AnioMareaBuque;
                 existing.NumeroMareaBuque = eDto.NumeroMareaBuque;
                 existing.TipoEtapa = eDto.TipoEtapa;
+                existing.PuertoZarpada = eDto.PuertoZarpada;
+                existing.PuertoArribo = eDto.PuertoArribo;
             }
             else
             {
@@ -368,7 +372,9 @@ public sealed class JsonImportService : IJsonImportService
                     NombreCapitan = eDto.NombreCapitan,
                     AnioMareaBuque = eDto.AnioMareaBuque,
                     NumeroMareaBuque = eDto.NumeroMareaBuque,
-                    TipoEtapa = eDto.TipoEtapa
+                    TipoEtapa = eDto.TipoEtapa,
+                    PuertoZarpada = eDto.PuertoZarpada,
+                    PuertoArribo = eDto.PuertoArribo
                 });
             }
         }
@@ -413,6 +419,8 @@ public sealed class JsonImportService : IJsonImportService
         public int? AnioMareaBuque { get; set; }
         public int? NumeroMareaBuque { get; set; }
         public string? TipoEtapa { get; set; }
+        public string? PuertoZarpada { get; set; }
+        public string? PuertoArribo { get; set; }
     }
 
     private string? GetStringValue(JsonElement element, string propertyName)
