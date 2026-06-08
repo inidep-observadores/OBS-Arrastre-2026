@@ -603,10 +603,14 @@ namespace ControlMareas.App.Services
 
                 // Definir límite para % < X (basado en obsdist.PRG)
                 int cutoff = GetSpeciesCutoff(especie.CodigoInidep);
-                string cutoffHeader = cutoff > 0 ? $"%<{cutoff}" : "%<0";
+                bool showCutoff = cutoff > 0;
+                string cutoffHeader = $"%<{cutoff}";
 
                 // Encabezados de columnas
-                var colHeaders = new[] { "", "Media", "Desv.St.", "Porcent.", "Coef.V.", "Suma N", "Suma X", "Suma X2", cutoffHeader };
+                var colHeadersList = new List<string> { "", "Media", "Desv.St.", "Porcent.", "Coef.V.", "Suma N", "Suma X", "Suma X2" };
+                if (showCutoff) colHeadersList.Add(cutoffHeader);
+                
+                var colHeaders = colHeadersList.ToArray();
                 for (int i = 0; i < colHeaders.Length; i++)
                 {
                     worksheet.Cell(currentRow, i + 1).Value = colHeaders[i];
@@ -634,10 +638,10 @@ namespace ControlMareas.App.Services
                     statsTotal.Porcent = totalN > 0 ? 100 : 0;
 
                     // Escribir Filas
-                    WriteStatsRow(worksheet, ref currentRow, "Machos", statsMachos);
-                    WriteStatsRow(worksheet, ref currentRow, "Hembras", statsHembras);
-                    WriteStatsRow(worksheet, ref currentRow, "Indet.", statsIndet);
-                    WriteStatsRow(worksheet, ref currentRow, "Total", statsTotal, true);
+                    WriteStatsRow(worksheet, ref currentRow, "Machos", statsMachos, false, showCutoff);
+                    WriteStatsRow(worksheet, ref currentRow, "Hembras", statsHembras, false, showCutoff);
+                    WriteStatsRow(worksheet, ref currentRow, "Indet.", statsIndet, false, showCutoff);
+                    WriteStatsRow(worksheet, ref currentRow, "Total", statsTotal, true, showCutoff);
                 }
                 else
                 {
@@ -645,8 +649,8 @@ namespace ControlMareas.App.Services
                     var statsSinSexo = CalculateStats(frecuencias, f => f.NroTotal, cutoff);
                     statsSinSexo.Porcent = statsSinSexo.SumN > 0 ? 100 : 0;
 
-                    WriteStatsRow(worksheet, ref currentRow, "Sin determinar sexo", statsSinSexo);
-                    WriteStatsRow(worksheet, ref currentRow, "Total", statsSinSexo, true);
+                    WriteStatsRow(worksheet, ref currentRow, "Sin determinar sexo", statsSinSexo, false, showCutoff);
+                    WriteStatsRow(worksheet, ref currentRow, "Total", statsSinSexo, true, showCutoff);
                 }
 
                 currentRow += 2; // Espacio entre especies
@@ -703,7 +707,7 @@ namespace ControlMareas.App.Services
             return result;
         }
 
-        private void WriteStatsRow(IXLWorksheet ws, ref int row, string label, StatsResult stats, bool isBold = false)
+        private void WriteStatsRow(IXLWorksheet ws, ref int row, string label, StatsResult stats, bool isBold = false, bool showCutoff = true)
         {
             ws.Cell(row, 1).Value = label;
             
@@ -716,21 +720,23 @@ namespace ControlMareas.App.Services
             ws.Cell(row, 6).Value = stats.SumN;
             ws.Cell(row, 7).Value = stats.SumX;
             ws.Cell(row, 8).Value = stats.SumX2;
-            ws.Cell(row, 9).Value = stats.PorcentLimit;
+            
+            int totalCols = showCutoff ? 9 : 8;
+            if (showCutoff) ws.Cell(row, 9).Value = stats.PorcentLimit;
 
             if (isBold)
             {
-                ws.Range(row, 1, row, 9).Style.Font.Bold = true;
+                ws.Range(row, 1, row, totalCols).Style.Font.Bold = true;
             }
 
             // Bordes y formato numérico
-            var range = ws.Range(row, 1, row, 9);
+            var range = ws.Range(row, 1, row, totalCols);
             range.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
             range.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
             
             // Decimales para Media, DesvSt, Porcent, CoefV y PorcentLimit
             ws.Range(row, 2, row, 5).Style.NumberFormat.Format = "#,##0.00";
-            ws.Cell(row, 9).Style.NumberFormat.Format = "#,##0.00";
+            if (showCutoff) ws.Cell(row, 9).Style.NumberFormat.Format = "#,##0.00";
 
             // Enteros para Suma N, Suma X y Suma X2
             ws.Range(row, 6, row, 8).Style.NumberFormat.Format = "#,##0";

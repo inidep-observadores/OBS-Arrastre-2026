@@ -1389,11 +1389,16 @@ public class MareaReportService : IMareaReportService
 
     private async Task InsertFrequenciesSectionAsync(DocX doc, List<Lance> lances)
     {
+        var kilosPorEspecie = lances.SelectMany(l => l.ItemsCaptura)
+            .GroupBy(i => i.EspecieID)
+            .ToDictionary(g => g.Key, g => g.Sum(i => i.CapturaTotalKgCalculado));
+
         var muestras = lances.SelectMany(l => l.Muestras).ToList();
         var grupos = muestras
             .GroupBy(m => new { m.EspecieID, m.TipoMuestra })
             .Where(g => g.SelectMany(m => m.FrecuenciasTallas).Sum(f => f.NroTotal) >= 10)
-            .OrderBy(g => g.First().Especie?.NombreCientifico)
+            .OrderByDescending(g => kilosPorEspecie.ContainsKey(g.Key.EspecieID) ? kilosPorEspecie[g.Key.EspecieID] : 0)
+            .ThenBy(g => g.First().Especie?.NombreCientifico)
             .ThenBy(g => g.Key.TipoMuestra)
             .ToList();
 
@@ -1696,14 +1701,22 @@ public class MareaReportService : IMareaReportService
                     && frecuencias.Sum(f => f.NroHembras) == 0
                     && frecuencias.Sum(f => f.NroIndeterminados) == 0);
 
+        bool showCutoff = cutoff > 0;
+        int numCols = showCutoff ? 8 : 7;
         int numRows = sinSexo ? 3 : 5;
-        var table = doc.AddTable(numRows, 8);
+        var table = doc.AddTable(numRows, numCols);
         table.Alignment = Alignment.center;
         table.Design = TableDesign.TableGrid;
         table.AutoFit = AutoFit.Window;
-        table.SetWidthsPercentage(new float[] { 30, 10, 10, 10, 10, 10, 10, 10 }, null);
+        
+        var widths = showCutoff 
+            ? new float[] { 30, 10, 10, 10, 10, 10, 10, 10 }
+            : new float[] { 40, 10, 10, 10, 10, 10, 10 };
+        table.SetWidthsPercentage(widths, null);
 
-        string[] headers = { "Sexo", "Media", "Desv.St", "Porcent.", "Suma N", "Suma X", "Suma X2", cutoff > 0 ? $"%<{cutoff}" : "%<0" };
+        var headersList = new List<string> { "Sexo", "Media", "Desv.St", "Porcent.", "Suma N", "Suma X", "Suma X2" };
+        if (showCutoff) headersList.Add($"%<{cutoff}");
+        string[] headers = headersList.ToArray();
         for (int i = 0; i < headers.Length; i++)
         {
             var hp = table.Rows[0].Cells[i].Paragraphs[0];
@@ -1722,7 +1735,7 @@ public class MareaReportService : IMareaReportService
             SetR(4, s.SumN.ToString("N0"));
             SetR(5, s.SumX.ToString("N0"));
             SetR(6, s.SumX2.ToString("N0"));
-            SetR(7, FormatVal(s.PorcentLimit));
+            if (showCutoff) SetR(7, FormatVal(s.PorcentLimit));
             if (bold) foreach(var cell in table.Rows[r].Cells) cell.Paragraphs[0].Bold();
         }
 
