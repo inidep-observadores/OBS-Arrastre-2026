@@ -1,4 +1,4 @@
-﻿@echo off
+@echo off
 echo ======================================================
 echo Generando Instalador para Control de mareas
 echo ======================================================
