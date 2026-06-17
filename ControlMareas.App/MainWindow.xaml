@@ -1614,7 +1614,7 @@
                                             <DropShadowEffect BlurRadius="15" ShadowDepth="0" Opacity="0.15" />
                                         </Border.Effect>
                                         <StackPanel Width="170">
-                                            <TextBlock Text="NAV DATA HUD" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,12" />
+                                            <TextBlock Text="DATOS DE NAVEGACIÓN" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,12" />
                                             
                                             <Grid Margin="0,0,0,6">
                                                 <TextBlock Text="FECHA" FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
