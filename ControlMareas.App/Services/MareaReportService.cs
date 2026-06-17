@@ -985,6 +985,7 @@ public class MareaReportService : IMareaReportService
                 doc.ReplaceText("{ApellidoNombreRevisor}", revisor);
                 doc.ReplaceText("{AñoMarea}", marea.AnioInidep.ToString());
                 doc.ReplaceText("{NroMarea}", marea.NumeroInidep.ToString("00"));
+                doc.ReplaceText("{AñoActual}", DateTime.Now.Year.ToString());
 
                 var meta = MareaMetadataHelper.GetMetadata(marea);
                 string palabrasClave = $"{meta.TipoBuque}, {meta.Pesqueria}".Trim(' ', ',');
