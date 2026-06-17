@@ -352,6 +352,10 @@ public class MareaImportService : IMareaImportService
         }
 
         // 6. Generar Reporte PDF
+        if (report.HasFatalErrors)
+        {
+            report.Issues.RemoveAll(i => i.Level != ValidationLevel.Fatal);
+        }
         var pdfBytes = await _reporter.GenerateValidationPdfAsync(report);
         safeBarco = barco.Replace("/", "-").Replace("\\", "-");
         reportPath = Path.Combine(basePath, "Reportes", $"Audit_{safeBarco}_{mareaNum}_{anio}.pdf");
