@@ -1839,7 +1839,7 @@ public class MareaReportService : IMareaReportService
     }
     private string FormatVal(double val)
     {
-        return val % 1 == 0 ? val.ToString("N0") : val.ToString("N2");
+        return val.ToString("N2");
     }
 
     public async Task<byte[]> GenerateRecibiProyectoPdfAsync(RecibiProyectoReport report)
