@@ -451,6 +451,21 @@ public sealed class MareaValidationEngine
 
             ValidateLanceDetails(report, c);
 
+            // Verificar si hay especies duplicadas en el detalle de captura del lance
+            var duplicatedEspecies = c.EspeciesOrder.GroupBy(x => x).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
+            foreach (var dupCode in duplicatedEspecies)
+            {
+                var nombres = especiesDict.Where(kvp => kvp.Value == dupCode).Select(k => k.Key).ToList();
+                if (nombres.Count == 0) nombres = especiesViejasDict.Where(kvp => kvp.Value == dupCode).Select(k => k.Key).ToList();
+                
+                string vulgar = nombres.Count > 0 ? nombres[0] : $"Cod: {dupCode}";
+                string cientifico = nombres.Count > 1 ? nombres[1] : dupCode;
+
+                var nivelError = skipConsensusHeuristic ? ValidationLevel.Error : ValidationLevel.Fatal;
+                string accion = skipConsensusHeuristic ? "Debe unificarlas o corregir la especie." : "Esto impide la importación para evitar pérdida de datos.";
+                report.AddIssue(nivelError, "Captura", $"Especie duplicada: '{vulgar}' ({cientifico}) figura más de una vez en el detalle de captura. {accion}", ctx);
+            }
+
 
             // REQ-3.5.1: Recalcular CAPT_TOTAL
             double sumEspecies = c.Especies.Values.Sum();

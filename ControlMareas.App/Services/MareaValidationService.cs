@@ -74,14 +74,14 @@ public class MareaValidationService : IMareaValidationService
             .OrderByDescending(e => e.Frecuente)
             .ToListAsync();
 
-        var especiesDict = new Dictionary<string, string>();
+        var especiesDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var esp in especiesDB)
         {
             string code = esp.CodigoInidep ?? esp.ID; // Usar código si existe, sino ID interno
             if (!string.IsNullOrEmpty(esp.NombreVulgar))
-                especiesDict.TryAdd(esp.NombreVulgar.Trim().ToUpper(), code);
+                especiesDict.TryAdd(esp.NombreVulgar.Trim(), code);
             if (!string.IsNullOrEmpty(esp.NombreCientifico))
-                especiesDict.TryAdd(esp.NombreCientifico.Trim().ToUpper(), code);
+                especiesDict.TryAdd(esp.NombreCientifico.Trim(), code);
         }
 
         // También para especies viejas ordenado por Frecuente descendente
@@ -90,14 +90,14 @@ public class MareaValidationService : IMareaValidationService
             .OrderByDescending(e => e.Frecuente)
             .ToListAsync();
 
-        var especiesViejasDict = new Dictionary<string, string>();
+        var especiesViejasDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var esp in especiesViejasDB)
         {
             string code = esp.CodigoInidep ?? esp.ID;
             if (!string.IsNullOrEmpty(esp.NombreVulgar))
-                especiesViejasDict.TryAdd(esp.NombreVulgar.Trim().ToUpper(), code);
+                especiesViejasDict.TryAdd(esp.NombreVulgar.Trim(), code);
             if (!string.IsNullOrEmpty(esp.NombreCientifico))
-                especiesViejasDict.TryAdd(esp.NombreCientifico.Trim().ToUpper(), code);
+                especiesViejasDict.TryAdd(esp.NombreCientifico.Trim(), code);
         }
 
         var especiesCodigosValidos = new HashSet<string>(especiesDict.Values);
@@ -156,6 +156,7 @@ public class MareaValidationService : IMareaValidationService
 
                         cap.Especies[cod] += ic.CapturaTotalKgCalculado;
                         cap.DescartesPorEspecie[cod] += ic.PesoDescarteCalculado;
+                        cap.EspeciesOrder.Add(cod); // Permitir validación de duplicados
                     }
                 }
                 capturas.Add(cap);

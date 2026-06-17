@@ -227,8 +227,8 @@ public class MareaImportService : IMareaImportService
 
         var productos = await dbContext.Productos.ToListAsync();
 
-        var especiesDict = new Dictionary<string, string>();
-        var especiesSinAcentosDict = new Dictionary<string, string>();
+        var especiesDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var especiesSinAcentosDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var esp in especiesDB)
         {
             var codeStr = NormalizeInidepCode(esp.CodigoInidep);
@@ -236,15 +236,17 @@ public class MareaImportService : IMareaImportService
             {
                 if (!string.IsNullOrEmpty(esp.NombreVulgar))
                 {
-                    var name = esp.NombreVulgar.Trim().ToUpper().Normalize(NormalizationForm.FormC);
-                    especiesDict.TryAdd(name, codeStr);
-                    especiesSinAcentosDict.TryAdd(RemoveAccents(name), codeStr);
+                    var nameOriginal = esp.NombreVulgar.Trim().Normalize(NormalizationForm.FormC);
+                    var nameUpper = nameOriginal.ToUpper();
+                    especiesDict.TryAdd(nameOriginal, codeStr);
+                    especiesSinAcentosDict.TryAdd(RemoveAccents(nameUpper), codeStr);
                 }
                 if (!string.IsNullOrEmpty(esp.NombreCientifico))
                 {
-                    var name = esp.NombreCientifico.Trim().ToUpper().Normalize(NormalizationForm.FormC);
-                    especiesDict.TryAdd(name, codeStr);
-                    especiesSinAcentosDict.TryAdd(RemoveAccents(name), codeStr);
+                    var nameOriginal = esp.NombreCientifico.Trim().Normalize(NormalizationForm.FormC);
+                    var nameUpper = nameOriginal.ToUpper();
+                    especiesDict.TryAdd(nameOriginal, codeStr);
+                    especiesSinAcentosDict.TryAdd(RemoveAccents(nameUpper), codeStr);
                 }
             }
         }
@@ -253,7 +255,7 @@ public class MareaImportService : IMareaImportService
             .Where(e => e.CodigoInidep != null)
             .ToListAsync();
 
-        var especiesViejasDict = new Dictionary<string, string>();
+        var especiesViejasDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var setEspeciesViejasExistentes = new HashSet<string>();
         foreach (var esp in especiesViejasDB)
         {
@@ -262,9 +264,9 @@ public class MareaImportService : IMareaImportService
             if (!string.IsNullOrEmpty(codeStr))
             {
                 if (!string.IsNullOrEmpty(esp.NombreVulgar))
-                    especiesViejasDict[esp.NombreVulgar.Trim().ToUpper().Normalize(NormalizationForm.FormC)] = codeStr;
+                    especiesViejasDict[esp.NombreVulgar.Trim().Normalize(NormalizationForm.FormC)] = codeStr;
                 if (!string.IsNullOrEmpty(esp.NombreCientifico))
-                    especiesViejasDict[esp.NombreCientifico.Trim().ToUpper().Normalize(NormalizationForm.FormC)] = codeStr;
+                    especiesViejasDict[esp.NombreCientifico.Trim().Normalize(NormalizationForm.FormC)] = codeStr;
             }
         }
 
