@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Input;
@@ -87,6 +87,7 @@ public sealed class CatchItemViewModel : ObservableObject
                 
                 OnPropertyChanged(nameof(EspecieNombreVulgar));
                 OnPropertyChanged(nameof(EspecieNombreCientifico));
+                OnPropertyChanged(nameof(EspecieDisplayFullName));
             }
         }
     }
@@ -192,6 +193,7 @@ public sealed class CatchItemViewModel : ObservableObject
     }
     public string EspecieNombreVulgar => SelectedEspecie?.NombreVulgar ?? "---";
     public string EspecieNombreCientifico => SelectedEspecie?.NombreCientifico ?? "---";
+    public string EspecieDisplayFullName => SelectedEspecie?.FullDisplayName ?? "---";
 
     public string DatoCapturaDisplay
     {

@@ -241,7 +241,7 @@
                                           IsReadOnly="True">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="ORD" Binding="{Binding NumeroOrden}" Width="40" ElementStyle="{StaticResource DataGridTextCenter}" />
-                                        <DataGridTextColumn Header="ESPECIE" Binding="{Binding EspecieNombreVulgar}" Width="*" FontWeight="SemiBold" FontSize="13" ElementStyle="{StaticResource DataGridTextLeft}" />
+                                        <DataGridTextColumn Header="ESPECIE" Binding="{Binding EspecieDisplayFullName}" Width="*" FontWeight="SemiBold" FontSize="13" ElementStyle="{StaticResource DataGridTextLeft}" />
                                         <DataGridTextColumn Header="CAPTURA" Binding="{Binding DatoCapturaDisplay}" Width="110" ElementStyle="{StaticResource DataGridTextRight}" HeaderStyle="{StaticResource PremiumDataGridColumnHeaderRightStyle}" />
                                         <DataGridTextColumn Header="DESC. (%)" Binding="{Binding DatoDescartePorcentajeDisplay}" Width="100" ElementStyle="{StaticResource DataGridTextRight}" HeaderStyle="{StaticResource PremiumDataGridColumnHeaderRightStyle}" Foreground="{DynamicResource SecondaryTextBrush}" />
                                         <DataGridTextColumn Header="DESC. (KG)" Binding="{Binding DatoDescarteKilosDisplay}" Width="110" ElementStyle="{StaticResource DataGridTextRight}" HeaderStyle="{StaticResource PremiumDataGridColumnHeaderRightStyle}" FontWeight="SemiBold" />
