@@ -683,6 +683,15 @@ public class MareaReportService : IMareaReportService
                 });
             });
 
+            if (report.HasFatalErrors)
+            {
+                col.Item().PaddingTop(10).Background(Colors.Red.Lighten4).Padding(10).Row(row =>
+                {
+                    row.AutoItem().PaddingRight(5).Text("⚠️").FontSize(10);
+                    row.RelativeItem().Text("ATENCIÓN: Se han detectado errores críticos. Debe corregir los problemas indicados a continuación en los archivos originales para poder realizar la importación.").FontSize(9).FontColor(Colors.Red.Darken4).SemiBold();
+                });
+            }
+
             // Lista de Issues
             col.Item().PaddingTop(10).Text("Detalle de Observaciones").FontSize(11).SemiBold();
 
