@@ -4,15 +4,44 @@ Documentación histórica del desarrollo del proyecto ControlMareas.
 Período documentado: 2026-04-09 a 2026-05-21.
 Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 1.0.0.
 
-## [Unreleased]
+## [v1.10.0] - 2026-06-17
+
+**Descripción**: Mejoras en la interfaz de usuario, optimización de reportes (Word, PDF, Excel), y refinamiento en las validaciones de importación.
+
+### Added (Características nuevas)
+- feat(ui): mostrar nombre científico en lista de especies del lance
+- feat(importacion): discriminar validación de especies duplicadas entre importación y auditoría
+- feat(importacion): agregar leyenda de advertencia en reporte PDF si hay errores criticos
+- feat(importacion): mostrar unicamente errores criticos en reporte PDF si existen
+- feat(reportes): reemplazar etiqueta AñoActual en portada de Word
+- feat(reportes): agregar % de descarte y días operados en el encabezado de viajes desglosados y etapas
+- feat(reportes): agregar detalle de cuadrado dominante en etapas
+- feat(importacion): importar puertos Zarpada y Arribo en JSON
+- feat(reportes): agregar lógica de agrupación jerárquica por viaje en resumen narrativo
+- feat(reportes): mejorar reportes de frecuencias y tallas
+- feat(reportes): agregar sufijo de PROSPECCIÓN a encabezado de viaje
+- feat(reportes): agregar sufijo de prospeccion a narrativa de viajes
+- feat(importacion): agregar soporte para TipoEtapa en la importacion de JSON
+- feat(reportes): agregar validación de sobreescritura y encabezados repetidos en tablas
+- feat(configuracion): agregar validación y formato obligatorio para revisor
 
 ### Fixed (Correcciones)
-- fix(exportacion): arreglar decodificacion de tallas DBF usando long para prevenir perdida de ceros o notacion cientifica.
-- fix(exportacion): arreglar mapeo de tallas a columna absoluta en archivo L.
-- fix(exportacion): evitar creacion de archivos DBF vacios cuando no hay registros.
-- fix(tests): actualizar pruebas unitarias inyectando registros de produccion simulados.
+- fix(reportes): forzar 2 decimales en tablas de captura del reporte Word
+- fix(build): eliminar caracter BOM de build_installer.bat
+- fix(ui): ajustar anchos de columnas en tabla de Control Producción
+- fix(reportes): corregir titulo de prospección para mareas de etapa única
+- fix(exportacion): arreglar decodificacion y mapeo de tallas DBF y prevencion de archivos vacios
+- fix(report): aplicar correcciones de gráficas y cálculos de Excel al informe Word
+- fix(report): corregir cálculos y visualización en gráficas de frecuencia de tallas
+
+### Changed (Cambios y mejoras)
+- refactor(db): unificar carpeta de migraciones en ControlMareas.App/Migrations
+- style(reportes): aplicar negrita al prefijo ordinal en viajes no desglosados
+- style(reportes): reducir espaciado posterior a 12pt en los párrafos de Modeinfo
+- chore(docs): consolidar notas de release en docs/CHANGELOG.md y eliminar archivo duplicado
 
 ---
+
 
 ## [v1.9.0] - 2026-05-27
 
@@ -600,7 +629,7 @@ Para generar changelog de cambios pendientes:
 
 ---
 
-**Última actualización**: 2026-05-27
-**Período de desarrollo**: 2026-04-09 a 2026-05-27 (49 días)
-**Total de commits documentados**: 295  
-**Versión actual**: v1.9.0
+**Última actualización**: 2026-06-17
+**Período de desarrollo**: 2026-04-09 a 2026-06-17 (69 días)
+**Total de commits documentados**: 320  
+**Versión actual**: v1.10.0
