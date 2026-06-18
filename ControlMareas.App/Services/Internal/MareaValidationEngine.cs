@@ -695,6 +695,9 @@ public sealed class MareaValidationEngine
         if (c.ProfFinal <= 0 || c.ProfFinal > 2000)
             report.AddIssue(ValidationLevel.Error, "Geografía", $"Profundidad final ({c.ProfFinal}m) fuera de rango (0-2000)", ctx);
 
+        if (c.ProfInic > 0 && c.ProfFinal > 0 && Math.Abs(c.ProfFinal - c.ProfInic) > 100)
+            report.AddIssue(ValidationLevel.Warning, "Geografía", $"Diferencia mayor a 100m entre profundidad inicial y final. Verifique ({c.ProfInic}m -> {c.ProfFinal}m)", ctx);
+
         if (c.ProfFinal > c.ProfInic * 2 && c.ProfInic > 0)
             report.AddIssue(ValidationLevel.Warning, "Geografía", $"Cambio de profundidad inusual ({c.ProfInic}m -> {c.ProfFinal}m)", ctx);
 
