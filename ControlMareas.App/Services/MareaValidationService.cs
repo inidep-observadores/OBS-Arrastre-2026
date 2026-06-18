@@ -9,7 +9,7 @@ namespace ControlMareas.App.Services;
 
 public interface IMareaValidationService
 {
-    Task<MareaValidationReport> ValidateExistingMareaAsync(string mareaId);
+    Task<MareaValidationReport> ValidateExistingMareaAsync(string mareaId, bool omitirValidacionCapturaProduccion = false);
 }
 
 public class MareaValidationService : IMareaValidationService
@@ -18,14 +18,16 @@ public class MareaValidationService : IMareaValidationService
     private readonly IUserSettingsService _userSettingsService;
     private readonly MareaValidationEngine _validator;
 
-    public MareaValidationService(IDbContextFactory<AppDbContext> dbContextFactory, IUserSettingsService userSettingsService)
+    public MareaValidationService(
+        IDbContextFactory<AppDbContext> dbContextFactory,
+        IUserSettingsService userSettingsService)
     {
         _dbContextFactory = dbContextFactory;
         _userSettingsService = userSettingsService;
         _validator = new MareaValidationEngine();
     }
 
-    public async Task<MareaValidationReport> ValidateExistingMareaAsync(string mareaId)
+    public async Task<MareaValidationReport> ValidateExistingMareaAsync(string mareaId, bool omitirValidacionCapturaProduccion = false)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
 
@@ -77,13 +79,17 @@ public class MareaValidationService : IMareaValidationService
             .ToListAsync();
 
         var especiesDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var especiesCientificasDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var esp in especiesDB)
         {
             string code = esp.CodigoInidep ?? esp.ID; // Usar código si existe, sino ID interno
             if (!string.IsNullOrEmpty(esp.NombreVulgar))
                 especiesDict.TryAdd(esp.NombreVulgar.Trim(), code);
             if (!string.IsNullOrEmpty(esp.NombreCientifico))
+            {
                 especiesDict.TryAdd(esp.NombreCientifico.Trim(), code);
+                especiesCientificasDict.TryAdd(code, esp.NombreCientifico.Trim());
+            }
         }
 
         // También para especies viejas ordenado por Frecuente descendente
@@ -99,7 +105,10 @@ public class MareaValidationService : IMareaValidationService
             if (!string.IsNullOrEmpty(esp.NombreVulgar))
                 especiesViejasDict.TryAdd(esp.NombreVulgar.Trim(), code);
             if (!string.IsNullOrEmpty(esp.NombreCientifico))
+            {
                 especiesViejasDict.TryAdd(esp.NombreCientifico.Trim(), code);
+                especiesCientificasDict.TryAdd(code, esp.NombreCientifico.Trim());
+            }
         }
 
         var allEspeciesCodigos = await dbContext.Especies
@@ -282,11 +291,13 @@ public class MareaValidationService : IMareaValidationService
             produccionList,
             especiesDict,
             especiesViejasDict,
+            especiesCientificasDict,
             especiesCodigosValidos,
             largoPesoCatalogo,
             skipConsensusHeuristic: true,
             filtrarDiferenciasAuditoria: settings.FiltrarDiferenciasAuditoria,
-            toleranciaFiltroAuditoria: settings.ToleranciaFiltroAuditoria
+            toleranciaFiltroAuditoria: settings.ToleranciaFiltroAuditoria,
+            omitirValidacionCapturaProduccion: omitirValidacionCapturaProduccion
         );
 
         // PERSISTIR CORRECCIONES: Si el motor corrigió totales, los guardamos en la DB

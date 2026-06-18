@@ -26,12 +26,14 @@ public sealed class MareaValidationEngine
         List<LegacyProduccion> produccion,
         Dictionary<string, string> especiesDict,
         Dictionary<string, string> especiesViejasDict,
+        Dictionary<string, string> especiesCientificasDict,
         HashSet<string> especiesCodigosValidos,
         Dictionary<(string EspecieId, int Sexo), (double A, double B)> largoPesoCatalogo,
         bool procesarSubmuestrasSinMuestraTalla = false,
         bool skipConsensusHeuristic = false,
         bool filtrarDiferenciasAuditoria = true,
-        double toleranciaFiltroAuditoria = 2.0)
+        double toleranciaFiltroAuditoria = 2.0,
+        bool omitirValidacionCapturaProduccion = false)
     {
         var report = new MareaValidationReport
         {
@@ -59,13 +61,13 @@ public sealed class MareaValidationEngine
         ValidateLances(report, capturas, tracking, especiesDict, especiesViejasDict, especiesCodigosValidos, skipConsensusHeuristic);
 
         // 4. Validación de Muestras (M*) y Relación Largo-Peso
-        ValidateSamples(report, muestras, capturas, lgs, largoPesoCatalogo, especiesDict, especiesViejasDict, especiesCodigosValidos);
+        ValidateSamples(report, muestras, capturas, lgs, largoPesoCatalogo, especiesDict, especiesViejasDict, especiesCodigosValidos, omitirValidacionCapturaProduccion);
 
         // 5. Validación de Submuestras (S*)
         ValidateSubSamples(report, submuestras, muestras, procesarSubmuestrasSinMuestraTalla);
 
         // 6. Validación de Producción (P*)
-        ValidateProduction(report, produccion, especiesDict, especiesViejasDict, especiesCodigosValidos, capturas, filtrarDiferenciasAuditoria, toleranciaFiltroAuditoria);
+        ValidateProduction(report, produccion, especiesDict, especiesViejasDict, especiesCientificasDict, especiesCodigosValidos, capturas, filtrarDiferenciasAuditoria, toleranciaFiltroAuditoria, omitirValidacionCapturaProduccion);
 
         report.Capturas = capturas;
         report.Muestras = muestras;
@@ -77,7 +79,7 @@ public sealed class MareaValidationEngine
         return report;
     }
 
-    private void ValidateProduction(MareaValidationReport report, List<LegacyProduccion> produccion, Dictionary<string, string> especiesDict, Dictionary<string, string> especiesViejasDict, HashSet<string> especiesCodigosValidos, List<LegacyCaptura> capturas, bool filtrarDiferenciasAuditoria, double toleranciaFiltroAuditoria)
+    private void ValidateProduction(MareaValidationReport report, List<LegacyProduccion> produccion, Dictionary<string, string> especiesDict, Dictionary<string, string> especiesViejasDict, Dictionary<string, string> especiesCientificasDict, HashSet<string> especiesCodigosValidos, List<LegacyCaptura> capturas, bool filtrarDiferenciasAuditoria, double toleranciaFiltroAuditoria, bool omitirValidacionCapturaProduccion)
     {
         // 1. Validar existencia de especie por nombre
         var setNombresVulgares = new HashSet<string>(especiesDict.Keys, StringComparer.OrdinalIgnoreCase);
@@ -148,6 +150,8 @@ public sealed class MareaValidationEngine
             }
         }
 
+        if (omitirValidacionCapturaProduccion) return;
+
         // 4. Balance de Masa Diario por Especie (REQ: Producción vs Captura Neta)
         var fechasProduccion = produccion.Select(p => p.Fecha.Date);
         var fechasCaptura = capturas.Select(c => c.Fecha.Date);
@@ -216,24 +220,30 @@ public sealed class MareaValidationEngine
                 // Evitar errores de precisión flotante si tolerancia es 0
                 if (margenTolerancia < 0.001) margenTolerancia = 0.001;
 
-                string ctx = $"Fecha: {fecha:dd/MM/yyyy} | Especie: {nombreEspecie}";
+                // Obtener nombre para mostrar en el reporte
+                string especieDisplay = especiesCientificasDict.TryGetValue(codEspecie, out var codStr) && !string.IsNullOrWhiteSpace(codStr) ? codStr : nombreEspecie;
+
+                string ctx = $"Fecha: {fecha:dd/MM/yyyy} | Especie: {especieDisplay}";
                 string capReconStr = capturaReconstruida.ToString("N1", culture);
                 string capRealStr = capturaNetaReal.ToString("N1", culture);
+                
+                string diffStr = diffAbs.ToString("N1", culture);
+                double diffPorcentaje = (diffAbs / capturaNetaReal) * 100.0;
+                string diffPctStr = diffPorcentaje.ToString("N1", culture);
 
                 if (capturaReconstruida > capturaNetaReal + margenTolerancia)
                 {
                     // Error: Se produjo más de lo que se capturó físicamente
                     report.AddIssue(ValidationLevel.Error, "Balance de Captura Diaria", 
-                        $"Inconsistencia: La captura reconstruida ({capReconStr} kg) excede la captura neta real disponible ({capRealStr} kg){lancesStr}.", 
+                        $"Inconsistencia: La captura reconstruida ({capReconStr} kg) excede la captura neta real disponible ({capRealStr} kg) (Dif: {diffStr} kg, {diffPctStr}%){lancesStr}.", 
                         ctx);
                 }
                 else if (diffAbs > margenTolerancia)
                 {
                     // Advertencia: Diferencia superior a la tolerancia
                     string tipoDiff = diferencia > 0 ? "sobrante" : "faltante";
-                    string diffStr = diffAbs.ToString("N1", culture);
                     report.AddIssue(ValidationLevel.Warning, "Balance de Captura Diaria", 
-                        $"Diferencia de masa significativa ({tipoDiff}): Real {capRealStr} kg vs Reconstruida {capReconStr} kg (Dif: {diffStr} kg){lancesStr}.", 
+                        $"Diferencia de masa significativa ({tipoDiff}): Real {capRealStr} kg vs Reconstruida {capReconStr} kg (Dif: {diffStr} kg, {diffPctStr}%){lancesStr}.", 
                         ctx);
                 }
             }
@@ -733,7 +743,8 @@ public sealed class MareaValidationEngine
         Dictionary<(string EspecieId, int Sexo), (double A, double B)> largoPesoCatalogo,
         Dictionary<string, string> especiesDict,
         Dictionary<string, string> especiesViejasDict,
-        HashSet<string> especiesCodigosValidos)
+        HashSet<string> especiesCodigosValidos,
+        bool omitirValidacionCapturaProduccion)
     {
         foreach (var m in muestras)
         {
@@ -1003,15 +1014,17 @@ public sealed class MareaValidationEngine
                 }
             }
             // --- NUEVA VALIDACIÓN: Peso Muestra vs Peso Captura ---
-            if (lanceCorrespondiente != null && !string.IsNullOrEmpty(codEspecieMuestra))
+            if (!omitirValidacionCapturaProduccion && lanceCorrespondiente != null && !string.IsNullOrEmpty(codEspecieMuestra))
             {
                 if (lanceCorrespondiente.Especies.TryGetValue(codEspecieMuestra, out double kilosCaptura))
                 {
                     // Tolerancia de 10 gramos por redondeos en la conversión gramos/kilos
                     if (m.PesoMues > kilosCaptura + 0.01)
                     {
+                        double diffAbs = m.PesoMues - kilosCaptura;
+                        string pctStr = kilosCaptura > 0 ? $", {(diffAbs / kilosCaptura * 100.0):N1}%" : "";
                         report.AddIssue(ValidationLevel.Error, "Integridad", 
-                            $"Inconsistencia: El peso de la muestra ({m.PesoMues:F2} kg) es superior a la captura registrada de la especie ({kilosCaptura:F2} kg) en el lance {m.Lance}.", ctx);
+                            $"Inconsistencia: El peso de la muestra ({m.PesoMues:N2} kg) es superior a la captura registrada de la especie ({kilosCaptura:N2} kg) en el lance {m.Lance} (Dif: {diffAbs:N2} kg{pctStr}).", ctx);
                     }
                 }
             }

@@ -992,14 +992,20 @@
                                        LineHeight="20"
                                        Margin="0,0,0,24"/>
                             
+                            <CheckBox Content="Omitir validación de diferencias entre captura y producción"
+                                      IsChecked="{Binding OmitirValidacionCapturaProduccion}"
+                                      Foreground="{DynamicResource PrimaryTextBrush}"
+                                      Margin="0,0,0,16"/>
+
                             <CheckBox Content="Filtrar diferencias por tolerancia" 
                                       IsChecked="{Binding FiltrarDiferencias}"
+                                      IsEnabled="{Binding IsFiltrarHabilitado}"
                                       Foreground="{DynamicResource PrimaryTextBrush}"
                                       Margin="0,0,0,16"/>
                                       
                             <Label Content="Tolerancia (%)" Style="{StaticResource FormLabelStyle}" />
                             <TextBox Text="{Binding ToleranciaFiltro, StringFormat=N1, UpdateSourceTrigger=PropertyChanged}" 
-                                     IsEnabled="{Binding FiltrarDiferencias}"
+                                     IsEnabled="{Binding IsToleranciaHabilitado}"
                                      Style="{StaticResource PremiumTextBoxStyle}"
                                      Height="40" />
                         </StackPanel>

@@ -229,6 +229,7 @@ public class MareaImportService : IMareaImportService
 
         var especiesDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var especiesSinAcentosDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var especiesCientificasDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var esp in especiesDB)
         {
             var codeStr = NormalizeInidepCode(esp.CodigoInidep);
@@ -247,6 +248,7 @@ public class MareaImportService : IMareaImportService
                     var nameUpper = nameOriginal.ToUpper();
                     especiesDict.TryAdd(nameOriginal, codeStr);
                     especiesSinAcentosDict.TryAdd(RemoveAccents(nameUpper), codeStr);
+                    especiesCientificasDict.TryAdd(codeStr, esp.NombreCientifico.Trim());
                 }
             }
         }
@@ -266,7 +268,10 @@ public class MareaImportService : IMareaImportService
                 if (!string.IsNullOrEmpty(esp.NombreVulgar))
                     especiesViejasDict[esp.NombreVulgar.Trim().Normalize(NormalizationForm.FormC)] = codeStr;
                 if (!string.IsNullOrEmpty(esp.NombreCientifico))
+                {
                     especiesViejasDict[esp.NombreCientifico.Trim().Normalize(NormalizationForm.FormC)] = codeStr;
+                    especiesCientificasDict.TryAdd(codeStr, esp.NombreCientifico.Trim());
+                }
             }
         }
 
@@ -336,6 +341,7 @@ public class MareaImportService : IMareaImportService
             produccion, 
             especiesDict, 
             especiesViejasDict, 
+            especiesCientificasDict,
             especiesCodigosValidos, 
             largoPesoCatalogo,
             procesarSubmuestrasSinMuestraTalla);

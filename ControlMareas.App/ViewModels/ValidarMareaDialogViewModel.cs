@@ -12,11 +12,30 @@ public class ValidarMareaDialogViewModel : ObservableObject
     private readonly IUserSettingsService _userSettingsService;
     private bool _filtrarDiferencias;
     private double _toleranciaFiltro;
+    private bool _omitirValidacionCapturaProduccion;
+
+    public bool OmitirValidacionCapturaProduccion
+    {
+        get => _omitirValidacionCapturaProduccion;
+        set 
+        {
+            SetProperty(ref _omitirValidacionCapturaProduccion, value);
+            OnPropertyChanged(nameof(IsFiltrarHabilitado));
+            OnPropertyChanged(nameof(IsToleranciaHabilitado));
+        }
+    }
+
+    public bool IsFiltrarHabilitado => !OmitirValidacionCapturaProduccion;
+    public bool IsToleranciaHabilitado => FiltrarDiferencias && !OmitirValidacionCapturaProduccion;
 
     public bool FiltrarDiferencias
     {
         get => _filtrarDiferencias;
-        set => SetProperty(ref _filtrarDiferencias, value);
+        set 
+        {
+            SetProperty(ref _filtrarDiferencias, value);
+            OnPropertyChanged(nameof(IsToleranciaHabilitado));
+        }
     }
 
     public double ToleranciaFiltro

@@ -167,6 +167,8 @@ public sealed class MareaListItemViewModel : ObservableObject
             return;
         }
 
+        bool omitirProduccion = false;
+
         if (ShowCustomDialog != null)
         {
             var dialogVm = new ValidarMareaDialogViewModel(_userSettingsService);
@@ -176,6 +178,7 @@ public sealed class MareaListItemViewModel : ObservableObject
             ShowCustomDialog(null);
 
             if (!result) return;
+            omitirProduccion = dialogVm.OmitirValidacionCapturaProduccion;
         }
         else
         {
@@ -195,7 +198,7 @@ public sealed class MareaListItemViewModel : ObservableObject
             var pdfResult = await Task.Run(async () => 
             {
                 StatusText = "Conectando a base de datos...";
-                var report = await _validationService.ValidateExistingMareaAsync(Marea.ID);
+                var report = await _validationService.ValidateExistingMareaAsync(Marea.ID, omitirProduccion);
                 
                 StatusText = "Reglas de validación aplicadas. Generando PDF...";
                 var pdfBytes = await _reportService.GenerateValidationPdfAsync(report);
