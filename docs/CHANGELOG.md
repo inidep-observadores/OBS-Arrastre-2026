@@ -4,6 +4,27 @@ Documentación histórica del desarrollo del proyecto ControlMareas.
 Período documentado: 2026-04-09 a 2026-05-21.
 Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 1.0.0.
 
+## [v1.11.0] - 2026-06-18
+
+**Descripción**: Mejoras robustas en el motor de validación y auditoría, incorporando configuración de tolerancias para captura vs producción, validación de diferencias geográficas (proporcional) y manejo estricto de catálogos de especies.
+
+### Added (Características nuevas)
+- feat(auditoria): agregar opción para omitir validación captura vs producción e incluir diferencias en reporte
+- feat(auditoria): agregar diálogo de configuración y tolerancia para diferencias de producción
+- feat(importacion): indicar numero de columna en errores fatales de especies nulas o inexistentes e impedir importacion
+- feat(auditoria): advertir cuando diferencia de profundidad en lance supere 100m
+- feat(reportes): agregar período en cabecera de etapa y formato de 2 decimales en áreas de trabajo
+
+### Fixed (Correcciones)
+- fix(auditoria): mejorar regla de validación de diferencia de profundidad (cálculo proporcional con umbral de 60%)
+- fix(auditoria): mover validacion de catalogo de especies al motor central para que funcione en mareas ya importadas
+
+### Changed (Cambios y mejoras)
+- test(auditoria): agregar pruebas unitarias para validación proporcional de profundidad e integración
+- style(auditoria): cambiar texto 'Columna' por 'Nº orden' y 'legado' por 'importada' en mensajes de error
+
+---
+
 ## [v1.10.0] - 2026-06-17
 
 **Descripción**: Mejoras en la interfaz de usuario, optimización de reportes (Word, PDF, Excel), y refinamiento en las validaciones de importación.
