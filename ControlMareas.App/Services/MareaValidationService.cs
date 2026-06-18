@@ -100,7 +100,17 @@ public class MareaValidationService : IMareaValidationService
                 especiesViejasDict.TryAdd(esp.NombreCientifico.Trim(), code);
         }
 
-        var especiesCodigosValidos = new HashSet<string>(especiesDict.Values);
+        var allEspeciesCodigos = await dbContext.Especies
+            .Where(e => e.CodigoInidep != null)
+            .Select(e => e.CodigoInidep)
+            .ToListAsync();
+        var allEspeciesViejasCodigos = await dbContext.EspeciesViejas
+            .Where(e => e.CodigoInidep != null)
+            .Select(e => e.CodigoInidep)
+            .ToListAsync();
+
+        var especiesCodigosValidos = new HashSet<string>(allEspeciesCodigos.Select(c => c!.Trim()));
+        especiesCodigosValidos.UnionWith(allEspeciesViejasCodigos.Select(c => c!.Trim()));
 
         // Extraer rangos de fechas de las etapas
         var etapasFechas = marea.Etapas
@@ -157,6 +167,19 @@ public class MareaValidationService : IMareaValidationService
                         cap.Especies[cod] += ic.CapturaTotalKgCalculado;
                         cap.DescartesPorEspecie[cod] += ic.PesoDescarteCalculado;
                         cap.EspeciesOrder.Add(cod); // Permitir validación de duplicados
+                        cap.EspecieColumnIndex[cod] = ic.NumeroOrden;
+                    }
+                    else
+                    {
+                        // Especie nula / huérfana
+                        string cod = $"0_col{ic.NumeroOrden}";
+                        if (!cap.Especies.ContainsKey(cod)) cap.Especies[cod] = 0;
+                        if (!cap.DescartesPorEspecie.ContainsKey(cod)) cap.DescartesPorEspecie[cod] = 0;
+                        
+                        cap.Especies[cod] += ic.CapturaTotalKgCalculado;
+                        cap.DescartesPorEspecie[cod] += ic.PesoDescarteCalculado;
+                        cap.EspeciesOrder.Add(cod);
+                        cap.EspecieColumnIndex[cod] = ic.NumeroOrden;
                     }
                 }
                 capturas.Add(cap);

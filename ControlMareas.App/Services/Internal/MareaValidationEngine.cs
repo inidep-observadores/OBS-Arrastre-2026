@@ -451,6 +451,22 @@ public sealed class MareaValidationEngine
 
             ValidateLanceDetails(report, c);
 
+            // Validación de especies en el catálogo
+            foreach (var spCode in c.Especies.Keys)
+            {
+                int colIndex = c.EspecieColumnIndex.TryGetValue(spCode, out int idx) ? idx : 0;
+                string colInfo = colIndex > 0 ? $" (Columna {colIndex})" : "";
+
+                if (spCode.StartsWith("0_col"))
+                {
+                    report.AddIssue(ValidationLevel.Fatal, "Catálogo Especies", $"Se reportan pesos de captura o descarte pero el código de especie está en blanco o es 0{colInfo}.", $"Captura Lance {c.Lance}");
+                }
+                else if (!especiesCodigosValidos.Contains(spCode))
+                {
+                    report.AddIssue(ValidationLevel.Fatal, "Catálogo Especies", $"La especie legado con código '{spCode}' no existe ni en el catálogo actual ni en el histórico{colInfo}.", $"Captura Lance {c.Lance}");
+                }
+            }
+
             // Verificar si hay especies duplicadas en el detalle de captura del lance
             var duplicatedEspecies = c.EspeciesOrder.GroupBy(x => x).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
             foreach (var dupCode in duplicatedEspecies)
@@ -696,7 +712,7 @@ public sealed class MareaValidationEngine
             report.AddIssue(ValidationLevel.Error, "Geografía", $"Profundidad final ({c.ProfFinal}m) fuera de rango (0-2000)", ctx);
 
         if (c.ProfInic > 0 && c.ProfFinal > 0 && Math.Abs(c.ProfFinal - c.ProfInic) > 100)
-            report.AddIssue(ValidationLevel.Warning, "Geografía", $"Diferencia mayor a 100m entre profundidad inicial y final. Verifique ({c.ProfInic}m -> {c.ProfFinal}m)", ctx);
+            report.AddIssue(ValidationLevel.Warning, "Geografía", $"Diferencia mayor a 100m entre profundidad inicial y final. Verifique. ({c.ProfInic}m -> {c.ProfFinal}m)", ctx);
 
         if (c.ProfFinal > c.ProfInic * 2 && c.ProfInic > 0)
             report.AddIssue(ValidationLevel.Warning, "Geografía", $"Cambio de profundidad inusual ({c.ProfInic}m -> {c.ProfFinal}m)", ctx);
