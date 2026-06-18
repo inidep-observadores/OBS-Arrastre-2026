@@ -291,7 +291,7 @@ public class MareaImportService : IMareaImportService
         {
             if (!setEspeciesExistentes.Contains(m.CodEspec) && !setEspeciesViejasExistentes.Contains(m.CodEspec))
             {
-                report.AddIssue(ValidationLevel.Fatal, "Catálogo Especies", $"La especie legado con código '{m.CodEspec}' no existe ni en el catálogo actual ni en el histórico.", $"Muestra Lance {m.Lance}");
+                report.AddIssue(ValidationLevel.Fatal, "Catálogo Especies", $"La especie importada con código '{m.CodEspec}' no existe ni en el catálogo actual ni en el histórico.", $"Muestra Lance {m.Lance}");
             }
         }
 

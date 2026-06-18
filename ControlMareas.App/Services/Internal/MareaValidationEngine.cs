@@ -54,7 +54,7 @@ public sealed class MareaValidationEngine
         ValidateBaseConsistency(report, barcoMareaActual, nroMareaActual, capturas, muestras, submuestras, lgs, tracking, produccion);
 
         // 3. Validación de Lances (C*)
-        ValidateLances(report, capturas, tracking, especiesDict, especiesViejasDict, skipConsensusHeuristic);
+        ValidateLances(report, capturas, tracking, especiesDict, especiesViejasDict, especiesCodigosValidos, skipConsensusHeuristic);
 
         // 4. Validación de Muestras (M*) y Relación Largo-Peso
         ValidateSamples(report, muestras, capturas, lgs, largoPesoCatalogo, especiesDict, especiesViejasDict, especiesCodigosValidos);
@@ -434,7 +434,7 @@ public sealed class MareaValidationEngine
     }
 
     private void ValidateLances(MareaValidationReport report, List<LegacyCaptura> capturas, List<LegacyTracking> tracking,
-        Dictionary<string, string> especiesDict, Dictionary<string, string> especiesViejasDict, bool skipConsensusHeuristic)
+        Dictionary<string, string> especiesDict, Dictionary<string, string> especiesViejasDict, HashSet<string> especiesCodigosValidos, bool skipConsensusHeuristic)
     {
         int countPorcentaje = 0;
         int countKilos = 0;
@@ -455,7 +455,7 @@ public sealed class MareaValidationEngine
             foreach (var spCode in c.Especies.Keys)
             {
                 int colIndex = c.EspecieColumnIndex.TryGetValue(spCode, out int idx) ? idx : 0;
-                string colInfo = colIndex > 0 ? $" (Columna {colIndex})" : "";
+                string colInfo = colIndex > 0 ? $" (Nº orden {colIndex})" : "";
 
                 if (spCode.StartsWith("0_col"))
                 {
@@ -463,7 +463,7 @@ public sealed class MareaValidationEngine
                 }
                 else if (!especiesCodigosValidos.Contains(spCode))
                 {
-                    report.AddIssue(ValidationLevel.Fatal, "Catálogo Especies", $"La especie legado con código '{spCode}' no existe ni en el catálogo actual ni en el histórico{colInfo}.", $"Captura Lance {c.Lance}");
+                    report.AddIssue(ValidationLevel.Fatal, "Catálogo Especies", $"La especie importada con código '{spCode}' no existe ni en el catálogo actual ni en el histórico{colInfo}.", $"Captura Lance {c.Lance}");
                 }
             }
 
