@@ -1,4 +1,4 @@
-﻿namespace ControlMareas.App.Models.Import;
+namespace ControlMareas.App.Models.Import;
 
 /// <summary>
 /// Modelo para representar los datos biológicos desempaquetados de una talla.
@@ -67,6 +67,7 @@ public class LegacyCaptura
     public Dictionary<string, double> Especies { get; } = new(); // ID Especie -> KG
     public Dictionary<string, double> DescartesPorEspecie { get; } = new(); // ID Especie -> KG
     public List<string> EspeciesOrder { get; } = new(); // Para preservar el orden de las columnas ESPECIE_1..25
+    public Dictionary<string, int> EspecieColumnIndex { get; } = new(); // ID Especie -> Número de columna (1-25)
 }
 
 /// <summary>

@@ -283,9 +283,16 @@ public class MareaImportService : IMareaImportService
 
             foreach (var spCode in c.Especies.Keys)
             {
-                if (!setEspeciesExistentes.Contains(spCode) && !setEspeciesViejasExistentes.Contains(spCode))
+                int colIndex = c.EspecieColumnIndex.TryGetValue(spCode, out int idx) ? idx : 0;
+                string colInfo = colIndex > 0 ? $" (Columna {colIndex})" : "";
+
+                if (spCode.StartsWith("0_col"))
                 {
-                    report.AddIssue(ValidationLevel.Fatal, "Catálogo Especies", $"La especie legado con código '{spCode}' no existe ni en el catálogo actual ni en el histórico.", $"Captura Lance {c.Lance}");
+                    report.AddIssue(ValidationLevel.Fatal, "Catálogo Especies", $"Se reportan pesos de captura o descarte pero el código de especie está en blanco o es 0{colInfo}.", $"Captura Lance {c.Lance}");
+                }
+                else if (!setEspeciesExistentes.Contains(spCode) && !setEspeciesViejasExistentes.Contains(spCode))
+                {
+                    report.AddIssue(ValidationLevel.Fatal, "Catálogo Especies", $"La especie legado con código '{spCode}' no existe ni en el catálogo actual ni en el histórico{colInfo}.", $"Captura Lance {c.Lance}");
                 }
             }
         }
@@ -369,6 +376,11 @@ public class MareaImportService : IMareaImportService
 
     public async Task ImportAsync(string mareaId, MareaValidationReport report)
     {
+        if (report.HasFatalErrors)
+        {
+            throw new InvalidOperationException("No se puede importar la marea porque contiene errores de validación de nivel Fatal (como especies inexistentes). Verifique el reporte y solucione los problemas en los archivos de origen antes de intentar nuevamente.");
+        }
+
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
         
         var marea = await dbContext.Mareas

@@ -340,12 +340,24 @@ public sealed class DbfExtractorService : IDbfExtractorService
             for (int i = 1; i <= 25; i++)
             {
                 var espCode = GetDouble(reader, colMap, $"ESPECIE_{i}");
+                var kgVal = GetDouble(reader, colMap, $"KG_{i}");
+                var descarVal = GetDouble(reader, colMap, $"DESCAR_{i}");
+
                 if (espCode > 0)
                 {
                     string sCode = ((long)espCode).ToString();
-                    c.Especies[sCode] = GetDouble(reader, colMap, $"KG_{i}");
-                    c.DescartesPorEspecie[sCode] = GetDouble(reader, colMap, $"DESCAR_{i}");
+                    c.Especies[sCode] = kgVal;
+                    c.DescartesPorEspecie[sCode] = descarVal;
                     c.EspeciesOrder.Add(sCode);
+                    c.EspecieColumnIndex[sCode] = i;
+                }
+                else if (kgVal > 0 || descarVal > 0)
+                {
+                    string sCode = $"0_col{i}";
+                    c.Especies[sCode] = kgVal;
+                    c.DescartesPorEspecie[sCode] = descarVal;
+                    c.EspeciesOrder.Add(sCode);
+                    c.EspecieColumnIndex[sCode] = i;
                 }
             }
             list.Add(c);
