@@ -161,10 +161,23 @@ public class MareaReportService : IMareaReportService
 
     private void ComposeMareaSummarySection(ColumnDescriptor col, MareaSummarySection section, List<MareaSummarySection>? allEtapas = null, MareaSummaryReport? fullReport = null)
     {
-
-        col.Item().PaddingTop(10).Background(Colors.Grey.Lighten4).Padding(8).Text(section.Titulo).FontSize(12).SemiBold().FontColor(Colors.Blue.Darken3);
-
-
+        if (section.EsEtapa && section.FechaInicio.HasValue)
+        {
+            col.Item().PaddingTop(10).Background(Colors.Grey.Lighten4).Padding(8).Row(r => 
+            {
+                r.RelativeItem().Text(section.Titulo).FontSize(12).SemiBold().FontColor(Colors.Blue.Darken3);
+                
+                string periodo = section.FechaFin.HasValue 
+                    ? $"Período: {section.FechaInicio.Value:dd/MM/yyyy} — {section.FechaFin.Value:dd/MM/yyyy}"
+                    : $"Desde: {section.FechaInicio.Value:dd/MM/yyyy}";
+                    
+                r.AutoItem().Text(periodo).FontSize(10).SemiBold().FontColor(Colors.Blue.Darken3);
+            });
+        }
+        else
+        {
+            col.Item().PaddingTop(10).Background(Colors.Grey.Lighten4).Padding(8).Text(section.Titulo).FontSize(12).SemiBold().FontColor(Colors.Blue.Darken3);
+        }
         col.Item().PaddingVertical(10).Row(row =>
         {
             row.RelativeItem().Column(c =>
@@ -340,7 +353,7 @@ public class MareaReportService : IMareaReportService
                     {
                         table.Cell().Element(CellStyle).Text(area.Area);
                         table.Cell().Element(CellStyle).AlignRight().Text(area.CantidadLances.ToString());
-                        table.Cell().Element(CellStyle).AlignRight().Text(area.CapturaKg.ToString("N1"));
+                        table.Cell().Element(CellStyle).AlignRight().Text(area.CapturaKg.ToString("N2"));
                         table.Cell().Element(CellStyle).AlignRight().Text(area.DiasPesca.ToString());
                     }
 
