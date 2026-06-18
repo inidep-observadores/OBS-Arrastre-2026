@@ -15,11 +15,13 @@ public interface IMareaValidationService
 public class MareaValidationService : IMareaValidationService
 {
     private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
+    private readonly IUserSettingsService _userSettingsService;
     private readonly MareaValidationEngine _validator;
 
-    public MareaValidationService(IDbContextFactory<AppDbContext> dbContextFactory)
+    public MareaValidationService(IDbContextFactory<AppDbContext> dbContextFactory, IUserSettingsService userSettingsService)
     {
         _dbContextFactory = dbContextFactory;
+        _userSettingsService = userSettingsService;
         _validator = new MareaValidationEngine();
     }
 
@@ -261,6 +263,8 @@ public class MareaValidationService : IMareaValidationService
             );
 
         var meta = MareaMetadataHelper.GetMetadata(marea);
+        var settings = _userSettingsService.GetSettings();
+
         var report = _validator.ValidateMarea(
             marea.Buque?.Nombre ?? "",
             marea.AnioInidep,
@@ -280,7 +284,9 @@ public class MareaValidationService : IMareaValidationService
             especiesViejasDict,
             especiesCodigosValidos,
             largoPesoCatalogo,
-            skipConsensusHeuristic: true
+            skipConsensusHeuristic: true,
+            filtrarDiferenciasAuditoria: settings.FiltrarDiferenciasAuditoria,
+            toleranciaFiltroAuditoria: settings.ToleranciaFiltroAuditoria
         );
 
         // PERSISTIR CORRECCIONES: Si el motor corrigió totales, los guardamos en la DB

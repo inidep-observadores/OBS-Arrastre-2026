@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Input;
 using Microsoft.Win32;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -14,19 +14,24 @@ public sealed class MareaListItemViewModel : ObservableObject
     private readonly IMareaValidationService _validationService;
     private readonly IMareaReportService _reportService;
     private readonly IMareaSummaryService _summaryService;
+    private readonly IUserSettingsService _userSettingsService;
+
+    public Action<object>? ShowCustomDialog { get; set; }
 
     public MareaListItemViewModel(
         Marea marea, 
         IActiveMareaManager activeMareaManager,
         IMareaValidationService validationService,
         IMareaReportService reportService,
-        IMareaSummaryService summaryService)
+        IMareaSummaryService summaryService,
+        IUserSettingsService userSettingsService)
     {
         Marea = marea;
         _activeMareaManager = activeMareaManager;
         _validationService = validationService;
         _reportService = reportService;
         _summaryService = summaryService;
+        _userSettingsService = userSettingsService;
 
         SetActiveCommand = new AsyncRelayCommand(() => _activeMareaManager.SetActiveMareaAsync(Marea.ID));
         ValidateCommand = new AsyncRelayCommand(ValidateAsync);
@@ -162,13 +167,26 @@ public sealed class MareaListItemViewModel : ObservableObject
             return;
         }
 
-        var result = System.Windows.MessageBox.Show(
-            $"¿Desea iniciar el proceso de auditoría para la marea {CodigoDisplay}?\n\nEste proceso puede tardar unos segundos.",
-            "Confirmar Auditoría",
-            System.Windows.MessageBoxButton.YesNo,
-            System.Windows.MessageBoxImage.Question);
+        if (ShowCustomDialog != null)
+        {
+            var dialogVm = new ValidarMareaDialogViewModel(_userSettingsService);
+            ShowCustomDialog(dialogVm);
 
-        if (result != System.Windows.MessageBoxResult.Yes) return;
+            bool result = await dialogVm.DialogResult.Task;
+            ShowCustomDialog(null);
+
+            if (!result) return;
+        }
+        else
+        {
+            var result = System.Windows.MessageBox.Show(
+                $"¿Desea iniciar el proceso de auditoría para la marea {CodigoDisplay}?\n\nEste proceso puede tardar unos segundos.",
+                "Confirmar Auditoría",
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Question);
+
+            if (result != System.Windows.MessageBoxResult.Yes) return;
+        }
 
         IsValidating = true;
         StatusText = "Iniciando...";

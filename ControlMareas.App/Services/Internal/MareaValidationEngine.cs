@@ -29,7 +29,9 @@ public sealed class MareaValidationEngine
         HashSet<string> especiesCodigosValidos,
         Dictionary<(string EspecieId, int Sexo), (double A, double B)> largoPesoCatalogo,
         bool procesarSubmuestrasSinMuestraTalla = false,
-        bool skipConsensusHeuristic = false)
+        bool skipConsensusHeuristic = false,
+        bool filtrarDiferenciasAuditoria = true,
+        double toleranciaFiltroAuditoria = 2.0)
     {
         var report = new MareaValidationReport
         {
@@ -63,7 +65,7 @@ public sealed class MareaValidationEngine
         ValidateSubSamples(report, submuestras, muestras, procesarSubmuestrasSinMuestraTalla);
 
         // 6. Validación de Producción (P*)
-        ValidateProduction(report, produccion, especiesDict, especiesViejasDict, especiesCodigosValidos, capturas);
+        ValidateProduction(report, produccion, especiesDict, especiesViejasDict, especiesCodigosValidos, capturas, filtrarDiferenciasAuditoria, toleranciaFiltroAuditoria);
 
         report.Capturas = capturas;
         report.Muestras = muestras;
@@ -75,7 +77,7 @@ public sealed class MareaValidationEngine
         return report;
     }
 
-    private void ValidateProduction(MareaValidationReport report, List<LegacyProduccion> produccion, Dictionary<string, string> especiesDict, Dictionary<string, string> especiesViejasDict, HashSet<string> especiesCodigosValidos, List<LegacyCaptura> capturas)
+    private void ValidateProduction(MareaValidationReport report, List<LegacyProduccion> produccion, Dictionary<string, string> especiesDict, Dictionary<string, string> especiesViejasDict, HashSet<string> especiesCodigosValidos, List<LegacyCaptura> capturas, bool filtrarDiferenciasAuditoria, double toleranciaFiltroAuditoria)
     {
         // 1. Validar existencia de especie por nombre
         var setNombresVulgares = new HashSet<string>(especiesDict.Keys, StringComparer.OrdinalIgnoreCase);
@@ -204,10 +206,15 @@ public sealed class MareaValidationEngine
                         return cap - des;
                     });
 
-                // C. Comparar y reportar diferencias > 1%
+                // C. Comparar y reportar diferencias
                 double diferencia = capturaNetaReal - capturaReconstruida;
                 double diffAbs = Math.Abs(diferencia);
-                double margenTolerancia = capturaNetaReal * 0.01;
+                
+                double toleranciaPorcentaje = filtrarDiferenciasAuditoria ? toleranciaFiltroAuditoria : 0.0;
+                double margenTolerancia = capturaNetaReal * (toleranciaPorcentaje / 100.0);
+                
+                // Evitar errores de precisión flotante si tolerancia es 0
+                if (margenTolerancia < 0.001) margenTolerancia = 0.001;
 
                 string ctx = $"Fecha: {fecha:dd/MM/yyyy} | Especie: {nombreEspecie}";
                 string capReconStr = capturaReconstruida.ToString("N1", culture);
@@ -222,7 +229,7 @@ public sealed class MareaValidationEngine
                 }
                 else if (diffAbs > margenTolerancia)
                 {
-                    // Advertencia: Diferencia superior al 1%
+                    // Advertencia: Diferencia superior a la tolerancia
                     string tipoDiff = diferencia > 0 ? "sobrante" : "faltante";
                     string diffStr = diffAbs.ToString("N1", culture);
                     report.AddIssue(ValidationLevel.Warning, "Balance de Captura Diaria", 

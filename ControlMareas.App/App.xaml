@@ -951,6 +951,83 @@
             </Border>
         </DataTemplate>
 
+        <!-- Diálogo de Validación de Marea -->
+        <DataTemplate DataType="{x:Type vm:ValidarMareaDialogViewModel}">
+            <Border Width="450" 
+                    Background="{DynamicResource CardBackgroundBrush}"
+                    BorderBrush="{DynamicResource CardBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="16"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="40" ShadowDepth="10" Opacity="0.15" Color="Black"/>
+                </Border.Effect>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="24,20" CornerRadius="16,16,0,0">
+                        <StackPanel>
+                            <TextBlock Text="AUDITORÍA DE MAREA" 
+                                       FontSize="11" FontWeight="Bold" 
+                                       Foreground="{DynamicResource AccentBrush}" />
+                            <TextBlock Text="Validar datos y generar PDF" 
+                                       FontSize="18" FontWeight="SemiBold" 
+                                       Foreground="{DynamicResource PrimaryTextBrush}"
+                                       Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="1" Padding="24,30">
+                        <StackPanel>
+                            <TextBlock Text="Este proceso verificará la integridad de los datos de la marea y generará un reporte en PDF. Puede configurar el margen de tolerancia para omitir del reporte las diferencias mínimas entre captura y producción." 
+                                       Foreground="{DynamicResource SecondaryTextBrush}" 
+                                       TextWrapping="Wrap"
+                                       FontSize="13"
+                                       LineHeight="20"
+                                       Margin="0,0,0,24"/>
+                            
+                            <CheckBox Content="Filtrar diferencias por tolerancia" 
+                                      IsChecked="{Binding FiltrarDiferencias}"
+                                      Foreground="{DynamicResource PrimaryTextBrush}"
+                                      Margin="0,0,0,16"/>
+                                      
+                            <Label Content="Tolerancia (%)" Style="{StaticResource FormLabelStyle}" />
+                            <TextBox Text="{Binding ToleranciaFiltro, StringFormat=N1, UpdateSourceTrigger=PropertyChanged}" 
+                                     IsEnabled="{Binding FiltrarDiferencias}"
+                                     Style="{StaticResource PremiumTextBoxStyle}"
+                                     Height="40" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="2" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="24,20" CornerRadius="0,0,16,16">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button Content="CANCELAR" 
+                                    Command="{Binding CancelCommand}"
+                                    Style="{StaticResource ThemeButtonStyle}"
+                                    Height="44"
+                                    Margin="0,0,8,0"/>
+                            <Button Grid.Column="1"
+                                    Content="INICIAR" 
+                                    Command="{Binding AcceptCommand}"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Height="44"
+                                    Margin="8,0,0,0"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
         <!-- Diálogo de Exportación de Recursos -->
         <DataTemplate DataType="{x:Type vm:ExportarRecursosViewModel}">
             <Border Width="500" 

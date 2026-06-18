@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 
 namespace ControlMareas.App.Models;
 
@@ -11,5 +11,6 @@ public sealed class UserSettings
     public string? RevisorApellido { get; set; }
     public string? ActiveMareaId { get; set; }
     public int? LastSelectedMareaAnio { get; set; }
+    public bool FiltrarDiferenciasAuditoria { get; set; } = true;
+    public double ToleranciaFiltroAuditoria { get; set; } = 2.0;
 }
-

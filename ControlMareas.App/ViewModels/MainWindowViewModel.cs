@@ -1721,8 +1721,10 @@ public class MainWindowViewModel : ObservableObject
                 filterHasta,
                 _mareasSearchText);
 
-            var viewModels = mareas.Select(m => new MareaListItemViewModel(m, _activeMareaManager, _validationService, _reportService, _mareaSummaryService)).ToList();
-            
+            var viewModels = mareas.Select(m => new MareaListItemViewModel(m, _activeMareaManager, _validationService, _reportService, _mareaSummaryService, _userSettingsService)
+            {
+                ShowCustomDialog = diag => ActiveDialog = diag
+            }).ToList();
             RecordsView.GroupDescriptions.Clear();
             Records.Clear();
             foreach (var vm in viewModels)
