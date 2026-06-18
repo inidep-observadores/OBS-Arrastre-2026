@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using NSubstitute;
 using ControlMareas.App.Models.Import;
 using ControlMareas.App.Services;
@@ -107,7 +107,14 @@ public class MareaIntegrationTests
         Directory.CreateDirectory(tempPath);
         try
         {
-            File.WriteAllText(Path.Combine(tempPath, "C10026.DBF"), "");
+            string suffix = "10026.DBF";
+            File.WriteAllText(Path.Combine(tempPath, $"C{suffix}"), "");
+            File.WriteAllText(Path.Combine(tempPath, $"M{suffix}"), "");
+            File.WriteAllText(Path.Combine(tempPath, $"P{suffix}"), "");
+
+            var db = await _dbFactory.CreateDbContextAsync();
+            db.Especies.Add(new Especie { CodigoInidep = "1", NombreVulgar = "TEST", NombreCientifico = "TEST" });
+            await db.SaveChangesAsync();
 
             // Arrange
             var capturas = new List<LegacyCaptura>

@@ -108,6 +108,30 @@ public class MareaValidationEngineTests
         report.Issues.Should().Contain(i => i.Category == "Geografía" && i.Message.Contains("final (2500m)"));
     }
 
+    [Theory]
+    [InlineData(100, 140, false)] // Diff 40m (< 50m minimum) -> false
+    [InlineData(100, 160, true)]  // Diff 60m (>= 50) and 60m / 100 = 60% (>= 60%) -> true
+    [InlineData(1000, 1500, false)] // Diff 500m (>= 50) and 500 / 1000 = 50% (< 60%) -> false
+    [InlineData(1000, 1700, true)] // Diff 700m (>= 50) and 700 / 1000 = 70% (>= 60%) -> true
+    [InlineData(17, 930, true)] // Diff 913m (>= 50) and 913 / 17 > 60% -> true
+    public void ValidateMarea_ShouldDetectSignificantDepthDifferences(double inic, double final, bool shouldDetect)
+    {
+        // Arrange
+        var c = new LegacyCaptura { Lance = 1, Barco = "B", Marea = 100, ProfInic = inic, ProfFinal = final };
+        c.Especies["1"] = 10;
+
+        // Act
+        var report = _engine.ValidateMarea("B", 2026, 100, null, null, null, null, new(), new() { c }, new(), new(), new(), new(), new(), new(), new(), new(), new(), new());
+
+        // Assert
+        if (shouldDetect)
+            report.Issues.Should().Contain(i => i.Category == "Geografía" && i.Message.Contains("Diferencia significativa de profundidad"));
+        else
+            report.Issues.Should().NotContain(i => i.Category == "Geografía" && i.Message.Contains("Diferencia significativa de profundidad"));
+    }
+
+
+
     [Fact]
     public void ValidateMarea_ShouldErrorOnEmptyLance()
     {
