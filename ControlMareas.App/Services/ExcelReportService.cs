@@ -286,7 +286,7 @@ namespace ControlMareas.App.Services
             bool hasHembras = dataPoints.Any(p => p.Hembras > 0.01);
             bool hasIndet = dataPoints.Any(p => p.Indet > 0.01);
             bool hasTotal = dataPoints.Any(p => p.Total > 0.01);
-            bool plotTotal = isLangostino || (!hasMachos && !hasHembras && !hasIndet);
+            bool plotTotal = isLangostino || (!hasMachos && !hasHembras);
 
             double maxYValue = dataPoints.Max(p => {
                 double val = Math.Max(p.Machos, p.Hembras);

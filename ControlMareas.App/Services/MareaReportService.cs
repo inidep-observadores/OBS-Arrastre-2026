@@ -1579,7 +1579,7 @@ public class MareaReportService : IMareaReportService
         bool hasHembras = !forzarSoloTotal && dataPoints.Any(p => p.Hembras > 0.01);
         bool hasIndet = !forzarSoloTotal && dataPoints.Any(p => p.Indet > 0.01);
         bool hasTotal = dataPoints.Any(p => p.Total > 0.01);
-        bool plotTotal = isLangostino || forzarSoloTotal || (!hasMachos && !hasHembras && !hasIndet);
+        bool plotTotal = isLangostino || forzarSoloTotal || (!hasMachos && !hasHembras);
 
         double maxYValue = dataPoints.Max(p => {
             double val = Math.Max(p.Machos, p.Hembras);
