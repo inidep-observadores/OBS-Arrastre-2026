@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -117,7 +117,19 @@ public sealed class SubmuestraEditViewModel : ValidatableViewModelBase<Submuestr
 
             if (!string.IsNullOrEmpty(initialMuestraId))
             {
-                SelectedMuestraId = initialMuestraId;
+                _selectedMuestraId = initialMuestraId;
+                OnPropertyChanged(nameof(SelectedMuestraId));
+                ((RelayCommand)AddItemCommand).RaiseCanExecuteChanged();
+
+                await LoadMuestraHeaderAsync(initialMuestraId);
+
+                var subs = await _submuestraService.GetSubmuestrasByMuestraIdAsync(initialMuestraId);
+                Submuestras.Clear();
+                _deletedIds.Clear();
+                foreach (var s in subs)
+                {
+                    Submuestras.Add(new ItemSubmuestraRowViewModel(s));
+                }
             }
         }
         finally
@@ -130,7 +142,6 @@ public sealed class SubmuestraEditViewModel : ValidatableViewModelBase<Submuestr
     {
         if (string.IsNullOrEmpty(SelectedMuestraId))
         {
-            Submuestras.Clear();
             EspecieNombre = string.Empty;
             PesoMuestraDisplay = string.Empty;
             return;
@@ -139,7 +150,7 @@ public sealed class SubmuestraEditViewModel : ValidatableViewModelBase<Submuestr
         IsLoading = true;
         try
         {
-            await LoadMuestraDataAsync(SelectedMuestraId);
+            await LoadMuestraHeaderAsync(SelectedMuestraId);
         }
         finally
         {
@@ -147,7 +158,7 @@ public sealed class SubmuestraEditViewModel : ValidatableViewModelBase<Submuestr
         }
     }
 
-    private async Task LoadMuestraDataAsync(string muestraId)
+    private async Task LoadMuestraHeaderAsync(string muestraId)
     {
         var muestra = await _muestraService.GetMuestraAsync(muestraId);
         if (muestra != null)
@@ -156,14 +167,6 @@ public sealed class SubmuestraEditViewModel : ValidatableViewModelBase<Submuestr
             PesoMuestraDisplay = muestra.PesoMuestra_PesoGramos.HasValue 
                 ? $"{(muestra.PesoMuestra_PesoGramos.Value / 1000.0):N2} kg" 
                 : "0.00 kg";
-
-            var subs = await _submuestraService.GetSubmuestrasByMuestraIdAsync(muestraId);
-            Submuestras.Clear();
-            _deletedIds.Clear();
-            foreach (var s in subs)
-            {
-                Submuestras.Add(new ItemSubmuestraRowViewModel(s));
-            }
         }
     }
 
