@@ -157,11 +157,14 @@ public class LegacyTracking
     public DateTime GetDateTime()
     {
         if (_cachedDateTime.HasValue) return _cachedDateTime.Value;
-        if (DateTime.TryParse(FechaStr, out var dt))
+        
+        // Se asume que la fecha ya viene en hora local en el archivo de origen.
+        // Se utiliza DateTimeOffset para preservar la "hora de reloj" y evitar que C# 
+        // aplique offsets en caso de que la cadena contenga info UTC.
+        if (DateTimeOffset.TryParse(FechaStr, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var dto))
         {
-            // Nota: Se asume que la fecha ya viene en hora local en el archivo de origen.
-            _cachedDateTime = dt;
-            return dt;
+            _cachedDateTime = dto.DateTime;
+            return dto.DateTime;
         }
         return DateTime.MinValue;
     }

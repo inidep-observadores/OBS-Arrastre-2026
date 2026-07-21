@@ -508,10 +508,11 @@ public sealed class DbfExtractorService : IDbfExtractorService
             var rawFecha = GetString(reader, colMap, "FECHA");
             string processedFecha = rawFecha;
             
-            if (DateTime.TryParse(rawFecha, out var dt))
+            // Usamos DateTimeOffset.TryParse para capturar el valor literal "de reloj"
+            // y evitar que C# convierta la hora a la zona local si el string incluye marcas UTC o de offset.
+            if (DateTimeOffset.TryParse(rawFecha, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var dto))
             {
-                // Se mantiene la fecha tal como viene en el DBF (asumida como hora local)
-                processedFecha = dt.ToString("yyyy-MM-dd HH:mm:ss");
+                processedFecha = dto.DateTime.ToString("yyyy-MM-dd HH:mm:ss");
             }
 
             list.Add(new LegacyTracking
