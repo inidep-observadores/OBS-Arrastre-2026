@@ -276,6 +276,10 @@ public class MareaImportService : IMareaImportService
         }
 
         var especiesCodigosValidos = new HashSet<string>(especiesDict.Values);
+        foreach (var codViejo in setEspeciesViejasExistentes)
+        {
+            especiesCodigosValidos.Add(codViejo);
+        }
 
         foreach (var c in capturas)
         {
@@ -453,6 +457,35 @@ public class MareaImportService : IMareaImportService
                     Frecuente = frecuenteActual,
                     EsVieja = true
                 });
+            }
+            else
+            {
+                var normCientifico = ev.NombreCientifico?.Trim().ToUpper().Normalize(NormalizationForm.FormC);
+                var normVulgar = ev.NombreVulgar?.Trim().ToUpper().Normalize(NormalizationForm.FormC);
+
+                // Prioridad 1: Match por nombre científico (tomar el primero)
+                var matchNuevo = (!string.IsNullOrEmpty(normCientifico)) 
+                    ? candidatosEspecies.FirstOrDefault(c => !c.EsVieja && c.NombreCientifico == normCientifico)
+                    : null;
+                
+                // Prioridad 2: Match por nombre vulgar (tomar el primero)
+                if (matchNuevo == null && !string.IsNullOrEmpty(normVulgar))
+                {
+                    matchNuevo = candidatosEspecies.FirstOrDefault(c => !c.EsVieja && c.NombreVulgar == normVulgar);
+                }
+
+                if (matchNuevo != null)
+                {
+                    candidatosEspecies.Add(new EspecieMatchCandidate
+                    {
+                        Id = matchNuevo.Id,
+                        CodigoInidep = code,
+                        NombreVulgar = normVulgar ?? string.Empty,
+                        NombreCientifico = normCientifico ?? string.Empty,
+                        Frecuente = matchNuevo.Frecuente,
+                        EsVieja = true
+                    });
+                }
             }
         }
 
