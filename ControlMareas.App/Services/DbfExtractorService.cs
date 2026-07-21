@@ -393,7 +393,8 @@ public sealed class DbfExtractorService : IDbfExtractorService
                 UltTalla = (int?)GetDoubleNullable(reader, colMap, "ULT_TALLA"),
                 Intervalo = GetDoubleNullable(reader, colMap, "INTERVALO"),
                 PesoMues = GetDouble(reader, colMap, "PESO_MUES"),
-                FactPond = GetDoubleNullable(reader, colMap, "FACT_POND")
+                FactPond = GetDoubleNullable(reader, colMap, "FACT_POND"),
+                Automatica = (int?)GetDoubleNullable(reader, colMap, "AUTOMATICA")
             };
 
             for (int i = 1; i <= 150; i++)

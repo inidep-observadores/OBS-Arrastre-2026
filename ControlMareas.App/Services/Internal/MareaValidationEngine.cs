@@ -65,6 +65,7 @@ public sealed class MareaValidationEngine
 
         // 5. Validación de Submuestras (S*)
         ValidateSubSamples(report, submuestras, muestras, procesarSubmuestrasSinMuestraTalla);
+        ValidateBiometricConsistency(report, muestras, submuestras);
 
         // 6. Validación de Producción (P*)
         ValidateProduction(report, produccion, especiesDict, especiesViejasDict, especiesCientificasDict, especiesCodigosValidos, capturas, filtrarDiferenciasAuditoria, toleranciaFiltroAuditoria, omitirValidacionCapturaProduccion);
@@ -1385,5 +1386,111 @@ public sealed class MareaValidationEngine
         if (matchOld.Key != null) return matchOld.Key;
         
         return $"Código {codigo}";
+    }
+
+    private void ValidateBiometricConsistency(MareaValidationReport report, List<LegacyMuestra> muestras, List<LegacySubmuestra> submuestras)
+    {
+        // Agrupar submuestras por (Lance, Especie, Talla, Sexo)
+        // Sexo en submuestra: 1=Macho, 2=Hembra, 3=Indeterminado
+        var subGroupByTuple = submuestras
+            .GroupBy(s => new { 
+                Lance = s.Lance, 
+                Especie = s.Especie.Trim().ToUpper(), 
+                Talla = s.LargoTot, 
+                Sexo = s.Sexo 
+            })
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        var muestrasByLanceEspecie = muestras
+            .GroupBy(m => new { Lance = m.Lance, Especie = m.Especie.Trim().ToUpper() });
+
+        foreach (var mGroup in muestrasByLanceEspecie)
+        {
+            double lance = mGroup.Key.Lance;
+            string especie = mGroup.Key.Especie;
+
+            // Ignorar validación si el lance no tiene submuestras asociadas a esta muestra
+            bool hasSubmuestras = subGroupByTuple.Keys.Any(k => k.Lance == lance && k.Especie == especie);
+            if (!hasSubmuestras)
+            {
+                continue;
+            }
+
+            int casosTotales = 0;
+            int casosCorrectos = 0;
+            List<string> erroresDetalle = new List<string>();
+
+            foreach (var muestra in mGroup)
+            {
+                // Ignorar validación en muestras automáticas
+                if (muestra.Automatica == 1) continue;
+
+                foreach (var tally in muestra.Tallies)
+                {
+                    int talla = tally.Size;
+
+                    // Función local para procesar cada sexo
+                    void Evaluar(int cantidadMuestra, int sexoCode)
+                    {
+                        if (cantidadMuestra == 0) return;
+
+                        int esperado = (int)Math.Ceiling(cantidadMuestra / 5.0);
+                        
+                        var tupleKey = new { Lance = lance, Especie = especie, Talla = talla, Sexo = sexoCode };
+                        int reales = subGroupByTuple.TryGetValue(tupleKey, out int count) ? count : 0;
+
+                        casosTotales++;
+                        if (reales == esperado)
+                        {
+                            casosCorrectos++;
+                        }
+                        else
+                        {
+                            string sexoNombre = sexoCode == 1 ? "Macho" : (sexoCode == 2 ? "Hembra" : "Indet.");
+                            erroresDetalle.Add($"Talla {talla} {sexoNombre}: esp {esperado}, real {reales}");
+                        }
+                    }
+
+                    if (tally.Males > 0) Evaluar(tally.Males, 1);
+                    if (tally.Females > 0) Evaluar(tally.Females, 2);
+                    if (tally.Indeterminate > 0) Evaluar(tally.Indeterminate, 3);
+                }
+            }
+
+            // Evaluar los excesos (submuestras que existan y no tengan contraparte en muestra)
+            var submuestrasExtras = subGroupByTuple
+                .Where(kvp => kvp.Key.Lance == lance && kvp.Key.Especie == especie)
+                .ToList();
+            
+            foreach (var extra in submuestrasExtras)
+            {
+                bool fueEvaluado = mGroup.Any(m => m.Tallies.Any(t => 
+                    t.Size == extra.Key.Talla && 
+                    ((extra.Key.Sexo == 1 && t.Males > 0) || 
+                     (extra.Key.Sexo == 2 && t.Females > 0) || 
+                     (extra.Key.Sexo == 3 && t.Indeterminate > 0))
+                ));
+
+                if (!fueEvaluado)
+                {
+                    casosTotales++;
+                    string sexoNombre = extra.Key.Sexo == 1 ? "Macho" : (extra.Key.Sexo == 2 ? "Hembra" : "Indet.");
+                    erroresDetalle.Add($"Talla {extra.Key.Talla} {sexoNombre}: esp 0, real {extra.Value}");
+                }
+            }
+
+            if (casosTotales > 0)
+            {
+                double porcentaje = (double)casosCorrectos / casosTotales * 100.0;
+                
+                if (porcentaje < 100.0)
+                {
+                    string detallesStr = string.Join("; ", erroresDetalle);
+                    report.AddIssue(ValidationLevel.Warning, "Consistencia Biológica", 
+                        $"La consistencia biométrica (Submuestra vs Muestra) para la especie {especie} en el lance {lance} es del {porcentaje:F1}%. Fallos: {detallesStr}.", 
+                        $"Lance {lance} {especie}");
+                }
+            }
+        }
     }
 }

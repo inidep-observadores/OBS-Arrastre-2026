@@ -91,6 +91,7 @@ public class LegacyMuestra
     public double PesoMues { get; set; }
     public double? FactPond { get; set; }
     public int TipoMuestra { get; set; } = 1; // 1 = Estandar, 2 = Descarte
+    public int? Automatica { get; set; }
     
     // Tallas empaquetadas o decodificadas
     public List<DecodedTally> Tallies { get; } = new();
