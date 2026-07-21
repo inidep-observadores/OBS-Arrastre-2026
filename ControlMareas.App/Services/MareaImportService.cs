@@ -496,6 +496,35 @@ public class MareaImportService : IMareaImportService
             .ThenBy(c => c.CodigoInidep)
             .ToList();
 
+        // Helper unificado para buscar la especie
+        string? ResolveEspecieId(string? codEspec, string? nombreOriginal)
+        {
+            if (!string.IsNullOrEmpty(codEspec))
+            {
+                var codigoTrim = codEspec.Trim();
+                if (especieByCodigoMap.TryGetValue(codigoTrim, out var eId)) return eId;
+                
+                var matchByCode = candidatosEspecies.FirstOrDefault(c => c.CodigoInidep == codigoTrim);
+                if (matchByCode != null) return matchByCode.Id;
+            }
+            
+            if (!string.IsNullOrEmpty(nombreOriginal))
+            {
+                var normName = nombreOriginal.Trim().ToUpper().Normalize(NormalizationForm.FormC);
+                var exactMatch = candidatosEspecies.FirstOrDefault(c => 
+                    c.NombreVulgar == normName || 
+                    c.NombreCientifico == normName);
+                if (exactMatch != null) return exactMatch.Id;
+                
+                var normNameNoAccents = RemoveAccents(normName);
+                var accentMatch = candidatosEspecies.FirstOrDefault(c => 
+                    RemoveAccents(c.NombreVulgar) == normNameNoAccents || 
+                    RemoveAccents(c.NombreCientifico) == normNameNoAccents);
+                if (accentMatch != null) return accentMatch.Id;
+            }
+            return null;
+        }
+
 
 
         // Map Capturas -> Lances
@@ -571,7 +600,7 @@ public class MareaImportService : IMareaImportService
             {
                 if (c.Especies.TryGetValue(sCode, out var val) && val > 0)
                 {
-                    especieByCodigoMap.TryGetValue(sCode, out var especieId);
+                    string? especieId = ResolveEspecieId(sCode, null);
                     
                     lance.ItemsCaptura.Add(new ItemCaptura
                     {
@@ -598,33 +627,7 @@ public class MareaImportService : IMareaImportService
             if (lanceMap.TryGetValue(rm.Lance, out var lance))
             {
                 // Resolución de especie: Priorizar código, luego nombre (con puente incluido)
-                string? especieId = null;
-                if (!string.IsNullOrEmpty(rm.CodEspec)) especieByCodigoMap.TryGetValue(rm.CodEspec.Trim(), out especieId);
-                
-                if (especieId == null && !string.IsNullOrEmpty(rm.Especie))
-                {
-                    var normName = rm.Especie.Trim().ToUpper().Normalize(NormalizationForm.FormC);
-                    var exactMatch = candidatosEspecies.FirstOrDefault(c => 
-                        c.NombreVulgar == normName || 
-                        c.NombreCientifico == normName);
-                    
-                    if (exactMatch != null)
-                    {
-                        especieId = exactMatch.Id;
-                    }
-                    else
-                    {
-                        var normNameNoAccents = RemoveAccents(normName);
-                        var accentMatch = candidatosEspecies.FirstOrDefault(c => 
-                            RemoveAccents(c.NombreVulgar) == normNameNoAccents || 
-                            RemoveAccents(c.NombreCientifico) == normNameNoAccents);
-                        
-                        if (accentMatch != null)
-                        {
-                            especieId = accentMatch.Id;
-                        }
-                    }
-                }
+                string? especieId = ResolveEspecieId(rm.CodEspec, rm.Especie);
 
 
                 if (especieId != null)
@@ -708,32 +711,8 @@ public class MareaImportService : IMareaImportService
                 {
                     if (lanceMap.TryGetValue(grupo.Key.Lance, out var lance))
                     {
-                        string? especieId = null;
                         var muestraEjemplo = grupo.First();
-
-                        if (grupo.Key.EspecieKey != null)
-                        {
-                            var exactMatch = candidatosEspecies.FirstOrDefault(c => 
-                                c.NombreVulgar == grupo.Key.EspecieKey || 
-                                c.NombreCientifico == grupo.Key.EspecieKey);
-
-                            if (exactMatch != null)
-                            {
-                                especieId = exactMatch.Id;
-                            }
-                            else
-                            {
-                                var normNameNoAccents = RemoveAccents(grupo.Key.EspecieKey);
-                                var accentMatch = candidatosEspecies.FirstOrDefault(c => 
-                                    RemoveAccents(c.NombreVulgar) == normNameNoAccents || 
-                                    RemoveAccents(c.NombreCientifico) == normNameNoAccents);
-
-                                if (accentMatch != null)
-                                {
-                                    especieId = accentMatch.Id;
-                                }
-                            }
-                        }
+                        string? especieId = ResolveEspecieId(null, grupo.Key.EspecieKey);
 
                         if (especieId != null)
                         {
