@@ -1429,6 +1429,9 @@ public sealed class MareaValidationEngine
                 {
                     int talla = tally.Size;
 
+                    // Ignorar tallas menores a 19 por regla de negocio
+                    if (talla < 19) continue;
+
                     // Función local para procesar cada sexo
                     void Evaluar(int cantidadMuestra, int sexoCode)
                     {
@@ -1464,6 +1467,9 @@ public sealed class MareaValidationEngine
             
             foreach (var extra in submuestrasExtras)
             {
+                // Ignorar tallas menores a 19 por regla de negocio
+                if (extra.Key.Talla < 19) continue;
+
                 bool fueEvaluado = mGroup.Any(m => m.Tallies.Any(t => 
                     t.Size == extra.Key.Talla && 
                     ((extra.Key.Sexo == 1 && t.Males > 0) || 
