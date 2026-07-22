@@ -997,6 +997,11 @@
                                       Foreground="{DynamicResource PrimaryTextBrush}"
                                       Margin="0,0,0,16"/>
 
+                            <CheckBox Content="Omitir validación Muestra->Submuestra"
+                                      IsChecked="{Binding OmitirValidacionMuestraSubmuestra}"
+                                      Foreground="{DynamicResource PrimaryTextBrush}"
+                                      Margin="0,0,0,16"/>
+
                             <CheckBox Content="Filtrar diferencias por tolerancia" 
                                       IsChecked="{Binding FiltrarDiferencias}"
                                       IsEnabled="{Binding IsFiltrarHabilitado}"

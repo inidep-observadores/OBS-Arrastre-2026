@@ -13,6 +13,13 @@ public class ValidarMareaDialogViewModel : ObservableObject
     private bool _filtrarDiferencias;
     private double _toleranciaFiltro;
     private bool _omitirValidacionCapturaProduccion;
+    private bool _omitirValidacionMuestraSubmuestra;
+
+    public bool OmitirValidacionMuestraSubmuestra
+    {
+        get => _omitirValidacionMuestraSubmuestra;
+        set => SetProperty(ref _omitirValidacionMuestraSubmuestra, value);
+    }
 
     public bool OmitirValidacionCapturaProduccion
     {
@@ -62,6 +69,7 @@ public class ValidarMareaDialogViewModel : ObservableObject
         var settings = _userSettingsService.GetSettings();
         _filtrarDiferencias = settings.FiltrarDiferenciasAuditoria;
         _toleranciaFiltro = settings.ToleranciaFiltroAuditoria;
+        _omitirValidacionMuestraSubmuestra = settings.OmitirValidacionMuestraSubmuestra;
 
         AcceptCommand = new RelayCommand(Accept);
         CancelCommand = new RelayCommand(Cancel);
@@ -73,6 +81,7 @@ public class ValidarMareaDialogViewModel : ObservableObject
         {
             s.FiltrarDiferenciasAuditoria = FiltrarDiferencias;
             s.ToleranciaFiltroAuditoria = ToleranciaFiltro;
+            s.OmitirValidacionMuestraSubmuestra = OmitirValidacionMuestraSubmuestra;
         });
 
         DialogResult.TrySetResult(true);

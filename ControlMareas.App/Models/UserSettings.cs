@@ -13,4 +13,5 @@ public sealed class UserSettings
     public int? LastSelectedMareaAnio { get; set; }
     public bool FiltrarDiferenciasAuditoria { get; set; } = true;
     public double ToleranciaFiltroAuditoria { get; set; } = 2.0;
+    public bool OmitirValidacionMuestraSubmuestra { get; set; } = false;
 }

@@ -9,7 +9,7 @@ namespace ControlMareas.App.Services;
 
 public interface IMareaValidationService
 {
-    Task<MareaValidationReport> ValidateExistingMareaAsync(string mareaId, bool omitirValidacionCapturaProduccion = false);
+    Task<MareaValidationReport> ValidateExistingMareaAsync(string mareaId, bool omitirValidacionCapturaProduccion = false, bool omitirValidacionMuestraSubmuestra = false);
 }
 
 public class MareaValidationService : IMareaValidationService
@@ -27,7 +27,7 @@ public class MareaValidationService : IMareaValidationService
         _validator = new MareaValidationEngine();
     }
 
-    public async Task<MareaValidationReport> ValidateExistingMareaAsync(string mareaId, bool omitirValidacionCapturaProduccion = false)
+    public async Task<MareaValidationReport> ValidateExistingMareaAsync(string mareaId, bool omitirValidacionCapturaProduccion = false, bool omitirValidacionMuestraSubmuestra = false)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
 
@@ -297,7 +297,8 @@ public class MareaValidationService : IMareaValidationService
             skipConsensusHeuristic: true,
             filtrarDiferenciasAuditoria: settings.FiltrarDiferenciasAuditoria,
             toleranciaFiltroAuditoria: settings.ToleranciaFiltroAuditoria,
-            omitirValidacionCapturaProduccion: omitirValidacionCapturaProduccion
+            omitirValidacionCapturaProduccion: omitirValidacionCapturaProduccion,
+            omitirValidacionMuestraSubmuestra: omitirValidacionMuestraSubmuestra
         );
 
         // PERSISTIR CORRECCIONES: Si el motor corrigió totales, los guardamos en la DB

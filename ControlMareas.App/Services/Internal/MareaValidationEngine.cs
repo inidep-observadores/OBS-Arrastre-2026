@@ -33,7 +33,8 @@ public sealed class MareaValidationEngine
         bool skipConsensusHeuristic = false,
         bool filtrarDiferenciasAuditoria = true,
         double toleranciaFiltroAuditoria = 2.0,
-        bool omitirValidacionCapturaProduccion = false)
+        bool omitirValidacionCapturaProduccion = false,
+        bool omitirValidacionMuestraSubmuestra = false)
     {
         var report = new MareaValidationReport
         {
@@ -65,7 +66,10 @@ public sealed class MareaValidationEngine
 
         // 5. Validación de Submuestras (S*)
         ValidateSubSamples(report, submuestras, muestras, procesarSubmuestrasSinMuestraTalla);
-        ValidateBiometricConsistency(report, muestras, submuestras);
+        if (!omitirValidacionMuestraSubmuestra)
+        {
+            ValidateBiometricConsistency(report, muestras, submuestras);
+        }
 
         // 6. Validación de Producción (P*)
         ValidateProduction(report, produccion, especiesDict, especiesViejasDict, especiesCientificasDict, especiesCodigosValidos, capturas, filtrarDiferenciasAuditoria, toleranciaFiltroAuditoria, omitirValidacionCapturaProduccion);
@@ -1493,7 +1497,7 @@ public sealed class MareaValidationEngine
                 {
                     string detallesStr = string.Join("; ", erroresDetalle);
                     report.AddIssue(ValidationLevel.Warning, "Consistencia Biológica", 
-                        $"La consistencia biométrica (Submuestra vs Muestra) para la especie {especie} en el lance {lance} es del {porcentaje:F1}%. Fallos: {detallesStr}.", 
+                        $"La consistencia biométrica (Submuestra vs Muestra) es del {porcentaje:F1}%. Fallos: {detallesStr}.", 
                         $"Lance {lance} {especie}");
                 }
             }
