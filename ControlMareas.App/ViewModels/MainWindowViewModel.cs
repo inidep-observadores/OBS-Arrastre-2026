@@ -1854,12 +1854,6 @@ public class MainWindowViewModel : ObservableObject
                 .OrderBy(t => t.FechaHora)
                 .ToListAsync();
 
-            // Conversión explícita a UTC-3 para el ploteo en el mapa (Hora Local Argentina)
-            foreach (var p in trackPoints)
-            {
-                p.FechaHora = p.FechaHora.AddHours(-3);
-            }
-
             CurrentTrack = trackPoints;
 
             // Notificar a la vista para que actualice GMap.NET
