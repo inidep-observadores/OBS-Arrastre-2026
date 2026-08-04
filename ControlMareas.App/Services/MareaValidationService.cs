@@ -324,6 +324,22 @@ public class MareaValidationService : IMareaValidationService
 
                 foreach (var muestra in lance.Muestras)
                 {
+                    // Validación de madurez (Machos y Hembras) solo para Langostino
+                    if (muestra.Especie?.CodigoInidep == "5139030101")
+                    {
+                        foreach (var f in muestra.FrecuenciasTallas)
+                        {
+                            if (f.NroLangostinosMachoMaduros > f.NroMachos)
+                            {
+                                report.AddIssue(ValidationLevel.Error, "Muestras", $"Lance {lance.NroLance} (Especie: {muestra.Especie?.NombreVulgar ?? muestra.Especie?.NombreCientifico}): La talla {f.Talla} tiene {f.NroLangostinosMachoMaduros} machos maduros, superando el total de {f.NroMachos} machos.");
+                            }
+                            if ((f.NroLangostinosHembraMaduras + f.NroLangostinosHembraImpregnadas) > f.NroHembras)
+                            {
+                                report.AddIssue(ValidationLevel.Error, "Muestras", $"Lance {lance.NroLance} (Especie: {muestra.Especie?.NombreVulgar ?? muestra.Especie?.NombreCientifico}): La talla {f.Talla} tiene {f.NroLangostinosHembraMaduras + f.NroLangostinosHembraImpregnadas} hembras maduras e impregnadas, superando el total de {f.NroHembras} hembras.");
+                            }
+                        }
+                    }
+
                     // Buscar la muestra legacy correspondiente (por especie)
                     var legacyMuestra = muestrasList.FirstOrDefault(m => 
                         (int)m.Lance == lance.NroLance && 

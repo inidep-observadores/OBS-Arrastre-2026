@@ -420,6 +420,12 @@ public sealed class MareaValidationEngine
             }
         }
 
+        var duplicateLgs = lgs.GroupBy(l => l.Lance).Where(g => g.Count() > 1);
+        foreach (var dup in duplicateLgs)
+        {
+            report.AddIssue(ValidationLevel.Fatal, "Consistencia", $"El archivo L* contiene {dup.Count()} registros para el lance {dup.Key}. Sólo se admite un registro L* por lance.", $"Lance {dup.Key}");
+        }
+
         // 5. SEGUIMIENTO (T*) - Aquí el campo es "Buque"
         foreach (var t in tracking)
         {
@@ -1045,10 +1051,11 @@ public sealed class MareaValidationEngine
         {
             string ctx = $"Archivo L* - Lance {lg.Lance}";
             
-            // Buscar muestra correspondiente a Langostino (Código fijo "5139030101")
+            // Buscar muestra correspondiente a Langostino (Prioriza Código Inidep, y fallback por Nombre). Debe ser muestra Estándar (Tipo 1).
             var muestraM = muestras.FirstOrDefault(m => 
                 (int)m.Lance == (int)lg.Lance && 
-                m.CodEspec == "5139030101");
+                m.TipoMuestra == 1 &&
+                (m.CodEspec == "5139030101" || m.Especie?.Trim().ToUpper().Normalize(System.Text.NormalizationForm.FormC) == "LANGOSTINO"));
 
             if (muestraM == null)
             {
@@ -1060,18 +1067,36 @@ public sealed class MareaValidationEngine
                 continue;
             }
 
-            // Verificar que cada talla en L* exista en M*
+            // Verificar que cada talla en L* exista en M* y aplicar validaciones biológicas
             foreach (var kvp in lg.Frecuencias)
             {
                 int tallaL = kvp.Key;
                 if (kvp.Value > 0)
                 {
-                    bool existeEnM = muestraM.Tallies.Any(t => t.Size == tallaL);
-                    if (!existeEnM)
+                    var tallyM = muestraM.Tallies.FirstOrDefault(t => t.Size == tallaL);
+                    if (tallyM == null)
                     {
                         report.AddIssue(ValidationLevel.Fatal, "Integridad L/M", 
                             $"El archivo L* registra datos de madurez para la talla {tallaL} mm, pero esa talla no figura como medida en el archivo de muestra (M*).", 
-                            $"Lance {lg.Lance} - Especie {lg.CodEspecIE} - Talla {tallaL}");
+                            $"Lance {lg.Lance} - Especie LANGOSTINO - Talla {tallaL}");
+                    }
+                    else
+                    {
+                        // Validaciones biológicas L* vs M*
+                        var decoded = LegacyDecoder.DecodeMatureTally(kvp.Value);
+                        if (decoded.MatureMales > tallyM.Males)
+                        {
+                            report.AddIssue(ValidationLevel.Error, "Integridad L/M",
+                                $"La talla {tallaL} tiene {decoded.MatureMales} machos maduros (archivo L*), superando el total de {tallyM.Males} machos registrados (archivo M*).",
+                                $"Lance {lg.Lance} - Especie LANGOSTINO - Talla {tallaL}");
+                        }
+                        
+                        if ((decoded.MatureFemales + decoded.ImpregnatedFemales) > tallyM.Females)
+                        {
+                            report.AddIssue(ValidationLevel.Error, "Integridad L/M",
+                                $"La talla {tallaL} tiene {decoded.MatureFemales + decoded.ImpregnatedFemales} hembras maduras e impregnadas (archivo L*), superando el total de {tallyM.Females} hembras registradas (archivo M*).",
+                                $"Lance {lg.Lance} - Especie LANGOSTINO - Talla {tallaL}");
+                        }
                     }
                 }
             }

@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using NSubstitute;
 using ControlMareas.App.Services;
 using ControlMareas.App.ViewModels;
@@ -103,5 +103,40 @@ public sealed class MuestraEditViewModelValidatorTests
         var result = _validator.Validate(vm);
 
         result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void FrecuenciasTallas_MachoMadurosSuperaMachosTotales_FallaValidacion()
+    {
+        var vm = CrearVm();
+        vm.EspecieId = "esp-001";
+        vm.FrecuenciasTallas.Add(new FrecuenciaTallaViewModel
+        {
+            Talla = 10,
+            NroMachos = 5,
+            NroLangostinosMachoMaduros = 6
+        });
+
+        var result = _validator.Validate(vm);
+
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("NroLangostinosMachoMaduros"));
+    }
+
+    [Fact]
+    public void FrecuenciasTallas_HembrasMadurasEImpregnadasSuperaHembrasTotales_FallaValidacion()
+    {
+        var vm = CrearVm();
+        vm.EspecieId = "esp-001";
+        vm.FrecuenciasTallas.Add(new FrecuenciaTallaViewModel
+        {
+            Talla = 10,
+            NroHembras = 5,
+            NroLangostinosHembraMaduras = 3,
+            NroLangostinosHembraImpregnadas = 3
+        });
+
+        var result = _validator.Validate(vm);
+
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("NroLangostinosHembraMaduras") || e.PropertyName.Contains("FrecuenciasTallas"));
     }
 }
