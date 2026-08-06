@@ -202,6 +202,7 @@ public class MareaValidationService : IMareaValidationService
                         Intervalo = (int)m.Intervalo,
                         PesoMues = Math.Round((m.PesoMuestra_PesoGramos ?? 0) / 1000.0, 2),
                         TipoMuestra = m.TipoMuestra,
+                        Automatica = m.Automatica ? 1 : 0,
                         Area = _validator.CalculateArea(lance.LatitudInicioDecimal ?? 0, lance.LongitudInicioDecimal ?? 0)
                     };
 

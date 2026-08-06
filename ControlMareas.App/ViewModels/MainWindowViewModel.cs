@@ -497,12 +497,12 @@ public class MainWindowViewModel : ObservableObject
         NavigationItems.Add(new NavigationItemViewModel(NavigationSection.Procesos, "Procesos", "Lanzador de procesos", "⚡", true));
         NavigationItems.Add(new NavigationItemViewModel(NavigationSection.Separator, "", "", ""));
         NavigationItems.Add(ConfiguracionNavigationItem);
-
         _procesosVM = new ProcesosViewModel(
             new AsyncRelayCommand(OpenGenerarRecursosInformeAsync),
             new AsyncRelayCommand(OpenGenerarRecibiPdfAsync),
             new AsyncRelayCommand(OpenExportarDbfAsync),
-            new AsyncRelayCommand(OpenConfigurarUnidadDescarteAsync)
+            new AsyncRelayCommand(OpenConfigurarUnidadDescarteAsync),
+            new AsyncRelayCommand(OpenRecalcularPesosAsync)
         );
 
         _currentThemeMode = _themeService.CurrentMode;
@@ -1211,6 +1211,27 @@ public class MainWindowViewModel : ObservableObject
                 ShowMessage("Error", "No se pudo actualizar la unidad de descarte.", ex.Message, MessageDialogType.Error);
             }
         }
+    }
+
+    private async Task OpenRecalcularPesosAsync()
+    {
+        var activeMarea = _activeMareaManager.ActiveMarea;
+        if (activeMarea == null)
+        {
+            ShowMessage("Sin marea activa", "Debe seleccionar una marea activa para realizar esta acción.", null, MessageDialogType.Warning);
+            return;
+        }
+
+        var viewModel = new RecalcularPesosViewModel(activeMarea, _muestraService);
+        ActiveDialog = viewModel;
+
+        // Iniciar automáticamente
+        _ = viewModel.StartProcessAsync();
+
+        bool result = await viewModel.DialogResult.Task;
+        ActiveDialog = null;
+
+        await RefreshCurrentSectionAsync();
     }
 
     private async Task OpenGenerarRecursosInformeAsync()

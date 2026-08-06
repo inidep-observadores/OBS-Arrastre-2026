@@ -859,7 +859,7 @@ public sealed class MareaValidationEngine
             // --- FIN NUEVAS VALIDACIONES ---
 
             // Peso Alométrico
-            if (m.PesoMues <= 0)
+            if (m.PesoMues <= 0 || m.Automatica == 1)
             {
                 var lookupLogs = new List<string>();
                 double totalWeight = 0;

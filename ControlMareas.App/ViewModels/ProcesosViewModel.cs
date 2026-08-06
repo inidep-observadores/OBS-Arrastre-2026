@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Windows.Input;
 
@@ -24,16 +24,19 @@ public class ProcesosViewModel : ObservableObject
     public ICommand GenerarRecibiCommand { get; }
     public ICommand ExportarDbfCommand { get; }
     public ICommand CambiarUnidadDescarteCommand { get; }
+    public ICommand RecalcularPesosCommand { get; }
 
     public ProcesosViewModel(
         ICommand generarInformeCommand,
         ICommand generarRecibiCommand,
         ICommand exportarDbfCommand,
-        ICommand cambiarUnidadDescarteCommand)
+        ICommand cambiarUnidadDescarteCommand,
+        ICommand recalcularPesosCommand)
     {
         GenerarInformeCommand = generarInformeCommand;
         GenerarRecibiCommand = generarRecibiCommand;
         ExportarDbfCommand = exportarDbfCommand;
         CambiarUnidadDescarteCommand = cambiarUnidadDescarteCommand;
+        RecalcularPesosCommand = recalcularPesosCommand;
     }
 }

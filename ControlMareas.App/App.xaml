@@ -1531,6 +1531,104 @@
                 </Grid>
             </Border>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:RecalcularPesosViewModel}">
+            <Border Width="450" 
+                    Background="{DynamicResource CardBackgroundBrush}"
+                    BorderBrush="{DynamicResource CardBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="16"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="40" ShadowDepth="10" Opacity="0.15" Color="Black"/>
+                </Border.Effect>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="24,20" CornerRadius="16,16,0,0">
+                        <StackPanel>
+                            <TextBlock Text="RECALCULAR PESOS" 
+                                       FontSize="11" FontWeight="Bold" 
+                                       Foreground="{DynamicResource AccentBrush}" />
+                            <TextBlock Text="Cálculo de peso total por especie" 
+                                       FontSize="18" FontWeight="SemiBold" 
+                                       Foreground="{DynamicResource PrimaryTextBrush}"
+                                       Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Estado de Proceso (Cargando) -->
+                    <Border Grid.Row="1" Padding="24,30" Visibility="{Binding IsCompleted, Converter={StaticResource EnhancedBooleanToVisibilityConverter}, ConverterParameter=invert}">
+                        <StackPanel>
+                            <TextBlock Text="Recalculando los pesos de las muestras utilizando los parámetros alométricos (W = A * L^B). Por favor espere." 
+                                        Foreground="{DynamicResource SecondaryTextBrush}" 
+                                        TextWrapping="Wrap"
+                                        FontSize="13"
+                                        LineHeight="20"
+                                        Margin="0,0,0,24"/>
+                            
+                            <ProgressBar Value="{Binding ProgressValue}" Minimum="0" Maximum="100" Height="6" 
+                                         Foreground="{DynamicResource AccentBrush}" 
+                                         Background="{DynamicResource CardBorderBrush}" 
+                                         BorderThickness="0"/>
+                            
+                            <TextBlock Text="{Binding ProgressMessage}" 
+                                       Foreground="{DynamicResource PrimaryTextBrush}" 
+                                       Margin="0,8,0,0" 
+                                       HorizontalAlignment="Center" 
+                                       FontWeight="SemiBold"
+                                       FontSize="12"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Estado Completado -->
+                    <Border Grid.Row="1" Padding="24,30" Visibility="{Binding IsCompleted, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel>
+                            <Path Width="64" Height="64" 
+                                  Stretch="Uniform" 
+                                  Fill="{DynamicResource SuccessForegroundBrush}"
+                                  Data="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10,10-4.48,10-10S17.52,2,12,2z M10,17l-5-5l1.41-1.41L10,14.17l7.59-7.59L19,8L10,17z" 
+                                  Margin="0,0,0,16"/>
+                            
+                            <TextBlock Text="{Binding CompletionMessage}" 
+                                       Foreground="{DynamicResource PrimaryTextBrush}" 
+                                       TextWrapping="Wrap"
+                                       TextAlignment="Center"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="2" Background="{DynamicResource SurfaceBackgroundBrush}" Padding="24,20" CornerRadius="0,0,16,16">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            
+                            <Button Content="CANCELAR" 
+                                    Command="{Binding CancelCommand}"
+                                    Visibility="{Binding IsCompleted, Converter={StaticResource EnhancedBooleanToVisibilityConverter}, ConverterParameter=invert}"
+                                    Style="{StaticResource ThemeButtonStyle}"
+                                    Height="44"
+                                    Margin="0,0,8,0"/>
+                            <Button Grid.Column="1"
+                                    Content="CERRAR" 
+                                    Command="{Binding CloseCommand}"
+                                    Visibility="{Binding IsCompleted, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Height="44"
+                                    Margin="8,0,0,0"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+        </DataTemplate>
 
     </Application.Resources>
 

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using ControlMareas.App.Data.Entities;
@@ -13,4 +13,5 @@ public interface IMuestraService
     Task SaveMuestraAsync(Muestra muestra, CancellationToken cancellationToken = default);
     Task DeleteMuestraAsync(string id, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<EspecieLargoPeso>> GetParametrosAlometricosAsync(string especieId, CancellationToken cancellationToken = default);
+    Task RecalcularPesosMuestrasAsync(string mareaId, IProgress<(int Current, int Total, string Message)>? progress = null, CancellationToken cancellationToken = default);
 }
