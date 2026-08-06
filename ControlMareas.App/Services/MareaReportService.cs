@@ -1262,7 +1262,7 @@ public class MareaReportService : IMareaReportService
         table.Alignment = Alignment.center;
         table.Design = TableDesign.TableGrid;
         table.AutoFit = AutoFit.Window;
-        table.SetWidthsPercentage(new float[] { 36, 11, 11, 10, 9, 9, 14 }, null);
+        table.SetWidthsPercentage(new float[] { 33, 16, 14, 11, 10, 7, 9 }, null);
 
         // Headers
         string[] headers = { "Especie", "Kilos", "Descarte", "Desc.%", "Lances", "Días", "Horas" };
@@ -1338,7 +1338,7 @@ public class MareaReportService : IMareaReportService
         table.Alignment = Alignment.center;
         table.Design = TableDesign.TableGrid;
         table.AutoFit = AutoFit.Window;
-        table.SetWidthsPercentage(new float[] { 36, 11, 11, 10, 9, 9, 14 }, null);
+        table.SetWidthsPercentage(new float[] { 18, 18, 18, 14, 11, 8, 13 }, null);
 
         string[] headers = { "Área", "Kilos", "Descarte", "Desc.%", "Lances", "Días", "Horas" };
         for (int i = 0; i < headers.Length; i++)
@@ -1391,7 +1391,7 @@ public class MareaReportService : IMareaReportService
         table.Alignment = Alignment.center;
         table.Design = TableDesign.TableGrid;
         table.AutoFit = AutoFit.Window;
-        table.SetWidthsPercentage(new float[] { 34, 38, 8, 12, 8 }, null);
+        table.SetWidthsPercentage(new float[] { 34, 22, 15, 17, 12 }, null);
 
         string[] headers = { "Especie", "Producto", "Categoría", "Kilos", "Factor" };
         for (int i = 0; i < headers.Length; i++)
@@ -1741,8 +1741,8 @@ public class MareaReportService : IMareaReportService
         table.AutoFit = AutoFit.Window;
         
         var widths = showCutoff 
-            ? new float[] { 30, 10, 10, 10, 10, 10, 10, 10 }
-            : new float[] { 40, 10, 10, 10, 10, 10, 10 };
+            ? new float[] { 18, 9, 11, 13, 11, 11, 17, 10 }
+            : new float[] { 20, 11, 12, 14, 12, 12, 19 };
         table.SetWidthsPercentage(widths, null);
 
         var headersList = new List<string> { "Sexo", "Media", "Desv.St", "Porcent.", "Suma N", "Suma X", "Suma X2" };
@@ -1773,14 +1773,14 @@ public class MareaReportService : IMareaReportService
         if (sinSexo)
         {
             statsTotal.Porcent = 100;
-            FillRow(1, "Sin determinar sexo", statsTotal);
+            FillRow(1, "Indeterminado", statsTotal);
             FillRow(2, "Total", statsTotal, true);
         }
         else
         {
             FillRow(1, "Machos", statsMachos);
             FillRow(2, "Hembras", statsHembras);
-            FillRow(3, "Indet.", statsIndet);
+            FillRow(3, "Indeterminado", statsIndet);
             FillRow(4, "Total", statsTotal, true);
         }
 

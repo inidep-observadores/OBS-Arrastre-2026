@@ -640,7 +640,7 @@ namespace ControlMareas.App.Services
                     // Escribir Filas
                     WriteStatsRow(worksheet, ref currentRow, "Machos", statsMachos, false, showCutoff);
                     WriteStatsRow(worksheet, ref currentRow, "Hembras", statsHembras, false, showCutoff);
-                    WriteStatsRow(worksheet, ref currentRow, "Indet.", statsIndet, false, showCutoff);
+                    WriteStatsRow(worksheet, ref currentRow, "Indeterminado", statsIndet, false, showCutoff);
                     WriteStatsRow(worksheet, ref currentRow, "Total", statsTotal, true, showCutoff);
                 }
                 else
@@ -649,7 +649,7 @@ namespace ControlMareas.App.Services
                     var statsSinSexo = CalculateStats(frecuencias, f => f.NroTotal, cutoff);
                     statsSinSexo.Porcent = statsSinSexo.SumN > 0 ? 100 : 0;
 
-                    WriteStatsRow(worksheet, ref currentRow, "Sin determinar sexo", statsSinSexo, false, showCutoff);
+                    WriteStatsRow(worksheet, ref currentRow, "Indeterminado", statsSinSexo, false, showCutoff);
                     WriteStatsRow(worksheet, ref currentRow, "Total", statsSinSexo, true, showCutoff);
                 }
 
