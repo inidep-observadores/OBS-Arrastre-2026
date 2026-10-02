@@ -68,7 +68,7 @@ El presente documento detalla exhaustivamente todas las validaciones, chequeos y
 
 ### 3.2 Tallas y Frecuencias
 
-- **Tallas**: La última talla reportada no puede ser menor a la primera talla. El intervalo de tallas debe ser mayor a 0.
+- **Tallas**: La última talla reportada no puede ser menor a la primera talla. El intervalo de tallas debe ser mayor a 0. No pueden existir registros de frecuencias con la misma talla duplicada para una misma muestra.
 - **Reglas Específicas Langostino**:
   - *Machos*: El número de machos maduros no debe superar el total de machos contabilizados para la talla.
   - *Hembras*: La suma de hembras maduras más hembras impregnadas no debe superar el total de hembras contabilizadas para la talla.

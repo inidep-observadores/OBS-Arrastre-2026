@@ -325,6 +325,17 @@ public class MareaValidationService : IMareaValidationService
 
                 foreach (var muestra in lance.Muestras)
                 {
+                    var tallasDuplicadas = muestra.FrecuenciasTallas
+                        .GroupBy(f => f.Talla)
+                        .Where(g => g.Count() > 1)
+                        .Select(g => g.Key)
+                        .ToList();
+
+                    if (tallasDuplicadas.Any())
+                    {
+                        report.AddIssue(ValidationLevel.Error, "Muestras", $"Lance {lance.NroLance} (Especie: {muestra.Especie?.NombreVulgar ?? muestra.Especie?.NombreCientifico}): Existen registros de frecuencias con la misma talla duplicada ({string.Join(", ", tallasDuplicadas)}). Corrija la muestra antes de exportar.");
+                    }
+
                     // Validación de madurez (Machos y Hembras) solo para Langostino
                     if (muestra.Especie?.CodigoInidep == "5139030101")
                     {

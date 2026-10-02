@@ -400,7 +400,7 @@ public sealed class DbfExporterService : IDbfExporterService
             mRow[mIdx++] = (m.PesoMuestra_PesoGramos ?? 0) / 1000.0; // Kg
             mRow[mIdx++] = (object)m.FactPond ?? DBNull.Value;
 
-            var freqMap = m.FrecuenciasTallas.ToDictionary(f => (int)f.Talla, f => f);
+            var freqMap = m.FrecuenciasTallas.GroupBy(f => (int)f.Talla).ToDictionary(g => g.Key, g => g.First());
             int prim = m.PrimTalla ?? baseTalla;
             int ult = m.UltTalla ?? (m.FrecuenciasTallas.Any() ? (int)m.FrecuenciasTallas.Max(f => f.Talla) : prim);
 
