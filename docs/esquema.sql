@@ -66,6 +66,7 @@ CREATE TABLE mareas (
     ID TEXT NOT NULL CONSTRAINT pk_mareas PRIMARY KEY,
     AnioInidep INTEGER NOT NULL,
     NumeroInidep INTEGER NOT NULL,
+    tipo_marea INTEGER NOT NULL DEFAULT 0,
     Comentarios TEXT NULL,
     FechaInicio TEXT NOT NULL,
     FechaFin TEXT NULL,
@@ -168,6 +169,48 @@ CREATE INDEX idx_lances_marea_etapa_id ON lances(marea_etapa_id);
 CREATE INDEX idx_lances_fecha ON lances(fecha);
 
 
+-- lances_palangre definition
+
+CREATE TABLE lances_palangre (
+    lance_id TEXT NOT NULL PRIMARY KEY,
+    identificacion TEXT NULL,
+    hora_inicio_filado TEXT NULL,
+    hora_fin_filado TEXT NULL,
+    latitud_inicio_filado_decimal REAL NULL,
+    longitud_inicio_filado_decimal REAL NULL,
+    latitud_fin_filado_decimal REAL NULL,
+    longitud_fin_filado_decimal REAL NULL,
+    profundidad_inicio_filado_m INTEGER NULL,
+    profundidad_fin_filado_m INTEGER NULL,
+    fecha_virado TEXT NULL,
+    hora_inicio_virado TEXT NULL,
+    hora_fin_virado TEXT NULL,
+    latitud_inicio_virado_decimal REAL NULL,
+    longitud_inicio_virado_decimal REAL NULL,
+    latitud_fin_virado_decimal REAL NULL,
+    longitud_fin_virado_decimal REAL NULL,
+    profundidad_inicio_virado_m INTEGER NULL,
+    profundidad_fin_virado_m INTEGER NULL,
+    rumbo_virado_grados INTEGER NULL,
+    tipo_palangre TEXT NULL,
+    material_linea_madre TEXT NULL,
+    largo_linea_madre_m INTEGER NULL,
+    tramos_linea_madre INTEGER NULL,
+    largo_brazolada_cm INTEGER NULL,
+    separacion_brazoladas_m INTEGER NULL,
+    numero_brazoladas_por_tramo INTEGER NULL,
+    tipo_anzuelo TEXT NULL,
+    largo_anzuelo_mm INTEGER NULL,
+    ancho_anzuelo_mm INTEGER NULL,
+    anzuelos_total INTEGER NULL,
+    anzuelos_con_carnada INTEGER NULL,
+    anzuelos_sin_carnada INTEGER NULL,
+    carnada TEXT NULL,
+    observaciones TEXT NULL,
+    FOREIGN KEY (lance_id) REFERENCES lances(id) ON DELETE CASCADE
+);
+
+
 -- muestras definition
 
 CREATE TABLE muestras (
@@ -241,6 +284,7 @@ CREATE TABLE items_captura (
     DatoCaptura REAL NOT NULL,
     TipoDatoDescarte INTEGER NOT NULL,
     DatoDescarte REAL NOT NULL,
+    piezas INTEGER NULL,
     Metadata TEXT NULL,
     CONSTRAINT fk_items_captura_especies_especie_id FOREIGN KEY (EspecieID) REFERENCES especies (ID) ON DELETE RESTRICT,
     CONSTRAINT fk_items_captura_lances_lance_id FOREIGN KEY (LanceID) REFERENCES lances (ID) ON DELETE CASCADE

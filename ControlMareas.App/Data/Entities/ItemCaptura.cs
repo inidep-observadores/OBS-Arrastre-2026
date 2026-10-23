@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations.Schema;
 using ControlMareas.App.Models;
 
 namespace ControlMareas.App.Data.Entities;
@@ -19,6 +19,7 @@ public sealed class ItemCaptura
     public double DatoCaptura { get; set; }
     public TipoDatoDescarte TipoDatoDescarte { get; set; }
     public double DatoDescarte { get; set; }
+    public int? Piezas { get; set; }
     public string? Metadata { get; set; }
 
     [NotMapped]

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ControlMareas.App.Data.Configurations;
 using ControlMareas.App.Data.Entities;
 
@@ -14,6 +14,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<MareaEtapa> MareaEtapas => Set<MareaEtapa>();
     public DbSet<RegistroProduccion> RegistrosProduccion => Set<RegistroProduccion>();
     public DbSet<Lance> Lances => Set<Lance>();
+    public DbSet<LancePalangre> LancesPalangre => Set<LancePalangre>();
     public DbSet<Muestra> Muestras => Set<Muestra>();
     public DbSet<FrecuenciaTalla> FrecuenciasTallas => Set<FrecuenciaTalla>();
     public DbSet<FrecuenciaTallaEstadio> FrecuenciasTallasEstadio => Set<FrecuenciaTallaEstadio>();

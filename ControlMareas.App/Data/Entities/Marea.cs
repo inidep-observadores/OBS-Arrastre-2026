@@ -1,10 +1,13 @@
-﻿namespace ControlMareas.App.Data.Entities;
+using ControlMareas.App.Models;
+
+namespace ControlMareas.App.Data.Entities;
 
 public sealed class Marea
 {
     public string ID { get; set; } = Guid.NewGuid().ToString();
     public int AnioInidep { get; set; }
     public int NumeroInidep { get; set; }
+    public TipoMarea TipoMarea { get; set; } = TipoMarea.Arrastre;
     public string? Comentarios { get; set; }
     public DateTime FechaInicio { get; set; } = DateTime.Today;
     public DateTime? FechaFin { get; set; }

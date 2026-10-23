@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ControlMareas.App.Data.Entities;
 
@@ -18,6 +18,10 @@ public sealed class MareaConfiguration : IEntityTypeConfiguration<Marea>
 
         builder.Property(x => x.AnioInidep).HasColumnName("AnioInidep").IsRequired();
         builder.Property(x => x.NumeroInidep).HasColumnName("NumeroInidep").IsRequired();
+        builder.Property(x => x.TipoMarea)
+            .HasColumnName("tipo_marea")
+            .HasDefaultValue(ControlMareas.App.Models.TipoMarea.Arrastre)
+            .IsRequired();
         builder.Property(x => x.Comentarios).HasColumnName("Comentarios");
         builder.Property(x => x.FechaInicio).HasColumnName("FechaInicio").IsRequired();
         builder.Property(x => x.FechaFin).HasColumnName("FechaFin");

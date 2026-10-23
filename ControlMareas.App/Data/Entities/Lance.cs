@@ -64,6 +64,7 @@ public sealed class Lance
     public double? MallaSobre { get; set; }
 
     // Navigation properties
+    public LancePalangre? DetallePalangre { get; set; }
     public ICollection<Muestra> Muestras { get; set; } = new List<Muestra>();
     public ICollection<ItemCaptura> ItemsCaptura { get; set; } = new List<ItemCaptura>();
 

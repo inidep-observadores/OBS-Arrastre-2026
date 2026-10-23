@@ -15,7 +15,7 @@ namespace ControlMareas.App.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.8");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.13");
 
             modelBuilder.Entity("ControlMareas.App.Data.Entities.AuditoriaMareaLote", b =>
                 {
@@ -401,6 +401,10 @@ namespace ControlMareas.App.Migrations
                         .HasColumnType("INTEGER")
                         .HasColumnName("NumeroOrden");
 
+                    b.Property<int?>("Piezas")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("piezas");
+
                     b.Property<int>("TipoDatoCaptura")
                         .HasColumnType("INTEGER")
                         .HasColumnName("TipoDatoCaptura");
@@ -732,6 +736,153 @@ namespace ControlMareas.App.Migrations
                     b.ToTable("lances", (string)null);
                 });
 
+            modelBuilder.Entity("ControlMareas.App.Data.Entities.LancePalangre", b =>
+                {
+                    b.Property<string>("LanceId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("lance_id");
+
+                    b.Property<int?>("AnchoAnzueloMm")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("ancho_anzuelo_mm");
+
+                    b.Property<int?>("AnzuelosConCarnada")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("anzuelos_con_carnada");
+
+                    b.Property<int?>("AnzuelosSinCarnada")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("anzuelos_sin_carnada");
+
+                    b.Property<int?>("AnzuelosTotal")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("anzuelos_total");
+
+                    b.Property<string>("Carnada")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("carnada");
+
+                    b.Property<string>("FechaVirado")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("fecha_virado");
+
+                    b.Property<string>("HoraFinFilado")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("hora_fin_filado");
+
+                    b.Property<string>("HoraFinVirado")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("hora_fin_virado");
+
+                    b.Property<string>("HoraInicioFilado")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("hora_inicio_filado");
+
+                    b.Property<string>("HoraInicioVirado")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("hora_inicio_virado");
+
+                    b.Property<string>("Identificacion")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("identificacion");
+
+                    b.Property<int?>("LargoAnzueloMm")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("largo_anzuelo_mm");
+
+                    b.Property<int?>("LargoBrazoladaCm")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("largo_brazolada_cm");
+
+                    b.Property<int?>("LargoLineaMadreM")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("largo_linea_madre_m");
+
+                    b.Property<double?>("LatitudFinFiladoDecimal")
+                        .HasColumnType("REAL")
+                        .HasColumnName("latitud_fin_filado_decimal");
+
+                    b.Property<double?>("LatitudFinViradoDecimal")
+                        .HasColumnType("REAL")
+                        .HasColumnName("latitud_fin_virado_decimal");
+
+                    b.Property<double?>("LatitudInicioFiladoDecimal")
+                        .HasColumnType("REAL")
+                        .HasColumnName("latitud_inicio_filado_decimal");
+
+                    b.Property<double?>("LatitudInicioViradoDecimal")
+                        .HasColumnType("REAL")
+                        .HasColumnName("latitud_inicio_virado_decimal");
+
+                    b.Property<double?>("LongitudFinFiladoDecimal")
+                        .HasColumnType("REAL")
+                        .HasColumnName("longitud_fin_filado_decimal");
+
+                    b.Property<double?>("LongitudFinViradoDecimal")
+                        .HasColumnType("REAL")
+                        .HasColumnName("longitud_fin_virado_decimal");
+
+                    b.Property<double?>("LongitudInicioFiladoDecimal")
+                        .HasColumnType("REAL")
+                        .HasColumnName("longitud_inicio_filado_decimal");
+
+                    b.Property<double?>("LongitudInicioViradoDecimal")
+                        .HasColumnType("REAL")
+                        .HasColumnName("longitud_inicio_virado_decimal");
+
+                    b.Property<string>("MaterialLineaMadre")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("material_linea_madre");
+
+                    b.Property<int?>("NumeroBrazoladasPorTramo")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("numero_brazoladas_por_tramo");
+
+                    b.Property<string>("Observaciones")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("observaciones");
+
+                    b.Property<int?>("ProfundidadFinFiladoM")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("profundidad_fin_filado_m");
+
+                    b.Property<int?>("ProfundidadFinViradoM")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("profundidad_fin_virado_m");
+
+                    b.Property<int?>("ProfundidadInicioFiladoM")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("profundidad_inicio_filado_m");
+
+                    b.Property<int?>("ProfundidadInicioViradoM")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("profundidad_inicio_virado_m");
+
+                    b.Property<int?>("RumboViradoGrados")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("rumbo_virado_grados");
+
+                    b.Property<int?>("SeparacionBrazoladasM")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("separacion_brazoladas_m");
+
+                    b.Property<string>("TipoAnzuelo")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tipo_anzuelo");
+
+                    b.Property<string>("TipoPalangre")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tipo_palangre");
+
+                    b.Property<int?>("TramosLineaMadre")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("tramos_linea_madre");
+
+                    b.HasKey("LanceId");
+
+                    b.ToTable("lances_palangre", (string)null);
+                });
+
             modelBuilder.Entity("ControlMareas.App.Data.Entities.Marea", b =>
                 {
                     b.Property<string>("ID")
@@ -764,6 +915,12 @@ namespace ControlMareas.App.Migrations
                     b.Property<int>("NumeroInidep")
                         .HasColumnType("INTEGER")
                         .HasColumnName("NumeroInidep");
+
+                    b.Property<int>("TipoMarea")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(0)
+                        .HasColumnName("tipo_marea");
 
                     b.HasKey("ID");
 
@@ -1196,6 +1353,17 @@ namespace ControlMareas.App.Migrations
                     b.Navigation("MareaEtapa");
                 });
 
+            modelBuilder.Entity("ControlMareas.App.Data.Entities.LancePalangre", b =>
+                {
+                    b.HasOne("ControlMareas.App.Data.Entities.Lance", "Lance")
+                        .WithOne("DetallePalangre")
+                        .HasForeignKey("ControlMareas.App.Data.Entities.LancePalangre", "LanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Lance");
+                });
+
             modelBuilder.Entity("ControlMareas.App.Data.Entities.Marea", b =>
                 {
                     b.HasOne("ControlMareas.App.Data.Entities.Buque", "Buque")
@@ -1308,6 +1476,8 @@ namespace ControlMareas.App.Migrations
 
             modelBuilder.Entity("ControlMareas.App.Data.Entities.Lance", b =>
                 {
+                    b.Navigation("DetallePalangre");
+
                     b.Navigation("ItemsCaptura");
 
                     b.Navigation("Muestras");
