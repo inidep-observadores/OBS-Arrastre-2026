@@ -166,6 +166,11 @@ public partial class MainWindow : Window
             {
                 var dp = lance.DetallePalangre;
 
+                PointLatLng? startCalPos = null;
+                PointLatLng? endCalPos = null;
+                PointLatLng? startVirPos = null;
+                PointLatLng? endVirPos = null;
+
                 // --- A. Segmento de Calado (Filado) ---
                 if (vm.ShowPalangreCalados)
                 {
@@ -174,10 +179,10 @@ public partial class MainWindow : Window
 
                     if (latIniCal.HasValue && lonIniCal.HasValue)
                     {
-                        var startCalPos = new PointLatLng(latIniCal.Value, lonIniCal.Value);
+                        startCalPos = new PointLatLng(latIniCal.Value, lonIniCal.Value);
 
                         // Marcador Inicio Calado (Verde atenuado)
-                        var startCalMarker = new GMapMarker(startCalPos)
+                        var startCalMarker = new GMapMarker(startCalPos.Value)
                         {
                             Shape = new Ellipse
                             {
@@ -193,7 +198,7 @@ public partial class MainWindow : Window
                         };
                         startCalMarker.Shape.MouseLeftButtonDown += (s, e) =>
                         {
-                            vm.SeekTrackToTime(vm.GetLanceDateTime(lance, true));
+                            vm.SeekTrackToTime(vm.GetPalangreDateTime(lance, PalangreFase.InicioCalado));
                             e.Handled = true;
                         };
                         MainMap.Markers.Add(startCalMarker);
@@ -203,27 +208,26 @@ public partial class MainWindow : Window
 
                         if (latFinCal.HasValue && lonFinCal.HasValue)
                         {
-                            var endCalPos = new PointLatLng(latFinCal.Value, lonFinCal.Value);
+                            endCalPos = new PointLatLng(latFinCal.Value, lonFinCal.Value);
 
-                            // Línea de Calado (Color atenuado y punteada)
+                            // Línea de Calado (Color atenuado y línea continua)
                             var caladoBrush = isSelected
                                 ? new SolidColorBrush(Colors.Violet) { Opacity = 0.5 }
                                 : new SolidColorBrush(Colors.CornflowerBlue) { Opacity = 0.4 };
 
-                            var caladoRoute = new GMapRoute(new List<PointLatLng> { startCalPos, endCalPos })
+                            var caladoRoute = new GMapRoute(new List<PointLatLng> { startCalPos.Value, endCalPos.Value })
                             {
                                 Shape = new Path
                                 {
                                     Stroke = caladoBrush,
                                     StrokeThickness = isSelected ? 2.5 : 1.5,
-                                    StrokeDashArray = new DoubleCollection { 4, 2 },
                                     ToolTip = CreateLanceRouteToolTip(lance, "CALADO")
                                 }
                             };
                             MainMap.Markers.Add(caladoRoute);
 
                             // Marcador Fin Calado (Naranja atenuado)
-                            var endCalMarker = new GMapMarker(endCalPos)
+                            var endCalMarker = new GMapMarker(endCalPos.Value)
                             {
                                 Shape = new Ellipse
                                 {
@@ -236,6 +240,11 @@ public partial class MainWindow : Window
                                     Cursor = Cursors.Hand
                                 },
                                 Offset = new Point(-4.5, -4.5)
+                            };
+                            endCalMarker.Shape.MouseLeftButtonDown += (s, e) =>
+                            {
+                                vm.SeekTrackToTime(vm.GetPalangreDateTime(lance, PalangreFase.FinCalado));
+                                e.Handled = true;
                             };
                             MainMap.Markers.Add(endCalMarker);
                         }
@@ -251,7 +260,6 @@ public partial class MainWindow : Window
                     var latFinVir = dp.LatitudFinViradoDecimal ?? lance.LatitudFinalDecimal;
                     var lonFinVir = dp.LongitudFinViradoDecimal ?? lance.LongitudFinalDecimal;
 
-                    PointLatLng? startVirPos = null;
                     if (latIniVir.HasValue && lonIniVir.HasValue)
                     {
                         startVirPos = new PointLatLng(latIniVir.Value, lonIniVir.Value);
@@ -271,12 +279,17 @@ public partial class MainWindow : Window
                             },
                             Offset = new Point(-6, -6)
                         };
+                        startVirMarker.Shape.MouseLeftButtonDown += (s, e) =>
+                        {
+                            vm.SeekTrackToTime(vm.GetPalangreDateTime(lance, PalangreFase.InicioVirado));
+                            e.Handled = true;
+                        };
                         MainMap.Markers.Add(startVirMarker);
                     }
 
                     if (latFinVir.HasValue && lonFinVir.HasValue)
                     {
-                        var endVirPos = new PointLatLng(latFinVir.Value, lonFinVir.Value);
+                        endVirPos = new PointLatLng(latFinVir.Value, lonFinVir.Value);
 
                         if (startVirPos.HasValue)
                         {
@@ -285,7 +298,7 @@ public partial class MainWindow : Window
                                 ? new SolidColorBrush(Colors.Magenta) { Opacity = 0.8 }
                                 : new SolidColorBrush(Colors.SteelBlue) { Opacity = 0.85 };
 
-                            var viradoRoute = new GMapRoute(new List<PointLatLng> { startVirPos.Value, endVirPos })
+                            var viradoRoute = new GMapRoute(new List<PointLatLng> { startVirPos.Value, endVirPos.Value })
                             {
                                 Shape = new Path
                                 {
@@ -298,7 +311,7 @@ public partial class MainWindow : Window
                         }
 
                         // Marcador Fin Virado (Rojo pleno)
-                        var endVirMarker = new GMapMarker(endVirPos)
+                        var endVirMarker = new GMapMarker(endVirPos.Value)
                         {
                             Shape = new Ellipse
                             {
@@ -314,10 +327,87 @@ public partial class MainWindow : Window
                         };
                         endVirMarker.Shape.MouseLeftButtonDown += (s, e) =>
                         {
-                            vm.SeekTrackToTime(vm.GetLanceDateTime(lance, false));
+                            vm.SeekTrackToTime(vm.GetPalangreDateTime(lance, PalangreFase.FinVirado));
                             e.Handled = true;
                         };
                         MainMap.Markers.Add(endVirMarker);
+                    }
+                }
+
+                // --- C. Líneas de Correspondencia entre Extremos de Calado y Virado ---
+                if (vm.ShowPalangreCalados && vm.ShowPalangreVirados)
+                {
+                    var calPoints = new List<PointLatLng>();
+                    if (startCalPos.HasValue) calPoints.Add(startCalPos.Value);
+                    if (endCalPos.HasValue) calPoints.Add(endCalPos.Value);
+
+                    var virPoints = new List<PointLatLng>();
+                    if (startVirPos.HasValue) virPoints.Add(startVirPos.Value);
+                    if (endVirPos.HasValue) virPoints.Add(endVirPos.Value);
+
+                    if (calPoints.Count > 0 && virPoints.Count > 0)
+                    {
+                        PointLatLng? closestCal = null;
+                        PointLatLng? closestVir = null;
+                        double minDistanceKm = double.MaxValue;
+
+                        foreach (var cp in calPoints)
+                        {
+                            foreach (var vp in virPoints)
+                            {
+                                double dist = CalculateDistanceKm(cp, vp);
+                                if (dist < minDistanceKm)
+                                {
+                                    minDistanceKm = dist;
+                                    closestCal = cp;
+                                    closestVir = vp;
+                                }
+                            }
+                        }
+
+                        if (closestCal.HasValue && closestVir.HasValue)
+                        {
+                            // Pincel azul pizarra sutil y semitransparente: visible sobre el agua pero en segundo plano respecto a los lances
+                            var connBrush = isSelected
+                                ? new SolidColorBrush(Colors.Violet) { Opacity = 0.8 }
+                                : new SolidColorBrush(Color.FromArgb(145, 65, 95, 125));
+
+                            // 1. Unir los extremos más próximos
+                            double distNm = minDistanceKm / 1.852;
+                            var connectionRoute1 = new GMapRoute(new List<PointLatLng> { closestCal.Value, closestVir.Value })
+                            {
+                                Shape = new Path
+                                {
+                                    Stroke = connBrush,
+                                    StrokeThickness = isSelected ? 1.4 : 1.0,
+                                    StrokeDashArray = new DoubleCollection { 2, 3 },
+                                    ToolTip = $"Lance #{lance.NroLance} - Extremos más próximos ({distNm:F2} mn / {minDistanceKm:F2} km)"
+                                }
+                            };
+                            MainMap.Markers.Add(connectionRoute1);
+
+                            // 2. Unir los otros dos extremos restantes (si ambos segmentos tienen inicio y fin)
+                            if (calPoints.Count == 2 && virPoints.Count == 2)
+                            {
+                                var otherCal = calPoints.First(p => Math.Abs(p.Lat - closestCal.Value.Lat) > 1e-7 || Math.Abs(p.Lng - closestCal.Value.Lng) > 1e-7);
+                                var otherVir = virPoints.First(p => Math.Abs(p.Lat - closestVir.Value.Lat) > 1e-7 || Math.Abs(p.Lng - closestVir.Value.Lng) > 1e-7);
+
+                                double otherDistKm = CalculateDistanceKm(otherCal, otherVir);
+                                double otherDistNm = otherDistKm / 1.852;
+
+                                var connectionRoute2 = new GMapRoute(new List<PointLatLng> { otherCal, otherVir })
+                                {
+                                    Shape = new Path
+                                    {
+                                        Stroke = connBrush,
+                                        StrokeThickness = isSelected ? 1.4 : 1.0,
+                                        StrokeDashArray = new DoubleCollection { 2, 3 },
+                                        ToolTip = $"Lance #{lance.NroLance} - Extremos opuestos ({otherDistNm:F2} mn / {otherDistKm:F2} km)"
+                                    }
+                                };
+                                MainMap.Markers.Add(connectionRoute2);
+                            }
+                        }
                     }
                 }
             }
@@ -630,6 +720,19 @@ public partial class MainWindow : Window
         double min = (abs - deg) * 60;
         string q = isLat ? (val >= 0 ? "N" : "S") : (val >= 0 ? "E" : "O");
         return $"{deg}º {min:00.0}' {q}".Replace('.', ',');
+    }
+
+    private static double CalculateDistanceKm(PointLatLng p1, PointLatLng p2)
+    {
+        double dLat = (p2.Lat - p1.Lat) * Math.PI / 180.0;
+        double dLon = (p2.Lng - p1.Lng) * Math.PI / 180.0;
+        double lat1 = p1.Lat * Math.PI / 180.0;
+        double lat2 = p2.Lat * Math.PI / 180.0;
+
+        double a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                   Math.Sin(dLon / 2) * Math.Sin(dLon / 2) * Math.Cos(lat1) * Math.Cos(lat2);
+        double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+        return 6371.0 * c;
     }
 
     private UIElement CreateVesselShape()

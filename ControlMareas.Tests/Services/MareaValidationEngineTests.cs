@@ -469,4 +469,115 @@ public class MareaValidationEngineTests
         report.Issues.Should().Contain(i => i.Level == ValidationLevel.Error && i.Category == "Esfuerzo" && i.Message.Contains("anzuelos"));
         report.Issues.Should().Contain(i => i.Level == ValidationLevel.Error && i.Category == "Captura" && i.Message.Contains("piezas pero la captura en kilos es 0"));
     }
+
+    [Fact]
+    public void ValidateMarea_ProductionBalance_Palangre_ShouldUseFechaVirado()
+    {
+        // Arrange: Lance de palangre calado el 10/05/2026 y virado el 11/05/2026
+        var cp = new LegacyCapturaPalangre
+        {
+            Barco = "B",
+            Marea = 100,
+            Lance = 1,
+            Fecha = new DateTime(2026, 5, 10), // Calado
+            FechaVi = new DateTime(2026, 5, 11), // Virado
+            HoraInic = 20.00,
+            HoraFinF = 23.00,
+            HoraIniV = 06.00,
+            HoraFinV = 12.00,
+            LatInic = 45.0,
+            LongInic = 60.0,
+            LatFinF = 45.1,
+            LongFinF = 60.1,
+            LatIniV = 45.1,
+            LongIniV = 60.1,
+            LatFinV = 45.0,
+            LongFinV = 60.0,
+            ProfIniF = 1200,
+            ProfFinF = 1200,
+            ProfIniV = 1200,
+            ProfFinV = 1200,
+            AnzNTotal = 5000,
+            CaptTotal = 1000
+        };
+        cp.Especies["7210080101"] = 1000;
+        cp.EspeciesOrder.Add("7210080101");
+
+        // Producción el día de virado (11/05/2026)
+        var prod = new LegacyProduccion
+        {
+            Marea = 100,
+            Fecha = new DateTime(2026, 5, 11),
+            Especie = "MERLUZA NEGRA",
+            Kilos = 500,
+            Factor = 2.0 // 500 * 2.0 = 1000 kg reconstruidos
+        };
+
+        var etapas = new List<(DateTime Inicio, DateTime Fin)>
+        {
+            (new DateTime(2026, 5, 1), new DateTime(2026, 5, 20))
+        };
+
+        // Act
+        var report = _engine.ValidateMarea(
+            "B", 2026, 100, null, null, null, null, etapas,
+            new() { cp }, new(), new(), new(), new(), new() { prod },
+            new() { ["MERLUZA NEGRA"] = "7210080101" }, new(), new(),
+            new() { "7210080101" }, new()
+        );
+
+        // Assert: No debe haber errores ni advertencias de balance diario en producción
+        report.Issues.Should().NotContain(i => i.Category == "Balance de Captura Diaria");
+    }
+
+    [Fact]
+    public void ValidateMarea_ProductionBalance_Arrastre_ShouldUseFechaFin()
+    {
+        // Arrange: Lance de arrastre iniciado el 10/05/2026 y finalizado el 11/05/2026 (cruce de medianoche)
+        var c = new LegacyCaptura
+        {
+            Barco = "B",
+            Marea = 100,
+            Lance = 2,
+            Fecha = new DateTime(2026, 5, 10),
+            FechaFin = new DateTime(2026, 5, 11),
+            HoraInic = 23.00,
+            HoraFinal = 02.00,
+            LatInic = 45.0,
+            LongInic = 60.0,
+            LatFinal = 45.2,
+            LongFinal = 60.2,
+            ProfInic = 200,
+            ProfFinal = 200,
+            CaptTotal = 2000
+        };
+        c.Especies["7210080102"] = 2000;
+        c.EspeciesOrder.Add("7210080102");
+
+        // Producción el día de finalización del lance (11/05/2026)
+        var prod = new LegacyProduccion
+        {
+            Marea = 100,
+            Fecha = new DateTime(2026, 5, 11),
+            Especie = "MERLUZA",
+            Kilos = 2000,
+            Factor = 1.0
+        };
+
+        var etapas = new List<(DateTime Inicio, DateTime Fin)>
+        {
+            (new DateTime(2026, 5, 1), new DateTime(2026, 5, 20))
+        };
+
+        // Act
+        var report = _engine.ValidateMarea(
+            "B", 2026, 100, null, null, null, null, etapas,
+            new() { c }, new(), new(), new(), new(), new() { prod },
+            new() { ["MERLUZA"] = "7210080102" }, new(), new(),
+            new() { "7210080102" }, new()
+        );
+
+        // Assert: No debe haber problemas de balance diario
+        report.Issues.Should().NotContain(i => i.Category == "Balance de Captura Diaria");
+    }
 }

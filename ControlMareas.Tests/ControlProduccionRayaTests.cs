@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 using ControlMareas.App.Data;
@@ -193,6 +193,171 @@ public class ControlProduccionRayaTests
         vm.ControlLanceDetails.Should().NotBeEmpty("Deberían mostrarse lances en el detalle lateral");
         vm.ControlLanceDetails.Should().Contain(d => d.NroLance == 42);
         vm.TotalCapturaKg.Should().Be(200);
+    }
+
+    [Fact]
+    public async Task LoadControlProduccionAsync_Palangre_ShouldGroupByFechaVirado_NotCalado()
+    {
+        // Arrange: Lance de palangre calado el 2026-05-10 y virado el 2026-05-11
+        var mareaId = "marea-palangre";
+        var etapaId = "etapa-palangre";
+        var marea = new Marea { ID = mareaId, TipoMarea = TipoMarea.Palangre };
+        var etapa = new MareaEtapa { ID = etapaId, MareaID = mareaId };
+        marea.Etapas.Add(etapa);
+
+        _activeMareaManager.ActiveMarea.Returns(marea);
+
+        var merluzaNegra = new Especie { ID = "esp-merluza-negra", CodigoInidep = "7210080101", NombreVulgar = "Merluza Negra" };
+
+        using (var db = await _dbContextFactory.CreateDbContextAsync())
+        {
+            db.Especies.Add(merluzaNegra);
+
+            var lance = new Lance
+            {
+                Id = "lance-palangre-1",
+                MareaEtapaId = etapaId,
+                MareaEtapa = etapa,
+                NroLance = 1,
+                Fecha = "2026-05-10", // Calado
+                DetallePalangre = new LancePalangre
+                {
+                    LanceId = "lance-palangre-1",
+                    FechaVirado = "2026-05-11", // Virado al día siguiente
+                    HoraInicioVirado = "06:00",
+                    HoraFinVirado = "12:00"
+                }
+            };
+
+            lance.ItemsCaptura.Add(new ItemCaptura
+            {
+                ID = "item-palangre-1",
+                EspecieID = merluzaNegra.ID,
+                Especie = merluzaNegra,
+                TipoDatoCaptura = TipoDatoCaptura.Kilogramos,
+                DatoCaptura = 1000,
+                Lance = lance
+            });
+
+            db.Lances.Add(lance);
+            await db.SaveChangesAsync();
+        }
+
+        // Producción registrada el 2026-05-11 (fecha de virado)
+        var regProd = new RegistroProduccion
+        {
+            Id = "prod-palangre-1",
+            MareaEtapaId = etapaId,
+            EspecieId = merluzaNegra.ID,
+            Especie = merluzaNegra,
+            Fecha = "2026-05-11",
+            Kg = 500,
+            Factor = 2.0 // 500 * 2.0 = 1000 kg reconstruidos
+        };
+        _produccionService.GetRegistrosProduccionAsync(etapaId).Returns(new List<RegistroProduccion> { regProd });
+
+        var vm = CreateViewModel();
+        // Navegar a vista de detalle por especie
+        typeof(MainWindowViewModel).GetProperty("ControlProduccionSelectedEspecieId")!.SetValue(vm, merluzaNegra.ID);
+        typeof(MainWindowViewModel).GetProperty("ControlProduccionSelectedEspecie")!.SetValue(vm, merluzaNegra);
+
+        // Act
+        await vm.LoadControlProduccionAsyncInternal();
+
+        // Assert
+        var items = vm.Records.OfType<ControlProduccionListItemViewModel>().ToList();
+        items.Should().HaveCount(1, "Debería haber una sola fila diaria de balance para la fecha de virado");
+        
+        var row = items.First();
+        row.Fecha.Date.Should().Be(new DateTime(2026, 5, 11), "La fecha del balance debe ser la fecha de virado (2026-05-11)");
+        row.CapturaBruta.Should().Be(1000);
+        row.CapturaReconstruida.Should().Be(1000);
+        row.DiferenciaKg.Should().Be(0);
+
+        // Verificar además que LoadControlLanceDetailsAsync filtre por la fecha de virado
+        await vm.LoadControlLanceDetailsAsyncInternal(row);
+        vm.ControlLanceDetails.Should().Contain(d => d.NroLance == 1);
+        vm.TotalCapturaKg.Should().Be(1000);
+    }
+
+    [Fact]
+    public async Task LoadControlProduccionAsync_Arrastre_ShouldGroupByFechaFin_WhenMidnightCrossed()
+    {
+        // Arrange: Lance de arrastre iniciado el 2026-05-10 a las 23:00 y finalizado el 2026-05-11 a las 02:00
+        var mareaId = "marea-arrastre";
+        var etapaId = "etapa-arrastre";
+        var marea = new Marea { ID = mareaId, TipoMarea = TipoMarea.Arrastre };
+        var etapa = new MareaEtapa { ID = etapaId, MareaID = mareaId };
+        marea.Etapas.Add(etapa);
+
+        _activeMareaManager.ActiveMarea.Returns(marea);
+
+        var merluzaHubbsi = new Especie { ID = "esp-hubbsi", CodigoInidep = "7210080102", NombreVulgar = "Merluza Común" };
+
+        using (var db = await _dbContextFactory.CreateDbContextAsync())
+        {
+            db.Especies.Add(merluzaHubbsi);
+
+            var lance = new Lance
+            {
+                Id = "lance-arrastre-1",
+                MareaEtapaId = etapaId,
+                MareaEtapa = etapa,
+                NroLance = 5,
+                Fecha = "2026-05-10",
+                FechaFin = new DateTime(2026, 5, 11), // Cruzó medianoche
+                HoraInicio = "23:00",
+                HoraFinal = "02:00"
+            };
+
+            lance.ItemsCaptura.Add(new ItemCaptura
+            {
+                ID = "item-arrastre-1",
+                EspecieID = merluzaHubbsi.ID,
+                Especie = merluzaHubbsi,
+                TipoDatoCaptura = TipoDatoCaptura.Kilogramos,
+                DatoCaptura = 2500,
+                Lance = lance
+            });
+
+            db.Lances.Add(lance);
+            await db.SaveChangesAsync();
+        }
+
+        // Producción registrada el 2026-05-11 (fecha fin de lance)
+        var regProd = new RegistroProduccion
+        {
+            Id = "prod-arrastre-1",
+            MareaEtapaId = etapaId,
+            EspecieId = merluzaHubbsi.ID,
+            Especie = merluzaHubbsi,
+            Fecha = "2026-05-11",
+            Kg = 2500,
+            Factor = 1.0
+        };
+        _produccionService.GetRegistrosProduccionAsync(etapaId).Returns(new List<RegistroProduccion> { regProd });
+
+        var vm = CreateViewModel();
+        typeof(MainWindowViewModel).GetProperty("ControlProduccionSelectedEspecieId")!.SetValue(vm, merluzaHubbsi.ID);
+        typeof(MainWindowViewModel).GetProperty("ControlProduccionSelectedEspecie")!.SetValue(vm, merluzaHubbsi);
+
+        // Act
+        await vm.LoadControlProduccionAsyncInternal();
+
+        // Assert
+        var items = vm.Records.OfType<ControlProduccionListItemViewModel>().ToList();
+        items.Should().HaveCount(1);
+        
+        var row = items.First();
+        row.Fecha.Date.Should().Be(new DateTime(2026, 5, 11), "La fecha del balance debe ser la de finalización del lance (2026-05-11)");
+        row.CapturaBruta.Should().Be(2500);
+        row.CapturaReconstruida.Should().Be(2500);
+        row.DiferenciaKg.Should().Be(0);
+
+        // Verificar el detalle de lances
+        await vm.LoadControlLanceDetailsAsyncInternal(row);
+        vm.ControlLanceDetails.Should().Contain(d => d.NroLance == 5);
+        vm.TotalCapturaKg.Should().Be(2500);
     }
 
     private TestMainWindowViewModel CreateViewModel()

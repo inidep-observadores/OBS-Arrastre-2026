@@ -2028,6 +2028,96 @@ public class MainWindowViewModel : ObservableObject
         return null;
     }
 
+    public DateTime? GetPalangreDateTime(Lance lance, PalangreFase fase)
+    {
+        var dp = lance.DetallePalangre;
+        if (dp == null) return GetLanceDateTime(lance, fase == PalangreFase.InicioCalado);
+
+        string fechaCalado = lance.Fecha;
+        string fechaVirado = dp.FechaVirado ?? lance.FechaFin?.ToString("yyyy-MM-dd") ?? lance.Fecha;
+
+        static DateTime? ParseDateAndTime(string? date, string? time)
+        {
+            if (string.IsNullOrWhiteSpace(date) || string.IsNullOrWhiteSpace(time)) return null;
+            if (DateTime.TryParse($"{date} {time}", out var dt)) return dt;
+            return null;
+        }
+
+        switch (fase)
+        {
+            case PalangreFase.InicioCalado:
+                return ParseDateAndTime(fechaCalado, dp.HoraInicioFilado ?? lance.HoraInicio);
+
+            case PalangreFase.FinCalado:
+            {
+                var dtFinCal = ParseDateAndTime(fechaCalado, dp.HoraFinFilado);
+                var dtIniCal = ParseDateAndTime(fechaCalado, dp.HoraInicioFilado ?? lance.HoraInicio);
+                if (dtFinCal.HasValue && dtIniCal.HasValue && dtFinCal.Value < dtIniCal.Value)
+                {
+                    dtFinCal = dtFinCal.Value.AddDays(1);
+                }
+                return dtFinCal;
+            }
+
+            case PalangreFase.InicioVirado:
+            {
+                var dtIniVir = ParseDateAndTime(fechaVirado, dp.HoraInicioVirado);
+                var dtIniCal = ParseDateAndTime(fechaCalado, dp.HoraInicioFilado ?? lance.HoraInicio);
+                if (dtIniVir.HasValue && dtIniCal.HasValue && dtIniVir.Value < dtIniCal.Value)
+                {
+                    dtIniVir = dtIniVir.Value.AddDays(1);
+                }
+                return dtIniVir;
+            }
+
+            case PalangreFase.FinVirado:
+            {
+                var dtFinVir = ParseDateAndTime(fechaVirado, dp.HoraFinVirado ?? lance.HoraFinal);
+                var dtIniVir = ParseDateAndTime(fechaVirado, dp.HoraInicioVirado);
+                if (dtFinVir.HasValue && dtIniVir.HasValue && dtFinVir.Value < dtIniVir.Value)
+                {
+                    dtFinVir = dtFinVir.Value.AddDays(1);
+                }
+                return dtFinVir;
+            }
+        }
+
+        return null;
+    }
+
+    public static DateTime? GetLanceCaptureDate(Lance lance)
+    {
+        // 1. Si es palangre: la captura entra y se procesa en la fecha de virado
+        if (lance.DetallePalangre != null && !string.IsNullOrWhiteSpace(lance.DetallePalangre.FechaVirado))
+        {
+            if (DateTime.TryParse(lance.DetallePalangre.FechaVirado, out var dtVir))
+            {
+                return dtVir.Date;
+            }
+        }
+
+        // 2. Para arrastre (o fallback): fecha de finalización del lance
+        if (lance.FechaFin.HasValue)
+        {
+            return lance.FechaFin.Value.Date;
+        }
+
+        // Si no tiene FechaFin explícita, evaluar si cruzó medianoche
+        if (DateTime.TryParse(lance.Fecha, out var dtInicio))
+        {
+            if (TimeSpan.TryParse(lance.HoraInicio, out var tsIni) && TimeSpan.TryParse(lance.HoraFinal, out var tsFin))
+            {
+                if (tsFin < tsIni)
+                {
+                    return dtInicio.Date.AddDays(1);
+                }
+            }
+            return dtInicio.Date;
+        }
+
+        return null;
+    }
+
     private void JumpToDate(DateTime targetDate)
     {
         if (!CurrentTrack.Any()) return;
@@ -2183,6 +2273,7 @@ public class MainWindowViewModel : ObservableObject
         
         // Obtener lances de la marea
         var lances = await dbContext.Lances
+            .Include(l => l.DetallePalangre)
             .Include(l => l.MareaEtapa)
             .Include(l => l.ItemsCaptura)
                 .ThenInclude(i => i.Especie)
@@ -2198,7 +2289,7 @@ public class MainWindowViewModel : ObservableObject
         }
 
         var filteredLances = lances
-            .Where(l => controlItem.IsSummaryView || (DateTime.TryParse(l.Fecha, out var ld) && ld.Date == controlItem.Fecha.Date))
+            .Where(l => controlItem.IsSummaryView || (GetLanceCaptureDate(l) is DateTime ld && ld.Date == controlItem.Fecha.Date))
             .OrderBy(l => l.NroLance)
             .ToList();
 
@@ -2808,6 +2899,7 @@ public class MainWindowViewModel : ObservableObject
             // Obtener lances (incluyendo ítems de captura) y producción
             using var dbContext = await _dbContextFactory.CreateDbContextAsync();
             var lances = await dbContext.Lances
+                .Include(l => l.DetallePalangre)
                 .Include(l => l.ItemsCaptura)
                     .ThenInclude(i => i.Especie)
                 .Where(l => l.MareaEtapa!.MareaID == activeMarea.ID)
@@ -3036,22 +3128,23 @@ public class MainWindowViewModel : ObservableObject
 
                 // Agrupar capturas filtradas por fecha
                 var catchByDate = lances
-                    .Where(l => DateTime.TryParse(l.Fecha, out _))
-                    .GroupBy(l => DateTime.Parse(l.Fecha).Date)
+                    .Select(l => new { Lance = l, FechaOperativa = GetLanceCaptureDate(l) })
+                    .Where(x => x.FechaOperativa.HasValue)
+                    .GroupBy(x => x.FechaOperativa!.Value.Date)
                     .Select(g => new
                     {
                         Fecha = g.Key,
-                        CapturaBruta = g.SelectMany(l => l.ItemsCaptura)
+                        CapturaBruta = g.SelectMany(x => x.Lance.ItemsCaptura)
                             .Where(c => isRayaGenericGroup 
                                 ? (IsRaya(c.Especie) && (IsGenericRaya(c.Especie) || !_commonRayaIds.Contains(c.EspecieID!))) 
                                 : c.EspecieID == ControlProduccionSelectedEspecieId)
                             .Sum(c => c.CapturaTotalKgCalculado),
-                        DescarteKg = g.SelectMany(l => l.ItemsCaptura)
+                        DescarteKg = g.SelectMany(x => x.Lance.ItemsCaptura)
                             .Where(c => isRayaGenericGroup 
                                 ? (IsRaya(c.Especie) && (IsGenericRaya(c.Especie) || !_commonRayaIds.Contains(c.EspecieID!))) 
                                 : c.EspecieID == ControlProduccionSelectedEspecieId)
                             .Sum(c => c.PesoDescarteCalculado),
-                        CapturaRetenida = g.SelectMany(l => l.ItemsCaptura)
+                        CapturaRetenida = g.SelectMany(x => x.Lance.ItemsCaptura)
                             .Where(c => isRayaGenericGroup 
                                 ? (IsRaya(c.Especie) && (IsGenericRaya(c.Especie) || !_commonRayaIds.Contains(c.EspecieID!))) 
                                 : c.EspecieID == ControlProduccionSelectedEspecieId)

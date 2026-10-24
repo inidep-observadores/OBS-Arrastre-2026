@@ -167,8 +167,9 @@ public sealed class MareaValidationEngine
         if (omitirValidacionCapturaProduccion) return;
 
         // 4. Balance de Masa Diario por Especie (REQ: Producción vs Captura Neta)
+        // En palangre la captura ingresa y se procesa en la fecha de virado; en arrastre en la fecha de fin de lance.
         var fechasProduccion = produccion.Select(p => p.Fecha.Date);
-        var fechasCaptura = capturas.Select(c => c.Fecha.Date);
+        var fechasCaptura = capturas.Select(GetFechaOperativaCaptura);
         var todasLasFechas = fechasProduccion.Union(fechasCaptura).Distinct().OrderBy(d => d);
 
         var nombresEspeciesProduccion = produccion
@@ -181,7 +182,7 @@ public sealed class MareaValidationEngine
         foreach (var fecha in todasLasFechas)
         {
             var lancesDelDia = capturas
-                .Where(c => c.Fecha.Date == fecha)
+                .Where(c => GetFechaOperativaCaptura(c) == fecha)
                 .Select(c => (int)c.Lance)
                 .OrderBy(n => n)
                 .ToList();
@@ -217,7 +218,7 @@ public sealed class MareaValidationEngine
 
                 // B. Obtener captura neta real de los lances: Suma(Captura - Descarte)
                 double capturaNetaReal = capturas
-                    .Where(c => c.Fecha.Date == fecha)
+                    .Where(c => GetFechaOperativaCaptura(c) == fecha)
                     .Sum(c => {
                         double cap = c.Especies.ContainsKey(codEspecie) ? c.Especies[codEspecie] : 0;
                         double des = c.DescartesPorEspecie.ContainsKey(codEspecie) ? c.DescartesPorEspecie[codEspecie] : 0;
@@ -274,6 +275,23 @@ public sealed class MareaValidationEngine
 
         var firstPart = string.Join(", ", distinctSorted.Take(distinctSorted.Count - 1));
         return $"lances {firstPart} y {distinctSorted.Last()}";
+    }
+
+    private static DateTime GetFechaOperativaCaptura(LegacyCaptura c)
+    {
+        // Para palangre: la captura sube a bordo y se procesa en la fecha de virado
+        if (c is LegacyCapturaPalangre cp && cp.FechaVi != DateTime.MinValue)
+        {
+            return cp.FechaVi.Date;
+        }
+
+        // Para arrastre (o fallback): fecha de finalización del lance
+        if (c.FechaFin.HasValue)
+        {
+            return c.FechaFin.Value.Date;
+        }
+
+        return c.Fecha.Date;
     }
 
     private string RemoveAccents(string text)
