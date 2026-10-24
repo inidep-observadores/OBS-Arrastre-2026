@@ -1,8 +1,43 @@
 # Historial de Versiones
 
 Documentación histórica del desarrollo del proyecto ControlMareas.
-Período documentado: 2026-04-09 a 2026-05-21.
+Período documentado: 2026-04-09 a 2026-10-24.
 Todas las versiones basadas en Semantic Versioning 2.0.0 y Conventional Commits 1.0.0.
+
+## [v1.12.0] - 2026-10-24
+
+**Descripción**: Soporte integral para pesquerías de palangre (archivos CP de 85 campos) abarcando modelo de datos, importación, validación de negocio y biológica, exportación DBF, reportes de esfuerzo pesquero en anzuelos, trazado cartográfico interactivo de calado/virado y editor de lances; junto con mejoras en consistencia biométrica y tracking.
+
+### Added (Características nuevas)
+- feat(lances): formulario de edición de lances de palangre y piezas de captura
+- feat(mapa): incorporar trazado diferenciado de calado y virado para mareas de palangre
+- feat(mareas): soporte de tipo de marea palangre en UI y DTOs
+- feat(reportes): tablas de esfuerzo por anzuelos y mapa de virado en palangre para informes Word y Excel
+- feat(exportacion): exportar capturas de palangre a archivos DBF (CP) con estructura de 85 columnas
+- feat(validacion): validaciones diferenciadas para capturas de palangre
+- feat(importacion): importar capturas de palangre (archivos CP)
+- feat(datos): agregar soporte de palangre al modelo de base de datos
+- feat(muestras): agregar proceso independiente para recálculo de pesos
+- feat(validaciones): agregar validaciones biológicas para langostino maduro
+- feat(auditoria): agregar opción para omitir validación biométrica muestra/submuestra
+- feat(biometria): excluir tallas menores a 19 cm en validación de consistencia entre muestras y submuestras
+- feat(biometria): implementar validación de consistencia entre muestras y submuestras
+
+### Fixed (Correcciones)
+- fix(exportacion): prevenir error por tallas duplicadas y agregar validación en auditoría
+- fix(reportes): ajustar anchos de columnas en tablas de informes Word y Excel
+- fix(mapa): eliminar conversión de zona horaria UTC para datos de tracking
+- fix(importacion): resolver identificación de especies históricas durante la carga final de datos
+- fix(importacion): evitar conversión de zona horaria al procesar el archivo de tracking
+- fix(importacion): resolver fallo al mapear especies históricas por nombre
+- fix(submuestras): mantener items en pantalla al cambiar de muestra en editor
+- fix(reportes): corregir ploteo de gráficos cuando solo existen tallas indeterminadas
+
+### Documentation (Documentación)
+- docs(palangre): documentar reglas de validación y negocio para capturas de palangre
+- docs(validaciones): agregar documento de reglas de negocio y validaciones
+
+---
 
 ## [v1.11.0] - 2026-06-18
 
