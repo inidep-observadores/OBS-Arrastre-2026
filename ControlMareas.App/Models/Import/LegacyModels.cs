@@ -71,6 +71,51 @@ public class LegacyCaptura
 }
 
 /// <summary>
+/// Representa un registro crudo de CAPTURA DE PALANGRE (CP*.DBF) para validación y persistencia.
+/// </summary>
+public class LegacyCapturaPalangre : LegacyCaptura
+{
+    public string Identific { get; set; } = string.Empty;
+
+    // Filado (Calado)
+    public double HoraFinF { get; set; }
+    public double LatFinF { get; set; }
+    public double LongFinF { get; set; }
+    public double ProfIniF { get; set; }
+    public double ProfFinF { get; set; }
+
+    // Virado
+    public DateTime FechaVi { get; set; }
+    public double HoraIniV { get; set; }
+    public double HoraFinV { get; set; }
+    public double LatIniV { get; set; }
+    public double LongIniV { get; set; }
+    public double LatFinV { get; set; }
+    public double LongFinV { get; set; }
+    public double ProfIniV { get; set; }
+    public double ProfFinV { get; set; }
+
+    // Arte de pesca y aparejo
+    public string TipPalan { get; set; } = string.Empty;
+    public string Material { get; set; } = string.Empty;
+    public double? LmLargo { get; set; }
+    public double? LmTramos { get; set; }
+    public double? BrzLargo { get; set; }
+    public double? BrzSepar { get; set; }
+    public double? BrzNxTrmo { get; set; }
+    public string AnzTipo { get; set; } = string.Empty;
+    public double? AnzLargo { get; set; }
+    public double? AnzAncho { get; set; }
+    public double? AnzNTotal { get; set; }
+    public double? AnzCCarn { get; set; }
+    public double? AnzSCarn { get; set; }
+    public string Carnada { get; set; } = string.Empty;
+
+    // Piezas por especie (ESPECIE_1..10 -> PIEZA_1..10)
+    public Dictionary<string, int> PiezasPorEspecie { get; } = new();
+}
+
+/// <summary>
 /// Representa un registro crudo de MUESTRAS (M*.DBF).
 /// </summary>
 public class LegacyMuestra

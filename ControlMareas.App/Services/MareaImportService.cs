@@ -55,6 +55,9 @@ public class MareaImportService : IMareaImportService
             // El nombre debe empezar con el prefijo
             if (!fileName.StartsWith(prefix.ToUpper())) continue;
 
+            // Si se busca "C", no debe ser "CP" (palangre)
+            if (prefix.Equals("C", StringComparison.OrdinalIgnoreCase) && fileName.StartsWith("CP", StringComparison.OrdinalIgnoreCase)) continue;
+
             // El nombre debe terminar con el año (2 dígitos)
             if (!fileName.EndsWith(yearSuffix.Replace(".DBF", ""))) continue;
 
@@ -85,7 +88,27 @@ public class MareaImportService : IMareaImportService
         }
 
         // 1. Resolver rutas de forma flexible (Marea 3 Año 2026 -> S326, S0326, S00326, etc.) limitando a los archivos seleccionados
-        string? cPath = ResolveFilePath(selectedFiles, "C", mareaNum, anio);
+        bool isPalangre = marea.TipoMarea == ControlMareas.App.Models.TipoMarea.Palangre;
+        string? cPath = null;
+        if (isPalangre)
+        {
+            cPath = ResolveFilePath(selectedFiles, "CP", mareaNum, anio);
+        }
+        else
+        {
+            cPath = ResolveFilePath(selectedFiles, "C", mareaNum, anio);
+            if (cPath == null)
+            {
+                var cpCandidate = ResolveFilePath(selectedFiles, "CP", mareaNum, anio);
+                if (cpCandidate != null)
+                {
+                    isPalangre = true;
+                    cPath = cpCandidate;
+                    marea.TipoMarea = ControlMareas.App.Models.TipoMarea.Palangre;
+                }
+            }
+        }
+
         string? mPath = ResolveFilePath(selectedFiles, "M", mareaNum, anio);
         string? mdPath = ResolveFilePath(selectedFiles, "MD", mareaNum, anio); // Tallas de descarte
         string? xPath = ResolveFilePath(selectedFiles, "X", mareaNum, anio);
@@ -95,6 +118,12 @@ public class MareaImportService : IMareaImportService
         string? pPath = ResolveFilePath(selectedFiles, "P", mareaNum, anio);
 
         var report = new MareaValidationReport();
+        report.TipoMarea = isPalangre ? ControlMareas.App.Models.TipoMarea.Palangre : ControlMareas.App.Models.TipoMarea.Arrastre;
+        if (isPalangre)
+        {
+            report.UnidadDescarte = ControlMareas.App.Models.TipoDatoDescarte.Kilogramos;
+        }
+
         bool isTrackingOnly = (tPath != null || cPath == null) && cPath == null && mPath == null && pPath == null;
         report.IsTrackingOnly = isTrackingOnly;
         
@@ -102,9 +131,10 @@ public class MareaImportService : IMareaImportService
 
         // Verificar archivos obligatorios (usando nombres amigables para el reporte si no se encuentran)
         string suffix = $"{mareaNum:D2}{anio % 100:D2}.DBF"; // Nombre sugerido para el error
+        string capturaPrefix = isPalangre ? "CP*" : "C*";
         if (!isTrackingOnly)
         {
-            if (cPath == null) initialIssues.Add(new ValidationIssue(ValidationLevel.Fatal, "Sistema", $"El archivo de CAPTURA obligatorio no se encuentra (esperado C*{suffix})"));
+            if (cPath == null) initialIssues.Add(new ValidationIssue(ValidationLevel.Fatal, "Sistema", $"El archivo de CAPTURA obligatorio no se encuentra (esperado {capturaPrefix}{suffix})"));
             if (mPath == null) initialIssues.Add(new ValidationIssue(ValidationLevel.Fatal, "Sistema", $"El archivo de MUESTRA obligatorio no se encuentra (esperado M*{suffix})"));
             if (sPath == null) initialIssues.Add(new ValidationIssue(ValidationLevel.Warning, "Sistema", $"El archivo de SUBMUESTRA no se encuentra (esperado S*{suffix})"));
             if (pPath == null) initialIssues.Add(new ValidationIssue(ValidationLevel.Fatal, "Sistema", $"El archivo de PRODUCCIÓN obligatorio no se encuentra (esperado P*{suffix})"));
@@ -120,7 +150,7 @@ public class MareaImportService : IMareaImportService
         meta.ImportFolder = basePath;
 
         meta.OriginalFilenames.Clear();
-        if (cPath != null) meta.OriginalFilenames["C"] = Path.GetFileName(cPath);
+        if (cPath != null) meta.OriginalFilenames[isPalangre ? "CP" : "C"] = Path.GetFileName(cPath);
         if (mPath != null) meta.OriginalFilenames["M"] = Path.GetFileName(mPath);
         if (mdPath != null) meta.OriginalFilenames["MD"] = Path.GetFileName(mdPath);
         if (xPath != null) meta.OriginalFilenames["X"] = Path.GetFileName(xPath);
@@ -142,7 +172,23 @@ public class MareaImportService : IMareaImportService
         report.MareaMetadata = marea.Metadata;
 
         // 2. Extraer datos (si los paths fueron resueltos)
-        var capturas = cPath != null ? await _extractor.ReadCapturasAsync(cPath) ?? new() : new();
+        List<LegacyCaptura> capturas;
+        if (cPath != null)
+        {
+            if (isPalangre)
+            {
+                var cpList = await _extractor.ReadCapturasPalangreAsync(cPath) ?? new();
+                capturas = cpList.Cast<LegacyCaptura>().ToList();
+            }
+            else
+            {
+                capturas = await _extractor.ReadCapturasAsync(cPath) ?? new();
+            }
+        }
+        else
+        {
+            capturas = new();
+        }
 
         // Si el buque de la marea es "S/D" (marea nueva) y tenemos lances extraídos del DBF,
         // intentamos usar el nombre del barco real registrado por el observador en el archivo.
@@ -351,6 +397,11 @@ public class MareaImportService : IMareaImportService
             procesarSubmuestrasSinMuestraTalla);
             
         // Restaurar atributos del reporte original que se perdían al instanciar uno nuevo
+        report.TipoMarea = isPalangre ? ControlMareas.App.Models.TipoMarea.Palangre : ControlMareas.App.Models.TipoMarea.Arrastre;
+        if (isPalangre)
+        {
+            report.UnidadDescarte = ControlMareas.App.Models.TipoDatoDescarte.Kilogramos;
+        }
         report.IsTrackingOnly = isTrackingOnly;
         report.ArchivosProcesados = archivosEncontrados;
         report.ImportPath = basePath;
@@ -594,6 +645,51 @@ public class MareaImportService : IMareaImportService
                 MallaSobre = c.MallSobre
             };
 
+            if (c is LegacyCapturaPalangre cp)
+            {
+                lance.FechaFin = cp.FechaVi != DateTime.MinValue ? cp.FechaVi : fechaFin;
+                lance.ProfundidadInicioM = (int)cp.ProfInic;
+                lance.ProfundidadFinalM = (int)cp.ProfFinal;
+                lance.DetallePalangre = new LancePalangre
+                {
+                    LanceId = lance.Id,
+                    Identificacion = cp.Identific,
+                    HoraInicioFilado = FormatTime(cp.HoraInic),
+                    HoraFinFilado = FormatTime(cp.HoraFinF),
+                    LatitudInicioFiladoDecimal = LegacyDecoder.DecodeCoordinate(cp.LatInic),
+                    LongitudInicioFiladoDecimal = LegacyDecoder.DecodeCoordinate(cp.LongInic),
+                    LatitudFinFiladoDecimal = LegacyDecoder.DecodeCoordinate(cp.LatFinF),
+                    LongitudFinFiladoDecimal = LegacyDecoder.DecodeCoordinate(cp.LongFinF),
+                    ProfundidadInicioFiladoM = (int)cp.ProfIniF,
+                    ProfundidadFinFiladoM = (int)cp.ProfFinF,
+                    FechaVirado = cp.FechaVi != DateTime.MinValue ? cp.FechaVi.ToString("yyyy-MM-dd") : null,
+                    HoraInicioVirado = FormatTime(cp.HoraIniV),
+                    HoraFinVirado = FormatTime(cp.HoraFinV),
+                    LatitudInicioViradoDecimal = LegacyDecoder.DecodeCoordinate(cp.LatIniV),
+                    LongitudInicioViradoDecimal = LegacyDecoder.DecodeCoordinate(cp.LongIniV),
+                    LatitudFinViradoDecimal = LegacyDecoder.DecodeCoordinate(cp.LatFinV),
+                    LongitudFinViradoDecimal = LegacyDecoder.DecodeCoordinate(cp.LongFinV),
+                    ProfundidadInicioViradoM = (int)cp.ProfIniV,
+                    ProfundidadFinViradoM = (int)cp.ProfFinV,
+                    RumboViradoGrados = (int?)cp.Rumbo,
+                    TipoPalangre = cp.TipPalan,
+                    MaterialLineaMadre = cp.Material,
+                    LargoLineaMadreM = (int?)cp.LmLargo,
+                    TramosLineaMadre = (int?)cp.LmTramos,
+                    LargoBrazoladaCm = (int?)cp.BrzLargo,
+                    SeparacionBrazoladasM = (int?)cp.BrzSepar,
+                    NumeroBrazoladasPorTramo = (int?)cp.BrzNxTrmo,
+                    TipoAnzuelo = cp.AnzTipo,
+                    LargoAnzueloMm = (int?)cp.AnzLargo,
+                    AnchoAnzueloMm = (int?)cp.AnzAncho,
+                    AnzuelosTotal = (int?)cp.AnzNTotal,
+                    AnzuelosConCarnada = (int?)cp.AnzCCarn,
+                    AnzuelosSinCarnada = (int?)cp.AnzSCarn,
+                    Carnada = cp.Carnada,
+                    Observaciones = cp.Observac
+                };
+            }
+
             // Items de Captura (Especies preservando el orden original de las columnas)
             int itemIndex = 1;
             foreach (var sCode in c.EspeciesOrder)
@@ -601,6 +697,11 @@ public class MareaImportService : IMareaImportService
                 if (c.Especies.TryGetValue(sCode, out var val) && val > 0)
                 {
                     string? especieId = ResolveEspecieId(sCode, null);
+                    int? piezas = null;
+                    if (c is LegacyCapturaPalangre palangreItem && palangreItem.PiezasPorEspecie.TryGetValue(sCode, out var pz))
+                    {
+                        piezas = pz > 0 ? pz : null;
+                    }
                     
                     lance.ItemsCaptura.Add(new ItemCaptura
                     {
@@ -608,7 +709,8 @@ public class MareaImportService : IMareaImportService
                         EspecieOriginal = sCode,
                         DatoCaptura = val,
                         DatoDescarte = c.DescartesPorEspecie.TryGetValue(sCode, out var d) ? d : 0,
-                        TipoDatoDescarte = report.UnidadDescarte,
+                        TipoDatoDescarte = (c is LegacyCapturaPalangre) ? ControlMareas.App.Models.TipoDatoDescarte.Kilogramos : report.UnidadDescarte,
+                        Piezas = piezas,
                         NumeroOrden = itemIndex++
                     });
                 }

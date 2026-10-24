@@ -365,6 +365,136 @@ public sealed class DbfExtractorService : IDbfExtractorService
         return list;
     }
 
+    public async Task<List<LegacyCapturaPalangre>> ReadCapturasPalangreAsync(string dbfPath)
+    {
+        var list = new List<LegacyCapturaPalangre>();
+        if (!File.Exists(dbfPath)) return list;
+
+        var options = await GetOptionsAsync(dbfPath);
+        using var reader = new DbfDataReader.DbfDataReader(dbfPath, options);
+        var colMap = GetColumnMap(reader);
+
+        while (reader.Read())
+        {
+            var cp = new LegacyCapturaPalangre
+            {
+                Identific = GetString(reader, colMap, "IDENTIFIC"),
+                Barco = GetBarcoValue(reader, colMap),
+                Marea = GetDouble(reader, colMap, "MAREA"),
+                Lance = GetDouble(reader, colMap, "LANCE"),
+
+                // Filado (Calado)
+                Fecha = GetDateTime(reader, colMap, "FECHA_FI") ?? DateTime.MinValue,
+                HoraInic = GetDouble(reader, colMap, "HORA_INI_F"),
+                HoraFinF = GetDouble(reader, colMap, "HORA_FIN_F"),
+                LatInic = GetDouble(reader, colMap, "LAT_INIC_F"),
+                LatFinF = GetDouble(reader, colMap, "LAT_FIN_F"),
+                LongInic = GetDouble(reader, colMap, "LONG_IN_F"),
+                LongFinF = GetDouble(reader, colMap, "LONG_FI_F"),
+                ProfIniF = GetDouble(reader, colMap, "PROF_INI_F"),
+                ProfFinF = GetDouble(reader, colMap, "PROF_FIN_F"),
+
+                // Virado
+                FechaVi = GetDateTime(reader, colMap, "FECHA_VI") ?? DateTime.MinValue,
+                HoraIniV = GetDouble(reader, colMap, "HORA_INI_V"),
+                HoraFinal = GetDouble(reader, colMap, "HORA_FIN_V"),
+                HoraFinV = GetDouble(reader, colMap, "HORA_FIN_V"),
+                LatIniV = GetDouble(reader, colMap, "LAT_INIC_V"),
+                LatFinal = GetDouble(reader, colMap, "LAT_FIN_V"),
+                LatFinV = GetDouble(reader, colMap, "LAT_FIN_V"),
+                LongIniV = GetDouble(reader, colMap, "LONG_IN_V"),
+                LongFinal = GetDouble(reader, colMap, "LONG_FI_V"),
+                LongFinV = GetDouble(reader, colMap, "LONG_FI_V"),
+                ProfIniV = GetDouble(reader, colMap, "PROF_INI_V"),
+                ProfFinV = GetDouble(reader, colMap, "PROF_FIN_V"),
+                Rumbo = GetDoubleNullable(reader, colMap, "RUMBO"),
+
+                // Condiciones meteorológicas / ambientales
+                Tiempo = GetDoubleNullable(reader, colMap, "TIEMPO"),
+                Mar = GetDoubleNullable(reader, colMap, "MAR"),
+                DirViento = GetDoubleNullable(reader, colMap, "DIR_VIENTO"),
+                VelViento = GetDoubleNullable(reader, colMap, "VEL_VIENTO"),
+                TmpASeco = GetDoubleNullable(reader, colMap, "TMP_AIRE"),
+                TmpMarS = GetDoubleNullable(reader, colMap, "TMP_MAR_S"),
+                PresionB = GetDoubleNullable(reader, colMap, "PRESION_B"),
+
+                // Arte de pesca y aparejo
+                TipPalan = GetString(reader, colMap, "TIP_PALAN"),
+                Material = GetString(reader, colMap, "MATERIAL"),
+                LmLargo = GetDoubleNullable(reader, colMap, "LM_LARGO"),
+                LmTramos = GetDoubleNullable(reader, colMap, "LM_TRAMOS"),
+                BrzLargo = GetDoubleNullable(reader, colMap, "BRZ_LARGO"),
+                BrzSepar = GetDoubleNullable(reader, colMap, "BRZ_SEPAR"),
+                BrzNxTrmo = GetDoubleNullable(reader, colMap, "BRZ_NXTRMO"),
+                AnzTipo = GetString(reader, colMap, "ANZ_TIPO"),
+                AnzLargo = GetDoubleNullable(reader, colMap, "ANZ_LARGO"),
+                AnzAncho = GetDoubleNullable(reader, colMap, "ANZ_ANCHO"),
+                AnzNTotal = GetDoubleNullable(reader, colMap, "ANZ_NTOTAL"),
+                AnzCCarn = GetDoubleNullable(reader, colMap, "ANZ_CCARN"),
+                AnzSCarn = GetDoubleNullable(reader, colMap, "ANZ_SCARN"),
+                Carnada = GetString(reader, colMap, "CARNADA"),
+                Observac = GetString(reader, colMap, "OBSERVAC")
+            };
+
+            // FechaFin del lance común es la Fecha de Virado (si existe) o Fecha de filado
+            cp.FechaFin = cp.FechaVi != DateTime.MinValue ? cp.FechaVi : cp.Fecha;
+
+            // Profundidad resumen para Lance = promedio de inicio y fin de virado
+            if (cp.ProfIniV > 0 && cp.ProfFinV > 0)
+            {
+                double profPromedio = Math.Round((cp.ProfIniV + cp.ProfFinV) / 2.0);
+                cp.ProfInic = profPromedio;
+                cp.ProfFinal = profPromedio;
+            }
+            else if (cp.ProfIniV > 0)
+            {
+                cp.ProfInic = cp.ProfIniV;
+                cp.ProfFinal = cp.ProfIniV;
+            }
+            else if (cp.ProfFinV > 0)
+            {
+                cp.ProfInic = cp.ProfFinV;
+                cp.ProfFinal = cp.ProfFinV;
+            }
+
+            // Lectura de hasta 10 especies
+            for (int i = 1; i <= 10; i++)
+            {
+                var espCode = GetDouble(reader, colMap, $"ESPECIE_{i}");
+                var kgVal = GetDouble(reader, colMap, $"KG_{i}");
+                var descarVal = GetDouble(reader, colMap, $"DESCAR_{i}");
+                var piezaVal = (int)GetDouble(reader, colMap, $"PIEZA_{i}");
+
+                if (espCode > 0)
+                {
+                    string sCode = ((long)espCode).ToString();
+                    cp.Especies[sCode] = kgVal;
+                    cp.DescartesPorEspecie[sCode] = descarVal;
+                    cp.PiezasPorEspecie[sCode] = piezaVal;
+                    cp.EspeciesOrder.Add(sCode);
+                    cp.EspecieColumnIndex[sCode] = i;
+                }
+                else if (kgVal > 0 || descarVal > 0 || piezaVal > 0)
+                {
+                    string sCode = $"0_col{i}";
+                    cp.Especies[sCode] = kgVal;
+                    cp.DescartesPorEspecie[sCode] = descarVal;
+                    cp.PiezasPorEspecie[sCode] = piezaVal;
+                    cp.EspeciesOrder.Add(sCode);
+                    cp.EspecieColumnIndex[sCode] = i;
+                }
+            }
+
+            // Totales de captura y descarte calculados sumando las especies
+            cp.CaptTotal = cp.Especies.Values.Sum();
+            cp.Descarte = cp.DescartesPorEspecie.Values.Sum();
+
+            list.Add(cp);
+        }
+        return list;
+    }
+
+
     public async Task<List<LegacyMuestra>> ReadMuestrasAsync(string dbfPath)
     {
         var list = new List<LegacyMuestra>();
@@ -565,7 +695,18 @@ public sealed class DbfExtractorService : IDbfExtractorService
         var columns = reader.DbfTable.Columns;
         for (int i = 0; i < columns.Count; i++)
         {
-            map[columns[i].ColumnName] = i;
+            var rawName = columns[i].ColumnName;
+            map[rawName] = i;
+            var cleanName = rawName.Split('\0')[0].Trim();
+            if (!string.IsNullOrEmpty(cleanName))
+            {
+                map.TryAdd(cleanName, i);
+                var firstToken = cleanName.Split(' ')[0].Trim();
+                if (!string.IsNullOrEmpty(firstToken))
+                {
+                    map.TryAdd(firstToken, i);
+                }
+            }
         }
         return map;
     }

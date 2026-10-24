@@ -1,4 +1,4 @@
-﻿namespace ControlMareas.App.Models.Import;
+namespace ControlMareas.App.Models.Import;
 
 public enum ValidationLevel
 {
@@ -32,6 +32,7 @@ public class MareaValidationReport
     public string? ObservadorNombre { get; set; }
     public string? ObservadorApellido { get; set; }
     public int? ObservadorCodigo { get; set; }
+    public TipoMarea TipoMarea { get; set; } = TipoMarea.Arrastre;
     public TipoDatoDescarte UnidadDescarte { get; set; } = TipoDatoDescarte.Kilogramos;
     
     public DateTime? FechaInicioMarea { get; set; }

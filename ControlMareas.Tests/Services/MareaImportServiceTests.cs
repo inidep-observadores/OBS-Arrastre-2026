@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using FluentAssertions;
 using NSubstitute;
 using ControlMareas.App.Models.Import;
@@ -19,6 +19,8 @@ public class MareaImportServiceTests
 
     public MareaImportServiceTests()
     {
+        System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
@@ -375,4 +377,153 @@ public class MareaImportServiceTests
         // 3 ejemplares / (1156.757 / 1000) kg = 3 / 1.156757 kg = 2.59 ejemplares/kg -> redondeado a 3 ejemplares por kg
         muestraReconstruida.EjemplaresPorKg.Should().Be(3);
     }
+
+    [Fact]
+    public async Task ProcessMareaImportAsync_WithPalangreCPFile_ShouldImportLancesPalangreAndPiezas()
+    {
+        // Arrange
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+
+        var dbFactory = Substitute.For<IDbContextFactory<AppDbContext>>();
+        dbFactory.CreateDbContextAsync().Returns(_ => new AppDbContext(options));
+
+        var extractor = Substitute.For<IDbfExtractorService>();
+        var reporter = Substitute.For<IMareaReportService>();
+        reporter.GenerateValidationPdfAsync(Arg.Any<MareaValidationReport>())
+            .Returns(Task.FromResult(new byte[] { 1, 2, 3 }));
+
+        var service = new MareaImportService(extractor, reporter, dbFactory);
+
+        string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(tempDir);
+        File.WriteAllText(Path.Combine(tempDir, "CP7726.DBF"), "");
+        File.WriteAllText(Path.Combine(tempDir, "M7726.DBF"), "");
+        File.WriteAllText(Path.Combine(tempDir, "P7726.DBF"), "");
+
+        var marea = new Marea
+        {
+            ID = Guid.NewGuid().ToString(),
+            AnioInidep = 2026,
+            NumeroInidep = 77,
+            TipoMarea = ControlMareas.App.Models.TipoMarea.Palangre,
+            FechaInicio = new DateTime(2026, 5, 20),
+            FechaFin = new DateTime(2026, 6, 10),
+            Buque = new Buque { Nombre = "ARGENOVA XIV" },
+            Etapas = new List<MareaEtapa>
+            {
+                new()
+                {
+                    ID = Guid.NewGuid().ToString(),
+                    FechaZarpada = new DateTime(2026, 5, 20),
+                    FechaArribo = new DateTime(2026, 6, 10)
+                }
+            }
+        };
+
+        var especie = new Especie
+        {
+            ID = Guid.NewGuid().ToString(),
+            CodigoInidep = "7218280201",
+            NombreVulgar = "Bacalao de profundidad",
+            NombreCientifico = "Dissostichus eleginoides"
+        };
+
+        using (var setupContext = new AppDbContext(options))
+        {
+            setupContext.Mareas.Add(marea);
+            setupContext.Especies.Add(especie);
+            await setupContext.SaveChangesAsync();
+        }
+
+        var legacyCapturaPalangre = new LegacyCapturaPalangre
+        {
+            Lance = 1,
+            Barco = "ARGENOVA XIV",
+            Marea = 77,
+            Identific = "LW8316",
+            Fecha = new DateTime(2026, 5, 27),
+            FechaVi = new DateTime(2026, 5, 28),
+            FechaFin = new DateTime(2026, 5, 28),
+            HoraInic = 7.49,
+            HoraFinF = 9.12,
+            HoraIniV = 9.00,
+            HoraFinal = 21.00,
+            HoraFinV = 21.00,
+            LatInic = 39.172,
+            LatFinF = 39.205,
+            LongInic = 54.537,
+            LongFinF = 54.454,
+            LatIniV = 39.182,
+            LatFinal = 39.194,
+            LatFinV = 39.194,
+            LongIniV = 54.391,
+            LongFinal = 54.444,
+            LongFinV = 54.444,
+            ProfIniF = 1144,
+            ProfFinF = 1310,
+            ProfIniV = 1150,
+            ProfFinV = 1280,
+            ProfInic = 1215,
+            ProfFinal = 1215,
+            AnzNTotal = 6000,
+            Carnada = "CALAMAR",
+            Material = "POLIPROPIL"
+        };
+        legacyCapturaPalangre.Especies["7218280201"] = 500.0;
+        legacyCapturaPalangre.DescartesPorEspecie["7218280201"] = 0;
+        legacyCapturaPalangre.PiezasPorEspecie["7218280201"] = 45;
+        legacyCapturaPalangre.EspeciesOrder.Add("7218280201");
+        legacyCapturaPalangre.EspecieColumnIndex["7218280201"] = 1;
+        legacyCapturaPalangre.CaptTotal = 500.0;
+
+        extractor.ReadCapturasPalangreAsync(Arg.Any<string>())
+            .Returns(new List<LegacyCapturaPalangre> { legacyCapturaPalangre });
+        extractor.ReadMuestrasAsync(Arg.Any<string>())
+            .Returns(new List<LegacyMuestra>());
+        extractor.ReadProduccionAsync(Arg.Any<string>())
+            .Returns(new List<LegacyProduccion>());
+        extractor.DetectEncodingSmartAsync(Arg.Any<string>())
+            .Returns(System.Text.Encoding.GetEncoding(850));
+
+        // Act
+        var selectedFiles = Directory.GetFiles(tempDir);
+        var report = await service.ProcessMareaImportAsync(tempDir, selectedFiles, marea);
+
+        // Assert proceso de importación
+        report.Should().NotBeNull();
+        report.TipoMarea.Should().Be(ControlMareas.App.Models.TipoMarea.Palangre);
+        report.Capturas.Should().HaveCount(1);
+        report.ArchivosProcesados.Should().Contain(Path.GetFileName(Path.Combine(tempDir, "CP7726.DBF")));
+
+        // Act 2: Guardar en base de datos
+        await service.ImportAsync(marea.ID, report);
+
+        // Assert base de datos
+        using var assertContext = new AppDbContext(options);
+        var lances = await assertContext.Lances
+            .Include(l => l.DetallePalangre)
+            .Include(l => l.ItemsCaptura)
+            .ToListAsync();
+
+        lances.Should().HaveCount(1);
+        var lanceDb = lances.First();
+        lanceDb.NroLance.Should().Be(1);
+        lanceDb.ProfundidadInicioM.Should().Be(1215);
+        lanceDb.ProfundidadFinalM.Should().Be(1215);
+        lanceDb.DetallePalangre.Should().NotBeNull();
+        lanceDb.DetallePalangre!.Identificacion.Should().Be("LW8316");
+        lanceDb.DetallePalangre.AnzuelosTotal.Should().Be(6000);
+        lanceDb.DetallePalangre.Carnada.Should().Be("CALAMAR");
+        lanceDb.DetallePalangre.MaterialLineaMadre.Should().Be("POLIPROPIL");
+
+        lanceDb.ItemsCaptura.Should().HaveCount(1);
+        var itemDb = lanceDb.ItemsCaptura.First();
+        itemDb.EspecieID.Should().Be(especie.ID);
+        itemDb.DatoCaptura.Should().Be(500.0);
+        itemDb.Piezas.Should().Be(45);
+        itemDb.TipoDatoDescarte.Should().Be(ControlMareas.App.Models.TipoDatoDescarte.Kilogramos);
+    }
 }
+

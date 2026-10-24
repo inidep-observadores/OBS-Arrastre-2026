@@ -1,4 +1,4 @@
-﻿using ControlMareas.App.Models.Import;
+using ControlMareas.App.Models.Import;
 
 namespace ControlMareas.App.Services;
 
@@ -7,6 +7,7 @@ public interface IDbfExtractorService
     Task ExtractBuquesAsync(string dbfPath, string jsonOutputPath);
     Task ExtractEspeciesAsync(string dbfPath, string jsonOutputPath);
     Task<List<LegacyCaptura>> ReadCapturasAsync(string dbfPath);
+    Task<List<LegacyCapturaPalangre>> ReadCapturasPalangreAsync(string dbfPath);
     Task<List<LegacyMuestra>> ReadMuestrasAsync(string dbfPath);
     Task<List<LegacySubmuestra>> ReadSubmuestrasAsync(string dbfPath);
     Task<List<LegacyLg>> ReadLgAsync(string dbfPath);
