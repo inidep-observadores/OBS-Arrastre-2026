@@ -42,6 +42,10 @@ public sealed class MareaListItemViewModel : ObservableObject
 
     public string CodigoDisplay => $"{Marea.NumeroInidep}/{Marea.AnioInidep % 100:D2}";
     
+    public bool EsPalangre => Marea.TipoMarea == ControlMareas.App.Models.TipoMarea.Palangre;
+    
+    public string TipoPesqueriaDisplay => EsPalangre ? "Palangre" : "Arrastre";
+    
     public string BuqueNombre => Marea.Buque?.Nombre ?? "Sin buque";
     
     public string FechaInicioDisplay => Marea.FechaInicio.ToString("dd/MM/yyyy");

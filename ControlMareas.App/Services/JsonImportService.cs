@@ -327,6 +327,14 @@ public sealed class JsonImportService : IJsonImportService
         marea.Comentarios = dto.Comentarios;
         marea.FechaInicio = dto.FechaInicio;
         marea.FechaFin = dto.FechaFin;
+        if (dto.TipoMarea.HasValue)
+        {
+            marea.TipoMarea = dto.TipoMarea.Value;
+        }
+        else if (!string.IsNullOrEmpty(dto.ArtePesca) && dto.ArtePesca.Contains("palangre", StringComparison.OrdinalIgnoreCase))
+        {
+            marea.TipoMarea = ControlMareas.App.Models.TipoMarea.Palangre;
+        }
         marea.Metadata = MareaMetadataHelper.UpdateFromLegacyFields(marea.Metadata, 
             dto.BuqueCodigo, dto.ObservadorNombre, dto.ObservadorApellido, dto.ObservadorCodigo,
             dto.BuqueEslora, dto.BuquePotencia, dto.TipoBuque, dto.Pesqueria, dto.ArtePesca);
@@ -408,6 +416,7 @@ public sealed class JsonImportService : IJsonImportService
         public string? TipoBuque { get; set; }
         public string? Pesqueria { get; set; }
         public string? ArtePesca { get; set; }
+        public ControlMareas.App.Models.TipoMarea? TipoMarea { get; set; }
         public List<PortableEtapaDto> Etapas { get; set; } = new();
     }
 

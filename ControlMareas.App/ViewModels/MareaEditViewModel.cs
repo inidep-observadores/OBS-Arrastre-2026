@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -27,6 +27,7 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
     private BuqueListItemViewModel? _selectedBuque;
     private bool _isLoading;
     private string? _metadata;
+    private bool _esPalangre;
 
     public MareaEditViewModel(
         Action onClose, 
@@ -139,6 +140,12 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
                 ValidatePropertyWithFluent(value, nameof(SelectedBuque));
             }
         }
+    }
+
+    public bool EsPalangre
+    {
+        get => _esPalangre;
+        set => SetProperty(ref _esPalangre, value);
     }
 
     public ICommand SaveCommand { get; }
@@ -255,6 +262,7 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
                     FechaFin = marea.FechaFin;
                     SelectedBuque = Buques.FirstOrDefault(b => b.ID == marea.BuqueID);
                     _metadata = marea.Metadata;
+                    EsPalangre = marea.TipoMarea == ControlMareas.App.Models.TipoMarea.Palangre;
 
                     Etapas.Clear();
                     foreach (var etapa in marea.Etapas.OrderBy(e => e.FechaZarpada))
@@ -350,7 +358,8 @@ public sealed partial class MareaEditViewModel : ValidatableViewModelBase<MareaE
                     FechaInicio = FechaInicio,
                     FechaFin = FechaFin,
                     BuqueID = SelectedBuque?.ID,
-                    Metadata = _metadata
+                    Metadata = _metadata,
+                    TipoMarea = EsPalangre ? ControlMareas.App.Models.TipoMarea.Palangre : ControlMareas.App.Models.TipoMarea.Arrastre
                 };
 
                 // Añadir etapas desde los ViewModels

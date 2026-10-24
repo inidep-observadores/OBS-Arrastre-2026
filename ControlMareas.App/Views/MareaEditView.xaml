@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="ControlMareas.App.Views.MareaEditView"
+<UserControl x:Class="ControlMareas.App.Views.MareaEditView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -58,7 +58,19 @@
                         <!-- Seccion Marea -->
                         <Border Style="{StaticResource SurfaceBorderStyle}" Padding="24" Margin="0,0,0,24">
                             <StackPanel>
-                                <TextBlock Text="DATOS DE LA MAREA" Style="{StaticResource SectionHeaderStyle}" Margin="0,0,0,20" />
+                                <Grid Margin="0,0,0,20">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="DATOS DE LA MAREA" Style="{StaticResource SectionHeaderStyle}" VerticalAlignment="Center" />
+                                    <CheckBox Grid.Column="1" 
+                                              Content="Marea de palangre" 
+                                              IsChecked="{Binding EsPalangre}" 
+                                              VerticalAlignment="Center"
+                                              FontWeight="SemiBold"
+                                              Foreground="{DynamicResource PrimaryTextBrush}" />
+                                </Grid>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
