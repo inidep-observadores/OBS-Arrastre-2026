@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using ControlMareas.App.Data.Entities;
+using ControlMareas.App.Models;
 
 namespace ControlMareas.App.Services;
 
@@ -22,4 +23,5 @@ public interface ILanceService
     Task DeleteLanceAsync(string id, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Especie>> GetEspeciesAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<RegistroProduccion>> GetProduccionAsync(string mareaEtapaId, CancellationToken cancellationToken = default);
+    Task<TipoMarea> GetTipoMareaByEtapaIdAsync(string mareaEtapaId, CancellationToken cancellationToken = default);
 }

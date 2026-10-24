@@ -179,6 +179,22 @@ public sealed class CatchItemViewModel : ObservableObject
     }
 
 
+    public int? Piezas
+    {
+        get => _entity.Piezas;
+        set
+        {
+            if (_entity.Piezas != value)
+            {
+                _entity.Piezas = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(PiezasDisplay));
+            }
+        }
+    }
+
+    public string PiezasDisplay => Piezas.HasValue && Piezas.Value > 0 ? Piezas.Value.ToString("N0") : "---";
+
     public int NumeroOrden 
     { 
         get => _entity.NumeroOrden;

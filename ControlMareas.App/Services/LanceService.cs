@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using ControlMareas.App.Data;
 using ControlMareas.App.Data.Entities;
+using ControlMareas.App.Models;
 
 namespace ControlMareas.App.Services;
 
@@ -80,6 +81,8 @@ public sealed class LanceService(IDbContextFactory<AppDbContext> dbContextFactor
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
         
         return await dbContext.Lances
+            .Include(x => x.MareaEtapa)
+                .ThenInclude(e => e.Marea)
             .Include(x => x.DetallePalangre)
             .Include(x => x.ItemsCaptura)
                 .ThenInclude(i => i.Especie)
@@ -91,6 +94,7 @@ public sealed class LanceService(IDbContextFactory<AppDbContext> dbContextFactor
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
         
         var existing = await dbContext.Lances
+            .Include(x => x.DetallePalangre)
             .Include(x => x.ItemsCaptura)
             .FirstOrDefaultAsync(x => x.Id == lance.Id, cancellationToken);
 
@@ -107,6 +111,25 @@ public sealed class LanceService(IDbContextFactory<AppDbContext> dbContextFactor
         {
             dbContext.Entry(existing).CurrentValues.SetValues(lance);
             
+            // Sincronizar DetallePalangre
+            if (lance.DetallePalangre != null)
+            {
+                if (existing.DetallePalangre == null)
+                {
+                    lance.DetallePalangre.LanceId = existing.Id;
+                    existing.DetallePalangre = lance.DetallePalangre;
+                }
+                else
+                {
+                    dbContext.Entry(existing.DetallePalangre).CurrentValues.SetValues(lance.DetallePalangre);
+                }
+            }
+            else if (existing.DetallePalangre != null)
+            {
+                dbContext.LancesPalangre.Remove(existing.DetallePalangre);
+                existing.DetallePalangre = null;
+            }
+
             // Sincronizar ItemsCaptura
             // 1. Eliminar ítems que ya no están
             foreach (var existingItem in existing.ItemsCaptura.ToList())
@@ -132,11 +155,23 @@ public sealed class LanceService(IDbContextFactory<AppDbContext> dbContextFactor
                     item.Especie = null;
                     dbContext.Entry(existingItem).CurrentValues.SetValues(item);
                     existingItem.EspecieID = item.EspecieID; // Asegurar FK
+                    existingItem.Piezas = item.Piezas;
                 }
             }
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<TipoMarea> GetTipoMareaByEtapaIdAsync(string mareaEtapaId, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        var etapa = await dbContext.MareaEtapas
+            .Include(e => e.Marea)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(e => e.ID == mareaEtapaId, cancellationToken);
+
+        return etapa?.Marea?.TipoMarea ?? TipoMarea.Arrastre;
     }
 
     public async Task DeleteLanceAsync(string id, CancellationToken cancellationToken = default)

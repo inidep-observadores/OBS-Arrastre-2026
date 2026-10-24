@@ -52,6 +52,42 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
     private string? _comentarios;
     private CatchItemViewModel? _selectedCatchItem;
     private IReadOnlyList<Lance> _lancesInStage = new List<Lance>();
+
+    // Palangre fields
+    private bool _esPalangre;
+    private string? _identificacion;
+    private string? _tipoPalangre;
+    private string? _horaInicioFilado;
+    private string? _horaFinFilado;
+    private double? _latitudInicioFilado;
+    private double? _longitudInicioFilado;
+    private double? _latitudFinFilado;
+    private double? _longitudFinFilado;
+    private int? _profundidadInicioFilado;
+    private int? _profundidadFinFilado;
+    private DateTime? _fechaVirado;
+    private string? _horaInicioVirado;
+    private string? _horaFinVirado;
+    private double? _latitudInicioVirado;
+    private double? _longitudInicioVirado;
+    private double? _latitudFinVirado;
+    private double? _longitudFinVirado;
+    private int? _profundidadInicioVirado;
+    private int? _profundidadFinVirado;
+    private int? _rumboVirado;
+    private string? _material;
+    private int? _lmLargo;
+    private int? _lmTramos;
+    private int? _brzLargo;
+    private int? _brzSeparacion;
+    private int? _brzNxTramo;
+    private string? _anzuelosTipo;
+    private int? _anzuelosLargo;
+    private int? _anzuelosAncho;
+    private int? _anzuelosTotal;
+    private int? _anzuelosConCarnada;
+    private int? _anzuelosSinCarnada;
+    private string? _carnada;
     
     // Initial values for change detection
     private int _initialNroLance;
@@ -83,7 +119,43 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
     private int? _initialEstadoMar;
     private bool _initialSelectividad;
     private string? _initialComentarios;
-    private List<(string? EspecieId, double DatoCaptura, TipoDatoCaptura TipoDatoCaptura, double DatoDescarte, TipoDatoDescarte TipoDatoDescarte)> _initialItems = new();
+
+    // Initial palangre values
+    private string? _initialIdentificacion;
+    private string? _initialTipoPalangre;
+    private string? _initialHoraInicioFilado;
+    private string? _initialHoraFinFilado;
+    private double? _initialLatitudInicioFilado;
+    private double? _initialLongitudInicioFilado;
+    private double? _initialLatitudFinFilado;
+    private double? _initialLongitudFinFilado;
+    private int? _initialProfundidadInicioFilado;
+    private int? _initialProfundidadFinFilado;
+    private DateTime? _initialFechaVirado;
+    private string? _initialHoraInicioVirado;
+    private string? _initialHoraFinVirado;
+    private double? _initialLatitudInicioVirado;
+    private double? _initialLongitudInicioVirado;
+    private double? _initialLatitudFinVirado;
+    private double? _initialLongitudFinVirado;
+    private int? _initialProfundidadInicioVirado;
+    private int? _initialProfundidadFinVirado;
+    private int? _initialRumboVirado;
+    private string? _initialMaterial;
+    private int? _initialLmLargo;
+    private int? _initialLmTramos;
+    private int? _initialBrzLargo;
+    private int? _initialBrzSeparacion;
+    private int? _initialBrzNxTramo;
+    private string? _initialAnzuelosTipo;
+    private int? _initialAnzuelosLargo;
+    private int? _initialAnzuelosAncho;
+    private int? _initialAnzuelosTotal;
+    private int? _initialAnzuelosConCarnada;
+    private int? _initialAnzuelosSinCarnada;
+    private string? _initialCarnada;
+
+    private List<(string? EspecieId, double DatoCaptura, TipoDatoCaptura TipoDatoCaptura, double DatoDescarte, TipoDatoDescarte TipoDatoDescarte, int? Piezas)> _initialItems = new();
 
     public LanceEditViewModel(
         Action onClose,
@@ -171,6 +243,160 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
     public bool Selectividad { get => _selectividad; set => SetProperty(ref _selectividad, value); }
     public string? Comentarios { get => _comentarios; set => SetProperty(ref _comentarios, value); }
 
+    // Propiedades de Palangre
+    public bool EsPalangre { get => _esPalangre; set => SetProperty(ref _esPalangre, value); }
+    public string? Identificacion { get => _identificacion; set => SetProperty(ref _identificacion, value); }
+    public string? TipoPalangre { get => _tipoPalangre; set => SetProperty(ref _tipoPalangre, value); }
+
+    public string? HoraInicioFilado 
+    { 
+        get => _horaInicioFilado; 
+        set 
+        { 
+            if (SetProperty(ref _horaInicioFilado, value)) 
+            { 
+                HoraInicio = value; 
+                OnPropertyChanged(nameof(Title)); 
+            } 
+        } 
+    }
+
+    public string? HoraFinFilado { get => _horaFinFilado; set => SetProperty(ref _horaFinFilado, value); }
+
+    public double? LatitudInicioFiladoDecimal 
+    { 
+        get => _latitudInicioFilado; 
+        set 
+        { 
+            if (SetProperty(ref _latitudInicioFilado, value)) 
+                LatitudInicioDecimal = value; 
+        } 
+    }
+
+    public double? LongitudInicioFiladoDecimal 
+    { 
+        get => _longitudInicioFilado; 
+        set 
+        { 
+            if (SetProperty(ref _longitudInicioFilado, value)) 
+                LongitudInicioDecimal = value; 
+        } 
+    }
+
+    public double? LatitudFinFiladoDecimal { get => _latitudFinFilado; set => SetProperty(ref _latitudFinFilado, value); }
+    public double? LongitudFinFiladoDecimal { get => _longitudFinFilado; set => SetProperty(ref _longitudFinFilado, value); }
+    public int? ProfundidadInicioFiladoM { get => _profundidadInicioFilado; set => SetProperty(ref _profundidadInicioFilado, value); }
+    public int? ProfundidadFinFiladoM { get => _profundidadFinFilado; set => SetProperty(ref _profundidadFinFilado, value); }
+
+    public DateTime? FechaVirado 
+    { 
+        get => _fechaVirado; 
+        set 
+        { 
+            if (SetProperty(ref _fechaVirado, value)) 
+                FechaFin = value; 
+        } 
+    }
+
+    public string? HoraInicioVirado { get => _horaInicioVirado; set => SetProperty(ref _horaInicioVirado, value); }
+
+    public string? HoraFinVirado 
+    { 
+        get => _horaFinVirado; 
+        set 
+        { 
+            if (SetProperty(ref _horaFinVirado, value)) 
+                HoraFinal = value; 
+        } 
+    }
+
+    public double? LatitudInicioViradoDecimal { get => _latitudInicioVirado; set => SetProperty(ref _latitudInicioVirado, value); }
+    public double? LongitudInicioViradoDecimal { get => _longitudInicioVirado; set => SetProperty(ref _longitudInicioVirado, value); }
+
+    public double? LatitudFinViradoDecimal 
+    { 
+        get => _latitudFinVirado; 
+        set 
+        { 
+            if (SetProperty(ref _latitudFinVirado, value)) 
+                LatitudFinalDecimal = value; 
+        } 
+    }
+
+    public double? LongitudFinViradoDecimal 
+    { 
+        get => _longitudFinVirado; 
+        set 
+        { 
+            if (SetProperty(ref _longitudFinVirado, value)) 
+                LongitudFinalDecimal = value; 
+        } 
+    }
+
+    public int? ProfundidadInicioViradoM 
+    { 
+        get => _profundidadInicioVirado; 
+        set 
+        { 
+            if (SetProperty(ref _profundidadInicioVirado, value)) 
+                RecalcularProfundidadResumen(); 
+        } 
+    }
+
+    public int? ProfundidadFinViradoM 
+    { 
+        get => _profundidadFinVirado; 
+        set 
+        { 
+            if (SetProperty(ref _profundidadFinVirado, value)) 
+                RecalcularProfundidadResumen(); 
+        } 
+    }
+
+    private void RecalcularProfundidadResumen()
+    {
+        if (_profundidadInicioVirado.HasValue && _profundidadFinVirado.HasValue)
+        {
+            var avg = (int)Math.Round((_profundidadInicioVirado.Value + _profundidadFinVirado.Value) / 2.0);
+            ProfundidadInicioM = avg;
+            ProfundidadFinalM = avg;
+        }
+        else if (_profundidadFinVirado.HasValue)
+        {
+            ProfundidadInicioM = _profundidadFinVirado;
+            ProfundidadFinalM = _profundidadFinVirado;
+        }
+        else if (_profundidadInicioVirado.HasValue)
+        {
+            ProfundidadInicioM = _profundidadInicioVirado;
+            ProfundidadFinalM = _profundidadInicioVirado;
+        }
+    }
+
+    public int? RumboViradoGrados 
+    { 
+        get => _rumboVirado; 
+        set 
+        { 
+            if (SetProperty(ref _rumboVirado, value)) 
+                RumboGrados = value; 
+        } 
+    }
+
+    public string? Material { get => _material; set => SetProperty(ref _material, value); }
+    public int? LmLargoM { get => _lmLargo; set => SetProperty(ref _lmLargo, value); }
+    public int? LmTramos { get => _lmTramos; set => SetProperty(ref _lmTramos, value); }
+    public int? BrzLargoM { get => _brzLargo; set => SetProperty(ref _brzLargo, value); }
+    public int? BrzSeparacionM { get => _brzSeparacion; set => SetProperty(ref _brzSeparacion, value); }
+    public int? BrzNxTramo { get => _brzNxTramo; set => SetProperty(ref _brzNxTramo, value); }
+    public string? AnzuelosTipo { get => _anzuelosTipo; set => SetProperty(ref _anzuelosTipo, value); }
+    public int? AnzuelosLargoMm { get => _anzuelosLargo; set => SetProperty(ref _anzuelosLargo, value); }
+    public int? AnzuelosAnchoMm { get => _anzuelosAncho; set => SetProperty(ref _anzuelosAncho, value); }
+    public int? AnzuelosTotal { get => _anzuelosTotal; set => SetProperty(ref _anzuelosTotal, value); }
+    public int? AnzuelosConCarnada { get => _anzuelosConCarnada; set => SetProperty(ref _anzuelosConCarnada, value); }
+    public int? AnzuelosSinCarnada { get => _anzuelosSinCarnada; set => SetProperty(ref _anzuelosSinCarnada, value); }
+    public string? Carnada { get => _carnada; set => SetProperty(ref _carnada, value); }
+
     public CatchItemViewModel? SelectedCatchItem
     {
         get => _selectedCatchItem;
@@ -209,6 +435,9 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
         IsLoading = true;
         try
         {
+            var tipoMarea = await _lanceService.GetTipoMareaByEtapaIdAsync(_mareaEtapaId);
+            EsPalangre = tipoMarea == TipoMarea.Palangre;
+
             _allEspecies = (await _lanceService.GetEspeciesAsync()).ToList();
             _lancesInStage = (await _lanceService.GetLancesAsync(mareaEtapaId: _mareaEtapaId))
                 .OrderBy(l => l.NroLance)
@@ -235,6 +464,15 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
         if (lance != null)
         {
             _lanceId = lanceId;
+            if (lance.MareaEtapa?.Marea != null)
+            {
+                EsPalangre = lance.MareaEtapa.Marea.TipoMarea == TipoMarea.Palangre;
+            }
+            if (lance.DetallePalangre != null)
+            {
+                EsPalangre = true;
+            }
+
             NroLance = lance.NroLance;
             if (DateTime.TryParse(lance.Fecha, out var date)) Fecha = date;
             FechaFin = lance.FechaFin;
@@ -264,6 +502,63 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
             DistanciaPortonesM = lance.DistanciaPortonesM;
             Selectividad = lance.SelectividadSiNo == 1;
             Comentarios = lance.Comentarios;
+
+            // Cargar datos específicos de Palangre si existen
+            if (lance.DetallePalangre != null)
+            {
+                var dp = lance.DetallePalangre;
+                Identificacion = dp.Identificacion;
+                TipoPalangre = dp.TipoPalangre;
+
+                HoraInicioFilado = dp.HoraInicioFilado ?? lance.HoraInicio;
+                HoraFinFilado = dp.HoraFinFilado;
+                LatitudInicioFiladoDecimal = dp.LatitudInicioFiladoDecimal ?? lance.LatitudInicioDecimal;
+                LongitudInicioFiladoDecimal = dp.LongitudInicioFiladoDecimal ?? lance.LongitudInicioDecimal;
+                LatitudFinFiladoDecimal = dp.LatitudFinFiladoDecimal;
+                LongitudFinFiladoDecimal = dp.LongitudFinFiladoDecimal;
+                ProfundidadInicioFiladoM = dp.ProfundidadInicioFiladoM;
+                ProfundidadFinFiladoM = dp.ProfundidadFinFiladoM;
+
+                if (!string.IsNullOrEmpty(dp.FechaVirado) && DateTime.TryParse(dp.FechaVirado, out var dtVir))
+                    FechaVirado = dtVir;
+                else
+                    FechaVirado = lance.FechaFin ?? Fecha;
+
+                HoraInicioVirado = dp.HoraInicioVirado;
+                HoraFinVirado = dp.HoraFinVirado ?? lance.HoraFinal;
+                LatitudInicioViradoDecimal = dp.LatitudInicioViradoDecimal;
+                LongitudInicioViradoDecimal = dp.LongitudInicioViradoDecimal;
+                LatitudFinViradoDecimal = dp.LatitudFinViradoDecimal ?? lance.LatitudFinalDecimal;
+                LongitudFinViradoDecimal = dp.LongitudFinViradoDecimal ?? lance.LongitudFinalDecimal;
+                ProfundidadInicioViradoM = dp.ProfundidadInicioViradoM;
+                ProfundidadFinViradoM = dp.ProfundidadFinViradoM;
+                RumboViradoGrados = dp.RumboViradoGrados ?? lance.RumboGrados;
+
+                Material = dp.MaterialLineaMadre;
+                LmLargoM = dp.LargoLineaMadreM;
+                LmTramos = dp.TramosLineaMadre;
+                BrzLargoM = dp.LargoBrazoladaCm;
+                BrzSeparacionM = dp.SeparacionBrazoladasM;
+                BrzNxTramo = dp.NumeroBrazoladasPorTramo;
+                AnzuelosTipo = dp.TipoAnzuelo;
+                AnzuelosLargoMm = dp.LargoAnzueloMm;
+                AnzuelosAnchoMm = dp.AnchoAnzueloMm;
+                AnzuelosTotal = dp.AnzuelosTotal;
+                AnzuelosConCarnada = dp.AnzuelosConCarnada;
+                AnzuelosSinCarnada = dp.AnzuelosSinCarnada;
+                Carnada = dp.Carnada;
+            }
+            else if (EsPalangre)
+            {
+                HoraInicioFilado = lance.HoraInicio;
+                LatitudInicioFiladoDecimal = lance.LatitudInicioDecimal;
+                LongitudInicioFiladoDecimal = lance.LongitudInicioDecimal;
+                FechaVirado = lance.FechaFin ?? Fecha;
+                HoraFinVirado = lance.HoraFinal;
+                LatitudFinViradoDecimal = lance.LatitudFinalDecimal;
+                LongitudFinViradoDecimal = lance.LongitudFinalDecimal;
+                RumboViradoGrados = lance.RumboGrados;
+            }
 
             ItemsCaptura.Clear();
             foreach (var item in lance.ItemsCaptura.OrderBy(i => i.NumeroOrden))
@@ -311,13 +606,49 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
         _initialEstadoMar = EstadoMarCodigo;
         _initialSelectividad = Selectividad;
         _initialComentarios = Comentarios;
+
+        // Palangre
+        _initialIdentificacion = Identificacion;
+        _initialTipoPalangre = TipoPalangre;
+        _initialHoraInicioFilado = HoraInicioFilado;
+        _initialHoraFinFilado = HoraFinFilado;
+        _initialLatitudInicioFilado = LatitudInicioFiladoDecimal;
+        _initialLongitudInicioFilado = LongitudInicioFiladoDecimal;
+        _initialLatitudFinFilado = LatitudFinFiladoDecimal;
+        _initialLongitudFinFilado = LongitudFinFiladoDecimal;
+        _initialProfundidadInicioFilado = ProfundidadInicioFiladoM;
+        _initialProfundidadFinFilado = ProfundidadFinFiladoM;
+        _initialFechaVirado = FechaVirado;
+        _initialHoraInicioVirado = HoraInicioVirado;
+        _initialHoraFinVirado = HoraFinVirado;
+        _initialLatitudInicioVirado = LatitudInicioViradoDecimal;
+        _initialLongitudInicioVirado = LongitudInicioViradoDecimal;
+        _initialLatitudFinVirado = LatitudFinViradoDecimal;
+        _initialLongitudFinVirado = LongitudFinViradoDecimal;
+        _initialProfundidadInicioVirado = ProfundidadInicioViradoM;
+        _initialProfundidadFinVirado = ProfundidadFinViradoM;
+        _initialRumboVirado = RumboViradoGrados;
+        _initialMaterial = Material;
+        _initialLmLargo = LmLargoM;
+        _initialLmTramos = LmTramos;
+        _initialBrzLargo = BrzLargoM;
+        _initialBrzSeparacion = BrzSeparacionM;
+        _initialBrzNxTramo = BrzNxTramo;
+        _initialAnzuelosTipo = AnzuelosTipo;
+        _initialAnzuelosLargo = AnzuelosLargoMm;
+        _initialAnzuelosAncho = AnzuelosAnchoMm;
+        _initialAnzuelosTotal = AnzuelosTotal;
+        _initialAnzuelosConCarnada = AnzuelosConCarnada;
+        _initialAnzuelosSinCarnada = AnzuelosSinCarnada;
+        _initialCarnada = Carnada;
         
         _initialItems = ItemsCaptura.Select(i => (
             EspecieId: i.SelectedEspecie?.ID, 
             i.DatoCaptura, 
             i.TipoDatoCaptura,
             i.DatoDescarte,
-            i.TipoDatoDescarte)).ToList();
+            i.TipoDatoDescarte,
+            i.Piezas)).ToList();
     }
 
     private bool HasChanges()
@@ -351,6 +682,43 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
         if (_initialEstadoMar != EstadoMarCodigo) return true;
         if (_initialSelectividad != Selectividad) return true;
         if (_initialComentarios != Comentarios) return true;
+
+        if (EsPalangre)
+        {
+            if (_initialIdentificacion != Identificacion) return true;
+            if (_initialTipoPalangre != TipoPalangre) return true;
+            if (_initialHoraInicioFilado != HoraInicioFilado) return true;
+            if (_initialHoraFinFilado != HoraFinFilado) return true;
+            if (_initialLatitudInicioFilado != LatitudInicioFiladoDecimal) return true;
+            if (_initialLongitudInicioFilado != LongitudInicioFiladoDecimal) return true;
+            if (_initialLatitudFinFilado != LatitudFinFiladoDecimal) return true;
+            if (_initialLongitudFinFilado != LongitudFinFiladoDecimal) return true;
+            if (_initialProfundidadInicioFilado != ProfundidadInicioFiladoM) return true;
+            if (_initialProfundidadFinFilado != ProfundidadFinFiladoM) return true;
+            if (_initialFechaVirado != FechaVirado) return true;
+            if (_initialHoraInicioVirado != HoraInicioVirado) return true;
+            if (_initialHoraFinVirado != HoraFinVirado) return true;
+            if (_initialLatitudInicioVirado != LatitudInicioViradoDecimal) return true;
+            if (_initialLongitudInicioVirado != LongitudInicioViradoDecimal) return true;
+            if (_initialLatitudFinVirado != LatitudFinViradoDecimal) return true;
+            if (_initialLongitudFinVirado != LongitudFinViradoDecimal) return true;
+            if (_initialProfundidadInicioVirado != ProfundidadInicioViradoM) return true;
+            if (_initialProfundidadFinVirado != ProfundidadFinViradoM) return true;
+            if (_initialRumboVirado != RumboViradoGrados) return true;
+            if (_initialMaterial != Material) return true;
+            if (_initialLmLargo != LmLargoM) return true;
+            if (_initialLmTramos != LmTramos) return true;
+            if (_initialBrzLargo != BrzLargoM) return true;
+            if (_initialBrzSeparacion != BrzSeparacionM) return true;
+            if (_initialBrzNxTramo != BrzNxTramo) return true;
+            if (_initialAnzuelosTipo != AnzuelosTipo) return true;
+            if (_initialAnzuelosLargo != AnzuelosLargoMm) return true;
+            if (_initialAnzuelosAncho != AnzuelosAnchoMm) return true;
+            if (_initialAnzuelosTotal != AnzuelosTotal) return true;
+            if (_initialAnzuelosConCarnada != AnzuelosConCarnada) return true;
+            if (_initialAnzuelosSinCarnada != AnzuelosSinCarnada) return true;
+            if (_initialCarnada != Carnada) return true;
+        }
         
         if (_initialItems.Count != ItemsCaptura.Count) return true;
         for (int i = 0; i < _initialItems.Count; i++)
@@ -361,7 +729,8 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
                 initial.DatoCaptura != current.DatoCaptura || 
                 initial.TipoDatoCaptura != current.TipoDatoCaptura ||
                 initial.DatoDescarte != current.DatoDescarte ||
-                initial.TipoDatoDescarte != current.TipoDatoDescarte) return true;
+                initial.TipoDatoDescarte != current.TipoDatoDescarte ||
+                initial.Piezas != current.Piezas) return true;
         }
         
         return false;
@@ -527,6 +896,62 @@ public sealed class LanceEditViewModel : ValidatableViewModelBase<LanceEditViewM
                     SelectividadSiNo = Selectividad ? 1 : 0,
                     Comentarios = Comentarios
                 };
+
+                if (EsPalangre)
+                {
+                    lance.DetallePalangre = new LancePalangre
+                    {
+                        LanceId = lance.Id,
+                        Identificacion = Identificacion,
+                        TipoPalangre = TipoPalangre,
+                        HoraInicioFilado = HoraInicioFilado ?? HoraInicio,
+                        HoraFinFilado = HoraFinFilado,
+                        LatitudInicioFiladoDecimal = LatitudInicioFiladoDecimal ?? LatitudInicioDecimal,
+                        LongitudInicioFiladoDecimal = LongitudInicioFiladoDecimal ?? LongitudInicioDecimal,
+                        LatitudFinFiladoDecimal = LatitudFinFiladoDecimal,
+                        LongitudFinFiladoDecimal = LongitudFinFiladoDecimal,
+                        ProfundidadInicioFiladoM = ProfundidadInicioFiladoM,
+                        ProfundidadFinFiladoM = ProfundidadFinFiladoM,
+                        FechaVirado = FechaVirado?.ToString("yyyy-MM-dd") ?? FechaFin?.ToString("yyyy-MM-dd"),
+                        HoraInicioVirado = HoraInicioVirado,
+                        HoraFinVirado = HoraFinVirado ?? HoraFinal,
+                        LatitudInicioViradoDecimal = LatitudInicioViradoDecimal,
+                        LongitudInicioViradoDecimal = LongitudInicioViradoDecimal,
+                        LatitudFinViradoDecimal = LatitudFinViradoDecimal ?? LatitudFinalDecimal,
+                        LongitudFinViradoDecimal = LongitudFinViradoDecimal ?? LongitudFinalDecimal,
+                        ProfundidadInicioViradoM = ProfundidadInicioViradoM,
+                        ProfundidadFinViradoM = ProfundidadFinViradoM,
+                        RumboViradoGrados = RumboViradoGrados ?? RumboGrados,
+                        MaterialLineaMadre = Material,
+                        LargoLineaMadreM = LmLargoM,
+                        TramosLineaMadre = LmTramos,
+                        LargoBrazoladaCm = BrzLargoM,
+                        SeparacionBrazoladasM = BrzSeparacionM,
+                        NumeroBrazoladasPorTramo = BrzNxTramo,
+                        TipoAnzuelo = AnzuelosTipo,
+                        LargoAnzueloMm = AnzuelosLargoMm,
+                        AnchoAnzueloMm = AnzuelosAnchoMm,
+                        AnzuelosTotal = AnzuelosTotal,
+                        AnzuelosConCarnada = AnzuelosConCarnada,
+                        AnzuelosSinCarnada = AnzuelosSinCarnada,
+                        Carnada = Carnada,
+                        Observaciones = Comentarios
+                    };
+
+                    lance.HoraInicio = HoraInicioFilado ?? HoraInicio;
+                    lance.HoraFinal = HoraFinVirado ?? HoraFinal;
+                    lance.LatitudInicioDecimal = LatitudInicioFiladoDecimal ?? LatitudInicioDecimal;
+                    lance.LongitudInicioDecimal = LongitudInicioFiladoDecimal ?? LongitudInicioDecimal;
+                    lance.LatitudFinalDecimal = LatitudFinViradoDecimal ?? LatitudFinalDecimal;
+                    lance.LongitudFinalDecimal = LongitudFinViradoDecimal ?? LongitudFinalDecimal;
+                    lance.FechaFin = FechaVirado ?? FechaFin;
+                    if (ProfundidadInicioViradoM.HasValue && ProfundidadFinViradoM.HasValue)
+                    {
+                        var avgProf = (int)Math.Round((ProfundidadInicioViradoM.Value + ProfundidadFinViradoM.Value) / 2.0);
+                        lance.ProfundidadInicioM = avgProf;
+                        lance.ProfundidadFinalM = avgProf;
+                    }
+                }
 
                 foreach (var itemVm in ItemsCaptura)
                 {
