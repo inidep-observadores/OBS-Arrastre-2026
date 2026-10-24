@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ClosedXML.Excel;
 using SkiaSharp;
+using ControlMareas.App.Models;
 using ControlMareas.App.Data.Entities;
 using ControlMareas.App.Services.Internal;
 
@@ -20,18 +21,35 @@ namespace ControlMareas.App.Services
                 
                 var lancesList = lances.ToList();
                 var produccionList = produccion.ToList();
+                bool isPalangre = marea.TipoMarea == TipoMarea.Palangre || lancesList.Any(l => l.DetallePalangre != null);
                 
                 // --- HOJA: ESPECIES ---
-                GenerateSpeciesSheet(workbook, lancesList);
-                AddMetadataHeader(workbook.Worksheets.Last(), marea, 7);
+                if (isPalangre)
+                {
+                    GenerateSpeciesSheetPalangre(workbook, lancesList);
+                    AddMetadataHeader(workbook.Worksheets.Last(), marea, 9);
+                }
+                else
+                {
+                    GenerateSpeciesSheet(workbook, lancesList);
+                    AddMetadataHeader(workbook.Worksheets.Last(), marea, 7);
+                }
 
                 // --- HOJA: DISTRIBUCIÓN ---
                 GenerateDistribucionSheet(workbook, lancesList);
                 AddMetadataHeader(workbook.Worksheets.Last(), marea, 9);
 
                 // --- HOJA: ÁREAS ---
-                GenerateAreasSheet(workbook, lancesList);
-                AddMetadataHeader(workbook.Worksheets.Last(), marea, 7);
+                if (isPalangre)
+                {
+                    GenerateAreasSheetPalangre(workbook, lancesList);
+                    AddMetadataHeader(workbook.Worksheets.Last(), marea, 9);
+                }
+                else
+                {
+                    GenerateAreasSheet(workbook, lancesList);
+                    AddMetadataHeader(workbook.Worksheets.Last(), marea, 7);
+                }
 
                 // --- HOJA: PRODUCCIÓN ---
                 GenerateProduccionSheet(workbook, produccionList);
@@ -530,8 +548,11 @@ namespace ControlMareas.App.Services
                 worksheet.Cell(row, 2).Value = marea?.NumeroInidep ?? 0;
                 worksheet.Cell(row, 3).Value = lance.NroLance;
                 
-                // Combinar fecha y hora
-                string fullDateTimeStr = $"{lance.Fecha} {lance.HoraInicio ?? "00:00"}";
+                var dp = lance.DetallePalangre;
+                string fullDateTimeStr = dp != null
+                    ? $"{(dp.FechaVirado ?? lance.Fecha)} {dp.HoraFinVirado ?? lance.HoraFinal ?? lance.HoraInicio ?? "00:00"}"
+                    : $"{lance.Fecha} {lance.HoraInicio ?? "00:00"}";
+
                 if (DateTime.TryParse(fullDateTimeStr, out var fechaHora))
                 {
                     worksheet.Cell(row, 4).Value = fechaHora;
@@ -542,8 +563,11 @@ namespace ControlMareas.App.Services
                     worksheet.Cell(row, 4).Value = fullDateTimeStr;
                 }
 
-                worksheet.Cell(row, 5).Value = lance.LatitudInicioDecimal ?? 0;
-                worksheet.Cell(row, 6).Value = lance.LongitudInicioDecimal ?? 0;
+                var lat = dp?.LatitudFinViradoDecimal ?? lance.LatitudFinalDecimal ?? lance.LatitudInicioDecimal ?? 0;
+                var lon = dp?.LongitudFinViradoDecimal ?? lance.LongitudFinalDecimal ?? lance.LongitudInicioDecimal ?? 0;
+
+                worksheet.Cell(row, 5).Value = lat;
+                worksheet.Cell(row, 6).Value = lon;
 
                 // Formato numérico para coordenadas (4 decimales)
                 worksheet.Cell(row, 5).Style.NumberFormat.Format = "0.0000";
@@ -954,17 +978,259 @@ namespace ControlMareas.App.Services
             worksheet.Columns().AdjustToContents();
         }
 
+        private void GenerateSpeciesSheetPalangre(XLWorkbook workbook, List<Lance> lancesList)
+        {
+            var worksheet = workbook.Worksheets.Add("Especies");
+
+            worksheet.Style.Font.FontName = "Times New Roman";
+            worksheet.Style.Font.FontSize = 12;
+
+            // Encabezados
+            worksheet.Cell(1, 1).Value = "Especie";
+            worksheet.Cell(1, 2).Value = "Captura (kg)";
+            worksheet.Cell(1, 3).Value = "Piezas";
+            worksheet.Cell(1, 4).Value = "Descarte (kg)";
+            worksheet.Cell(1, 5).Value = "Lances";
+            worksheet.Cell(1, 6).Value = "Días";
+            worksheet.Cell(1, 7).Value = "Horas";
+            worksheet.Cell(1, 8).Value = "Captura miles anzuelos";
+            worksheet.Cell(1, 9).Value = "Piezas miles anzuelos";
+
+            var headerRange = worksheet.Range(1, 1, 1, 9);
+            headerRange.Style.Font.Bold = true;
+            headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+            var itemsCaptura = lancesList.SelectMany(l => l.ItemsCaptura).ToList();
+
+            var speciesSummary = itemsCaptura
+                .GroupBy(i => i.EspecieID)
+                .Select(g => {
+                    var especie = g.First().Especie;
+                    var lancesDeEspecie = g.Select(i => i.Lance).Where(l => l != null).Distinct().ToList();
+                    
+                    double kilos = g.Sum(i => i.CapturaTotalKgCalculado);
+                    int piezas = g.Sum(i => i.Piezas ?? 0);
+                    double descarte = g.Sum(i => i.PesoDescarteCalculado);
+                    double horas = lancesDeEspecie.Sum(l => CalculateDurationHours(l!));
+                    int nroLances = lancesDeEspecie.Count;
+                    int nroDias = lancesDeEspecie.Select(l => l!.Fecha).Distinct().Count();
+                    int anzuelos = lancesDeEspecie.Sum(l => l!.DetallePalangre?.AnzuelosTotal ?? 0);
+                    double captMilesAnz = anzuelos > 0 ? (kilos * 1000.0 / anzuelos) : 0;
+                    double piezasMilesAnz = anzuelos > 0 ? (piezas * 1000.0 / anzuelos) : 0;
+
+                    return new {
+                        NombreCientifico = especie?.NombreCientifico ?? "Desconocida",
+                        Kilos = kilos,
+                        Piezas = piezas,
+                        Descarte = descarte,
+                        Lances = nroLances,
+                        Dias = nroDias,
+                        Horas = horas,
+                        CaptMilesAnz = captMilesAnz,
+                        PiezasMilesAnz = piezasMilesAnz
+                    };
+                })
+                .OrderByDescending(s => s.Kilos)
+                .ToList();
+
+            int currentRow = 2;
+            foreach (var item in speciesSummary)
+            {
+                worksheet.Cell(currentRow, 1).Value = item.NombreCientifico;
+                worksheet.Cell(currentRow, 1).Style.Font.Italic = true;
+                
+                worksheet.Cell(currentRow, 2).Value = item.Kilos;
+                worksheet.Cell(currentRow, 3).Value = item.Piezas;
+                worksheet.Cell(currentRow, 4).Value = item.Descarte;
+                worksheet.Cell(currentRow, 5).Value = item.Lances;
+                worksheet.Cell(currentRow, 6).Value = item.Dias;
+                worksheet.Cell(currentRow, 7).Value = item.Horas;
+                worksheet.Cell(currentRow, 8).Value = item.CaptMilesAnz;
+                worksheet.Cell(currentRow, 9).Value = item.PiezasMilesAnz;
+
+                currentRow++;
+            }
+
+            // Totales
+            worksheet.Cell(currentRow, 1).Value = "TOTAL";
+            
+            double totalKilos = speciesSummary.Sum(s => s.Kilos);
+            int totalPiezas = speciesSummary.Sum(s => s.Piezas);
+            double totalDescarte = speciesSummary.Sum(s => s.Descarte);
+            double totalHoras = lancesList.Sum(l => CalculateDurationHours(l));
+            int totalAnz = lancesList.Sum(l => l.DetallePalangre?.AnzuelosTotal ?? 0);
+            
+            worksheet.Cell(currentRow, 2).Value = totalKilos;
+            worksheet.Cell(currentRow, 3).Value = totalPiezas;
+            worksheet.Cell(currentRow, 4).Value = totalDescarte;
+            worksheet.Cell(currentRow, 5).Value = lancesList.Count;
+            worksheet.Cell(currentRow, 6).Value = lancesList.Select(l => l.Fecha).Distinct().Count();
+            worksheet.Cell(currentRow, 7).Value = totalHoras;
+            worksheet.Cell(currentRow, 8).Value = totalAnz > 0 ? (totalKilos * 1000.0 / totalAnz) : 0;
+            worksheet.Cell(currentRow, 9).Value = totalAnz > 0 ? (totalPiezas * 1000.0 / totalAnz) : 0;
+            
+            var totalRange = worksheet.Range(currentRow, 1, currentRow, 9);
+            totalRange.Style.Font.Bold = true;
+
+            ApplyFormattingPalangre(worksheet, currentRow);
+        }
+
+        private void GenerateAreasSheetPalangre(XLWorkbook workbook, List<Lance> lancesList)
+        {
+            var worksheet = workbook.Worksheets.Add("Áreas");
+
+            worksheet.Style.Font.FontName = "Times New Roman";
+            worksheet.Style.Font.FontSize = 12;
+
+            // Encabezados
+            worksheet.Cell(1, 1).Value = "Área";
+            worksheet.Cell(1, 2).Value = "Lances";
+            worksheet.Cell(1, 3).Value = "Días";
+            worksheet.Cell(1, 4).Value = "Horas";
+            worksheet.Cell(1, 5).Value = "Captura (kg)";
+            worksheet.Cell(1, 6).Value = "Piezas";
+            worksheet.Cell(1, 7).Value = "Descarte (kg)";
+            worksheet.Cell(1, 8).Value = "Captura miles anzuelos";
+            worksheet.Cell(1, 9).Value = "Piezas miles anzuelos";
+
+            var headerRange = worksheet.Range(1, 1, 1, 9);
+            headerRange.Style.Font.Bold = true;
+            headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+            var areaSummary = lancesList
+                .GroupBy(l => GetCuadricula(l))
+                .Select(g => {
+                    var lancesDeArea = g.ToList();
+                    double kilos = lancesDeArea.Sum(l => l.ItemsCaptura.Sum(i => i.CapturaTotalKgCalculado));
+                    int piezas = lancesDeArea.Sum(l => l.ItemsCaptura.Sum(i => i.Piezas ?? 0));
+                    double descarte = lancesDeArea.Sum(l => l.ItemsCaptura.Sum(i => i.PesoDescarteCalculado));
+                    double horas = lancesDeArea.Sum(l => CalculateDurationHours(l));
+                    int nroLances = lancesDeArea.Count;
+                    int nroDias = lancesDeArea.Select(l => l.Fecha).Distinct().Count();
+                    int anzuelos = lancesDeArea.Sum(l => l.DetallePalangre?.AnzuelosTotal ?? 0);
+                    double captMilesAnz = anzuelos > 0 ? (kilos * 1000.0 / anzuelos) : 0;
+                    double piezasMilesAnz = anzuelos > 0 ? (piezas * 1000.0 / anzuelos) : 0;
+
+                    return new {
+                        Area = g.Key,
+                        Lances = nroLances,
+                        Dias = nroDias,
+                        Horas = horas,
+                        Kilos = kilos,
+                        Piezas = piezas,
+                        Descarte = descarte,
+                        CaptMilesAnz = captMilesAnz,
+                        PiezasMilesAnz = piezasMilesAnz
+                    };
+                })
+                .OrderBy(s => s.Area)
+                .ToList();
+
+            int currentRow = 2;
+            foreach (var item in areaSummary)
+            {
+                worksheet.Cell(currentRow, 1).Value = item.Area;
+                worksheet.Cell(currentRow, 2).Value = item.Lances;
+                worksheet.Cell(currentRow, 3).Value = item.Dias;
+                worksheet.Cell(currentRow, 4).Value = item.Horas;
+                worksheet.Cell(currentRow, 5).Value = item.Kilos;
+                worksheet.Cell(currentRow, 6).Value = item.Piezas;
+                worksheet.Cell(currentRow, 7).Value = item.Descarte;
+                worksheet.Cell(currentRow, 8).Value = item.CaptMilesAnz;
+                worksheet.Cell(currentRow, 9).Value = item.PiezasMilesAnz;
+
+                currentRow++;
+            }
+
+            // Totales
+            worksheet.Cell(currentRow, 1).Value = "TOTAL";
+            double totalKilos = areaSummary.Sum(s => s.Kilos);
+            int totalPiezas = areaSummary.Sum(s => s.Piezas);
+            double totalDescarte = areaSummary.Sum(s => s.Descarte);
+            double totalHoras = lancesList.Sum(l => CalculateDurationHours(l));
+            int totalAnz = lancesList.Sum(l => l.DetallePalangre?.AnzuelosTotal ?? 0);
+
+            worksheet.Cell(currentRow, 2).Value = lancesList.Count;
+            worksheet.Cell(currentRow, 3).Value = lancesList.Select(l => l.Fecha).Distinct().Count();
+            worksheet.Cell(currentRow, 4).Value = totalHoras;
+            worksheet.Cell(currentRow, 5).Value = totalKilos;
+            worksheet.Cell(currentRow, 6).Value = totalPiezas;
+            worksheet.Cell(currentRow, 7).Value = totalDescarte;
+            worksheet.Cell(currentRow, 8).Value = totalAnz > 0 ? (totalKilos * 1000.0 / totalAnz) : 0;
+            worksheet.Cell(currentRow, 9).Value = totalAnz > 0 ? (totalPiezas * 1000.0 / totalAnz) : 0;
+
+            var totalRange = worksheet.Range(currentRow, 1, currentRow, 9);
+            totalRange.Style.Font.Bold = true;
+
+            ApplyFormattingAreasPalangre(worksheet, currentRow);
+        }
+
+        private void ApplyFormattingPalangre(IXLWorksheet worksheet, int lastRow)
+        {
+            // Col 2 (Kilos), Col 4 (Descarte), Col 7 (Horas), Col 8 (Capt/mil anz), Col 9 (Pzas/mil anz) con 2 decimales
+            worksheet.Range(2, 2, lastRow, 2).Style.NumberFormat.Format = "#,##0.00";
+            worksheet.Range(2, 4, lastRow, 4).Style.NumberFormat.Format = "#,##0.00";
+            worksheet.Range(2, 7, lastRow, 7).Style.NumberFormat.Format = "#,##0.00";
+            worksheet.Range(2, 8, lastRow, 9).Style.NumberFormat.Format = "#,##0.00";
+
+            // Col 3 (Piezas), Col 5 (Lances), Col 6 (Días) como enteros
+            worksheet.Range(2, 3, lastRow, 3).Style.NumberFormat.Format = "#,##0";
+            worksheet.Range(2, 5, lastRow, 6).Style.NumberFormat.Format = "#,##0";
+
+            // Bordes
+            var fullRange = worksheet.Range(1, 1, lastRow, 9);
+            fullRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            fullRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+
+            worksheet.Columns().AdjustToContents();
+        }
+
+        private void ApplyFormattingAreasPalangre(IXLWorksheet worksheet, int lastRow)
+        {
+            // Col 2 (Lances), Col 3 (Días), Col 6 (Piezas) como enteros
+            worksheet.Range(2, 2, lastRow, 3).Style.NumberFormat.Format = "#,##0";
+            worksheet.Range(2, 6, lastRow, 6).Style.NumberFormat.Format = "#,##0";
+
+            // Col 4 (Horas), Col 5 (Kilos), Col 7 (Descarte), Col 8 (Capt/mil anz), Col 9 (Pzas/mil anz) con 2 decimales
+            worksheet.Range(2, 4, lastRow, 5).Style.NumberFormat.Format = "#,##0.00";
+            worksheet.Range(2, 7, lastRow, 9).Style.NumberFormat.Format = "#,##0.00";
+
+            // Bordes
+            var fullRange = worksheet.Range(1, 1, lastRow, 9);
+            fullRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            fullRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+
+            worksheet.Columns().AdjustToContents();
+        }
+
         private string GetCuadricula(Lance lance)
         {
-            if (!lance.LatitudInicioDecimal.HasValue || !lance.LongitudInicioDecimal.HasValue) 
+            var lat = lance.DetallePalangre?.LatitudFinViradoDecimal ?? lance.LatitudFinalDecimal ?? lance.LatitudInicioDecimal;
+            var lon = lance.DetallePalangre?.LongitudFinViradoDecimal ?? lance.LongitudFinalDecimal ?? lance.LongitudInicioDecimal;
+
+            if (!lat.HasValue || !lon.HasValue) 
                 return "S/D";
 
-            double area = LegacyDecoder.CalculateGridArea(lance.LatitudInicioDecimal.Value, lance.LongitudInicioDecimal.Value);
+            double area = LegacyDecoder.CalculateGridArea(lat.Value, lon.Value);
             return Math.Truncate(area).ToString("0");
         }
 
         private double CalculateDurationHours(Lance lance)
         {
+            if (lance.DetallePalangre != null)
+            {
+                var dp = lance.DetallePalangre;
+                var fFinFil = lance.Fecha;
+                var fIniVir = dp.FechaVirado ?? lance.Fecha;
+                if (DateTime.TryParse($"{fFinFil} {dp.HoraFinFilado}", out var finFilado) &&
+                    DateTime.TryParse($"{fIniVir} {dp.HoraInicioVirado}", out var iniVirado))
+                {
+                    if (iniVirado < finFilado) iniVirado = iniVirado.AddDays(1);
+                    return Math.Round(Math.Max(0, (iniVirado - finFilado).TotalHours), 2);
+                }
+                return 0;
+            }
+
             if (string.IsNullOrEmpty(lance.HoraInicio) || string.IsNullOrEmpty(lance.HoraFinal)) return 0;
             
             try 

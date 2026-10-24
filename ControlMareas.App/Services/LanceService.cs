@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -26,6 +26,7 @@ public sealed class LanceService(IDbContextFactory<AppDbContext> dbContextFactor
             .Include(x => x.MareaEtapa)
                 .ThenInclude(e => e.Marea)
                     .ThenInclude(m => m.Buque)
+            .Include(x => x.DetallePalangre)
             .Include(x => x.ItemsCaptura)
                 .ThenInclude(i => i.Especie)
             .Include(x => x.Muestras)
@@ -79,6 +80,7 @@ public sealed class LanceService(IDbContextFactory<AppDbContext> dbContextFactor
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
         
         return await dbContext.Lances
+            .Include(x => x.DetallePalangre)
             .Include(x => x.ItemsCaptura)
                 .ThenInclude(i => i.Especie)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);

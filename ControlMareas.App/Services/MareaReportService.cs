@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using ControlMareas.App.Models;
 using ControlMareas.App.Models.Import;
 using ControlMareas.App.Models.Reports;
 using ControlMareas.App.Data.Entities;
@@ -1182,41 +1183,62 @@ public class MareaReportService : IMareaReportService
                 doc.InsertParagraph().SpacingAfter(10);
             }
 
-            // Tablas de datos
-            doc.InsertParagraph("Datos de captura, esfuerzo y producción").Font("Times New Roman").FontSize(12).Bold().SpacingAfter(6);
+            bool isPalangre = marea.TipoMarea == TipoMarea.Palangre || etapaLances.Any(l => l.DetallePalangre != null);
 
             doc.InsertParagraph("Captura por especie").Font("Times New Roman").FontSize(12).Italic().SpacingBefore(6);
-            InsertSpeciesTable(doc, etapaLances);
+            if (isPalangre)
+            {
+                InsertSpeciesTablePalangre(doc, etapaLances);
+            }
+            else
+            {
+                InsertSpeciesTable(doc, etapaLances);
+            }
 
             doc.InsertParagraph("Captura por área").Font("Times New Roman").FontSize(12).Italic().SpacingBefore(10);
-            InsertAreaTable(doc, etapaLances);
+            if (isPalangre)
+            {
+                InsertAreaTablePalangre(doc, etapaLances);
+            }
+            else
+            {
+                InsertAreaTable(doc, etapaLances);
+            }
 
             doc.InsertParagraph("Producción").Font("Times New Roman").FontSize(12).Italic().SpacingBefore(10);
             InsertProduccionTable(doc, etapaProduccion);
 
-                    // Mapa
-                    var lancesConCoord = etapaLances.Where(l => l.LatitudInicioDecimal.HasValue && l.LongitudInicioDecimal.HasValue).ToList();
-                    if (lancesConCoord.Any())
-                    {
-                        doc.InsertParagraph("Localización del área de pesca").Font("Times New Roman").FontSize(12).Bold().SpacingBefore(10).Alignment = Alignment.center;
-                        try
-                        {
-                            var lats = lancesConCoord.Select(l => l.LatitudInicioDecimal!.Value);
-                            var lons = lancesConCoord.Select(l => l.LongitudInicioDecimal!.Value);
-                            var mapBytes = await _mapRenderingService.RenderMapToBytesAsync(lats, lons);
-                            using var mapMs = new MemoryStream(mapBytes);
-                            var img = doc.AddImage(mapMs);
-                            var pic = img.CreatePicture();
-                            using var codec = SKCodec.Create(new MemoryStream(mapBytes));
-                            double ratio = (double)codec.Info.Height / codec.Info.Width;
-                            pic.Width = 450;
-                            pic.Height = (int)(450 * ratio);
-                            var pMap = doc.InsertParagraph();
-                            pMap.AppendPicture(pic);
-                            pMap.Alignment = Alignment.center;
-                        }
-                        catch { }
-                    }
+            // Mapa
+            var lancesConCoord = isPalangre
+                ? etapaLances.Where(l => (l.DetallePalangre?.LatitudFinViradoDecimal ?? l.LatitudFinalDecimal ?? l.LatitudInicioDecimal).HasValue &&
+                                         (l.DetallePalangre?.LongitudFinViradoDecimal ?? l.LongitudFinalDecimal ?? l.LongitudInicioDecimal).HasValue).ToList()
+                : etapaLances.Where(l => l.LatitudInicioDecimal.HasValue && l.LongitudInicioDecimal.HasValue).ToList();
+
+            if (lancesConCoord.Any())
+            {
+                doc.InsertParagraph("Localización del área de pesca").Font("Times New Roman").FontSize(12).Bold().SpacingBefore(10).Alignment = Alignment.center;
+                try
+                {
+                    var lats = isPalangre
+                        ? lancesConCoord.Select(l => (l.DetallePalangre?.LatitudFinViradoDecimal ?? l.LatitudFinalDecimal ?? l.LatitudInicioDecimal)!.Value)
+                        : lancesConCoord.Select(l => l.LatitudInicioDecimal!.Value);
+                    var lons = isPalangre
+                        ? lancesConCoord.Select(l => (l.DetallePalangre?.LongitudFinViradoDecimal ?? l.LongitudFinalDecimal ?? l.LongitudInicioDecimal)!.Value)
+                        : lancesConCoord.Select(l => l.LongitudInicioDecimal!.Value);
+                    var mapBytes = await _mapRenderingService.RenderMapToBytesAsync(lats, lons);
+                    using var mapMs = new MemoryStream(mapBytes);
+                    var img = doc.AddImage(mapMs);
+                    var pic = img.CreatePicture();
+                    using var codec = SKCodec.Create(new MemoryStream(mapBytes));
+                    double ratio = (double)codec.Info.Height / codec.Info.Width;
+                    pic.Width = 450;
+                    pic.Height = (int)(450 * ratio);
+                    var pMap = doc.InsertParagraph();
+                    pMap.AppendPicture(pic);
+                    pMap.Alignment = Alignment.center;
+                }
+                catch { }
+            }
 
                     // Frecuencias de tallas
                     doc.InsertParagraph("Distribución de frecuencias de longitudes").Font("Times New Roman").FontSize(14).Bold().SpacingBefore(10).SpacingAfter(6);
@@ -1364,6 +1386,179 @@ public class MareaReportService : IMareaReportService
             SetR(5, a.Dias.ToString());
             SetR(6, FormatVal(a.Horas));
         }
+        doc.InsertTable(table);
+    }
+
+    private void InsertSpeciesTablePalangre(DocX doc, List<Lance> lances)
+    {
+        var itemsCaptura = lances.SelectMany(l => l.ItemsCaptura).ToList();
+        var summary = itemsCaptura
+            .GroupBy(i => i.EspecieID)
+            .Select(g => {
+                var esp = g.First().Especie;
+                var lancesEsp = g.Select(i => i.Lance).Where(l => l != null).Distinct().ToList();
+                double kilos = g.Sum(i => i.CapturaTotalKgCalculado);
+                int piezas = g.Sum(i => i.Piezas ?? 0);
+                double descarte = g.Sum(i => i.PesoDescarteCalculado);
+                double horas = lancesEsp.Sum(l => GetHorasEfectivas(l!));
+                int anzuelos = lancesEsp.Sum(l => l!.DetallePalangre?.AnzuelosTotal ?? 0);
+                double captMilesAnz = anzuelos > 0 ? (kilos * 1000.0 / anzuelos) : 0;
+                double piezasMilesAnz = anzuelos > 0 ? (piezas * 1000.0 / anzuelos) : 0;
+
+                return new {
+                    Nombre = esp?.NombreCientifico ?? "Desconocida",
+                    Kilos = kilos,
+                    Piezas = piezas,
+                    Descarte = descarte,
+                    Lances = lancesEsp.Count,
+                    Dias = lancesEsp.Select(l => l!.Fecha).Distinct().Count(),
+                    Horas = horas,
+                    CaptMilesAnz = captMilesAnz,
+                    PiezasMilesAnz = piezasMilesAnz
+                };
+            })
+            .OrderByDescending(s => s.Kilos)
+            .ToList();
+
+        var table = doc.AddTable(summary.Count + 2, 9);
+        table.Alignment = Alignment.center;
+        table.Design = TableDesign.TableGrid;
+        table.AutoFit = AutoFit.Window;
+        table.SetWidthsPercentage(new float[] { 26, 12, 8, 11, 7, 6, 7, 11, 12 }, null);
+
+        // Headers
+        string[] headers = { "Especie", "Captura (kg)", "Piezas", "Descarte (kg)", "Lances", "Días", "Horas", "Capt./mil anz.", "Pzas./mil anz." };
+        for (int i = 0; i < headers.Length; i++)
+        {
+            var hp = table.Rows[0].Cells[i].Paragraphs[0];
+            hp.Append(headers[i]).Bold().Font("Times New Roman").FontSize(11);
+            table.Rows[0].Cells[i].FillColor = XColor.LightGray;
+            if (i > 0) hp.Alignment = Alignment.right;
+        }
+
+        table.Rows[0].TableHeader = true;
+
+        int rowIdx = 1;
+        foreach (var s in summary)
+        {
+            table.Rows[rowIdx].Cells[0].Paragraphs[0].Append(s.Nombre).Italic().Font("Times New Roman").FontSize(11);
+            void SetR(int col, string val) { var p = table.Rows[rowIdx].Cells[col].Paragraphs[0]; p.Append(val).Font("Times New Roman").FontSize(11); p.Alignment = Alignment.right; }
+            SetR(1, FormatVal(s.Kilos));
+            SetR(2, s.Piezas.ToString());
+            SetR(3, FormatVal(s.Descarte));
+            SetR(4, s.Lances.ToString());
+            SetR(5, s.Dias.ToString());
+            SetR(6, FormatVal(s.Horas));
+            SetR(7, FormatVal(s.CaptMilesAnz));
+            SetR(8, FormatVal(s.PiezasMilesAnz));
+            rowIdx++;
+        }
+
+        // Totales
+        double totalK = summary.Sum(s => s.Kilos);
+        int totalP = summary.Sum(s => s.Piezas);
+        double totalD = summary.Sum(s => s.Descarte);
+        double totalH = lances.Sum(l => GetHorasEfectivas(l));
+        int totalAnz = lances.Sum(l => l.DetallePalangre?.AnzuelosTotal ?? 0);
+        double totCaptMilesAnz = totalAnz > 0 ? (totalK * 1000.0 / totalAnz) : 0;
+        double totPiezasMilesAnz = totalAnz > 0 ? (totalP * 1000.0 / totalAnz) : 0;
+
+        table.Rows[rowIdx].Cells[0].Paragraphs[0].Append("Totales").Bold().Font("Times New Roman").FontSize(11);
+        void SetT(int col, string val) { var p = table.Rows[rowIdx].Cells[col].Paragraphs[0]; p.Append(val).Bold().Font("Times New Roman").FontSize(11); p.Alignment = Alignment.right; }
+        SetT(1, FormatVal(totalK));
+        SetT(2, totalP.ToString());
+        SetT(3, FormatVal(totalD));
+        SetT(4, lances.Count.ToString());
+        SetT(5, lances.Select(l => l.Fecha).Distinct().Count().ToString());
+        SetT(6, FormatVal(totalH));
+        SetT(7, FormatVal(totCaptMilesAnz));
+        SetT(8, FormatVal(totPiezasMilesAnz));
+
+        doc.InsertTable(table);
+    }
+
+    private void InsertAreaTablePalangre(DocX doc, List<Lance> lances)
+    {
+        var areaSummary = lances
+            .GroupBy(l => GetCuadricula(l))
+            .Select(g => {
+                var lancesArea = g.ToList();
+                double kilos = lancesArea.SelectMany(l => l.ItemsCaptura).Sum(i => i.CapturaTotalKgCalculado);
+                int piezas = lancesArea.SelectMany(l => l.ItemsCaptura).Sum(i => i.Piezas ?? 0);
+                double descarte = lancesArea.SelectMany(l => l.ItemsCaptura).Sum(i => i.PesoDescarteCalculado);
+                double horas = lancesArea.Sum(l => GetHorasEfectivas(l));
+                int anzuelos = lancesArea.Sum(l => l.DetallePalangre?.AnzuelosTotal ?? 0);
+                double captMilesAnz = anzuelos > 0 ? (kilos * 1000.0 / anzuelos) : 0;
+                double piezasMilesAnz = anzuelos > 0 ? (piezas * 1000.0 / anzuelos) : 0;
+
+                return new {
+                    Area = g.Key,
+                    Lances = lancesArea.Count,
+                    Dias = lancesArea.Select(l => l.Fecha).Distinct().Count(),
+                    Horas = horas,
+                    Kilos = kilos,
+                    Piezas = piezas,
+                    Descarte = descarte,
+                    CaptMilesAnz = captMilesAnz,
+                    PiezasMilesAnz = piezasMilesAnz
+                };
+            })
+            .OrderByDescending(a => a.Kilos)
+            .ToList();
+
+        var table = doc.AddTable(areaSummary.Count + 2, 9);
+        table.Alignment = Alignment.center;
+        table.Design = TableDesign.TableGrid;
+        table.AutoFit = AutoFit.Window;
+        table.SetWidthsPercentage(new float[] { 12, 8, 7, 8, 14, 10, 13, 14, 14 }, null);
+
+        string[] headers = { "Área", "Lances", "Días", "Horas", "Captura (kg)", "Piezas", "Descarte (kg)", "Capt./mil anz.", "Pzas./mil anz." };
+        for (int i = 0; i < headers.Length; i++)
+        {
+            var hp = table.Rows[0].Cells[i].Paragraphs[0];
+            hp.Append(headers[i]).Bold().Font("Times New Roman").FontSize(11);
+            table.Rows[0].Cells[i].FillColor = XColor.LightGray;
+            if (i > 0) hp.Alignment = Alignment.right;
+        }
+
+        table.Rows[0].TableHeader = true;
+
+        int rowIdx = 1;
+        foreach (var a in areaSummary)
+        {
+            table.Rows[rowIdx].Cells[0].Paragraphs[0].Append(a.Area).Font("Times New Roman").FontSize(11);
+            void SetR(int col, string val) { var p = table.Rows[rowIdx].Cells[col].Paragraphs[0]; p.Append(val).Font("Times New Roman").FontSize(11); p.Alignment = Alignment.right; }
+            SetR(1, a.Lances.ToString());
+            SetR(2, a.Dias.ToString());
+            SetR(3, FormatVal(a.Horas));
+            SetR(4, FormatVal(a.Kilos));
+            SetR(5, a.Piezas.ToString());
+            SetR(6, FormatVal(a.Descarte));
+            SetR(7, FormatVal(a.CaptMilesAnz));
+            SetR(8, FormatVal(a.PiezasMilesAnz));
+            rowIdx++;
+        }
+
+        // Totales
+        double totalK = areaSummary.Sum(s => s.Kilos);
+        int totalP = areaSummary.Sum(s => s.Piezas);
+        double totalD = areaSummary.Sum(s => s.Descarte);
+        double totalH = lances.Sum(l => GetHorasEfectivas(l));
+        int totalAnz = lances.Sum(l => l.DetallePalangre?.AnzuelosTotal ?? 0);
+        double totCaptMilesAnz = totalAnz > 0 ? (totalK * 1000.0 / totalAnz) : 0;
+        double totPiezasMilesAnz = totalAnz > 0 ? (totalP * 1000.0 / totalAnz) : 0;
+
+        table.Rows[rowIdx].Cells[0].Paragraphs[0].Append("Totales").Bold().Font("Times New Roman").FontSize(11);
+        void SetT(int col, string val) { var p = table.Rows[rowIdx].Cells[col].Paragraphs[0]; p.Append(val).Bold().Font("Times New Roman").FontSize(11); p.Alignment = Alignment.right; }
+        SetT(1, lances.Count.ToString());
+        SetT(2, lances.Select(l => l.Fecha).Distinct().Count().ToString());
+        SetT(3, FormatVal(totalH));
+        SetT(4, FormatVal(totalK));
+        SetT(5, totalP.ToString());
+        SetT(6, FormatVal(totalD));
+        SetT(7, FormatVal(totCaptMilesAnz));
+        SetT(8, FormatVal(totPiezasMilesAnz));
+
         doc.InsertTable(table);
     }
 
@@ -1822,7 +2017,40 @@ public class MareaReportService : IMareaReportService
     }
 
     private string GetCuadricula(Lance lance)
-        => LegacyDecoder.GetAreaKey(lance.LatitudInicioDecimal, lance.LongitudInicioDecimal);
+    {
+        if (lance.DetallePalangre != null)
+        {
+            var lat = lance.DetallePalangre.LatitudFinViradoDecimal ?? lance.LatitudFinalDecimal ?? lance.LatitudInicioDecimal;
+            var lon = lance.DetallePalangre.LongitudFinViradoDecimal ?? lance.LongitudFinalDecimal ?? lance.LongitudInicioDecimal;
+            return LegacyDecoder.GetAreaKey(lat, lon);
+        }
+        return LegacyDecoder.GetAreaKey(lance.LatitudInicioDecimal, lance.LongitudInicioDecimal);
+    }
+
+    private double GetHorasEfectivas(Lance lance)
+    {
+        if (lance.DetallePalangre != null)
+        {
+            var dp = lance.DetallePalangre;
+            var fFinFil = lance.Fecha;
+            var fIniVir = dp.FechaVirado ?? lance.Fecha;
+            if (DateTime.TryParse($"{fFinFil} {dp.HoraFinFilado}", out var finFilado) &&
+                DateTime.TryParse($"{fIniVir} {dp.HoraInicioVirado}", out var iniVirado))
+            {
+                if (iniVirado < finFilado) iniVirado = iniVirado.AddDays(1);
+                return Math.Max(0, (iniVirado - finFilado).TotalHours);
+            }
+            return 0;
+        }
+
+        if (DateTime.TryParse($"{lance.Fecha} {lance.HoraInicio}", out var start) &&
+            DateTime.TryParse($"{(lance.FechaFin?.ToString("yyyy-MM-dd") ?? lance.Fecha)} {lance.HoraFinal}", out var end))
+        {
+            if (end < start) end = end.AddDays(1);
+            return Math.Max(0, (end - start).TotalHours);
+        }
+        return 0;
+    }
 
     private int GetSpeciesCutoff(string? codigoInidep)
     {
