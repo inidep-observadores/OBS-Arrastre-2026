@@ -552,6 +552,167 @@ public sealed class DbfExporterServiceTests : IDisposable
         }
     }
 
+    [Fact]
+    public async Task ExportMareaToDbfAsync_MareaPalangre_ExportaArchivoCPCon85Campos()
+    {
+        // 1. Arrange: Crear marea de palangre
+        string mareaId = "marea-palangre-id";
+        string buqueId = "buque-palangre-id";
+        string etapaId = "etapa-palangre-id";
+        string lanceId = "lance-palangre-id";
+        string especieId = "especie-palangre-id";
+
+        using (var db = _fixture.CreateContext())
+        {
+            var buque = new Buque
+            {
+                Id = buqueId,
+                Nombre = "ARGENOVA XIV",
+                Matricula = 5678
+            };
+            db.Buques.Add(buque);
+
+            var marea = new Marea
+            {
+                ID = mareaId,
+                NumeroInidep = 77,
+                AnioInidep = 2026,
+                BuqueID = buqueId,
+                TipoMarea = TipoMarea.Palangre,
+                FechaInicio = new DateTime(2026, 5, 20),
+                FechaFin = new DateTime(2026, 6, 10)
+            };
+            db.Mareas.Add(marea);
+
+            var etapa = new MareaEtapa
+            {
+                ID = etapaId,
+                MareaID = mareaId,
+                FechaZarpada = new DateTime(2026, 5, 20),
+                FechaArribo = new DateTime(2026, 6, 10)
+            };
+            db.MareaEtapas.Add(etapa);
+
+            var especie = new Especie
+            {
+                ID = especieId,
+                CodigoInidep = "7218280201",
+                NombreVulgar = "Bacalao de profundidad",
+                NombreCientifico = "Dissostichus eleginoides"
+            };
+            db.Especies.Add(especie);
+
+            var lance = new Lance
+            {
+                Id = lanceId,
+                MareaEtapaId = etapaId,
+                NroLance = 1,
+                Fecha = "2026-05-27",
+                FechaFin = new DateTime(2026, 5, 28),
+                HoraInicio = "07:49",
+                HoraFinal = "21:00",
+                LatitudInicioDecimal = -39.172,
+                LongitudInicioDecimal = -54.537,
+                LatitudFinalDecimal = -39.194,
+                LongitudFinalDecimal = -54.444,
+                ProfundidadInicioM = 1144,
+                ProfundidadFinalM = 1280,
+                CapturaTotalKg = 500,
+                DescarteTotalKg = 25,
+                DetallePalangre = new LancePalangre
+                {
+                    LanceId = lanceId,
+                    Identificacion = "LW8316",
+                    HoraInicioFilado = "07:49",
+                    HoraFinFilado = "09:12",
+                    LatitudInicioFiladoDecimal = -39.172,
+                    LongitudInicioFiladoDecimal = -54.537,
+                    LatitudFinFiladoDecimal = -39.205,
+                    LongitudFinFiladoDecimal = -54.454,
+                    ProfundidadInicioFiladoM = 1144,
+                    ProfundidadFinFiladoM = 1310,
+                    FechaVirado = "2026-05-28",
+                    HoraInicioVirado = "09:00",
+                    HoraFinVirado = "21:00",
+                    LatitudInicioViradoDecimal = -39.182,
+                    LongitudInicioViradoDecimal = -54.391,
+                    LatitudFinViradoDecimal = -39.194,
+                    LongitudFinViradoDecimal = -54.444,
+                    ProfundidadInicioViradoM = 1150,
+                    ProfundidadFinViradoM = 1280,
+                    AnzuelosTotal = 6000,
+                    Carnada = "CALAMAR",
+                    MaterialLineaMadre = "POLIPROPIL"
+                }
+            };
+
+            lance.ItemsCaptura.Add(new ItemCaptura
+            {
+                ID = Guid.NewGuid().ToString(),
+                LanceID = lanceId,
+                EspecieID = especieId,
+                EspecieOriginal = "7218280201",
+                DatoCaptura = 500,
+                DatoDescarte = 25,
+                TipoDatoDescarte = TipoDatoDescarte.Kilogramos,
+                Piezas = 45,
+                NumeroOrden = 1
+            });
+
+            db.Lances.Add(lance);
+            await db.SaveChangesAsync();
+        }
+
+        Marea fullMarea;
+        using (var db = _fixture.CreateContext())
+        {
+            fullMarea = await db.Mareas
+                .Include(m => m.Buque)
+                .Include(m => m.Etapas)
+                    .ThenInclude(e => e.Lances)
+                        .ThenInclude(l => l.ItemsCaptura)
+                .Include(m => m.Etapas)
+                    .ThenInclude(e => e.Lances)
+                        .ThenInclude(l => l.DetallePalangre)
+                .FirstAsync(m => m.ID == mareaId);
+        }
+
+        string tempOutputDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(tempOutputDir);
+
+        try
+        {
+            // 2. Act: Exportar
+            await _service.ExportMareaToDbfAsync(fullMarea, tempOutputDir);
+
+            // 3. Assert: Verificar archivo CP7726.DBF generado y C7726.DBF NO generado
+            string cpPath = Path.Combine(tempOutputDir, "CP7726.DBF");
+            File.Exists(cpPath).Should().BeTrue();
+            File.Exists(Path.Combine(tempOutputDir, "C7726.DBF")).Should().BeFalse();
+
+            // Verificar estructura de 85 campos
+            using var stream = File.OpenRead(cpPath);
+            var reader = new DBFReader(stream);
+            reader.Fields.Length.Should().Be(85);
+            reader.Fields.Should().Contain(f => f.Name == "IDENTIFIC");
+            reader.Fields.Should().Contain(f => f.Name == "ANZ_NTOTAL");
+            reader.Fields.Should().Contain(f => f.Name == "PIEZA_1");
+            reader.Fields.Should().Contain(f => f.Name == "DESCAR_1");
+
+            var record = reader.NextRecord();
+            record.Should().NotBeNull();
+            record[0].ToString()!.Trim().Should().Be("LW8316"); // IDENTIFIC
+            record[1].ToString()!.Trim().Should().Be("ARGENOVA XIV"); // BARCO
+        }
+        finally
+        {
+            if (Directory.Exists(tempOutputDir))
+            {
+                Directory.Delete(tempOutputDir, true);
+            }
+        }
+    }
+
     public void Dispose()
     {
         _fixture.Dispose();

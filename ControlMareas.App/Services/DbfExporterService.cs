@@ -38,6 +38,9 @@ public sealed class DbfExporterService : IDbfExporterService
             .Include(m => m.Buque)
             .Include(m => m.Etapas)
                 .ThenInclude(e => e.Lances)
+                    .ThenInclude(l => l.DetallePalangre)
+            .Include(m => m.Etapas)
+                .ThenInclude(e => e.Lances)
                     .ThenInclude(l => l.ItemsCaptura)
                         .ThenInclude(i => i.Especie)
             .Include(m => m.Etapas)
@@ -79,8 +82,17 @@ public sealed class DbfExporterService : IDbfExporterService
         // Exportar cada archivo
         progress?.Report(10);
         var sw = Stopwatch.StartNew();
-        await ExportCapturasAsync(fullMarea, barcoNombre, mareaSuffix, outputPath, exportEncoding, originalFilenames);
-        summary.StageTimings["Capturas (C)"] = sw.Elapsed;
+        bool isPalangre = fullMarea.TipoMarea == TipoMarea.Palangre || fullMarea.Etapas.Any(e => e.Lances.Any(l => l.DetallePalangre != null));
+        if (isPalangre)
+        {
+            await ExportCapturasPalangreAsync(fullMarea, barcoNombre, mareaSuffix, outputPath, exportEncoding, originalFilenames);
+            summary.StageTimings["Capturas Palangre (CP)"] = sw.Elapsed;
+        }
+        else
+        {
+            await ExportCapturasAsync(fullMarea, barcoNombre, mareaSuffix, outputPath, exportEncoding, originalFilenames);
+            summary.StageTimings["Capturas (C)"] = sw.Elapsed;
+        }
 
         progress?.Report(30);
         sw.Restart();
@@ -225,6 +237,177 @@ public sealed class DbfExporterService : IDbfExporterService
                     }
                     else
                     {
+                        row[idx++] = 0.0;
+                        row[idx++] = 0.0;
+                        row[idx++] = 0.0;
+                    }
+                }
+
+                writer.WriteRecord(row);
+            }
+        }
+
+        writer.Close();
+    }
+
+    private async Task ExportCapturasPalangreAsync(Marea marea, string barco, string suffix, string path, Encoding encoding, Dictionary<string, string>? originalFilenames)
+    {
+        if (!marea.Etapas.Any(e => e.Lances.Any())) return;
+
+        string name = (originalFilenames != null && originalFilenames.TryGetValue("CP", out var originalName) && !string.IsNullOrWhiteSpace(originalName))
+            ? originalName
+            : $"CP{suffix}.DBF";
+        string fileName = Path.Combine(path, name);
+
+        using var stream = File.Open(fileName, FileMode.Create, FileAccess.Write);
+        var writer = new DBFWriter(stream) { CharEncoding = encoding };
+
+        var fields = new List<DBFField>
+        {
+            new DBFField("IDENTIFIC", NativeDbType.Char, 6, 0),
+            new DBFField("BARCO", NativeDbType.Char, 20, 0),
+            new DBFField("MAREA", NativeDbType.Numeric, 3, 0),
+            new DBFField("LANCE", NativeDbType.Numeric, 3, 0),
+            new DBFField("FECHA_FI", NativeDbType.Date),
+            new DBFField("FECHA_VI", NativeDbType.Date),
+            new DBFField("HORA_INI_F", NativeDbType.Numeric, 5, 2),
+            new DBFField("HORA_FIN_F", NativeDbType.Numeric, 6, 2),
+            new DBFField("LAT_INIC_F", NativeDbType.Numeric, 6, 3),
+            new DBFField("LAT_FIN_F", NativeDbType.Numeric, 6, 3),
+            new DBFField("LONG_IN_F", NativeDbType.Numeric, 6, 3),
+            new DBFField("LONG_FI_F", NativeDbType.Numeric, 6, 3),
+            new DBFField("HORA_INI_V", NativeDbType.Numeric, 5, 2),
+            new DBFField("HORA_FIN_V", NativeDbType.Numeric, 5, 2),
+            new DBFField("LAT_INIC_V", NativeDbType.Numeric, 6, 3),
+            new DBFField("LAT_FIN_V", NativeDbType.Numeric, 6, 3),
+            new DBFField("LONG_IN_V", NativeDbType.Numeric, 6, 3),
+            new DBFField("LONG_FI_V", NativeDbType.Numeric, 6, 3),
+            new DBFField("RUMBO", NativeDbType.Numeric, 3, 0),
+            new DBFField("TIEMPO", NativeDbType.Numeric, 2, 0),
+            new DBFField("MAR", NativeDbType.Numeric, 2, 0),
+            new DBFField("DIR_VIENTO", NativeDbType.Numeric, 3, 0),
+            new DBFField("VEL_VIENTO", NativeDbType.Numeric, 2, 0),
+            new DBFField("PROF_INI_F", NativeDbType.Numeric, 4, 0),
+            new DBFField("PROF_FIN_F", NativeDbType.Numeric, 4, 0),
+            new DBFField("PROF_INI_V", NativeDbType.Numeric, 4, 0),
+            new DBFField("PROF_FIN_V", NativeDbType.Numeric, 4, 0),
+            new DBFField("TMP_AIRE", NativeDbType.Numeric, 5, 2),
+            new DBFField("TMP_MAR_S", NativeDbType.Numeric, 5, 2),
+            new DBFField("PRESION_B", NativeDbType.Numeric, 6, 1),
+            new DBFField("TIP_PALAN", NativeDbType.Char, 10, 0),
+            new DBFField("MATERIAL", NativeDbType.Char, 10, 0),
+            new DBFField("LM_LARGO", NativeDbType.Numeric, 5, 0),
+            new DBFField("LM_TRAMOS", NativeDbType.Numeric, 3, 0),
+            new DBFField("BRZ_LARGO", NativeDbType.Numeric, 3, 0),
+            new DBFField("BRZ_SEPAR", NativeDbType.Numeric, 3, 0),
+            new DBFField("BRZ_NXTRMO", NativeDbType.Numeric, 3, 0),
+            new DBFField("ANZ_TIPO", NativeDbType.Char, 10, 0),
+            new DBFField("ANZ_LARGO", NativeDbType.Numeric, 2, 0),
+            new DBFField("ANZ_ANCHO", NativeDbType.Numeric, 2, 0),
+            new DBFField("ANZ_NTOTAL", NativeDbType.Numeric, 5, 0),
+            new DBFField("ANZ_CCARN", NativeDbType.Numeric, 5, 0),
+            new DBFField("ANZ_SCARN", NativeDbType.Numeric, 5, 0),
+            new DBFField("CARNADA", NativeDbType.Char, 10, 0),
+            new DBFField("OBSERVAC", NativeDbType.Char, 50, 0)
+        };
+
+        for (int i = 1; i <= 10; i++)
+        {
+            fields.Add(new DBFField($"ESPECIE_{i}", NativeDbType.Numeric, 10, 0));
+            fields.Add(new DBFField($"KG_{i}", NativeDbType.Numeric, 9, 2));
+            fields.Add(new DBFField($"PIEZA_{i}", NativeDbType.Numeric, 4, 0));
+            fields.Add(new DBFField($"DESCAR_{i}", NativeDbType.Numeric, 7, 1));
+        }
+
+        writer.Fields = fields.ToArray();
+
+        foreach (var etapa in marea.Etapas)
+        {
+            foreach (var lance in etapa.Lances.OrderBy(l => l.NroLance))
+            {
+                var dp = lance.DetallePalangre;
+                var row = new object[fields.Count];
+                int idx = 0;
+
+                string identific = dp?.Identificacion ?? "";
+                if (identific.Length > 6) identific = identific.Substring(0, 6);
+                row[idx++] = identific;
+
+                row[idx++] = barco;
+                row[idx++] = (double)marea.NumeroInidep;
+                row[idx++] = (double)lance.NroLance;
+
+                row[idx++] = DateTime.Parse(lance.Fecha);
+                DateTime fechaVi = !string.IsNullOrEmpty(dp?.FechaVirado) 
+                    ? DateTime.Parse(dp.FechaVirado) 
+                    : (lance.FechaFin ?? DateTime.Parse(lance.Fecha));
+                row[idx++] = fechaVi;
+
+                row[idx++] = LegacyDecoder.EncodeTime(ParseTime(dp?.HoraInicioFilado ?? lance.HoraInicio));
+                row[idx++] = LegacyDecoder.EncodeTime(ParseTime(dp?.HoraFinFilado));
+
+                row[idx++] = LegacyDecoder.EncodeCoordinate(dp?.LatitudInicioFiladoDecimal ?? lance.LatitudInicioDecimal ?? 0);
+                row[idx++] = LegacyDecoder.EncodeCoordinate(dp?.LatitudFinFiladoDecimal ?? 0);
+                row[idx++] = LegacyDecoder.EncodeCoordinate(dp?.LongitudInicioFiladoDecimal ?? lance.LongitudInicioDecimal ?? 0);
+                row[idx++] = LegacyDecoder.EncodeCoordinate(dp?.LongitudFinFiladoDecimal ?? 0);
+
+                row[idx++] = LegacyDecoder.EncodeTime(ParseTime(dp?.HoraInicioVirado));
+                row[idx++] = LegacyDecoder.EncodeTime(ParseTime(dp?.HoraFinVirado ?? lance.HoraFinal));
+
+                row[idx++] = LegacyDecoder.EncodeCoordinate(dp?.LatitudInicioViradoDecimal ?? 0);
+                row[idx++] = LegacyDecoder.EncodeCoordinate(dp?.LatitudFinViradoDecimal ?? lance.LatitudFinalDecimal ?? 0);
+                row[idx++] = LegacyDecoder.EncodeCoordinate(dp?.LongitudInicioViradoDecimal ?? 0);
+                row[idx++] = LegacyDecoder.EncodeCoordinate(dp?.LongitudFinViradoDecimal ?? lance.LongitudFinalDecimal ?? 0);
+
+                row[idx++] = (double?)dp?.RumboViradoGrados ?? (double?)lance.RumboGrados;
+                row[idx++] = (double?)lance.EstadoTiempoCodigo;
+                row[idx++] = (double?)lance.EstadoMarCodigo;
+                row[idx++] = (double?)lance.VientoDireccionGrados;
+                row[idx++] = (double?)lance.VientoFuerzaBeaufort;
+
+                row[idx++] = (double?)dp?.ProfundidadInicioFiladoM;
+                row[idx++] = (double?)dp?.ProfundidadFinFiladoM;
+                row[idx++] = (double?)dp?.ProfundidadInicioViradoM ?? (double?)lance.ProfundidadInicioM;
+                row[idx++] = (double?)dp?.ProfundidadFinViradoM ?? (double?)lance.ProfundidadFinalM;
+
+                row[idx++] = (double?)lance.TemperaturaAireC;
+                row[idx++] = (double?)lance.TmpMarS;
+                row[idx++] = (double?)lance.PresionHpa;
+
+                row[idx++] = dp?.TipoPalangre ?? "";
+                row[idx++] = dp?.MaterialLineaMadre ?? "";
+                row[idx++] = (double?)dp?.LargoLineaMadreM;
+                row[idx++] = (double?)dp?.TramosLineaMadre;
+                row[idx++] = (double?)dp?.LargoBrazoladaCm;
+                row[idx++] = (double?)dp?.SeparacionBrazoladasM;
+                row[idx++] = (double?)dp?.NumeroBrazoladasPorTramo;
+                row[idx++] = dp?.TipoAnzuelo ?? "";
+                row[idx++] = (double?)dp?.LargoAnzueloMm;
+                row[idx++] = (double?)dp?.AnchoAnzueloMm;
+                row[idx++] = (double?)dp?.AnzuelosTotal;
+                row[idx++] = (double?)dp?.AnzuelosConCarnada;
+                row[idx++] = (double?)dp?.AnzuelosSinCarnada;
+                row[idx++] = dp?.Carnada ?? "";
+
+                string obs = dp?.Observaciones ?? (lance.Comentarios ?? "");
+                if (obs.Length > 50) obs = obs.Substring(0, 50);
+                row[idx++] = obs;
+
+                var items = lance.ItemsCaptura.OrderBy(i => i.NumeroOrden).Take(10).ToList();
+                for (int i = 0; i < 10; i++)
+                {
+                    if (i < items.Count)
+                    {
+                        var item = items[i];
+                        item.Lance = lance;
+                        row[idx++] = double.TryParse(item.Especie?.CodigoInidep ?? item.EspecieOriginal, out double spCode) ? spCode : 0.0;
+                        row[idx++] = item.CapturaTotalKgCalculado;
+                        row[idx++] = (double)(item.Piezas ?? 0);
+                        row[idx++] = item.PesoDescarteCalculado;
+                    }
+                    else
+                    {
+                        row[idx++] = 0.0;
                         row[idx++] = 0.0;
                         row[idx++] = 0.0;
                         row[idx++] = 0.0;
