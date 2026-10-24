@@ -1,5 +1,6 @@
 using System.Text;
 using System.Globalization;
+using ControlMareas.App.Models;
 using ControlMareas.App.Models.Import;
 
 namespace ControlMareas.App.Services.Internal;
@@ -34,10 +35,18 @@ public sealed class MareaValidationEngine
         bool filtrarDiferenciasAuditoria = true,
         double toleranciaFiltroAuditoria = 2.0,
         bool omitirValidacionCapturaProduccion = false,
-        bool omitirValidacionMuestraSubmuestra = false)
+        bool omitirValidacionMuestraSubmuestra = false,
+        TipoMarea tipoMarea = TipoMarea.Arrastre)
     {
+        if (tipoMarea == TipoMarea.Arrastre && capturas.OfType<LegacyCapturaPalangre>().Any())
+        {
+            tipoMarea = TipoMarea.Palangre;
+        }
+
         var report = new MareaValidationReport
         {
+            TipoMarea = tipoMarea,
+            UnidadDescarte = tipoMarea == TipoMarea.Palangre ? TipoDatoDescarte.Kilogramos : TipoDatoDescarte.Porcentaje,
             Barco = barcoMareaActual,
             Marea = nroMareaActual.ToString(),
             Año = anioMareaActual,
@@ -477,7 +486,7 @@ public sealed class MareaValidationEngine
             if (latDec < -65 || latDec > -30)
                 report.AddIssue(ValidationLevel.Warning, "Geografía", $"Latitud inicial ({c.LatInic} -> {latDec:F3}) fuera de rango operativo (30°S - 65°S)", ctx);
 
-            ValidateLanceDetails(report, c);
+            ValidateLanceDetails(report, c, especiesDict, especiesViejasDict);
 
             // Validación de especies en el catálogo
             foreach (var spCode in c.Especies.Keys)
@@ -527,35 +536,38 @@ public sealed class MareaValidationEngine
                 c.Descarte = sumDescartes;
             }
 
-            // Detección para conversión de descarte
-            if (c.CaptTotal > 0 && c.Descarte > 0)
+            // Detección para conversión de descarte (solo en arrastre)
+            if (report.TipoMarea != TipoMarea.Palangre && c.CaptTotal > 0 && c.Descarte > 0)
             {
                 double ratio = c.Descarte / c.CaptTotal;
                 if (ratio > 1.0) countPorcentaje++;
                 else if (ratio <= 1.0 && ratio > 0) countKilos++;
             }
 
-            // REQ-5.3: Coherencia Temporal
-            var timeStart = LegacyDecoder.DecodeTime(c.HoraInic);
-            var timeEnd = LegacyDecoder.DecodeTime(c.HoraFinal);
-            
-            // Si el fin es menor que el inicio, asumimos cruce de medianoche (lance nocturno)
-            bool cruceMedianoche = timeEnd < timeStart;
-            var duration = cruceMedianoche ? (timeEnd.Add(TimeSpan.FromDays(1)) - timeStart) : (timeEnd - timeStart);
+            if (report.TipoMarea != TipoMarea.Palangre)
+            {
+                // REQ-5.3: Coherencia Temporal (Arrastre)
+                var timeStart = LegacyDecoder.DecodeTime(c.HoraInic);
+                var timeEnd = LegacyDecoder.DecodeTime(c.HoraFinal);
+                
+                // Si el fin es menor que el inicio, asumimos cruce de medianoche (lance nocturno)
+                bool cruceMedianoche = timeEnd < timeStart;
+                var duration = cruceMedianoche ? (timeEnd.Add(TimeSpan.FromDays(1)) - timeStart) : (timeEnd - timeStart);
 
-            if (duration.TotalMinutes == 0)
-                report.AddIssue(ValidationLevel.Warning, "Tiempo", "Hora de inicio y fin son idénticas", ctx);
-            else if (duration.TotalHours > 12)
-                report.AddIssue(ValidationLevel.Warning, "Tiempo", $"Duración de lance inusualmente larga: {duration.TotalHours:F1} horas", ctx);
+                if (duration.TotalMinutes == 0)
+                    report.AddIssue(ValidationLevel.Warning, "Tiempo", "Hora de inicio y fin son idénticas", ctx);
+                else if (duration.TotalHours > 12)
+                    report.AddIssue(ValidationLevel.Warning, "Tiempo", $"Duración de lance inusualmente larga: {duration.TotalHours:F1} horas", ctx);
 
-            // Nueva Validación: Coherencia con Tracking (Posición y Velocidad)
+                // Validación: Velocidad interna del lance (Inicio vs Fin de arrastre)
+                ValidateInternalLanceSpeed(report, c);
+            }
+
+            // Validación: Coherencia con Tracking (Posición y Velocidad)
             ValidateLanceTrackingConsistency(report, c, tracking);
-
-            // Nueva Validación: Velocidad interna del lance (Inicio vs Fin)
-            ValidateInternalLanceSpeed(report, c);
         }
 
-        // Nueva Validación: Velocidad entre lances (Fin de N vs Inicio de N+1)
+        // Validación: Velocidad entre lances (Fin de N vs Inicio de N+1)
         ValidateSpeedBetweenLances(report, capturas);
 
         // REQ-5.1: Duplicados de Lance
@@ -588,19 +600,68 @@ public sealed class MareaValidationEngine
             }
 
             // Detección de solapamientos
-            var fechaFinCurrent = current.FechaFin ?? current.Fecha;
-            var timeCurrentEnd = fechaFinCurrent.Date.Add(LegacyDecoder.DecodeTime(current.HoraFinal));
-            if (timeCurrentEnd < timeCurrent) timeCurrentEnd = timeCurrentEnd.AddDays(1);
-
-            if (timeNext < timeCurrentEnd)
+            DateTime timeCurrentEnd;
+            if (report.TipoMarea == TipoMarea.Palangre && current is LegacyCapturaPalangre cpCurrent)
             {
-                report.AddIssue(ValidationLevel.Error, "Tiempo", 
-                    $"Solapamiento detectado: El lance {next.Lance} inicia ({timeNext:HH:mm}) antes de que finalice el lance {current.Lance} ({timeCurrentEnd:HH:mm}).", 
-                    $"Lance {next.Lance}");
+                var fechaVirado = cpCurrent.FechaVi != DateTime.MinValue ? cpCurrent.FechaVi.Date : (current.FechaFin ?? current.Fecha).Date;
+                double hFinVirado = cpCurrent.HoraFinV > 0 ? cpCurrent.HoraFinV : current.HoraFinal;
+                timeCurrentEnd = fechaVirado.Add(LegacyDecoder.DecodeTime(hFinVirado));
+                if (timeCurrentEnd < timeCurrent) timeCurrentEnd = timeCurrentEnd.AddDays(1);
+
+                if (timeNext < timeCurrentEnd)
+                {
+                    report.AddIssue(ValidationLevel.Error, "Tiempo", 
+                        $"Solapamiento detectado: El lance {next.Lance} inicia el calado ({timeNext:dd/MM HH:mm}) antes de que finalice el virado del lance {current.Lance} ({timeCurrentEnd:dd/MM HH:mm}). Un buque no puede filar dos líneas al mismo tiempo.", 
+                        $"Lance {next.Lance}");
+                }
+            }
+            else
+            {
+                var fechaFinCurrent = current.FechaFin ?? current.Fecha;
+                timeCurrentEnd = fechaFinCurrent.Date.Add(LegacyDecoder.DecodeTime(current.HoraFinal));
+                if (timeCurrentEnd < timeCurrent) timeCurrentEnd = timeCurrentEnd.AddDays(1);
+
+                if (timeNext < timeCurrentEnd)
+                {
+                    report.AddIssue(ValidationLevel.Error, "Tiempo", 
+                        $"Solapamiento detectado: El lance {next.Lance} inicia ({timeNext:HH:mm}) antes de que finalice el lance {current.Lance} ({timeCurrentEnd:HH:mm}).", 
+                        $"Lance {next.Lance}");
+                }
             }
         }
 
-        if (skipConsensusHeuristic)
+        if (report.TipoMarea == TipoMarea.Palangre)
+        {
+            report.UnidadDescarte = TipoDatoDescarte.Kilogramos;
+            foreach (var c in capturas)
+            {
+                if (c.CaptTotal > 0 && c.Descarte > c.CaptTotal)
+                {
+                    var especiesConDescarteExcesivo = new List<string>();
+                    foreach (var kvp in c.DescartesPorEspecie)
+                    {
+                        string codEspecie = kvp.Key;
+                        double descarteEsp = kvp.Value;
+                        if (descarteEsp > 0)
+                        {
+                            c.Especies.TryGetValue(codEspecie, out double captEsp);
+                            if (descarteEsp > captEsp)
+                            {
+                                string nombre = GetEspecieNombre(codEspecie, especiesDict, especiesViejasDict);
+                                especiesConDescarteExcesivo.Add(nombre);
+                            }
+                        }
+                    }
+
+                    string ctxEspecies = especiesConDescarteExcesivo.Count > 0 
+                        ? $"Lance {c.Lance} - Especie {string.Join(", ", especiesConDescarteExcesivo)}"
+                        : $"Lance {c.Lance}";
+
+                    report.AddIssue(ValidationLevel.Error, "Captura", $"El descarte ({c.Descarte} kg) es superior a la captura total ({c.CaptTotal} kg).", ctxEspecies);
+                }
+            }
+        }
+        else if (skipConsensusHeuristic)
         {
             foreach (var c in capturas)
             {
@@ -728,11 +789,17 @@ public sealed class MareaValidationEngine
         }
     }
 
-    private void ValidateLanceDetails(MareaValidationReport report, LegacyCaptura c)
+    private void ValidateLanceDetails(MareaValidationReport report, LegacyCaptura c, Dictionary<string, string> especiesDict, Dictionary<string, string> especiesViejasDict)
     {
         string ctx = $"Lance {c.Lance}";
 
-        // REQ-5.5: Profundidad
+        if (report.TipoMarea == TipoMarea.Palangre || c is LegacyCapturaPalangre)
+        {
+            ValidateLancePalangreDetails(report, c as LegacyCapturaPalangre ?? new LegacyCapturaPalangre(), especiesDict, especiesViejasDict);
+            return;
+        }
+
+        // REQ-5.5: Profundidad (Arrastre)
         if (c.ProfInic <= 0 || c.ProfInic > 2000)
             report.AddIssue(ValidationLevel.Error, "Geografía", $"Profundidad inicial ({c.ProfInic}m) fuera de rango (0-2000)", ctx);
         
@@ -753,6 +820,92 @@ public sealed class MareaValidationEngine
         // REQ-5.8: Lances sin especies
         if (!c.Especies.Any() || c.Especies.Values.Sum() == 0)
             report.AddIssue(ValidationLevel.Error, "Captura", "Lance sin registro de especies o captura total cero", ctx);
+    }
+
+    private void ValidateLancePalangreDetails(MareaValidationReport report, LegacyCapturaPalangre cp, Dictionary<string, string> especiesDict, Dictionary<string, string> especiesViejasDict)
+    {
+        string ctx = $"Lance {cp.Lance}";
+
+        // 1. Validar rangos de profundidad en palangre (50 a 5000 metros)
+        void CheckProf(double prof, string nombreProf)
+        {
+            if (prof > 0 && (prof < 50 || prof > 5000))
+            {
+                report.AddIssue(ValidationLevel.Error, "Geografía", $"Profundidad {nombreProf} ({prof}m) fuera de rango operativo de palangre (50-5000m)", ctx);
+            }
+        }
+
+        CheckProf(cp.ProfIniF, "inicial de filado");
+        CheckProf(cp.ProfFinF, "final de filado");
+        CheckProf(cp.ProfIniV, "inicial de virado");
+        CheckProf(cp.ProfFinV, "final de virado");
+        CheckProf(cp.ProfInic, "inicial");
+        CheckProf(cp.ProfFinal, "final");
+
+        bool tieneProf = cp.ProfIniF > 0 || cp.ProfFinF > 0 || cp.ProfIniV > 0 || cp.ProfFinV > 0 || cp.ProfInic > 0 || cp.ProfFinal > 0;
+        if (!tieneProf)
+        {
+            report.AddIssue(ValidationLevel.Error, "Geografía", "Profundidad no registrada o fuera de rango de palangre (50-5000m)", ctx);
+        }
+
+        // 2. Anzuelos
+        if (cp.AnzNTotal <= 0)
+        {
+            report.AddIssue(ValidationLevel.Error, "Esfuerzo", "La cantidad total de anzuelos debe ser mayor a 0", ctx);
+        }
+        else if (cp.AnzCCarn > 0 || cp.AnzSCarn > 0)
+        {
+            if ((cp.AnzCCarn + cp.AnzSCarn) != cp.AnzNTotal)
+            {
+                report.AddIssue(ValidationLevel.Warning, "Esfuerzo", $"La suma de anzuelos con carnada ({cp.AnzCCarn}) y sin carnada ({cp.AnzSCarn}) no coincide con el total informado ({cp.AnzNTotal})", ctx);
+            }
+        }
+
+        // 3. Coherencia temporal interna del lance de palangre
+        var tIniF = cp.Fecha.Date.Add(LegacyDecoder.DecodeTime(cp.HoraInic));
+        var tFinF = cp.Fecha.Date.Add(LegacyDecoder.DecodeTime(cp.HoraFinF));
+        if (tFinF < tIniF && cp.HoraFinF > 0) tFinF = tFinF.AddDays(1);
+
+        var fechaVi = cp.FechaVi != DateTime.MinValue ? cp.FechaVi.Date : cp.Fecha.Date;
+        var tIniV = fechaVi.Add(LegacyDecoder.DecodeTime(cp.HoraIniV));
+        var hFinV = cp.HoraFinV > 0 ? cp.HoraFinV : cp.HoraFinal;
+        var tFinV = fechaVi.Add(LegacyDecoder.DecodeTime(hFinV));
+        if (tFinV < tIniV && hFinV > 0) tFinV = tFinV.AddDays(1);
+
+        if (cp.HoraFinF > 0 && tFinF < tIniF)
+        {
+            report.AddIssue(ValidationLevel.Error, "Tiempo", $"Hora fin de filado ({tFinF:HH:mm}) es anterior al inicio de filado ({tIniF:HH:mm})", ctx);
+        }
+        if (cp.HoraIniV > 0 && cp.HoraFinF > 0 && tIniV < tFinF)
+        {
+            report.AddIssue(ValidationLevel.Error, "Tiempo", $"Inconsistencia horaria: El inicio de virado ({tIniV:dd/MM HH:mm}) es anterior al fin de filado ({tFinF:dd/MM HH:mm})", ctx);
+        }
+        if (hFinV > 0 && cp.HoraIniV > 0 && tFinV < tIniV)
+        {
+            report.AddIssue(ValidationLevel.Error, "Tiempo", $"Hora fin de virado ({tFinV:HH:mm}) es anterior al inicio de virado ({tIniV:HH:mm})", ctx);
+        }
+
+        // 4. Piezas vs Kilos
+        foreach (var kvp in cp.PiezasPorEspecie)
+        {
+            string spCode = kvp.Key;
+            int piezas = kvp.Value;
+            if (piezas > 0)
+            {
+                bool tieneKilos = cp.Especies.TryGetValue(spCode, out double kg) && kg > 0;
+                if (!tieneKilos)
+                {
+                    string nombre = GetEspecieNombre(spCode, especiesDict, especiesViejasDict);
+                    report.AddIssue(ValidationLevel.Error, "Captura", $"Se registraron {piezas} piezas pero la captura en kilos es 0 para la especie '{nombre}'", ctx);
+                }
+            }
+        }
+
+        // Lances sin especies
+        if (!cp.Especies.Any() || cp.Especies.Values.Sum() == 0)
+        {
+            report.AddIssue(ValidationLevel.Error, "Captura", "Lance sin registro de especies o captura total cero", ctx);
+        }
     }
 
     private void ValidateSamples(MareaValidationReport report, List<LegacyMuestra> muestras, List<LegacyCaptura> capturas, List<LegacyLg> lgs, 

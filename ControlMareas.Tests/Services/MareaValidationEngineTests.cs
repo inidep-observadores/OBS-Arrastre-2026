@@ -347,4 +347,126 @@ public class MareaValidationEngineTests
         var geoIssues = report.Issues.Where(i => i.Category == "Geografía");
         geoIssues.Should().NotContain(i => i.Message.Contains("Fin") && i.Message.Contains("difiere"));
     }
+
+    [Fact]
+    public void ValidateMarea_Palangre_ShouldEnforceDepthRangeBetween50And5000()
+    {
+        // Arrange
+        var cpInvalidDepth = new LegacyCapturaPalangre
+        {
+            Lance = 1,
+            Barco = "B",
+            Marea = 100,
+            Fecha = new DateTime(2026, 5, 20),
+            FechaVi = new DateTime(2026, 5, 20),
+            HoraInic = 8.00,
+            HoraFinF = 10.00,
+            HoraIniV = 14.00,
+            HoraFinV = 18.00,
+            ProfIniF = 30, // Fuera de rango (< 50)
+            ProfFinF = 6000, // Fuera de rango (> 5000)
+            AnzNTotal = 2000
+        };
+        cpInvalidDepth.Especies["7218280201"] = 100;
+        cpInvalidDepth.EspeciesOrder.Add("7218280201");
+
+        // Act
+        var report = _engine.ValidateMarea(
+            "B", 2026, 100, null, null, null, null, new(),
+            new() { cpInvalidDepth }, new(), new(), new(), new(), new(),
+            new() { ["BACALAO"] = "7218280201" }, new(), new(),
+            new() { "7218280201" }, new()
+        );
+
+        // Assert
+        report.Issues.Should().Contain(i => i.Level == ValidationLevel.Error && i.Category == "Geografía" && i.Message.Contains("50-5000m"));
+    }
+
+    [Fact]
+    public void ValidateMarea_Palangre_ShouldDetectOverlapStrictly()
+    {
+        // Arrange
+        var cp1 = new LegacyCapturaPalangre
+        {
+            Lance = 1,
+            Barco = "B",
+            Marea = 100,
+            Fecha = new DateTime(2026, 5, 20),
+            FechaVi = new DateTime(2026, 5, 20),
+            HoraInic = 6.00,
+            HoraFinF = 8.00,
+            HoraIniV = 12.00,
+            HoraFinV = 16.00, // Termina virado a las 16:00
+            ProfIniV = 1200,
+            ProfFinV = 1200,
+            AnzNTotal = 3000
+        };
+        cp1.Especies["7218280201"] = 200;
+        cp1.EspeciesOrder.Add("7218280201");
+
+        var cp2 = new LegacyCapturaPalangre
+        {
+            Lance = 2,
+            Barco = "B",
+            Marea = 100,
+            Fecha = new DateTime(2026, 5, 20),
+            FechaVi = new DateTime(2026, 5, 20),
+            HoraInic = 15.00, // Inicia calado a las 15:00 (solapa con virado de lance 1 hasta 16:00)
+            HoraFinF = 17.00,
+            HoraIniV = 19.00,
+            HoraFinV = 23.00,
+            ProfIniV = 1200,
+            ProfFinV = 1200,
+            AnzNTotal = 3000
+        };
+        cp2.Especies["7218280201"] = 300;
+        cp2.EspeciesOrder.Add("7218280201");
+
+        // Act
+        var report = _engine.ValidateMarea(
+            "B", 2026, 100, null, null, null, null, new(),
+            new() { cp1, cp2 }, new(), new(), new(), new(), new(),
+            new() { ["BACALAO"] = "7218280201" }, new(), new(),
+            new() { "7218280201" }, new()
+        );
+
+        // Assert
+        report.Issues.Should().Contain(i => i.Level == ValidationLevel.Error && i.Category == "Tiempo" && i.Message.Contains("Solapamiento detectado"));
+    }
+
+    [Fact]
+    public void ValidateMarea_Palangre_ShouldEnforceHooksCountAndPiecesCoherence()
+    {
+        // Arrange
+        var cp = new LegacyCapturaPalangre
+        {
+            Lance = 1,
+            Barco = "B",
+            Marea = 100,
+            Fecha = new DateTime(2026, 5, 20),
+            FechaVi = new DateTime(2026, 5, 20),
+            HoraInic = 6.00,
+            HoraFinF = 8.00,
+            HoraIniV = 12.00,
+            HoraFinV = 16.00,
+            ProfIniV = 1200,
+            ProfFinV = 1200,
+            AnzNTotal = 0 // Invalido
+        };
+        cp.Especies["7218280201"] = 0; // Sin kilos
+        cp.PiezasPorEspecie["7218280201"] = 15; // 15 piezas pero 0 kg
+        cp.EspeciesOrder.Add("7218280201");
+
+        // Act
+        var report = _engine.ValidateMarea(
+            "B", 2026, 100, null, null, null, null, new(),
+            new() { cp }, new(), new(), new(), new(), new(),
+            new() { ["BACALAO"] = "7218280201" }, new(), new(),
+            new() { "7218280201" }, new()
+        );
+
+        // Assert
+        report.Issues.Should().Contain(i => i.Level == ValidationLevel.Error && i.Category == "Esfuerzo" && i.Message.Contains("anzuelos"));
+        report.Issues.Should().Contain(i => i.Level == ValidationLevel.Error && i.Category == "Captura" && i.Message.Contains("piezas pero la captura en kilos es 0"));
+    }
 }

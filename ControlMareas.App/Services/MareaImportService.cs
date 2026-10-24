@@ -394,7 +394,8 @@ public class MareaImportService : IMareaImportService
             especiesCientificasDict,
             especiesCodigosValidos, 
             largoPesoCatalogo,
-            procesarSubmuestrasSinMuestraTalla);
+            procesarSubmuestrasSinMuestraTalla,
+            tipoMarea: isPalangre ? ControlMareas.App.Models.TipoMarea.Palangre : ControlMareas.App.Models.TipoMarea.Arrastre);
             
         // Restaurar atributos del reporte original que se perdían al instanciar uno nuevo
         report.TipoMarea = isPalangre ? ControlMareas.App.Models.TipoMarea.Palangre : ControlMareas.App.Models.TipoMarea.Arrastre;

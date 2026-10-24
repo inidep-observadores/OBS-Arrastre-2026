@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ControlMareas.App.Data;
 using ControlMareas.App.Data.Entities;
+using ControlMareas.App.Models;
 using ControlMareas.App.Models.Import;
 using ControlMareas.App.Services.Internal;
 using System.Text;
@@ -37,6 +38,9 @@ public class MareaValidationService : IMareaValidationService
                 .ThenInclude(e => e.Lances)
                     .ThenInclude(l => l.ItemsCaptura)
                         .ThenInclude(ic => ic.Especie)
+            .Include(m => m.Etapas)
+                .ThenInclude(e => e.Lances)
+                    .ThenInclude(l => l.DetallePalangre)
             .Include(m => m.Etapas)
                 .ThenInclude(e => e.Lances)
                     .ThenInclude(l => l.Muestras)
@@ -142,24 +146,68 @@ public class MareaValidationService : IMareaValidationService
         {
             foreach (var lance in etapa.Lances)
             {
-                var cap = new LegacyCaptura
+                LegacyCaptura cap;
+                if (marea.TipoMarea == TipoMarea.Palangre || lance.DetallePalangre != null)
                 {
-                    Barco = marea.Buque?.Nombre ?? "",
-                    Marea = marea.NumeroInidep,
-                    Lance = lance.NroLance,
-                    Fecha = DateTime.Parse(lance.Fecha),
-                    FechaFin = lance.FechaFin,
-                    HoraInic = EncodeTime(lance.HoraInicio),
-                    HoraFinal = EncodeTime(lance.HoraFinal),
-                    LatInic = EncodeCoordinate(lance.LatitudInicioDecimal),
-                    LongInic = EncodeCoordinate(lance.LongitudInicioDecimal),
-                    LatFinal = EncodeCoordinate(lance.LatitudFinalDecimal),
-                    LongFinal = EncodeCoordinate(lance.LongitudFinalDecimal),
-                    ProfInic = lance.ProfundidadInicioM ?? 0,
-                    ProfFinal = lance.ProfundidadFinalM ?? 0,
-                    CaptTotal = lance.CapturaTotalKg ?? 0,
-                    Descarte = lance.DescarteTotalKg ?? 0
-                };
+                    var dp = lance.DetallePalangre;
+                    cap = new LegacyCapturaPalangre
+                    {
+                        Barco = marea.Buque?.Nombre ?? "",
+                        Marea = marea.NumeroInidep,
+                        Lance = lance.NroLance,
+                        Identific = dp?.Identificacion,
+                        Fecha = DateTime.Parse(lance.Fecha),
+                        FechaFin = lance.FechaFin,
+                        FechaVi = !string.IsNullOrEmpty(dp?.FechaVirado) ? DateTime.Parse(dp.FechaVirado) : (lance.FechaFin ?? DateTime.Parse(lance.Fecha)),
+                        HoraInic = EncodeTime(dp?.HoraInicioFilado ?? lance.HoraInicio),
+                        HoraFinF = EncodeTime(dp?.HoraFinFilado),
+                        HoraIniV = EncodeTime(dp?.HoraInicioVirado),
+                        HoraFinV = EncodeTime(dp?.HoraFinVirado ?? lance.HoraFinal),
+                        HoraFinal = EncodeTime(lance.HoraFinal),
+                        LatInic = EncodeCoordinate(dp?.LatitudInicioFiladoDecimal ?? lance.LatitudInicioDecimal),
+                        LongInic = EncodeCoordinate(dp?.LongitudInicioFiladoDecimal ?? lance.LongitudInicioDecimal),
+                        LatFinF = EncodeCoordinate(dp?.LatitudFinFiladoDecimal),
+                        LongFinF = EncodeCoordinate(dp?.LongitudFinFiladoDecimal),
+                        LatIniV = EncodeCoordinate(dp?.LatitudInicioViradoDecimal),
+                        LongIniV = EncodeCoordinate(dp?.LongitudInicioViradoDecimal),
+                        LatFinal = EncodeCoordinate(dp?.LatitudFinViradoDecimal ?? lance.LatitudFinalDecimal),
+                        LongFinal = EncodeCoordinate(dp?.LongitudFinViradoDecimal ?? lance.LongitudFinalDecimal),
+                        ProfIniF = dp?.ProfundidadInicioFiladoM ?? 0,
+                        ProfFinF = dp?.ProfundidadFinFiladoM ?? 0,
+                        ProfIniV = dp?.ProfundidadInicioViradoM ?? 0,
+                        ProfFinV = dp?.ProfundidadFinViradoM ?? 0,
+                        ProfInic = lance.ProfundidadInicioM ?? 0,
+                        ProfFinal = lance.ProfundidadFinalM ?? 0,
+                        AnzNTotal = dp?.AnzuelosTotal ?? 0,
+                        AnzCCarn = dp?.AnzuelosConCarnada ?? 0,
+                        AnzSCarn = dp?.AnzuelosSinCarnada ?? 0,
+                        Carnada = dp?.Carnada,
+                        Material = dp?.MaterialLineaMadre,
+                        CaptTotal = lance.CapturaTotalKg ?? 0,
+                        Descarte = lance.DescarteTotalKg ?? 0
+                    };
+                }
+                else
+                {
+                    cap = new LegacyCaptura
+                    {
+                        Barco = marea.Buque?.Nombre ?? "",
+                        Marea = marea.NumeroInidep,
+                        Lance = lance.NroLance,
+                        Fecha = DateTime.Parse(lance.Fecha),
+                        FechaFin = lance.FechaFin,
+                        HoraInic = EncodeTime(lance.HoraInicio),
+                        HoraFinal = EncodeTime(lance.HoraFinal),
+                        LatInic = EncodeCoordinate(lance.LatitudInicioDecimal),
+                        LongInic = EncodeCoordinate(lance.LongitudInicioDecimal),
+                        LatFinal = EncodeCoordinate(lance.LatitudFinalDecimal),
+                        LongFinal = EncodeCoordinate(lance.LongitudFinalDecimal),
+                        ProfInic = lance.ProfundidadInicioM ?? 0,
+                        ProfFinal = lance.ProfundidadFinalM ?? 0,
+                        CaptTotal = lance.CapturaTotalKg ?? 0,
+                        Descarte = lance.DescarteTotalKg ?? 0
+                    };
+                }
 
                 foreach (var ic in lance.ItemsCaptura)
                 {
@@ -171,6 +219,10 @@ public class MareaValidationService : IMareaValidationService
 
                         cap.Especies[cod] += ic.CapturaTotalKgCalculado;
                         cap.DescartesPorEspecie[cod] += ic.PesoDescarteCalculado;
+                        if (cap is LegacyCapturaPalangre cpItem && ic.Piezas.HasValue)
+                        {
+                            cpItem.PiezasPorEspecie[cod] = ic.Piezas.Value;
+                        }
                         cap.EspeciesOrder.Add(cod); // Permitir validación de duplicados
                         cap.EspecieColumnIndex[cod] = ic.NumeroOrden;
                     }
@@ -293,7 +345,8 @@ public class MareaValidationService : IMareaValidationService
             filtrarDiferenciasAuditoria: settings.FiltrarDiferenciasAuditoria,
             toleranciaFiltroAuditoria: settings.ToleranciaFiltroAuditoria,
             omitirValidacionCapturaProduccion: omitirValidacionCapturaProduccion,
-            omitirValidacionMuestraSubmuestra: omitirValidacionMuestraSubmuestra
+            omitirValidacionMuestraSubmuestra: omitirValidacionMuestraSubmuestra,
+            tipoMarea: marea.TipoMarea
         );
 
         // PERSISTIR CORRECCIONES: Si el motor corrigió totales, los guardamos en la DB
