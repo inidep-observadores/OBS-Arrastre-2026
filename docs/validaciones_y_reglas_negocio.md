@@ -55,6 +55,23 @@ El presente documento detalla exhaustivamente todas las validaciones, chequeos y
   - El descarte total nunca puede superar a la captura total.
   - *Heurística de Unidad*: Si los descartes se mezclan entre kilogramos y porcentajes, se aplica un consenso de mayoría (> 80%). Si el consenso indica porcentajes, el sistema automáticamente los convierte a kilogramos.
 
+### 2.4 Capturas de Palangre (Archivo CP*)
+
+En mareas de palangre, las capturas se registran mediante el archivo `CP*` (reemplazando al archivo `C*` de arrastre), aplicando reglas diferenciadas:
+
+- **Estructura y Límite de Especies**: Admite hasta 10 especies por registro de lance (en contraposición a las 25 de arrastre), con soporte para piezas capturadas (`PIEZA_n`).
+- **Profundidades de Operación**: Rango permitido entre **50 y 5.000 metros** tanto en filado como en virado.
+- **Cronología y Solapamiento Estricto**:
+  - Se comparan fechas y horas completas entre fases: la finalización del filado debe ser posterior al inicio de filado, y el virado debe iniciar y finalizar con posterioridad al filado.
+  - **Error Estricto de Solapamiento**: Un buque no puede filar dos líneas en simultáneo. Se valida que el inicio de filado del lance $N+1$ sea posterior a la fecha y hora de fin de virado del lance $N$.
+- **Tiempo de Reposo (*Soak Time*)**:
+  - Calculado como el intervalo entre el fin de filado y el inicio de virado. Se advierte si el tiempo de reposo es nulo, negativo o excede 72 horas.
+- **Esfuerzo y Artes de Pesca**:
+  - El total de anzuelos calados (`ANZ_NTOTAL`) debe ser mayor a 0 para el cálculo de índices de esfuerzo y CPUE.
+  - Se verifica la coherencia entre el total de anzuelos y la suma de anzuelos con carnada (`ANZ_CCARN`) y sin carnada (`ANZ_SCARN`).
+- **Unidad de Descarte**: En palangre los descartes se computan estrictamente en kilogramos (`TipoDatoDescarte = Kilogramos`), sin aplicar conversiones porcentuales.
+- **Posicionamiento**: La posición de referencia para los informes y cuadrículas estadísticas corresponde al **fin de virado** (`LAT_FIN_V`, `LONG_FI_V`). En el mapa interactivo de la aplicación se representan ambos segmentos (calado y virado).
+
 ---
 
 ## 3. Muestras Biológicas (Archivo M* / Edición UI)
