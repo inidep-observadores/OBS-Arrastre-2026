@@ -1692,33 +1692,63 @@
                                         </StackPanel>
                                     </Border>
 
-                                    <!-- Control de Capas de Mapa -->
-                                    <Border HorizontalAlignment="Left" VerticalAlignment="Top" 
-                                            Margin="16" Padding="14" 
-                                            Background="{DynamicResource CardBackgroundBrush}" 
-                                            Opacity="0.9"
-                                            BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
-                                            CornerRadius="8"
-                                            Visibility="{Binding TotalTrackPoints, Converter={StaticResource IntToVisibilityConverter}}">
-                                        <Border.Effect>
-                                            <DropShadowEffect BlurRadius="15" ShadowDepth="0" Opacity="0.15" />
-                                        </Border.Effect>
-                                        <StackPanel>
-                                            <TextBlock Text="CAPAS DE TRAYECTORIA" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,12" />
-                                            
-                                            <CheckBox Content="Mostrar Línea de Track" 
-                                                      IsChecked="{Binding ShowTrackLine, UpdateSourceTrigger=PropertyChanged}" 
-                                                      Foreground="{DynamicResource PrimaryTextBrush}"
-                                                      FontSize="11" Margin="0,0,0,8" 
-                                                      Cursor="Hand" />
-                                            
-                                            <CheckBox Content="Mostrar Puntos de Track" 
-                                                      IsChecked="{Binding ShowTrackPoints, UpdateSourceTrigger=PropertyChanged}" 
-                                                      Foreground="{DynamicResource PrimaryTextBrush}"
-                                                      FontSize="11" 
-                                                      Cursor="Hand" />
-                                        </StackPanel>
-                                    </Border>
+                                    <!-- Controles de Capas de Mapa -->
+                                    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="16">
+                                        <!-- Capas de Trayectoria -->
+                                        <Border Padding="14" 
+                                                Background="{DynamicResource CardBackgroundBrush}" 
+                                                Opacity="0.9"
+                                                BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
+                                                CornerRadius="8"
+                                                Margin="0,0,0,10"
+                                                Visibility="{Binding TotalTrackPoints, Converter={StaticResource IntToVisibilityConverter}}">
+                                            <Border.Effect>
+                                                <DropShadowEffect BlurRadius="15" ShadowDepth="0" Opacity="0.15" />
+                                            </Border.Effect>
+                                            <StackPanel>
+                                                <TextBlock Text="CAPAS DE TRAYECTORIA" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,12" />
+                                                
+                                                <CheckBox Content="Mostrar Línea de Track" 
+                                                          IsChecked="{Binding ShowTrackLine, UpdateSourceTrigger=PropertyChanged}" 
+                                                          Foreground="{DynamicResource PrimaryTextBrush}"
+                                                          FontSize="11" Margin="0,0,0,8" 
+                                                          Cursor="Hand" />
+                                                
+                                                <CheckBox Content="Mostrar Puntos de Track" 
+                                                          IsChecked="{Binding ShowTrackPoints, UpdateSourceTrigger=PropertyChanged}" 
+                                                          Foreground="{DynamicResource PrimaryTextBrush}"
+                                                          FontSize="11" 
+                                                          Cursor="Hand" />
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- Capas de Palangre (Calados / Virados) -->
+                                        <Border Padding="14" 
+                                                Background="{DynamicResource CardBackgroundBrush}" 
+                                                Opacity="0.9"
+                                                BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
+                                                CornerRadius="8"
+                                                Visibility="{Binding IsCurrentMareaPalangre, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <Border.Effect>
+                                                <DropShadowEffect BlurRadius="15" ShadowDepth="0" Opacity="0.15" />
+                                            </Border.Effect>
+                                            <StackPanel>
+                                                <TextBlock Text="CAPAS DE PALANGRE" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,12" />
+                                                
+                                                <CheckBox Content="Mostrar Calados (atenuado)" 
+                                                          IsChecked="{Binding ShowPalangreCalados, UpdateSourceTrigger=PropertyChanged}" 
+                                                          Foreground="{DynamicResource PrimaryTextBrush}"
+                                                          FontSize="11" Margin="0,0,0,8" 
+                                                          Cursor="Hand" />
+                                                
+                                                <CheckBox Content="Mostrar Virados" 
+                                                          IsChecked="{Binding ShowPalangreVirados, UpdateSourceTrigger=PropertyChanged}" 
+                                                          Foreground="{DynamicResource PrimaryTextBrush}"
+                                                          FontSize="11" 
+                                                          Cursor="Hand" />
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
                                 </Grid>
 
                                 <!-- Panel de Reproducción de Trayectoria -->

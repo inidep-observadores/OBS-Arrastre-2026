@@ -290,6 +290,36 @@ public class MainWindowViewModel : ObservableObject
         }
     }
 
+    public bool IsCurrentMareaPalangre => _activeMareaManager.ActiveMarea?.TipoMarea == ControlMareas.App.Models.TipoMarea.Palangre || CurrentLances.Any(l => l.DetallePalangre != null);
+
+    private bool _showPalangreCalados = true;
+    public bool ShowPalangreCalados
+    {
+        get => _showPalangreCalados;
+        set
+        {
+            if (!value && !_showPalangreVirados) return; // No permitir desmarcar ambos al mismo tiempo
+            if (SetProperty(ref _showPalangreCalados, value))
+            {
+                MapUpdateRequested?.Invoke();
+            }
+        }
+    }
+
+    private bool _showPalangreVirados = true;
+    public bool ShowPalangreVirados
+    {
+        get => _showPalangreVirados;
+        set
+        {
+            if (!value && !_showPalangreCalados) return; // No permitir desmarcar ambos al mismo tiempo
+            if (SetProperty(ref _showPalangreVirados, value))
+            {
+                MapUpdateRequested?.Invoke();
+            }
+        }
+    }
+
     private double _trackVisibilityWindowDays = 0;
     public double TrackVisibilityWindowDays
     {
@@ -1867,6 +1897,7 @@ public class MainWindowViewModel : ObservableObject
 
             // 1. Obtener Lances
             CurrentLances = await dbContext.Lances
+                .Include(l => l.DetallePalangre)
                 .Where(l => l.MareaEtapa.MareaID == _activeMareaManager.ActiveMareaId)
                 .ToListAsync();
 
@@ -1879,6 +1910,7 @@ public class MainWindowViewModel : ObservableObject
 
             // Notificar a la vista para que actualice GMap.NET
             ShouldZoomOnNextUpdate = true;
+            OnPropertyChanged(nameof(IsCurrentMareaPalangre));
             MapUpdateRequested?.Invoke();
             
             OnPropertyChanged(nameof(TotalTrackPoints));

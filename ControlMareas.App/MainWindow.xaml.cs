@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -160,76 +160,236 @@ public partial class MainWindow : Window
         // 2. Dibujar Lances
         foreach (var lance in vm.CurrentLances)
         {
-            if (lance.LatitudInicioDecimal.HasValue && lance.LongitudInicioDecimal.HasValue)
+            bool isSelected = vm.SelectedRecord is LanceListItemViewModel selectedVm && selectedVm.ID == lance.Id;
+
+            if (lance.DetallePalangre != null)
             {
-                var startPos = new PointLatLng(lance.LatitudInicioDecimal.Value, lance.LongitudInicioDecimal.Value);
-                
-                // Marcador Inicio (Verde)
-                var startMarker = new GMapMarker(startPos)
+                var dp = lance.DetallePalangre;
+
+                // --- A. Segmento de Calado (Filado) ---
+                if (vm.ShowPalangreCalados)
                 {
-                    Shape = new Ellipse
+                    var latIniCal = dp.LatitudInicioFiladoDecimal ?? lance.LatitudInicioDecimal;
+                    var lonIniCal = dp.LongitudInicioFiladoDecimal ?? lance.LongitudInicioDecimal;
+
+                    if (latIniCal.HasValue && lonIniCal.HasValue)
                     {
-                        Width = 12,
-                        Height = 12,
-                        Fill = Brushes.Green,
-                        Stroke = Brushes.White,
-                        StrokeThickness = 1.5,
-                        ToolTip = CreateLanceToolTip(lance, "INICIO", vm),
-                        Cursor = Cursors.Hand
-                    },
-                    Offset = new Point(-6, -6)
-                };
-                startMarker.Shape.MouseLeftButtonDown += (s, e) =>
-                {
-                    vm.SeekTrackToTime(vm.GetLanceDateTime(lance, true));
-                    e.Handled = true;
-                };
-                MainMap.Markers.Add(startMarker);
+                        var startCalPos = new PointLatLng(latIniCal.Value, lonIniCal.Value);
 
-                if (lance.LatitudFinalDecimal.HasValue && lance.LongitudFinalDecimal.HasValue)
-                {
-                    var endPos = new PointLatLng(lance.LatitudFinalDecimal.Value, lance.LongitudFinalDecimal.Value);
-
-                    // Determinar color (Magenta si está seleccionado para mayor visibilidad, SteelBlue si no)
-                    bool isSelected = vm.SelectedRecord is LanceListItemViewModel selectedVm && selectedVm.ID == lance.Id;
-                    var lanceBrush = isSelected
-                        ? new SolidColorBrush(Colors.Magenta) { Opacity = 0.5 }
-                        : new SolidColorBrush(Colors.SteelBlue) { Opacity = 0.5 };
-                    var lanceThickness = isSelected ? 3.0 : 1.5;
-
-                    // Línea del lance
-                    var lanceRoute = new GMapRoute(new List<PointLatLng> { startPos, endPos })
-                    {
-                        Shape = new Path
+                        // Marcador Inicio Calado (Verde atenuado)
+                        var startCalMarker = new GMapMarker(startCalPos)
                         {
-                            Stroke = lanceBrush,
-                            StrokeThickness = lanceThickness,
-                            ToolTip = CreateLanceRouteToolTip(lance)
-                        }
-                    };
-                    MainMap.Markers.Add(lanceRoute);
+                            Shape = new Ellipse
+                            {
+                                Width = 10,
+                                Height = 10,
+                                Fill = new SolidColorBrush(Color.FromArgb(180, 76, 175, 80)),
+                                Stroke = Brushes.White,
+                                StrokeThickness = 1.0,
+                                ToolTip = CreateLanceToolTip(lance, "CALADO (INICIO)", vm, latIniCal, lonIniCal, dp.HoraInicioFilado, lance.Fecha),
+                                Cursor = Cursors.Hand
+                            },
+                            Offset = new Point(-5, -5)
+                        };
+                        startCalMarker.Shape.MouseLeftButtonDown += (s, e) =>
+                        {
+                            vm.SeekTrackToTime(vm.GetLanceDateTime(lance, true));
+                            e.Handled = true;
+                        };
+                        MainMap.Markers.Add(startCalMarker);
 
-                    // Marcador Fin (Rojo)
-                    var endMarker = new GMapMarker(endPos)
+                        var latFinCal = dp.LatitudFinFiladoDecimal;
+                        var lonFinCal = dp.LongitudFinFiladoDecimal;
+
+                        if (latFinCal.HasValue && lonFinCal.HasValue)
+                        {
+                            var endCalPos = new PointLatLng(latFinCal.Value, lonFinCal.Value);
+
+                            // Línea de Calado (Color atenuado y punteada)
+                            var caladoBrush = isSelected
+                                ? new SolidColorBrush(Colors.Violet) { Opacity = 0.5 }
+                                : new SolidColorBrush(Colors.CornflowerBlue) { Opacity = 0.4 };
+
+                            var caladoRoute = new GMapRoute(new List<PointLatLng> { startCalPos, endCalPos })
+                            {
+                                Shape = new Path
+                                {
+                                    Stroke = caladoBrush,
+                                    StrokeThickness = isSelected ? 2.5 : 1.5,
+                                    StrokeDashArray = new DoubleCollection { 4, 2 },
+                                    ToolTip = CreateLanceRouteToolTip(lance, "CALADO")
+                                }
+                            };
+                            MainMap.Markers.Add(caladoRoute);
+
+                            // Marcador Fin Calado (Naranja atenuado)
+                            var endCalMarker = new GMapMarker(endCalPos)
+                            {
+                                Shape = new Ellipse
+                                {
+                                    Width = 9,
+                                    Height = 9,
+                                    Fill = new SolidColorBrush(Color.FromArgb(180, 255, 152, 0)),
+                                    Stroke = Brushes.White,
+                                    StrokeThickness = 1.0,
+                                    ToolTip = CreateLanceToolTip(lance, "CALADO (FIN)", vm, latFinCal, lonFinCal, dp.HoraFinFilado, lance.Fecha),
+                                    Cursor = Cursors.Hand
+                                },
+                                Offset = new Point(-4.5, -4.5)
+                            };
+                            MainMap.Markers.Add(endCalMarker);
+                        }
+                    }
+                }
+
+                // --- B. Segmento de Virado ---
+                if (vm.ShowPalangreVirados)
+                {
+                    var latIniVir = dp.LatitudInicioViradoDecimal;
+                    var lonIniVir = dp.LongitudInicioViradoDecimal;
+
+                    var latFinVir = dp.LatitudFinViradoDecimal ?? lance.LatitudFinalDecimal;
+                    var lonFinVir = dp.LongitudFinViradoDecimal ?? lance.LongitudFinalDecimal;
+
+                    PointLatLng? startVirPos = null;
+                    if (latIniVir.HasValue && lonIniVir.HasValue)
+                    {
+                        startVirPos = new PointLatLng(latIniVir.Value, lonIniVir.Value);
+
+                        // Marcador Inicio Virado (Cyan / Verde pleno)
+                        var startVirMarker = new GMapMarker(startVirPos.Value)
+                        {
+                            Shape = new Ellipse
+                            {
+                                Width = 12,
+                                Height = 12,
+                                Fill = Brushes.DarkCyan,
+                                Stroke = Brushes.White,
+                                StrokeThickness = 1.5,
+                                ToolTip = CreateLanceToolTip(lance, "VIRADO (INICIO)", vm, latIniVir, lonIniVir, dp.HoraInicioVirado, dp.FechaVirado ?? lance.Fecha),
+                                Cursor = Cursors.Hand
+                            },
+                            Offset = new Point(-6, -6)
+                        };
+                        MainMap.Markers.Add(startVirMarker);
+                    }
+
+                    if (latFinVir.HasValue && lonFinVir.HasValue)
+                    {
+                        var endVirPos = new PointLatLng(latFinVir.Value, lonFinVir.Value);
+
+                        if (startVirPos.HasValue)
+                        {
+                            // Línea de Virado (Color pleno / contrastado)
+                            var viradoBrush = isSelected
+                                ? new SolidColorBrush(Colors.Magenta) { Opacity = 0.8 }
+                                : new SolidColorBrush(Colors.SteelBlue) { Opacity = 0.85 };
+
+                            var viradoRoute = new GMapRoute(new List<PointLatLng> { startVirPos.Value, endVirPos })
+                            {
+                                Shape = new Path
+                                {
+                                    Stroke = viradoBrush,
+                                    StrokeThickness = isSelected ? 3.5 : 2.0,
+                                    ToolTip = CreateLanceRouteToolTip(lance, "VIRADO")
+                                }
+                            };
+                            MainMap.Markers.Add(viradoRoute);
+                        }
+
+                        // Marcador Fin Virado (Rojo pleno)
+                        var endVirMarker = new GMapMarker(endVirPos)
+                        {
+                            Shape = new Ellipse
+                            {
+                                Width = 12,
+                                Height = 12,
+                                Fill = Brushes.Red,
+                                Stroke = Brushes.White,
+                                StrokeThickness = 1.5,
+                                ToolTip = CreateLanceToolTip(lance, "VIRADO (FIN)", vm, latFinVir, lonFinVir, dp.HoraFinVirado, dp.FechaVirado ?? lance.Fecha),
+                                Cursor = Cursors.Hand
+                            },
+                            Offset = new Point(-6, -6)
+                        };
+                        endVirMarker.Shape.MouseLeftButtonDown += (s, e) =>
+                        {
+                            vm.SeekTrackToTime(vm.GetLanceDateTime(lance, false));
+                            e.Handled = true;
+                        };
+                        MainMap.Markers.Add(endVirMarker);
+                    }
+                }
+            }
+            else
+            {
+                // Arrastre tradicional
+                if (lance.LatitudInicioDecimal.HasValue && lance.LongitudInicioDecimal.HasValue)
+                {
+                    var startPos = new PointLatLng(lance.LatitudInicioDecimal.Value, lance.LongitudInicioDecimal.Value);
+                    
+                    var startMarker = new GMapMarker(startPos)
                     {
                         Shape = new Ellipse
                         {
                             Width = 12,
                             Height = 12,
-                            Fill = Brushes.Red,
+                            Fill = Brushes.Green,
                             Stroke = Brushes.White,
                             StrokeThickness = 1.5,
-                            ToolTip = CreateLanceToolTip(lance, "FIN", vm),
+                            ToolTip = CreateLanceToolTip(lance, "INICIO", vm),
                             Cursor = Cursors.Hand
                         },
                         Offset = new Point(-6, -6)
                     };
-                    endMarker.Shape.MouseLeftButtonDown += (s, e) =>
+                    startMarker.Shape.MouseLeftButtonDown += (s, e) =>
                     {
-                        vm.SeekTrackToTime(vm.GetLanceDateTime(lance, false));
+                        vm.SeekTrackToTime(vm.GetLanceDateTime(lance, true));
                         e.Handled = true;
                     };
-                    MainMap.Markers.Add(endMarker);
+                    MainMap.Markers.Add(startMarker);
+
+                    if (lance.LatitudFinalDecimal.HasValue && lance.LongitudFinalDecimal.HasValue)
+                    {
+                        var endPos = new PointLatLng(lance.LatitudFinalDecimal.Value, lance.LongitudFinalDecimal.Value);
+
+                        var lanceBrush = isSelected
+                            ? new SolidColorBrush(Colors.Magenta) { Opacity = 0.5 }
+                            : new SolidColorBrush(Colors.SteelBlue) { Opacity = 0.5 };
+                        var lanceThickness = isSelected ? 3.0 : 1.5;
+
+                        var lanceRoute = new GMapRoute(new List<PointLatLng> { startPos, endPos })
+                        {
+                            Shape = new Path
+                            {
+                                Stroke = lanceBrush,
+                                StrokeThickness = lanceThickness,
+                                ToolTip = CreateLanceRouteToolTip(lance)
+                            }
+                        };
+                        MainMap.Markers.Add(lanceRoute);
+
+                        var endMarker = new GMapMarker(endPos)
+                        {
+                            Shape = new Ellipse
+                            {
+                                Width = 12,
+                                Height = 12,
+                                Fill = Brushes.Red,
+                                Stroke = Brushes.White,
+                                StrokeThickness = 1.5,
+                                ToolTip = CreateLanceToolTip(lance, "FIN", vm),
+                                Cursor = Cursors.Hand
+                            },
+                            Offset = new Point(-6, -6)
+                        };
+                        endMarker.Shape.MouseLeftButtonDown += (s, e) =>
+                        {
+                            vm.SeekTrackToTime(vm.GetLanceDateTime(lance, false));
+                            e.Handled = true;
+                        };
+                        MainMap.Markers.Add(endMarker);
+                    }
                 }
             }
         }
@@ -293,9 +453,25 @@ public partial class MainWindow : Window
         }
     }
 
-    private object CreateLanceToolTip(Lance lance, string type, MainWindowViewModel vm)
+    private object CreateLanceToolTip(
+        Lance lance, 
+        string type, 
+        MainWindowViewModel vm, 
+        double? customLat = null, 
+        double? customLon = null, 
+        string? customHora = null, 
+        string? customFecha = null)
     {
-        var accentBrush = type == "INICIO" ? Brushes.Green : Brushes.Red;
+        Brush accentBrush;
+        if (type.Contains("CALADO"))
+        {
+            accentBrush = type.Contains("INICIO") ? Brushes.LimeGreen : Brushes.Orange;
+        }
+        else
+        {
+            accentBrush = type.Contains("INICIO") ? Brushes.DarkCyan : Brushes.Red;
+        }
+
         var textBrush = (Brush)Application.Current.FindResource("PrimaryTextBrush");
         var bgBrush = (Brush)Application.Current.FindResource("SurfaceBackgroundBrush");
 
@@ -310,18 +486,20 @@ public partial class MainWindow : Window
             FontWeight = FontWeights.SemiBold
         };
 
-        // Usar la fecha correcta: FechaFin si es "FIN", Fecha si es "INICIO"
-        string fechaStr = type == "INICIO" ? lance.Fecha : (lance.FechaFin?.ToString("yyyy-MM-dd") ?? lance.Fecha);
+        string fechaStr = customFecha ?? (type.Contains("INICIO") ? lance.Fecha : (lance.FechaFin?.ToString("yyyy-MM-dd") ?? lance.Fecha));
         string fecha = fechaStr;
         if (DateTime.TryParse(fechaStr, out DateTime dt))
         {
             fecha = dt.ToString("dd/MM/yyyy");
         }
 
-        string hora = type == "INICIO" ? lance.HoraInicio : lance.HoraFinal;
+        string hora = customHora ?? (type.Contains("INICIO") ? lance.HoraInicio : lance.HoraFinal);
         
-        string lat = type == "INICIO" ? FormatCoord(lance.LatitudInicioDecimal, true) : FormatCoord(lance.LatitudFinalDecimal, true);
-        string lon = type == "INICIO" ? FormatCoord(lance.LongitudInicioDecimal, false) : FormatCoord(lance.LongitudFinalDecimal, false);
+        double? latVal = customLat ?? (type.Contains("INICIO") ? lance.LatitudInicioDecimal : lance.LatitudFinalDecimal);
+        double? lonVal = customLon ?? (type.Contains("INICIO") ? lance.LongitudInicioDecimal : lance.LongitudFinalDecimal);
+
+        string lat = FormatCoord(latVal, true);
+        string lon = FormatCoord(lonVal, false);
 
         tip.Content = new StackPanel();
         var header = new TextBlock 
@@ -388,7 +566,7 @@ public partial class MainWindow : Window
         return tip;
     }
 
-    private object CreateLanceRouteToolTip(Lance lance)
+    private object CreateLanceRouteToolTip(Lance lance, string? subTipo = null)
     {
         var bgBrush = (Brush)Application.Current.FindResource("SurfaceBackgroundBrush");
         var textBrush = (Brush)Application.Current.FindResource("PrimaryTextBrush");
@@ -397,7 +575,7 @@ public partial class MainWindow : Window
         {
             Background = bgBrush,
             Foreground = textBrush,
-            BorderBrush = Brushes.Cyan,
+            BorderBrush = subTipo == "CALADO" ? Brushes.LightGreen : Brushes.Cyan,
             BorderThickness = new Thickness(2),
             Padding = new Thickness(10),
             FontSize = 13,
@@ -406,10 +584,11 @@ public partial class MainWindow : Window
 
         var stack = new StackPanel();
         
+        string title = subTipo != null ? $"LANCE NRO: {lance.NroLance} ({subTipo})" : $"LANCE NRO: {lance.NroLance}";
         stack.Children.Add(new TextBlock 
         { 
-            Text = $"LANCE NRO: {lance.NroLance}", 
-            Foreground = Brushes.DarkCyan,
+            Text = title, 
+            Foreground = subTipo == "CALADO" ? Brushes.ForestGreen : Brushes.DarkCyan,
             FontWeight = FontWeights.Bold,
             Margin = new Thickness(0, 0, 0, 8)
         });
@@ -422,8 +601,21 @@ public partial class MainWindow : Window
         }
 
         stack.Children.Add(new TextBlock { Text = $"FECHA: {fecha}", Foreground = textBrush, FontSize = 12 });
-        stack.Children.Add(new TextBlock { Text = $"INICIO: {lance.HoraInicio}", Foreground = textBrush, FontSize = 12 });
-        stack.Children.Add(new TextBlock { Text = $"FIN: {lance.HoraFinal}", Foreground = textBrush, FontSize = 12 });
+        if (subTipo == "CALADO" && lance.DetallePalangre != null)
+        {
+            stack.Children.Add(new TextBlock { Text = $"FILADO INICIO: {lance.DetallePalangre.HoraInicioFilado}", Foreground = textBrush, FontSize = 12 });
+            stack.Children.Add(new TextBlock { Text = $"FILADO FIN: {lance.DetallePalangre.HoraFinFilado}", Foreground = textBrush, FontSize = 12 });
+        }
+        else if (subTipo == "VIRADO" && lance.DetallePalangre != null)
+        {
+            stack.Children.Add(new TextBlock { Text = $"VIRADO INICIO: {lance.DetallePalangre.HoraInicioVirado}", Foreground = textBrush, FontSize = 12 });
+            stack.Children.Add(new TextBlock { Text = $"VIRADO FIN: {lance.DetallePalangre.HoraFinVirado}", Foreground = textBrush, FontSize = 12 });
+        }
+        else
+        {
+            stack.Children.Add(new TextBlock { Text = $"INICIO: {lance.HoraInicio}", Foreground = textBrush, FontSize = 12 });
+            stack.Children.Add(new TextBlock { Text = $"FIN: {lance.HoraFinal}", Foreground = textBrush, FontSize = 12 });
+        }
         stack.Children.Add(new TextBlock { Text = $"CAPTURA: {lance.CapturaTotalKg:N0} kg", Foreground = textBrush, FontSize = 12 });
 
         tip.Content = stack;
